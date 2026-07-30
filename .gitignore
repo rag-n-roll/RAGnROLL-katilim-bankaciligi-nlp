@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.playwright-cli/
+.DS_Store
+
+# Calistirma sirasinda uretilen veri ve raporlar
+data/raw/*.json
+data/processed/*.json
+outputs/*.json
