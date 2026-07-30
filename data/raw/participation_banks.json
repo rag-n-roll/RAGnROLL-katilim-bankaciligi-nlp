@@ -1,0 +1,57 @@
+{
+  "source_url": "https://www.bddk.gov.tr/Kurulus/Liste/90",
+  "retrieved_at": "2026-07-30T09:39:28.873928+00:00",
+  "count": 10,
+  "banks": [
+    {
+      "name": "ADİL KATILIM BANKASI A.Ş.",
+      "website": "https://www.adilkatilim.com.tr/",
+      "is_digital": true
+    },
+    {
+      "name": "ALBARAKA TÜRK KATILIM BANKASI A.Ş.",
+      "website": "http://www.albarakaturk.com.tr/",
+      "is_digital": false
+    },
+    {
+      "name": "DÜNYA KATILIM BANKASI A.Ş.",
+      "website": "https://www.dunyakatilim.com.tr/",
+      "is_digital": false
+    },
+    {
+      "name": "HAYAT FİNANS KATILIM BANKASI A.Ş.",
+      "website": "https://www.hayatfinans.com.tr/",
+      "is_digital": true
+    },
+    {
+      "name": "KUVEYT TÜRK KATILIM BANKASI A.Ş.",
+      "website": "http://www.kuveytturk.com.tr",
+      "is_digital": false
+    },
+    {
+      "name": "T.O.M. KATILIM BANKASI A.Ş.",
+      "website": "https://www.tombank.com.tr/",
+      "is_digital": true
+    },
+    {
+      "name": "TÜRKİYE EMLAK KATILIM BANKASI A.Ş.",
+      "website": "http://www.emlakbank.com.tr/",
+      "is_digital": false
+    },
+    {
+      "name": "TÜRKİYE FİNANS KATILIM BANKASI A.Ş.",
+      "website": "http://www.turkiyefinans.com.tr",
+      "is_digital": false
+    },
+    {
+      "name": "VAKIF KATILIM BANKASI A.Ş.",
+      "website": "http://www.vakifkatilim.com.tr/",
+      "is_digital": false
+    },
+    {
+      "name": "ZİRAAT KATILIM BANKASI A.Ş.",
+      "website": "http://www.ziraatkatilim.com.tr/",
+      "is_digital": false
+    }
+  ]
+}
