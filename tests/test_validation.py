@@ -23,3 +23,5 @@ def test_duplicate_url_is_reported():
     second = valid_campaign()
     report = build_quality_report([first, second])
     assert report["error_count"] >= 2
+    assert report["valid_record_count"] == 0
+    assert report["quality_score"] == 0.0

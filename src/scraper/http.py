@@ -3,16 +3,12 @@
 from __future__ import annotations
 
 import logging
+import ssl
 import time
 from urllib.parse import urlparse
 from urllib.robotparser import RobotFileParser
 
 import truststore
-
-# requests'in paketli CA dosyasi yerine isletim sisteminin guncel guven deposu.
-# Bu, kurumsal/government sertifika zincirlerinde verify=False ihtiyacini onler.
-truststore.inject_into_ssl()
-
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -22,6 +18,28 @@ DEFAULT_USER_AGENT = (
     "RAGnROLLCampaignBot/1.0 "
     "(+https://github.com/rag-n-roll/RAGnROLL-katilim-bankaciligi-nlp)"
 )
+
+
+class TruststoreHTTPAdapter(HTTPAdapter):
+    """Sistem CA deposunu yalnizca bagli oldugu requests oturumunda kullanir."""
+
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        self._ssl_context = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        super().__init__(*args, **kwargs)
+
+    def init_poolmanager(
+        self,
+        connections: int,
+        maxsize: int,
+        block: bool = False,
+        **pool_kwargs: object,
+    ) -> None:
+        pool_kwargs.setdefault("ssl_context", self._ssl_context)
+        super().init_poolmanager(connections, maxsize, block=block, **pool_kwargs)
+
+    def proxy_manager_for(self, proxy: str, **proxy_kwargs: object):  # type: ignore[no-untyped-def]
+        proxy_kwargs.setdefault("ssl_context", self._ssl_context)
+        return super().proxy_manager_for(proxy, **proxy_kwargs)
 
 
 class RobotsDeniedError(PermissionError):
@@ -60,7 +78,8 @@ class HttpClient:
             allowed_methods=frozenset({"GET", "HEAD"}),
             respect_retry_after_header=True,
         )
-        self.session.mount("https://", HTTPAdapter(max_retries=retry))
+        # Global ssl monkey-patch'i yerine sistem guven deposu bu oturuma ozeldir.
+        self.session.mount("https://", TruststoreHTTPAdapter(max_retries=retry))
         self.session.mount("http://", HTTPAdapter(max_retries=retry))
 
     def _robot_parser(self, url: str) -> RobotFileParser | None:

@@ -5,6 +5,8 @@ __pycache__/
 .playwright-cli/
 .DS_Store
 
+.commandcode
+
 # Calistirma sirasinda uretilen veri ve raporlar
 data/raw/*.json
 data/processed/*.json

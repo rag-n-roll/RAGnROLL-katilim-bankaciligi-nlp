@@ -65,22 +65,36 @@ def run_validate(args: argparse.Namespace) -> int:
     # JSON'dan model kurmaya gerek olmadan temel dis veri seti kontrolleri.
     from .models import Campaign
 
+    rows = payload.get("records", [])
+    if not isinstance(rows, list):
+        raise ValueError("Veri setinde 'records' listesi bulunmuyor")
     records = []
-    conversion_errors: list[dict[str, str]] = []
-    for row in payload.get("records", []):
+    conversion_errors: list[dict[str, object]] = []
+    for index, row in enumerate(rows):
         try:
             from datetime import date, datetime
 
+            if not isinstance(row, dict):
+                raise TypeError("Kayıt bir JSON nesnesi olmalı")
             converted = dict(row)
             for name in ("start_date", "end_date"):
                 converted[name] = date.fromisoformat(converted[name]) if converted.get(name) else None
             converted["scraped_at"] = datetime.fromisoformat(converted["scraped_at"]) if converted.get("scraped_at") else None
             records.append(Campaign(**converted))
         except (TypeError, ValueError) as exc:
-            conversion_errors.append({"url": str(row.get("source_url", "")), "error": str(exc)})
-    report = build_quality_report(records, conversion_errors)
+            source_url = row.get("source_url", "") if isinstance(row, dict) else ""
+            conversion_errors.append(
+                {"record_index": index, "url": str(source_url), "error": str(exc)}
+            )
+    report = build_quality_report(records)
+    report["input_record_count"] = len(rows)
+    report["conversion_error_count"] = len(conversion_errors)
+    report["conversion_errors"] = conversion_errors
+    report["overall_quality_score"] = (
+        round(report["valid_record_count"] / len(rows), 4) if rows else 0.0
+    )
     write_json(args.output, report)
-    print(f"Kalite skoru={report['quality_score']:.2%}: {args.output}")
+    print(f"Genel kalite skoru={report['overall_quality_score']:.2%}: {args.output}")
     return 2 if report["error_count"] or conversion_errors else 0
 
 

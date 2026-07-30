@@ -61,9 +61,11 @@ Hata oluşturan kurallar:
 - kayıt kimliği ve kaynak URL tekil olmalı.
 
 Eksik tarih veya özet uyarıdır; bazı sürekli kampanyalarda tarih gerçekten
-bulunmayabilir. `quality_score`, kayıt seviyesinde hata içermeyen kayıtların tüm
-kayıtlara oranıdır. Ağ ve HTML ayrıştırma hataları ayrıca `fetch_failures`
-alanında tutulur ve sessizce kaybedilmez.
+bulunmayabilir. `quality_score`, modele başarıyla dönüştürülen kayıtlar içindeki
+hatasız kayıt oranıdır. `validate` komutunun `overall_quality_score` alanı ise
+dönüşemeyen girdileri de paydaya dahil eder. Ağ ve HTML ayrıştırma hataları
+`fetch_failures`, JSON/model dönüşüm hataları `conversion_errors` alanında
+birbirinden ayrı tutulur ve sessizce kaybedilmez.
 
 ## Ön işleme yaklaşımı
 

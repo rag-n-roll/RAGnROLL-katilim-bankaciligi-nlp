@@ -41,21 +41,26 @@ def build_quality_report(
     issue_rows: list[dict[str, str]] = []
     id_counts = Counter(record.id for record in records)
     url_counts = Counter(record.source_url for record in records)
+    valid_records = 0
     for record in records:
-        for issue in validate_campaign(record):
-            issue_rows.append({"record_id": str(record.id), "bank_slug": record.bank_slug, **issue})
+        record_issues = validate_campaign(record)
         if id_counts[record.id] > 1:
-            issue_rows.append(
-                {"record_id": str(record.id), "bank_slug": record.bank_slug, "severity": "error", "field": "id", "message": "Tekrarlanan kayit kimligi"}
+            record_issues.append(
+                {"severity": "error", "field": "id", "message": "Tekrarlanan kayit kimligi"}
             )
         if url_counts[record.source_url] > 1:
-            issue_rows.append(
-                {"record_id": str(record.id), "bank_slug": record.bank_slug, "severity": "error", "field": "source_url", "message": "Tekrarlanan kaynak URL"}
+            record_issues.append(
+                {"severity": "error", "field": "source_url", "message": "Tekrarlanan kaynak URL"}
             )
+        issue_rows.extend(
+            {"record_id": str(record.id), "bank_slug": record.bank_slug, **issue}
+            for issue in record_issues
+        )
+        if not any(issue["severity"] == "error" for issue in record_issues):
+            valid_records += 1
 
     errors = sum(issue["severity"] == "error" for issue in issue_rows)
     warnings = sum(issue["severity"] == "warning" for issue in issue_rows)
-    valid_records = sum(not any(i["severity"] == "error" for i in validate_campaign(record)) for record in records)
     return {
         "record_count": len(records),
         "valid_record_count": valid_records,
