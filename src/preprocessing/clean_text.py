@@ -14,6 +14,12 @@ from typing import Any
 from bs4 import BeautifulSoup
 
 TOKEN_RE = re.compile(r"\d+(?:[.,]\d+)*|[^\W\d_]+(?:['’][^\W\d_]+)?", re.UNICODE)
+TURKISH_LOWER_TRANSLATION = str.maketrans({"I": "ı", "İ": "i"})
+
+
+def turkish_lower(value: str) -> str:
+    """Python'un dil bagimsiz lower davranisini Turkce icin duzeltir."""
+    return value.translate(TURKISH_LOWER_TRANSLATION).lower()
 
 
 def clean_text(value: str, *, lowercase: bool = False) -> str:
@@ -29,7 +35,7 @@ def clean_text(value: str, *, lowercase: bool = False) -> str:
     value = re.sub(r"[ \t\r\f\v]+", " ", value)
     value = re.sub(r" *\n *", "\n", value)
     value = re.sub(r"\n{3,}", "\n\n", value).strip()
-    return value.lower() if lowercase else value
+    return turkish_lower(value) if lowercase else value
 
 
 def tokenize_turkish(value: str, *, lowercase: bool = True) -> list[str]:

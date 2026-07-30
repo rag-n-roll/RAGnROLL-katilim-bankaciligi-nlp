@@ -16,6 +16,14 @@ def test_turkish_tokenizer_keeps_apostrophe_and_numbers():
     ]
 
 
+def test_turkish_tokenizer_does_not_split_capital_dotted_i():
+    assert tokenize_turkish("İşlemlerin IŞIK koşulları") == [
+        "işlemlerin",
+        "ışık",
+        "koşulları",
+    ]
+
+
 def test_preprocess_dataset_adds_derived_fields():
     result = preprocess_dataset({"records": [{"content": "Merhaba dünya"}]})
     assert result["record_count"] == 1
