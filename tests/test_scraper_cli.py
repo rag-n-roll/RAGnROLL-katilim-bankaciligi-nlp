@@ -10,7 +10,10 @@ def test_validate_separates_conversion_errors_from_fetch_failures(tmp_path):
         bank_slug="ornek",
         bank_name="Örnek Katılım",
         title="Geçerli Kampanya",
-        content="Kalite doğrulamasını geçecek kadar uzun bir kampanya açıklaması burada bulunmaktadır ve koşulları anlatır.",
+        content=(
+            "Kalite doğrulamasını geçecek kadar uzun bir kampanya açıklaması "
+            "burada bulunmaktadır ve koşulları anlatır."
+        ),
         summary="Kısa özet",
         source_url="https://ornek.example/kampanya/1",
     ).to_dict()

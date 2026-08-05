@@ -7,7 +7,10 @@ def valid_campaign() -> Campaign:
         bank_slug="ornek",
         bank_name="Örnek Katılım",
         title="Geçerli Kampanya",
-        content="Müşterilerimize özel kampanyanın bütün koşullarını anlatan yeterince uzun bir içerik metnidir. Detaylar burada.",
+        content=(
+            "Müşterilerimize özel kampanyanın bütün koşullarını anlatan yeterince "
+            "uzun bir içerik metnidir. Detaylar burada."
+        ),
         summary="Kısa özet",
         source_url="https://ornek.example/kampanya/1",
     )

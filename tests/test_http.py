@@ -1,4 +1,3 @@
-import ssl
 import subprocess
 import sys
 
@@ -16,5 +15,10 @@ def test_import_does_not_replace_global_ssl_context():
         "import src.scraper.http; "
         "assert ssl.SSLContext is original"
     )
-    result = subprocess.run([sys.executable, "-c", code], check=False, capture_output=True, text=True)
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
     assert result.returncode == 0, result.stderr
