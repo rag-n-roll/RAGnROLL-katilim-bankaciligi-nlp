@@ -1,0 +1,176 @@
+[
+  {
+    "source_entity": "BANK",
+    "relation": "SUNAR",
+    "target_entity": "PRODUCT",
+    "example": "Kuveyt Türk → sunar → Araç Finansmanı"
+  },
+  {
+    "source_entity": "PRODUCT",
+    "relation": "ORANA_SAHIP",
+    "target_entity": "PROFIT_RATE",
+    "example": "Araç Finansmanı → orana_sahip → %2,49"
+  },
+  {
+    "source_entity": "PRODUCT",
+    "relation": "VADEYE_SAHIP",
+    "target_entity": "MATURITY",
+    "example": "Konut Finansmanı → vadeye_sahip → 120 ay"
+  },
+  {
+    "source_entity": "PRODUCT",
+    "relation": "TUTARA_SAHIP",
+    "target_entity": "FINANCING_AMOUNT",
+    "example": "İhtiyaç Finansmanı → tutara_sahip → 100.000 TL"
+  },
+  {
+    "source_entity": "CAMPAIGN",
+    "relation": "HEDEFLE",
+    "target_entity": "TARGET_CUSTOMER",
+    "example": "Kampanya → hedefle → Yeni müşteriler"
+  },
+  {
+    "source_entity": "CAMPAIGN",
+    "relation": "AVANTAJ_SUNAR",
+    "target_entity": "CAMPAIGN_BENEFIT",
+    "example": "Kampanya → avantaj_sunar → Tahsis ücreti muafiyeti"
+  },
+  {
+    "source_entity": "PRODUCT",
+    "relation": "GEREKTIRIR",
+    "target_entity": "DOCUMENT",
+    "example": "Taşıt Finansmanı → gerektirir → Proforma Fatura"
+  },
+  {
+    "source_entity": "PRODUCT",
+    "relation": "TEMINAT_ALIR",
+    "target_entity": "COLLATERAL",
+    "example": "Konut Finansmanı → teminat_alır → İpotek"
+  },
+  {
+    "source_entity": "PRODUCT",
+    "relation": "AKDE_DAYANIR",
+    "target_entity": "ISLAMIC_CONTRACT",
+    "example": "Finansman → akde_dayanır → Murabaha"
+  },
+  {
+    "source_entity": "PRODUCT",
+    "relation": "BASVURU_KANALI",
+    "target_entity": "APPLICATION_CHANNEL",
+    "example": "Dijital Finansman → başvuru_kanalı → Mobil Başvuru"
+  },
+  {
+    "source_entity": "PRODUCT",
+    "relation": "HEDEF_MUSTERI",
+    "target_entity": "TARGET_CUSTOMER",
+    "example": "KOBİ Finansmanı → hedef_müşteri → KOBİ"
+  },
+  {
+    "source_entity": "PRODUCT",
+    "relation": "KULLANIM_AMACI",
+    "target_entity": "FINANCING_PURPOSE",
+    "example": "Tarım Finansmanı → kullanım_amacı → Tarımsal üretim"
+  },
+  {
+    "source_entity": "CAMPAIGN",
+    "relation": "GECERLILIK_TARIHI",
+    "target_entity": "DATE_RANGE",
+    "example": "Kampanya → geçerlilik_tarihi → 01.08.2026-31.08.2026"
+  },
+  {
+    "source_entity": "CAMPAIGN",
+    "relation": "KATILIM_KANALI",
+    "target_entity": "APPLICATION_CHANNEL",
+    "example": "Kampanya → katılım_kanalı → Mobil Başvuru"
+  },
+  {
+    "source_entity": "TRADE_DOCUMENT",
+    "relation": "KULLANILIR",
+    "target_entity": "TRADE_PAYMENT_METHOD",
+    "example": "Konşimento → kullanılır → Akreditifli ödeme"
+  },
+  {
+    "source_entity": "INCOTERM",
+    "relation": "SORUMLULUK_BELIRLER",
+    "target_entity": "PARTY",
+    "example": "FOB → sorumluluk_belirler → İhracatçı"
+  },
+  {
+    "source_entity": "PRODUCT",
+    "relation": "ILISKILI_RISK",
+    "target_entity": "RISK_TYPE",
+    "example": "İthalat Finansmanı → ilişkili_risk → Kur Riski"
+  },
+  {
+    "source_entity": "ACCOUNT_TYPE",
+    "relation": "KAR_DAGITIMI",
+    "target_entity": "PROFIT_DISTRIBUTION",
+    "example": "Katılma Hesabı → kâr_dağıtımı → Günlük Kâr Dağıtımı"
+  },
+  {
+    "source_entity": "CARD_PRODUCT",
+    "relation": "LIMITE_SAHIP",
+    "target_entity": "CARD_LIMIT",
+    "example": "Kredi Kartı → limite_sahip → 50.000 TL"
+  },
+  {
+    "source_entity": "CARD_PRODUCT",
+    "relation": "EKSTRE_TARIHI",
+    "target_entity": "STATEMENT_DATE",
+    "example": "Kredi Kartı → ekstre_tarihi → Ayın 10'u"
+  },
+  {
+    "source_entity": "TRANSACTION",
+    "relation": "DURUMA_SAHIP",
+    "target_entity": "TRANSACTION_STATUS",
+    "example": "Transfer → duruma_sahip → Beklemede"
+  },
+  {
+    "source_entity": "APPLICATION_PROCESS",
+    "relation": "DURUMA_SAHIP",
+    "target_entity": "APPLICATION_STATUS",
+    "example": "Finansman Başvurusu → duruma_sahip → İncelemede"
+  },
+  {
+    "source_entity": "PRODUCT",
+    "relation": "TEMINAT_GEREKTIRIR",
+    "target_entity": "COLLATERAL",
+    "example": "Konut Finansmanı → teminat_gerektirir → İpotek"
+  },
+  {
+    "source_entity": "PRODUCT",
+    "relation": "MALIYET_ICERIR",
+    "target_entity": "FEE",
+    "example": "Akreditif → maliyet_içerir → Akreditif Komisyonu"
+  },
+  {
+    "source_entity": "INVESTMENT_FUND",
+    "relation": "BELGEYE_SAHIP",
+    "target_entity": "DOCUMENT",
+    "example": "Yatırım Fonu → belgeye_sahip → Fon İzahnamesi"
+  },
+  {
+    "source_entity": "INSURANCE_PRODUCT",
+    "relation": "TEMINAT_SUNAR",
+    "target_entity": "INSURANCE_COVERAGE",
+    "example": "Kasko → teminat_sunar → Ek Teminat"
+  },
+  {
+    "source_entity": "CUSTOMER",
+    "relation": "RISK_SEVIYESI",
+    "target_entity": "RISK_LEVEL",
+    "example": "Müşteri → risk_seviyesi → Yüksek Risk"
+  },
+  {
+    "source_entity": "TRADE_PAYMENT_METHOD",
+    "relation": "BELGE_KULLANIR",
+    "target_entity": "TRADE_DOCUMENT",
+    "example": "Akreditifli Ödeme → belge_kullanır → Konşimento"
+  },
+  {
+    "source_entity": "CAMPAIGN",
+    "relation": "ODUL_SUNAR",
+    "target_entity": "CAMPAIGN_REWARD",
+    "example": "Kampanya → ödül_sunar → Nakit İade"
+  }
+]

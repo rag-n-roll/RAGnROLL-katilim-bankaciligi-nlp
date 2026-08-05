@@ -1,0 +1,1869 @@
+{
+  "yerleşim yeri belgesi": [
+    {
+      "canonical": "İkametgâh Belgesi",
+      "term_id": "TRM0004",
+      "entity": "DOCUMENT"
+    }
+  ],
+  "ehliyet": [
+    {
+      "canonical": "Sürücü Belgesi",
+      "term_id": "TRM0018",
+      "entity": "DOCUMENT"
+    }
+  ],
+  "kimlik belgesi": [
+    {
+      "canonical": "T.C. Kimlik Kartı",
+      "term_id": "TRM0019",
+      "entity": "DOCUMENT"
+    }
+  ],
+  "çiftçi kayıt sistemi belgesi": [
+    {
+      "canonical": "ÇKS Belgesi",
+      "term_id": "TRM0024",
+      "entity": "DOCUMENT"
+    }
+  ],
+  "oda sicil kayıt belgesi": [
+    {
+      "canonical": "Oda Kayıt Belgesi",
+      "term_id": "TRM0031",
+      "entity": "DOCUMENT"
+    }
+  ],
+  "yapı kullanım i̇zin belgesi": [
+    {
+      "canonical": "İskân İzni",
+      "term_id": "TRM0035",
+      "entity": "DOCUMENT"
+    }
+  ],
+  "alışveriş kredisi": [
+    {
+      "canonical": "Alışveriş Finansmanı",
+      "term_id": "TRM0042",
+      "entity": "PRODUCT"
+    }
+  ],
+  "okul finansmanı": [
+    {
+      "canonical": "Eğitim Finansmanı",
+      "term_id": "TRM0043",
+      "entity": "PRODUCT"
+    }
+  ],
+  "ev finansmanı": [
+    {
+      "canonical": "Konut Finansmanı",
+      "term_id": "TRM0045",
+      "entity": "PRODUCT"
+    }
+  ],
+  "tatil finansmanı": [
+    {
+      "canonical": "Seyahat Finansmanı",
+      "term_id": "TRM0048",
+      "entity": "PRODUCT"
+    }
+  ],
+  "taşıt finansmanı": [
+    {
+      "canonical": "Araç Finansmanı",
+      "term_id": "TRM0050",
+      "entity": "PRODUCT"
+    }
+  ],
+  "motor finansmanı": [
+    {
+      "canonical": "Motosiklet Finansmanı",
+      "term_id": "TRM0052",
+      "entity": "PRODUCT"
+    }
+  ],
+  "push bildirimi": [
+    {
+      "canonical": "Anlık Bildirim",
+      "term_id": "TRM0065",
+      "entity": "DIGITAL_BANKING_TERM"
+    }
+  ],
+  "liveness": [
+    {
+      "canonical": "Canlılık Kontrolü",
+      "term_id": "TRM0073",
+      "entity": "DIGITAL_BANKING_TERM"
+    }
+  ],
+  "device fingerprint": [
+    {
+      "canonical": "Cihaz Parmak İzi",
+      "term_id": "TRM0074",
+      "entity": "DIGITAL_BANKING_TERM"
+    }
+  ],
+  "audit trail": [
+    {
+      "canonical": "Denetim İzi",
+      "term_id": "TRM0076",
+      "entity": "DIGITAL_BANKING_TERM"
+    }
+  ],
+  "e-imza": [
+    {
+      "canonical": "Elektronik İmza",
+      "term_id": "TRM0083",
+      "entity": "DIGITAL_BANKING_TERM"
+    }
+  ],
+  "access token": [
+    {
+      "canonical": "Erişim Jetonu",
+      "term_id": "TRM0085",
+      "entity": "DIGITAL_BANKING_TERM"
+    }
+  ],
+  "ais": [
+    {
+      "canonical": "Hesap Bilgisi Hizmeti",
+      "term_id": "TRM0092",
+      "entity": "DIGITAL_BANKING_TERM"
+    }
+  ],
+  "account takeover": [
+    {
+      "canonical": "Hesap Ele Geçirme",
+      "term_id": "TRM0093",
+      "entity": "DIGITAL_BANKING_TERM"
+    }
+  ],
+  "phishing": [
+    {
+      "canonical": "Oltalama",
+      "term_id": "TRM0106",
+      "entity": "DIGITAL_BANKING_TERM"
+    }
+  ],
+  "login": [
+    {
+      "canonical": "Oturum Açma",
+      "term_id": "TRM0107",
+      "entity": "DIGITAL_BANKING_TERM"
+    }
+  ],
+  "logout": [
+    {
+      "canonical": "Oturum Kapatma",
+      "term_id": "TRM0108",
+      "entity": "DIGITAL_BANKING_TERM"
+    }
+  ],
+  "rbac": [
+    {
+      "canonical": "Rol Tabanlı Erişim",
+      "term_id": "TRM0113",
+      "entity": "DIGITAL_BANKING_TERM"
+    }
+  ],
+  "baas": [
+    {
+      "canonical": "Servis Modeli Bankacılığı",
+      "term_id": "TRM0120",
+      "entity": "DIGITAL_BANKING_TERM"
+    }
+  ],
+  "malware": [
+    {
+      "canonical": "Zararlı Yazılım",
+      "term_id": "TRM0132",
+      "entity": "DIGITAL_BANKING_TERM"
+    }
+  ],
+  "pis": [
+    {
+      "canonical": "Ödeme Emri Başlatma Hizmeti",
+      "term_id": "TRM0133",
+      "entity": "DIGITAL_BANKING_TERM"
+    }
+  ],
+  "timeout": [
+    {
+      "canonical": "İşlem Zaman Aşımı",
+      "term_id": "TRM0138",
+      "entity": "DIGITAL_BANKING_TERM"
+    }
+  ],
+  "onay kodu": [
+    {
+      "canonical": "SMS Doğrulama Kodu",
+      "term_id": "TRM0142",
+      "entity": "VERIFICATION_CODE"
+    }
+  ],
+  "otp": [
+    {
+      "canonical": "Tek Kullanımlık Şifre",
+      "term_id": "TRM0143",
+      "entity": "OTP"
+    }
+  ],
+  "2fa": [
+    {
+      "canonical": "İki Faktörlü Doğrulama",
+      "term_id": "TRM0144",
+      "entity": "TWO_FACTOR_AUTHENTICATION"
+    }
+  ],
+  "mobil başvuru": [
+    {
+      "canonical": "Başvuru Kanalı",
+      "term_id": "TRM0146",
+      "entity": "APPLICATION_CHANNEL"
+    }
+  ],
+  "şube başvurusu": [
+    {
+      "canonical": "Başvuru Kanalı",
+      "term_id": "TRM0146",
+      "entity": "APPLICATION_CHANNEL"
+    }
+  ],
+  "i̇nternet şubesi": [
+    {
+      "canonical": "Başvuru Kanalı",
+      "term_id": "TRM0146",
+      "entity": "APPLICATION_CHANNEL"
+    },
+    {
+      "canonical": "İnternet Bankacılığı",
+      "term_id": "TRM0148",
+      "entity": "DIGITAL_CHANNEL"
+    }
+  ],
+  "görüntülü müşteri olma": [
+    {
+      "canonical": "Görüntülü Müşteri Edinimi",
+      "term_id": "TRM0153",
+      "entity": "DIGITAL_ONBOARDING"
+    }
+  ],
+  "mobil pos": [
+    {
+      "canonical": "CebimPOS",
+      "term_id": "TRM0163",
+      "entity": "DIGITAL_PAYMENT_SYSTEM"
+    }
+  ],
+  "qr ile ödeme": [
+    {
+      "canonical": "QR Kod ile Finansman",
+      "term_id": "TRM0172",
+      "entity": "PAYMENT_METHOD"
+    }
+  ],
+  "fx makası": [
+    {
+      "canonical": "Kur Makası",
+      "term_id": "TRM0173",
+      "entity": "FX_SPREAD"
+    }
+  ],
+  "dar makas": [
+    {
+      "canonical": "Kur Makası",
+      "term_id": "TRM0173",
+      "entity": "FX_SPREAD"
+    }
+  ],
+  "inspection certificate": [
+    {
+      "canonical": "Gözetim Belgesi",
+      "term_id": "TRM0187",
+      "entity": "TRADE_DOCUMENT"
+    }
+  ],
+  "certificate of origin": [
+    {
+      "canonical": "Menşe Şahadetnamesi",
+      "term_id": "TRM0188",
+      "entity": "TRADE_DOCUMENT"
+    }
+  ],
+  "commercial invoice": [
+    {
+      "canonical": "Ticari Fatura",
+      "term_id": "TRM0190",
+      "entity": "TRADE_DOCUMENT"
+    }
+  ],
+  "packing list": [
+    {
+      "canonical": "Çeki Listesi",
+      "term_id": "TRM0191",
+      "entity": "TRADE_DOCUMENT"
+    }
+  ],
+  "sevkiyat belgeleri": [
+    {
+      "canonical": "Vesaik",
+      "term_id": "TRM0192",
+      "entity": "SHIPPING_DOCUMENTS"
+    }
+  ],
+  "belge ibrazı": [
+    {
+      "canonical": "İbraz",
+      "term_id": "TRM0193",
+      "entity": "DOCUMENT_PRESENTATION"
+    }
+  ],
+  "söi̇k": [
+    {
+      "canonical": "Sevk Öncesi İhracat Kredisi (SÖİK)",
+      "term_id": "TRM0195",
+      "entity": "PRODUCT"
+    }
+  ],
+  "non-recourse financing": [
+    {
+      "canonical": "Gayrikabili Rücu Finansman",
+      "term_id": "TRM0197",
+      "entity": "NON_RECOURSE_FINANCING"
+    }
+  ],
+  "demurrage": [
+    {
+      "canonical": "Demuraj",
+      "term_id": "TRM0199",
+      "entity": "TRADE_FEE"
+    }
+  ],
+  "atr": [
+    {
+      "canonical": "A.TR Dolaşım Belgesi",
+      "term_id": "TRM0200",
+      "entity": "TRADE_DOCUMENT"
+    }
+  ],
+  "eur1": [
+    {
+      "canonical": "EUR.1 Dolaşım Belgesi",
+      "term_id": "TRM0201",
+      "entity": "TRADE_DOCUMENT"
+    }
+  ],
+  "cost and freight": [
+    {
+      "canonical": "CFR",
+      "term_id": "TRM0203",
+      "entity": "INCOTERM"
+    }
+  ],
+  "cost insurance and freight": [
+    {
+      "canonical": "CIF",
+      "term_id": "TRM0204",
+      "entity": "INCOTERM"
+    }
+  ],
+  "delivered at place": [
+    {
+      "canonical": "DAP",
+      "term_id": "TRM0205",
+      "entity": "INCOTERM"
+    }
+  ],
+  "delivered duty paid": [
+    {
+      "canonical": "DDP",
+      "term_id": "TRM0206",
+      "entity": "INCOTERM"
+    }
+  ],
+  "delivered at place unloaded": [
+    {
+      "canonical": "DPU",
+      "term_id": "TRM0207",
+      "entity": "INCOTERM"
+    }
+  ],
+  "ex works": [
+    {
+      "canonical": "EXW",
+      "term_id": "TRM0208",
+      "entity": "INCOTERM"
+    }
+  ],
+  "free carrier": [
+    {
+      "canonical": "FCA",
+      "term_id": "TRM0209",
+      "entity": "INCOTERM"
+    }
+  ],
+  "free on board": [
+    {
+      "canonical": "FOB",
+      "term_id": "TRM0210",
+      "entity": "INCOTERM"
+    }
+  ],
+  "air waybill": [
+    {
+      "canonical": "Hava Yolu Taşıma Senedi",
+      "term_id": "TRM0225",
+      "entity": "TRADE_DOCUMENT"
+    }
+  ],
+  "awb": [
+    {
+      "canonical": "Hava Yolu Taşıma Senedi",
+      "term_id": "TRM0225",
+      "entity": "TRADE_DOCUMENT"
+    }
+  ],
+  "cmr": [
+    {
+      "canonical": "Karayolu Taşıma Belgesi",
+      "term_id": "TRM0226",
+      "entity": "TRADE_DOCUMENT"
+    }
+  ],
+  "bill of lading": [
+    {
+      "canonical": "Konşimento",
+      "term_id": "TRM0227",
+      "entity": "TRADE_DOCUMENT"
+    }
+  ],
+  "b/l": [
+    {
+      "canonical": "Konşimento",
+      "term_id": "TRM0227",
+      "entity": "TRADE_DOCUMENT"
+    }
+  ],
+  "freight": [
+    {
+      "canonical": "Navlun",
+      "term_id": "TRM0228",
+      "entity": "FREIGHT_COST"
+    }
+  ],
+  "letter of credit": [
+    {
+      "canonical": "Akreditif",
+      "term_id": "TRM0232",
+      "entity": "PRODUCT"
+    }
+  ],
+  "l/c": [
+    {
+      "canonical": "Akreditif",
+      "term_id": "TRM0232",
+      "entity": "PRODUCT"
+    }
+  ],
+  "open account": [
+    {
+      "canonical": "Mal Mukabili Ödeme",
+      "term_id": "TRM0234",
+      "entity": "TRADE_PAYMENT_METHOD"
+    }
+  ],
+  "documents against payment": [
+    {
+      "canonical": "Vesaik Mukabili Ödeme",
+      "term_id": "TRM0236",
+      "entity": "TRADE_PAYMENT_METHOD"
+    }
+  ],
+  "vi̇f": [
+    {
+      "canonical": "Vadeli İhracat Finansmanı (VİF)",
+      "term_id": "TRM0237",
+      "entity": "PRODUCT"
+    }
+  ],
+  "vadeli i̇hracatın finansmanı": [
+    {
+      "canonical": "Vadeli İhracat Finansmanı (VİF)",
+      "term_id": "TRM0237",
+      "entity": "PRODUCT"
+    }
+  ],
+  "sevk öncesi finansman": [
+    {
+      "canonical": "Prefinansman",
+      "term_id": "TRM0238",
+      "entity": "PRE_SHIPMENT_FINANCING"
+    }
+  ],
+  "sevk sonrası finansman": [
+    {
+      "canonical": "Yükleme Sonrası Finansman",
+      "term_id": "TRM0239",
+      "entity": "POST_SHIPMENT_FINANCING"
+    }
+  ],
+  "amendment": [
+    {
+      "canonical": "Akreditif Değişikliği",
+      "term_id": "TRM0241",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "transshipment": [
+    {
+      "canonical": "Aktarma",
+      "term_id": "TRM0247",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "carriage and insurance paid to": [
+    {
+      "canonical": "CIP",
+      "term_id": "TRM0257",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "carriage paid to": [
+    {
+      "canonical": "CPT",
+      "term_id": "TRM0258",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "di̇r": [
+    {
+      "canonical": "Dahilde İşleme Rejimi",
+      "term_id": "TRM0259",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "dab": [
+    {
+      "canonical": "Döviz Alım Belgesi",
+      "term_id": "TRM0262",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "dsb": [
+    {
+      "canonical": "Döviz Satım Belgesi",
+      "term_id": "TRM0263",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "free alongside ship": [
+    {
+      "canonical": "FAS",
+      "term_id": "TRM0265",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "sight l/c": [
+    {
+      "canonical": "Görüldüğünde Ödemeli Akreditif",
+      "term_id": "TRM0271",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "gti̇p": [
+    {
+      "canonical": "Gümrük Tarife İstatistik Pozisyonu",
+      "term_id": "TRM0273",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "back-to-back l/c": [
+    {
+      "canonical": "Karşılıklı Akreditif",
+      "term_id": "TRM0279",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "kdv": [
+    {
+      "canonical": "Katma Değer Vergisi",
+      "term_id": "TRM0280",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "kkdf": [
+    {
+      "canonical": "Kaynak Kullanımını Destekleme Fonu",
+      "term_id": "TRM0281",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "red clause l/c": [
+    {
+      "canonical": "Kırmızı Şartlı Akreditif",
+      "term_id": "TRM0285",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "reimbursement": [
+    {
+      "canonical": "Rambursman",
+      "term_id": "TRM0298",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "reimbursing bank": [
+    {
+      "canonical": "Rambursman Bankası",
+      "term_id": "TRM0299",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "revolving l/c": [
+    {
+      "canonical": "Rotatif Akreditif",
+      "term_id": "TRM0302",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "free time": [
+    {
+      "canonical": "Serbest Süre",
+      "term_id": "TRM0307",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "sblc": [
+    {
+      "canonical": "Standby Letter of Credit",
+      "term_id": "TRM0309",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "etd": [
+    {
+      "canonical": "Tahmini Kalkış Tarihi",
+      "term_id": "TRM0310",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "eta": [
+    {
+      "canonical": "Tahmini Varış Tarihi",
+      "term_id": "TRM0311",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "complying presentation": [
+    {
+      "canonical": "Uygun İbraz",
+      "term_id": "TRM0322",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "usance l/c": [
+    {
+      "canonical": "Vadeli Akreditif",
+      "term_id": "TRM0323",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "green clause l/c": [
+    {
+      "canonical": "Yeşil Şartlı Akreditif",
+      "term_id": "TRM0326",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "nominated bank": [
+    {
+      "canonical": "Ödeme Bankası",
+      "term_id": "TRM0328",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "ötv": [
+    {
+      "canonical": "Özel Tüketim Vergisi",
+      "term_id": "TRM0329",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "i̇bkb": [
+    {
+      "canonical": "İhracat Bedeli Kabul Belgesi",
+      "term_id": "TRM0334",
+      "entity": "TRADE_FINANCE_TERM"
+    }
+  ],
+  "nakit akış tahmini": [
+    {
+      "canonical": "Nakit Akış Projeksiyonu",
+      "term_id": "TRM0346",
+      "entity": "CASH_FLOW_PROJECTION"
+    }
+  ],
+  "refinansman": [
+    {
+      "canonical": "Yeniden Yapılandırma",
+      "term_id": "TRM0347",
+      "entity": "RESTRUCTURING"
+    }
+  ],
+  "esnek taksit planı": [
+    {
+      "canonical": "Esnek Ödeme Planı",
+      "term_id": "TRM0349",
+      "entity": "FLEXIBLE_REPAYMENT_PLAN"
+    }
+  ],
+  "geri ödemesiz dönem": [
+    {
+      "canonical": "Ödemesiz Dönem",
+      "term_id": "TRM0352",
+      "entity": "GRACE_PERIOD"
+    }
+  ],
+  "e-teminat": [
+    {
+      "canonical": "Elektronik Teminat Mektubu",
+      "term_id": "TRM0354",
+      "entity": "DIGITAL_PRODUCT"
+    }
+  ],
+  "kat mülkiyeti tapusu": [
+    {
+      "canonical": "Kat Mülkiyeti",
+      "term_id": "TRM0371",
+      "entity": "PROPERTY_STATUS"
+    }
+  ],
+  "kat irtifakı tapusu": [
+    {
+      "canonical": "Kat İrtifakı",
+      "term_id": "TRM0372",
+      "entity": "PROPERTY_STATUS"
+    }
+  ],
+  "minimum hesap açılış bakiyesi": [
+    {
+      "canonical": "Hesap Açılış Bakiyesi",
+      "term_id": "TRM0376",
+      "entity": "ACCOUNT_BALANCE"
+    }
+  ],
+  "cari hesap": [
+    {
+      "canonical": "Özel Cari Hesap",
+      "term_id": "TRM0378",
+      "entity": "ACCOUNT_TYPE"
+    }
+  ],
+  "hesap kapatma": [
+    {
+      "canonical": "Hesap Kapanışı",
+      "term_id": "TRM0382",
+      "entity": "ACCOUNT_PROCESS"
+    }
+  ],
+  "katılma hesabı yenileme": [
+    {
+      "canonical": "Hesap Yenileme",
+      "term_id": "TRM0392",
+      "entity": "ACCOUNT_PROCESS"
+    }
+  ],
+  "alacak temliki": [
+    {
+      "canonical": "Temlik",
+      "term_id": "TRM0397",
+      "entity": "ASSIGNMENT"
+    }
+  ],
+  "alacak devri": [
+    {
+      "canonical": "Temlik",
+      "term_id": "TRM0397",
+      "entity": "ASSIGNMENT"
+    }
+  ],
+  "sıfır kâr payı": [
+    {
+      "canonical": "%0 Kâr Payı",
+      "term_id": "TRM0401",
+      "entity": "CAMPAIGN_BENEFIT"
+    }
+  ],
+  "yeni müşteriye özel": [
+    {
+      "canonical": "Yeni Müşterilere Özel",
+      "term_id": "TRM0404",
+      "entity": "CAMPAIGN_CONDITION"
+    }
+  ],
+  "mobilden başvurana özel": [
+    {
+      "canonical": "Mobil Başvuruya Özel",
+      "term_id": "TRM0405",
+      "entity": "CAMPAIGN_CONDITION"
+    }
+  ],
+  "kupon kodu": [
+    {
+      "canonical": "Promosyon Kodu",
+      "term_id": "TRM0411",
+      "entity": "PROMO_CODE"
+    }
+  ],
+  "arkadaşını getir kazan": [
+    {
+      "canonical": "Davet Et Kazan",
+      "term_id": "TRM0414",
+      "entity": "REFERRAL_PROGRAM"
+    }
+  ],
+  "i̇lk taksit öteleme": [
+    {
+      "canonical": "İlk Taksit Erteleme",
+      "term_id": "TRM0420",
+      "entity": "CAMPAIGN_BENEFIT"
+    }
+  ],
+  "cashback": [
+    {
+      "canonical": "Nakit İade",
+      "term_id": "TRM0422",
+      "entity": "CASHBACK"
+    }
+  ],
+  "bonus puan": [
+    {
+      "canonical": "Puan Kazanımı",
+      "term_id": "TRM0423",
+      "entity": "REWARD_POINT"
+    }
+  ],
+  "worldpuan": [
+    {
+      "canonical": "Puan Kazanımı",
+      "term_id": "TRM0423",
+      "entity": "REWARD_POINT"
+    }
+  ],
+  "tahsis ücreti muafiyeti": [
+    {
+      "canonical": "Tahsis Ücreti Yok",
+      "term_id": "TRM0426",
+      "entity": "CAMPAIGN_BENEFIT"
+    }
+  ],
+  "debit kart": [
+    {
+      "canonical": "Banka Kartı",
+      "term_id": "TRM0430",
+      "entity": "CARD_PRODUCT"
+    }
+  ],
+  "business kart": [
+    {
+      "canonical": "Ticari Kart",
+      "term_id": "TRM0444",
+      "entity": "CARD_PRODUCT"
+    }
+  ],
+  "contactless": [
+    {
+      "canonical": "Temassız Ödeme",
+      "term_id": "TRM0446",
+      "entity": "CARD_FEATURE"
+    }
+  ],
+  "i̇care akdi": [
+    {
+      "canonical": "İcare",
+      "term_id": "TRM0451",
+      "entity": "ISLAMIC_CONTRACT"
+    }
+  ],
+  "mudarebe akdi": [
+    {
+      "canonical": "Mudârebe",
+      "term_id": "TRM0459",
+      "entity": "ISLAMIC_CONTRACT"
+    }
+  ],
+  "emek-sermaye ortaklığı": [
+    {
+      "canonical": "Mudârebe",
+      "term_id": "TRM0459",
+      "entity": "ISLAMIC_CONTRACT"
+    }
+  ],
+  "kâr-zarar ortaklığı": [
+    {
+      "canonical": "Müşareke",
+      "term_id": "TRM0460",
+      "entity": "ISLAMIC_CONTRACT"
+    }
+  ],
+  "profit and loss sharing": [
+    {
+      "canonical": "Kâr-Zarar Ortaklığı",
+      "term_id": "TRM0461",
+      "entity": "ISLAMIC_FINANCING_MODEL"
+    }
+  ],
+  "murabaha akdi": [
+    {
+      "canonical": "Murabaha",
+      "term_id": "TRM0462",
+      "entity": "ISLAMIC_CONTRACT"
+    }
+  ],
+  "cost plus financing": [
+    {
+      "canonical": "Murabaha",
+      "term_id": "TRM0462",
+      "entity": "ISLAMIC_CONTRACT"
+    }
+  ],
+  "kfk": [
+    {
+      "canonical": "Katılım Finans Kefalet (KFK)",
+      "term_id": "TRM0471",
+      "entity": "ORGANIZATION"
+    }
+  ],
+  "bankacılık düzenleme ve denetleme kurumu": [
+    {
+      "canonical": "BDDK",
+      "term_id": "TRM0473",
+      "entity": "ORGANIZATION"
+    }
+  ],
+  "eximbank": [
+    {
+      "canonical": "Türk Eximbank",
+      "term_id": "TRM0482",
+      "entity": "ORGANIZATION"
+    }
+  ],
+  "ön onaylı limit": [
+    {
+      "canonical": "Ön Limit",
+      "term_id": "TRM0484",
+      "entity": "PREAPPROVED_LIMIT"
+    }
+  ],
+  "hedef kitle": [
+    {
+      "canonical": "Hedef Müşteri",
+      "term_id": "TRM0491",
+      "entity": "TARGET_CUSTOMER"
+    }
+  ],
+  "küçük ve orta büyüklükte i̇şletme": [
+    {
+      "canonical": "KOBİ",
+      "term_id": "TRM0492",
+      "entity": "CUSTOMER_SEGMENT"
+    }
+  ],
+  "çağrı merkezi": [
+    {
+      "canonical": "Müşteri İletişim Merkezi",
+      "term_id": "TRM0497",
+      "entity": "SERVICE_CHANNEL"
+    }
+  ],
+  "dbs": [
+    {
+      "canonical": "DBS (Doğrudan Borçlandırma Sistemi)",
+      "term_id": "TRM0502",
+      "entity": "FINANCIAL_SYSTEM"
+    }
+  ],
+  "ots": [
+    {
+      "canonical": "Online Tahsilat Sistemi",
+      "term_id": "TRM0503",
+      "entity": "PAYMENT_SYSTEM"
+    }
+  ],
+  "kâr oranı": [
+    {
+      "canonical": "Kâr Payı Oranı",
+      "term_id": "TRM0505",
+      "entity": "PROFIT_RATE"
+    }
+  ],
+  "finansman oranı": [
+    {
+      "canonical": "Kâr Payı Oranı",
+      "term_id": "TRM0505",
+      "entity": "PROFIT_RATE"
+    }
+  ],
+  "kar payı oranı": [
+    {
+      "canonical": "Kâr Payı Oranı",
+      "term_id": "TRM0505",
+      "entity": "PROFIT_RATE"
+    }
+  ],
+  "katılım sigortacılığı": [
+    {
+      "canonical": "Tekafül",
+      "term_id": "TRM0518",
+      "entity": "TAKAFUL"
+    }
+  ],
+  "ticari alacak sigortası": [
+    {
+      "canonical": "Alacak Sigortası",
+      "term_id": "TRM0524",
+      "entity": "INSURANCE_PRODUCT"
+    }
+  ],
+  "sigorta primi": [
+    {
+      "canonical": "Poliçe Primi",
+      "term_id": "TRM0526",
+      "entity": "INSURANCE_PREMIUM"
+    }
+  ],
+  "bes": [
+    {
+      "canonical": "Bireysel Emeklilik Sistemi",
+      "term_id": "TRM0529",
+      "entity": "INSURANCE_TERM"
+    }
+  ],
+  "surplus distribution": [
+    {
+      "canonical": "Fazla Dağıtımı",
+      "term_id": "TRM0536",
+      "entity": "INSURANCE_TERM"
+    }
+  ],
+  "tekafül": [
+    {
+      "canonical": "Katılım Sigortacılığı",
+      "term_id": "TRM0547",
+      "entity": "INSURANCE_TERM"
+    }
+  ],
+  "tekafül işletmecisi": [
+    {
+      "canonical": "Operatör",
+      "term_id": "TRM0552",
+      "entity": "INSURANCE_TERM"
+    }
+  ],
+  "oks": [
+    {
+      "canonical": "Otomatik Katılım Sistemi",
+      "term_id": "TRM0553",
+      "entity": "INSURANCE_TERM"
+    }
+  ],
+  "yeşil ekonomik dönüşüm": [
+    {
+      "canonical": "Yeşil Dönüşüm",
+      "term_id": "TRM0580",
+      "entity": "GREEN_TRANSFORMATION"
+    }
+  ],
+  "second party opinion": [
+    {
+      "canonical": "Dış Görüş",
+      "term_id": "TRM0587",
+      "entity": "ESG_FINANCE_TERM"
+    }
+  ],
+  "ets": [
+    {
+      "canonical": "Emisyon Ticaret Sistemi",
+      "term_id": "TRM0590",
+      "entity": "ESG_FINANCE_TERM"
+    }
+  ],
+  "ekb": [
+    {
+      "canonical": "Enerji Kimlik Belgesi",
+      "term_id": "TRM0591",
+      "entity": "ESG_FINANCE_TERM"
+    }
+  ],
+  "scope 1": [
+    {
+      "canonical": "Kapsam 1 Emisyonu",
+      "term_id": "TRM0604",
+      "entity": "ESG_FINANCE_TERM"
+    }
+  ],
+  "scope 2": [
+    {
+      "canonical": "Kapsam 2 Emisyonu",
+      "term_id": "TRM0605",
+      "entity": "ESG_FINANCE_TERM"
+    }
+  ],
+  "scope 3": [
+    {
+      "canonical": "Kapsam 3 Emisyonu",
+      "term_id": "TRM0606",
+      "entity": "ESG_FINANCE_TERM"
+    }
+  ],
+  "net zero": [
+    {
+      "canonical": "Net Sıfır",
+      "term_id": "TRM0612",
+      "entity": "ESG_FINANCE_TERM"
+    }
+  ],
+  "spt": [
+    {
+      "canonical": "Sürdürülebilirlik Performans Hedefi",
+      "term_id": "TRM0623",
+      "entity": "ESG_FINANCE_TERM"
+    }
+  ],
+  "kpi": [
+    {
+      "canonical": "Temel Performans Göstergesi",
+      "term_id": "TRM0627",
+      "entity": "ESG_FINANCE_TERM"
+    }
+  ],
+  "tsrs": [
+    {
+      "canonical": "Türkiye Sürdürülebilirlik Raporlama Standartları",
+      "term_id": "TRM0629",
+      "entity": "ESG_FINANCE_TERM"
+    }
+  ],
+  "greenwashing": [
+    {
+      "canonical": "Yeşil Yıkama",
+      "term_id": "TRM0634",
+      "entity": "ESG_FINANCE_TERM"
+    }
+  ],
+  "çed": [
+    {
+      "canonical": "Çevresel Etki Değerlendirmesi",
+      "term_id": "TRM0637",
+      "entity": "ESG_FINANCE_TERM"
+    }
+  ],
+  "esap": [
+    {
+      "canonical": "Çevresel ve Sosyal Eylem Planı",
+      "term_id": "TRM0638",
+      "entity": "ESG_FINANCE_TERM"
+    }
+  ],
+  "esra": [
+    {
+      "canonical": "Çevresel ve Sosyal Risk Değerlendirmesi",
+      "term_id": "TRM0639",
+      "entity": "ESG_FINANCE_TERM"
+    }
+  ],
+  "çevre dostu araç finansmanı": [
+    {
+      "canonical": "Elektrikli Araç Finansmanı",
+      "term_id": "TRM0653",
+      "entity": "GREEN_FINANCING_PRODUCT"
+    }
+  ],
+  "ges finansmanı": [
+    {
+      "canonical": "Güneş Enerjisi Santrali Finansmanı",
+      "term_id": "TRM0654",
+      "entity": "GREEN_FINANCING_PRODUCT"
+    }
+  ],
+  "res finansmanı": [
+    {
+      "canonical": "Rüzgâr Enerjisi Santrali Finansmanı",
+      "term_id": "TRM0655",
+      "entity": "GREEN_FINANCING_PRODUCT"
+    }
+  ],
+  "environmental social governance": [
+    {
+      "canonical": "ESG",
+      "term_id": "TRM0656",
+      "entity": "ESG_TERM"
+    }
+  ],
+  "ödeme süresi": [
+    {
+      "canonical": "Vade",
+      "term_id": "TRM0659",
+      "entity": "MATURITY"
+    }
+  ],
+  "son başvuru tarihi": [
+    {
+      "canonical": "Bitiş Tarihi",
+      "term_id": "TRM0662",
+      "entity": "END_DATE"
+    }
+  ],
+  "tarımsal ekipman finansmanı": [
+    {
+      "canonical": "Tarım Makinesi Finansmanı",
+      "term_id": "TRM0682",
+      "entity": "PRODUCT"
+    }
+  ],
+  "akuakültür": [
+    {
+      "canonical": "Su Ürünleri Yetiştiriciliği",
+      "term_id": "TRM0686",
+      "entity": "AGRICULTURE_ACTIVITY"
+    }
+  ],
+  "dönüm": [
+    {
+      "canonical": "Dekar",
+      "term_id": "TRM0702",
+      "entity": "AGRICULTURE_TERM"
+    }
+  ],
+  "elüs teminatı": [
+    {
+      "canonical": "Elektronik Ürün Senedi Teminatı",
+      "term_id": "TRM0708",
+      "entity": "AGRICULTURE_TERM"
+    }
+  ],
+  "haybi̇s": [
+    {
+      "canonical": "Hayvancılık Bilgi Sistemi",
+      "term_id": "TRM0713",
+      "entity": "AGRICULTURE_TERM"
+    }
+  ],
+  "çks": [
+    {
+      "canonical": "Çiftçi Kayıt Sistemi",
+      "term_id": "TRM0756",
+      "entity": "AGRICULTURE_TERM"
+    }
+  ],
+  "sera üretimi": [
+    {
+      "canonical": "Örtü Altı Tarım",
+      "term_id": "TRM0769",
+      "entity": "AGRICULTURE_METHOD"
+    }
+  ],
+  "i̇tu": [
+    {
+      "canonical": "İyi Tarım Uygulamaları",
+      "term_id": "TRM0770",
+      "entity": "AGRICULTURE_METHOD"
+    }
+  ],
+  "elektronik ürün senedi": [
+    {
+      "canonical": "ELÜS",
+      "term_id": "TRM0772",
+      "entity": "AGRICULTURAL_INSTRUMENT"
+    }
+  ],
+  "tl": [
+    {
+      "canonical": "Para Birimi",
+      "term_id": "TRM0780",
+      "entity": "CURRENCY"
+    }
+  ],
+  "usd": [
+    {
+      "canonical": "Para Birimi",
+      "term_id": "TRM0780",
+      "entity": "CURRENCY"
+    }
+  ],
+  "eur": [
+    {
+      "canonical": "Para Birimi",
+      "term_id": "TRM0780",
+      "entity": "CURRENCY"
+    }
+  ],
+  "xau": [
+    {
+      "canonical": "Para Birimi",
+      "term_id": "TRM0780",
+      "entity": "CURRENCY"
+    }
+  ],
+  "finansal ürün": [
+    {
+      "canonical": "Ürün",
+      "term_id": "TRM0781",
+      "entity": "PRODUCT"
+    }
+  ],
+  "katılım bankası": [
+    {
+      "canonical": "Banka",
+      "term_id": "TRM0783",
+      "entity": "BANK"
+    }
+  ],
+  "roa": [
+    {
+      "canonical": "Aktif Karlılığı",
+      "term_id": "TRM0790",
+      "entity": "COMMERCIAL_FINANCE_TERM"
+    }
+  ],
+  "dscr": [
+    {
+      "canonical": "Borç Servis Karşılama Oranı",
+      "term_id": "TRM0799",
+      "entity": "COMMERCIAL_FINANCE_TERM"
+    }
+  ],
+  "ebitda": [
+    {
+      "canonical": "FAVÖK",
+      "term_id": "TRM0809",
+      "entity": "COMMERCIAL_FINANCE_TERM"
+    }
+  ],
+  "asit-test oranı": [
+    {
+      "canonical": "Likidite Oranı",
+      "term_id": "TRM0831",
+      "entity": "COMMERCIAL_FINANCE_TERM"
+    }
+  ],
+  "nbd": [
+    {
+      "canonical": "Net Bugünkü Değer",
+      "term_id": "TRM0839",
+      "entity": "COMMERCIAL_FINANCE_TERM"
+    }
+  ],
+  "npv": [
+    {
+      "canonical": "Net Bugünkü Değer",
+      "term_id": "TRM0839",
+      "entity": "COMMERCIAL_FINANCE_TERM"
+    }
+  ],
+  "opex": [
+    {
+      "canonical": "Operasyonel Harcama",
+      "term_id": "TRM0842",
+      "entity": "COMMERCIAL_FINANCE_TERM"
+    }
+  ],
+  "capex": [
+    {
+      "canonical": "Sermaye Harcaması",
+      "term_id": "TRM0848",
+      "entity": "COMMERCIAL_FINANCE_TERM"
+    }
+  ],
+  "vkn": [
+    {
+      "canonical": "Vergi Kimlik Numarası",
+      "term_id": "TRM0862",
+      "entity": "COMMERCIAL_FINANCE_TERM"
+    }
+  ],
+  "payback period": [
+    {
+      "canonical": "Yatırımın Geri Dönüş Süresi",
+      "term_id": "TRM0867",
+      "entity": "COMMERCIAL_FINANCE_TERM"
+    }
+  ],
+  "roe": [
+    {
+      "canonical": "Özkaynak Karlılığı",
+      "term_id": "TRM0876",
+      "entity": "COMMERCIAL_FINANCE_TERM"
+    }
+  ],
+  "i̇vo": [
+    {
+      "canonical": "İç Verim Oranı",
+      "term_id": "TRM0877",
+      "entity": "COMMERCIAL_FINANCE_TERM"
+    }
+  ],
+  "irr": [
+    {
+      "canonical": "İç Verim Oranı",
+      "term_id": "TRM0877",
+      "entity": "COMMERCIAL_FINANCE_TERM"
+    }
+  ],
+  "fatura teminatlı kredi": [
+    {
+      "canonical": "Fatura Teminatlı Finansman",
+      "term_id": "TRM0892",
+      "entity": "PRODUCT"
+    }
+  ],
+  "çalışma sermayesi": [
+    {
+      "canonical": "İşletme Sermayesi",
+      "term_id": "TRM0894",
+      "entity": "FINANCING_PURPOSE"
+    }
+  ],
+  "leasing": [
+    {
+      "canonical": "Finansal Kiralama",
+      "term_id": "TRM0896",
+      "entity": "FINANCING_METHOD"
+    }
+  ],
+  "sale and lease back": [
+    {
+      "canonical": "Sat-Geri Kirala",
+      "term_id": "TRM0898",
+      "entity": "SALE_AND_LEASEBACK"
+    }
+  ],
+  "spv": [
+    {
+      "canonical": "Proje Şirketi (SPV)",
+      "term_id": "TRM0905",
+      "entity": "SPECIAL_PURPOSE_VEHICLE"
+    }
+  ],
+  "supply chain finance": [
+    {
+      "canonical": "Tedarikçi Finansmanı",
+      "term_id": "TRM0907",
+      "entity": "PRODUCT"
+    }
+  ],
+  "finansman limiti": [
+    {
+      "canonical": "Finansman Tutarı",
+      "term_id": "TRM0909",
+      "entity": "FINANCING_AMOUNT"
+    }
+  ],
+  "kullanım tutarı": [
+    {
+      "canonical": "Finansman Tutarı",
+      "term_id": "TRM0909",
+      "entity": "FINANCING_AMOUNT"
+    }
+  ],
+  "ödenecek toplam tutar": [
+    {
+      "canonical": "Toplam Geri Ödeme",
+      "term_id": "TRM0911",
+      "entity": "TOTAL_PAYMENT"
+    }
+  ],
+  "aml": [
+    {
+      "canonical": "Kara Paranın Aklanmasının Önlenmesi",
+      "term_id": "TRM0913",
+      "entity": "COMPLIANCE_FRAMEWORK"
+    }
+  ],
+  "şi̇b": [
+    {
+      "canonical": "Şüpheli İşlem Bildirimi",
+      "term_id": "TRM0914",
+      "entity": "COMPLIANCE_PROCESS"
+    }
+  ],
+  "cft": [
+    {
+      "canonical": "Terörizmin Finansmanının Önlenmesi",
+      "term_id": "TRM0915",
+      "entity": "COMPLIANCE_FRAMEWORK"
+    }
+  ],
+  "kyc": [
+    {
+      "canonical": "Müşterini Tanı",
+      "term_id": "TRM0916",
+      "entity": "COMPLIANCE_PROCESS"
+    }
+  ],
+  "know your customer": [
+    {
+      "canonical": "Müşterini Tanı",
+      "term_id": "TRM0916",
+      "entity": "COMPLIANCE_PROCESS"
+    }
+  ],
+  "kvkk": [
+    {
+      "canonical": "Kişisel Verilerin Korunması",
+      "term_id": "TRM0918",
+      "entity": "COMPLIANCE_FRAMEWORK"
+    }
+  ],
+  "olumsuz haber taraması": [
+    {
+      "canonical": "Adverse Media",
+      "term_id": "TRM0920",
+      "entity": "COMPLIANCE_TERM"
+    }
+  ],
+  "uyarı": [
+    {
+      "canonical": "Alarm",
+      "term_id": "TRM0921",
+      "entity": "COMPLIANCE_TERM"
+    }
+  ],
+  "source of funds": [
+    {
+      "canonical": "Fon Kaynağı",
+      "term_id": "TRM0936",
+      "entity": "COMPLIANCE_TERM"
+    }
+  ],
+  "gerçek faydalanıcı": [
+    {
+      "canonical": "Nihai Faydalanıcı",
+      "term_id": "TRM0950",
+      "entity": "COMPLIANCE_TERM"
+    }
+  ],
+  "ubo": [
+    {
+      "canonical": "Nihai Faydalanıcı",
+      "term_id": "TRM0950",
+      "entity": "COMPLIANCE_TERM"
+    }
+  ],
+  "source of wealth": [
+    {
+      "canonical": "Servet Kaynağı",
+      "term_id": "TRM0954",
+      "entity": "COMPLIANCE_TERM"
+    }
+  ],
+  "pep": [
+    {
+      "canonical": "Siyasi Nüfuz Sahibi Kişi",
+      "term_id": "TRM0956",
+      "entity": "COMPLIANCE_TERM"
+    }
+  ],
+  "i̇ys": [
+    {
+      "canonical": "İleti Yönetim Sistemi",
+      "term_id": "TRM0986",
+      "entity": "COMPLIANCE_TERM"
+    }
+  ],
+  "transaction monitoring": [
+    {
+      "canonical": "İşlem İzleme",
+      "term_id": "TRM0991",
+      "entity": "COMPLIANCE_TERM"
+    }
+  ],
+  "fon payı": [
+    {
+      "canonical": "Katılma Payı",
+      "term_id": "TRM1003",
+      "entity": "FUND_UNIT"
+    }
+  ],
+  "sukuk": [
+    {
+      "canonical": "Kira Sertifikası",
+      "term_id": "TRM1011",
+      "entity": "CAPITAL_MARKET_INSTRUMENT"
+    }
+  ],
+  "byf": [
+    {
+      "canonical": "Borsa Yatırım Fonu",
+      "term_id": "TRM1018",
+      "entity": "INVESTMENT_TERM"
+    }
+  ],
+  "etf": [
+    {
+      "canonical": "Borsa Yatırım Fonu",
+      "term_id": "TRM1018",
+      "entity": "INVESTMENT_TERM"
+    }
+  ],
+  "bist": [
+    {
+      "canonical": "Borsa İstanbul",
+      "term_id": "TRM1019",
+      "entity": "INVESTMENT_TERM"
+    }
+  ],
+  "benchmark": [
+    {
+      "canonical": "Fon Karşılaştırma Ölçütü",
+      "term_id": "TRM1026",
+      "entity": "INVESTMENT_TERM"
+    }
+  ],
+  "gyf": [
+    {
+      "canonical": "Gayrimenkul Yatırım Fonu",
+      "term_id": "TRM1037",
+      "entity": "INVESTMENT_TERM"
+    }
+  ],
+  "gsyf": [
+    {
+      "canonical": "Girişim Sermayesi Yatırım Fonu",
+      "term_id": "TRM1042",
+      "entity": "INVESTMENT_TERM"
+    }
+  ],
+  "pay senedi": [
+    {
+      "canonical": "Hisse Senedi",
+      "term_id": "TRM1046",
+      "entity": "INVESTMENT_TERM"
+    }
+  ],
+  "mkk": [
+    {
+      "canonical": "Merkezi Kayıt Kuruluşu",
+      "term_id": "TRM1062",
+      "entity": "INVESTMENT_TERM"
+    }
+  ],
+  "türkiye elektronik fon alım satım platformu": [
+    {
+      "canonical": "TEFAS",
+      "term_id": "TRM1084",
+      "entity": "INVESTMENT_TERM"
+    }
+  ],
+  "asset allocation": [
+    {
+      "canonical": "Varlık Dağılımı",
+      "term_id": "TRM1090",
+      "entity": "INVESTMENT_TERM"
+    }
+  ],
+  "vkş": [
+    {
+      "canonical": "Varlık Kiralama Şirketi",
+      "term_id": "TRM1091",
+      "entity": "INVESTMENT_TERM"
+    }
+  ],
+  "ön ödeme": [
+    {
+      "canonical": "Peşinat",
+      "term_id": "TRM1110",
+      "entity": "DOWN_PAYMENT"
+    }
+  ],
+  "fonların anlık ve sürekli transferi": [
+    {
+      "canonical": "FAST",
+      "term_id": "TRM1111",
+      "entity": "PAYMENT_SYSTEM"
+    }
+  ],
+  "elektronik fon transferi": [
+    {
+      "canonical": "EFT",
+      "term_id": "TRM1113",
+      "entity": "PAYMENT_SYSTEM"
+    }
+  ],
+  "uluslararası banka hesap numarası": [
+    {
+      "canonical": "IBAN",
+      "term_id": "TRM1115",
+      "entity": "IBAN"
+    }
+  ],
+  "lehtar müşteri": [
+    {
+      "canonical": "Alıcı",
+      "term_id": "TRM1120",
+      "entity": "PAYMENT_TERM"
+    }
+  ],
+  "bankalararası kart merkezi": [
+    {
+      "canonical": "BKM",
+      "term_id": "TRM1125",
+      "entity": "PAYMENT_TERM"
+    }
+  ],
+  "e-para": [
+    {
+      "canonical": "Elektronik Para",
+      "term_id": "TRM1129",
+      "entity": "PAYMENT_TERM"
+    }
+  ],
+  "ödeyen": [
+    {
+      "canonical": "Gönderen",
+      "term_id": "TRM1133",
+      "entity": "PAYMENT_TERM"
+    }
+  ],
+  "host card emulation": [
+    {
+      "canonical": "HCE",
+      "term_id": "TRM1136",
+      "entity": "PAYMENT_TERM"
+    }
+  ],
+  "cvv": [
+    {
+      "canonical": "Kart Doğrulama Kodu",
+      "term_id": "TRM1145",
+      "entity": "PAYMENT_TERM"
+    }
+  ],
+  "cvc": [
+    {
+      "canonical": "Kart Doğrulama Kodu",
+      "term_id": "TRM1145",
+      "entity": "PAYMENT_TERM"
+    }
+  ],
+  "pan": [
+    {
+      "canonical": "Kart Numarası",
+      "term_id": "TRM1147",
+      "entity": "PAYMENT_TERM"
+    }
+  ],
+  "issuer": [
+    {
+      "canonical": "Kart Veren Banka",
+      "term_id": "TRM1151",
+      "entity": "PAYMENT_TERM"
+    }
+  ],
+  "pin": [
+    {
+      "canonical": "Kart Şifresi",
+      "term_id": "TRM1156",
+      "entity": "PAYMENT_TERM"
+    }
+  ],
+  "p2p ödeme": [
+    {
+      "canonical": "Kişiden Kişiye Ödeme",
+      "term_id": "TRM1158",
+      "entity": "PAYMENT_TERM"
+    }
+  ],
+  "p2m ödeme": [
+    {
+      "canonical": "Kişiden İşyerine Ödeme",
+      "term_id": "TRM1159",
+      "entity": "PAYMENT_TERM"
+    }
+  ],
+  "recurring payment": [
+    {
+      "canonical": "Tekrarlayan Ödeme",
+      "term_id": "TRM1179",
+      "entity": "PAYMENT_TERM"
+    }
+  ],
+  "request to pay": [
+    {
+      "canonical": "Ödeme İste",
+      "term_id": "TRM1191",
+      "entity": "PAYMENT_TERM"
+    }
+  ],
+  "acquirer": [
+    {
+      "canonical": "Üye İşyeri Bankası",
+      "term_id": "TRM1197",
+      "entity": "PAYMENT_TERM"
+    }
+  ],
+  "point of sale": [
+    {
+      "canonical": "POS",
+      "term_id": "TRM1209",
+      "entity": "PAYMENT_SYSTEM"
+    }
+  ],
+  "otomatik fatura talimatı": [
+    {
+      "canonical": "Otomatik Ödeme Talimatı",
+      "term_id": "TRM1213",
+      "entity": "AUTO_PAYMENT"
+    }
+  ],
+  "ters ibraz": [
+    {
+      "canonical": "Chargeback",
+      "term_id": "TRM1218",
+      "entity": "CARD_DISPUTE"
+    }
+  ],
+  "ücret": [
+    {
+      "canonical": "Masraf",
+      "term_id": "TRM1223",
+      "entity": "EXPENSE"
+    }
+  ],
+  "komisyon": [
+    {
+      "canonical": "Masraf",
+      "term_id": "TRM1223",
+      "entity": "EXPENSE"
+    }
+  ],
+  "yıllık kart ücreti": [
+    {
+      "canonical": "Kart Aidatı",
+      "term_id": "TRM1224",
+      "entity": "FEE"
+    }
+  ],
+  "mdr": [
+    {
+      "canonical": "Üye İşyeri Komisyonu",
+      "term_id": "TRM1226",
+      "entity": "FEE"
+    }
+  ],
+  "gurbetçi finansmanı": [
+    {
+      "canonical": "Gurbetten Sılaya Gayrimenkul Finansmanı",
+      "term_id": "TRM1233",
+      "entity": "PRODUCT"
+    }
+  ],
+  "i̇lk konut finansmanı": [
+    {
+      "canonical": "İlk Evim Konut Finansmanı",
+      "term_id": "TRM1235",
+      "entity": "PRODUCT"
+    }
+  ]
+}

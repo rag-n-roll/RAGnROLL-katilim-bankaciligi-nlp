@@ -1,0 +1,1393 @@
+{
+  "Bloke": [],
+  "İşlem Referans Numarası": [],
+  "Başvuru Numarası": [],
+  "İkametgâh Belgesi": [
+    "Yerleşim yeri belgesi"
+  ],
+  "Enerji Kimlik Belgesi": [
+    "EKB"
+  ],
+  "Ekspertiz Raporu": [],
+  "Kıymet Takdir Raporu": [],
+  "Döviz Transfer Talimatı": [],
+  "Akreditif Açma Talimatı": [],
+  "Sürdürülebilirlik Raporu": [],
+  "Çevresel ve Sosyal Etki Değerlendirmesi": [
+    "ÇSED"
+  ],
+  "E-Arşiv Fatura": [],
+  "E-Fatura": [],
+  "E-İrsaliye": [],
+  "Enerji Performans Sözleşmesi": [],
+  "Fatura Numarası": [],
+  "Fatura Tarihi": [],
+  "Leasing Sözleşmesi": [],
+  "Bilanço": [],
+  "Gelir Tablosu": [],
+  "Nakit Akış Tablosu": [],
+  "Son Üç Yıl Bilançosu": [],
+  "Finansman Sözleşmesi": [],
+  "Kredi Talep Formu": [],
+  "Garanti Metni": [],
+  "Teminat Mektubu Metni": [],
+  "Teminat Mektubu Talep Formu": [],
+  "Satış Vaadi Sözleşmesi": [],
+  "Tapu Fotokopisi": [],
+  "Tapu Takyidat Belgesi": [],
+  "İpotek Belgesi": [],
+  "Gelir Belgesi": [],
+  "Maaş Bordrosu": [],
+  "Belge": [],
+  "Hayvan Varlığı Listesi": [],
+  "Hesap Özeti": [],
+  "Hesap Cüzdanı": [],
+  "Aydınlatma Metni": [],
+  "Müşteri Bilgi Formu": [],
+  "Kapama Yazısı": [],
+  "Kart Ekstresi": [],
+  "Kefalet Sözleşmesi": [],
+  "Kefil Bilgi Formu": [],
+  "Risk Tespit Raporu": [],
+  "Pasaport": [],
+  "Sürücü Belgesi": [
+    "Ehliyet"
+  ],
+  "T.C. Kimlik Kartı": [
+    "Kimlik belgesi"
+  ],
+  "Kira Sözleşmesi": [],
+  "Entegre Faaliyet Raporu": [],
+  "Mizan": [],
+  "Kabul Mektubu": [],
+  "Muvafakatname": [],
+  "Fizibilite Raporu": [],
+  "Proje Tanıtım Dosyası": [],
+  "SGK Borcu Yoktur Yazısı": [],
+  "DASK Poliçesi": [],
+  "Eksper Raporu": [],
+  "Sigorta Poliçesi Fotokopisi": [],
+  "Taahhütname": [],
+  "Makbuz": [],
+  "Tahsilat Makbuzu": [],
+  "ÇKS Belgesi": [
+    "Çiftçi Kayıt Sistemi Belgesi"
+  ],
+  "İşletme Tescil Belgesi": [],
+  "Araç Satış Sözleşmesi": [],
+  "Ruhsat Fotokopisi": [],
+  "Trafik Tescil Belgesi": [],
+  "Rehin Sözleşmesi": [],
+  "Teminat Listesi": [],
+  "Cari Hesap Ekstresi": [],
+  "Faaliyet Belgesi": [],
+  "Oda Kayıt Belgesi": [
+    "Oda sicil kayıt belgesi"
+  ],
+  "Proforma Fatura": [],
+  "Ticaret Sicil Gazetesi": [],
+  "Vergi Levhası": [],
+  "İrsaliye": [],
+  "Genel Kredi Sözleşmesi": [
+    "GKS"
+  ],
+  "Transfer Talimatı": [],
+  "Ön Bilgilendirme Formu": [],
+  "Vergi Borcu Yazısı": [],
+  "İskân İzni": [
+    "Yapı Kullanım İzin Belgesi"
+  ],
+  "Fon İzahnamesi": [],
+  "Yatırımcı Bilgi Formu": [],
+  "Vekâletname": [],
+  "İmza Beyannamesi": [],
+  "İmza Sirküleri": [],
+  "SGK Hizmet Dökümü": [],
+  "Ödeme Talimatı": [],
+  "Kapasite Raporu": [],
+  "Dekont": [],
+  "İş Planı": [],
+  "Ortaklık Yapısı Belgesi": [],
+  "Alışveriş Finansmanı": [
+    "Alışveriş kredisi"
+  ],
+  "Eğitim Finansmanı": [
+    "Okul finansmanı"
+  ],
+  "Arsa Finansmanı": [],
+  "Konut Finansmanı": [
+    "Ev finansmanı"
+  ],
+  "İş Yeri Finansmanı": [],
+  "Kentsel Dönüşüm Finansmanı": [],
+  "Seyahat Finansmanı": [
+    "Tatil finansmanı"
+  ],
+  "Umre Finansmanı": [],
+  "Araç Finansmanı": [
+    "Taşıt Finansmanı"
+  ],
+  "Deniz Taşıtları Finansmanı": [],
+  "Motosiklet Finansmanı": [
+    "Motor finansmanı"
+  ],
+  "İhtiyaç Finansmanı": [],
+  "Ekspertiz Değeri": [],
+  "API Bankacılığı": [],
+  "API Anahtarı": [],
+  "Altın Kesem": [],
+  "Hesap Bilgisi Hizmeti": [
+    "AIS"
+  ],
+  "Ödeme Emri Başlatma Hizmeti": [
+    "PIS"
+  ],
+  "Açık Bankacılık": [],
+  "Açık Finans": [],
+  "Servis Bankacılığı": [
+    "BaaS"
+  ],
+  "Mobil Başvuru": [],
+  "Şube Başvurusu": [],
+  "Başvuru İzleme": [],
+  "OCR": [
+    "Optik Karakter Tanıma"
+  ],
+  "Fatura Yükleme": [],
+  "Anlık Bildirim": [],
+  "Canlılık Kontrolü": [],
+  "Parmak İzi Doğrulama": [],
+  "Yüz Tanıma": [],
+  "Güvenilir Cihaz": [],
+  "Gömülü Finans": [],
+  "Çalışma Süresi": [],
+  "Biyometrik Doğrulama": [],
+  "Cihaz Eşleştirme": [],
+  "Güçlü Müşteri Kimlik Doğrulaması": [
+    "SCA"
+  ],
+  "Parola Politikası": [],
+  "Risk Bazlı Kimlik Doğrulama": [],
+  "SMS Doğrulama Kodu": [
+    "Onay kodu"
+  ],
+  "Tek Kullanımlık Şifre": [
+    "OTP"
+  ],
+  "İki Faktörlü Doğrulama": [
+    "2FA"
+  ],
+  "İşlem Doğrulama": [],
+  "Şifre Sıfırlama": [],
+  "Anlık Kesinti": [],
+  "Bakım Çalışması": [],
+  "Planlı Kesinti": [],
+  "Masrafsız Bankacılık": [],
+  "Başvuru Kanalı": [
+    "Mobil başvuru",
+    "Şube başvurusu",
+    "İnternet şubesi"
+  ],
+  "Mobil Bankacılık": [],
+  "İnternet Bankacılığı": [
+    "İnternet şubesi"
+  ],
+  "Belge Doğrulama": [],
+  "Biyometrik Veri": [],
+  "NFC ile Kimlik Doğrulama": [],
+  "Günlük Transfer Limiti": [],
+  "İşlem Limiti": [],
+  "HADİ Uygulaması": [],
+  "Görüntülü Müşteri Edinimi": [
+    "Görüntülü müşteri olma"
+  ],
+  "Hemen Hayat'lı Ol": [],
+  "Uzaktan Müşteri Edinimi": [],
+  "A101 Kasadan Para Yatırma": [],
+  "A101 Kasadan Para Çekme": [],
+  "QR ile Para Yatırma": [],
+  "QR ile Para Çekme": [],
+  "Açık Bankacılık İzni": [],
+  "Oturum Kapatma": [],
+  "Oturum Süresi": [],
+  "Yanıt Süresi": [],
+  "Taksitlio": [],
+  "Hizmet Seviyesi": [],
+  "Dijital Sözleşme Onayı": [],
+  "Kurumsal İnternet Bankacılığı": [],
+  "Mobil Uygulama Sürümü": [],
+  "Zorunlu Güncelleme": [],
+  "Erişim Belirteci": [
+    "Access token"
+  ],
+  "OAuth": [],
+  "Yenileme Belirteci": [],
+  "CebimPOS": [
+    "Mobil POS"
+  ],
+  "Bildirim Onayı": [],
+  "CebimPOS ile Alışveriş Finansmanı": [],
+  "Taksitlio Alışveriş Finansmanı": [],
+  "Veresiye Alışveriş Kredisi": [],
+  "KOBİ Anında Finansman": [],
+  "Dijital Kullandırım": [],
+  "SMS'li Finansman": [],
+  "Dijital Taksitli Ticari Finansman Desteği": [],
+  "Jet Ticari Finansman": [],
+  "QR Kod ile Finansman": [
+    "QR ile ödeme"
+  ],
+  "Mobil Cüzdan": [],
+  "Elektronik Para": [],
+  "Mobil Ödeme": [],
+  "Karekod Ödeme": [
+    "QR ödeme"
+  ],
+  "NFC Ödeme": [],
+  "Kur Makası": [
+    "FX makası",
+    "Dar makas"
+  ],
+  "Alış Kuru": [],
+  "Satış Kuru": [],
+  "Spot Kur": [],
+  "Vadeli Kur": [
+    "Forward kur"
+  ],
+  "Değerleme Kuru": [],
+  "Rambursman Talimatı": [],
+  "Rezerv Bildirimi": [],
+  "Rezerv Kabulü": [],
+  "Uygun İbraz": [],
+  "Akreditif Açılışı": [],
+  "Akreditif Değişikliği": [
+    "Amendment"
+  ],
+  "Akreditif Teyidi": [],
+  "Akreditif İhbarı": [],
+  "Akreditif İptali": [],
+  "Devredilebilir Akreditif": [],
+  "Görüldüğünde Ödemeli Akreditif": [
+    "Sight LC"
+  ],
+  "Karşılıklı Akreditif": [
+    "Back-to-back akreditif"
+  ],
+  "Kırmızı Şartlı Akreditif": [
+    "Red clause"
+  ],
+  "Rotatif Akreditif": [],
+  "Standby Akreditif": [],
+  "Teyitli Akreditif": [],
+  "Vadeli Ödemeli Akreditif": [
+    "Usance LC"
+  ],
+  "Yeşil Şartlı Akreditif": [
+    "Green clause"
+  ],
+  "İhracat Akreditifi": [],
+  "İthalat Akreditifi": [],
+  "İştira Akreditifi": [],
+  "Vadeli İhracat Alacağı": [],
+  "İskonto İşlemi": [],
+  "Amir Banka": [],
+  "Gönderi Bankası": [],
+  "Muhabir Banka": [],
+  "Rambursman Bankası": [],
+  "Tahsil Bankası": [],
+  "Teyit Bankası": [],
+  "Ödeme Bankası": [],
+  "İhbar Bankası": [],
+  "Gözetim Belgesi": [
+    "Inspection Certificate"
+  ],
+  "Menşe Şahadetnamesi": [
+    "Certificate of Origin"
+  ],
+  "Sigorta Poliçesi": [],
+  "Ticari Fatura": [
+    "Commercial Invoice"
+  ],
+  "Çeki Listesi": [
+    "Packing List"
+  ],
+  "Vesaik": [
+    "Sevkiyat belgeleri"
+  ],
+  "Doküman Kontrolü": [],
+  "İbraz": [
+    "Belge ibrazı"
+  ],
+  "Rezerv": [],
+  "Sevk Öncesi İhracat Kredisi (SÖİK)": [
+    "SÖİK"
+  ],
+  "Döviz Kazandırıcı Faaliyet": [],
+  "Gayrikabili Rücu Finansman": [
+    "Non-recourse financing"
+  ],
+  "Aval": [],
+  "Demuraj": [
+    "Demurrage"
+  ],
+  "A.TR Dolaşım Belgesi": [
+    "ATR"
+  ],
+  "EUR.1 Dolaşım Belgesi": [
+    "EUR1"
+  ],
+  "Gümrük Beyannamesi": [],
+  "CFR": [
+    "Cost and Freight"
+  ],
+  "CIF": [
+    "Cost Insurance and Freight"
+  ],
+  "DAP": [
+    "Delivered At Place"
+  ],
+  "DDP": [
+    "Delivered Duty Paid"
+  ],
+  "DPU": [
+    "Delivered at Place Unloaded"
+  ],
+  "EXW": [
+    "Ex Works"
+  ],
+  "FCA": [
+    "Free Carrier"
+  ],
+  "FOB": [
+    "Free On Board"
+  ],
+  "Poliçe": [],
+  "Belge Riski": [],
+  "Teslim Riski": [],
+  "Transfer Riski": [],
+  "Ülke Riski": [],
+  "İhracat Taahhüdü": [],
+  "Amir": [],
+  "Gümrük Müşaviri": [],
+  "Hamil": [],
+  "Keşideci": [],
+  "Lehtar": [],
+  "Taşıyıcı": [],
+  "İhracatçı": [],
+  "İthalatçı": [],
+  "Hava Yolu Taşıma Senedi": [
+    "Air Waybill",
+    "AWB"
+  ],
+  "Karayolu Taşıma Belgesi": [
+    "CMR"
+  ],
+  "Konşimento": [
+    "Bill of Lading",
+    "B/L"
+  ],
+  "Navlun": [
+    "Freight"
+  ],
+  "Eximbank Temlik Teyidi": [],
+  "ISP98": [],
+  "Incoterms 2020": [],
+  "UCP 600": [],
+  "URC 522": [],
+  "URDG 758": [],
+  "URR 725": [],
+  "Akreditif": [
+    "Letter of Credit",
+    "L/C"
+  ],
+  "Kabul Kredili Ödeme": [],
+  "Mal Mukabili Ödeme": [
+    "Open Account"
+  ],
+  "Peşin Ödeme": [],
+  "Vesaik Mukabili Ödeme": [
+    "Documents Against Payment"
+  ],
+  "Vadeli İhracat Finansmanı (VİF)": [
+    "VİF",
+    "Vadeli İhracatın Finansmanı"
+  ],
+  "Prefinansman": [
+    "Sevk öncesi finansman"
+  ],
+  "Yükleme Sonrası Finansman": [
+    "Sevk sonrası finansman"
+  ],
+  "İthalat Finansmanı": [],
+  "Ciro": [],
+  "Borç / Özkaynak Oranı": [],
+  "Finansal Kaldıraç Oranı": [],
+  "Alacak Devir Hızı": [],
+  "Stok Devir Hızı": [],
+  "Başabaş Noktası": [],
+  "FAVÖK": [
+    "EBITDA"
+  ],
+  "Aktif Kârlılığı": [
+    "ROA"
+  ],
+  "Özkaynak Kârlılığı": [
+    "ROE"
+  ],
+  "Net İşletme Sermayesi": [],
+  "Cari Oran": [],
+  "Likidite Oranı": [],
+  "Nakit Oranı": [],
+  "Likidite": [],
+  "Nakit Akış Projeksiyonu": [
+    "Nakit akış tahmini"
+  ],
+  "Nakit Dönüş Süresi": [],
+  "Başvuru Durumu": [],
+  "Finansman Başvurusu": [],
+  "Yeniden Yapılandırma": [
+    "Refinansman"
+  ],
+  "Başvuru Alındı": [],
+  "Ek Belge Bekleniyor": [],
+  "İncelemede": [],
+  "Gecikme Cezası": [],
+  "Gecikmiş Taksit": [],
+  "Temerrüt": [],
+  "Erken Ödeme": [],
+  "Esnek Ödeme Planı": [
+    "Esnek taksit planı"
+  ],
+  "Kısmi Erken Ödeme": [],
+  "Ödeme Erteleme": [],
+  "Ödemesiz Dönem": [
+    "Geri ödemesiz dönem"
+  ],
+  "Muacceliyet": [],
+  "Yasal Takip": [],
+  "Borç Kapama Tutarı": [],
+  "Erken Kapama": [],
+  "Kullandırım Koşulu": [],
+  "Blokeli Kullandırım": [],
+  "Ön Onay": [],
+  "Gecikme Süresi": [],
+  "Teklif Geçerlilik Süresi": [],
+  "Tahsilat Araması": [],
+  "İdari Takip": [],
+  "Takip Hesabı": [],
+  "Kullandırım Tarihi": [],
+  "Taksit Başlangıç Tarihi": [],
+  "Taksit Vadesi": [],
+  "Finansman Teklifi": [],
+  "Teklif Aşaması": [],
+  "Satıcıya Doğrudan Ödeme": [],
+  "Elektronik Teminat Mektubu": [
+    "e-Teminat"
+  ],
+  "Teminat Mektubu": [],
+  "Kontrgaranti": [],
+  "Kabul-Aval Finansmanı": [],
+  "ETMP": [],
+  "Referans Mektubu": [],
+  "Garantör": [],
+  "Kontrgarantör": [],
+  "Avans Teminat Mektubu": [],
+  "Geçici Teminat Mektubu": [],
+  "Kesin Teminat Mektubu": [],
+  "Harici Garanti": [],
+  "2B Arazi": [],
+  "İmar Durumu": [],
+  "Yerinde Dönüşüm": [],
+  "Anlaşmalı Konut Projesi": [],
+  "Konut Projesi Geliştiricisi": [],
+  "Kat Mülkiyeti": [
+    "Kat mülkiyeti tapusu"
+  ],
+  "Kat İrtifakı": [
+    "Kat irtifakı tapusu"
+  ],
+  "Ada / Parsel Bilgisi": [],
+  "Riskli Yapı": [],
+  "Güçlendirme": [],
+  "Getiri Eğrisi": [],
+  "Forward İşlemi": [],
+  "Opsiyon": [],
+  "Swap İşlemi": [],
+  "Hesap Açılış Bakiyesi": [
+    "Minimum hesap açılış bakiyesi"
+  ],
+  "FERAH Cari Hesap": [],
+  "Özel Cari Hesap": [
+    "Cari hesap"
+  ],
+  "Döviz Katılma Hesabı": [],
+  "Avantajlı Günlük Hesap": [],
+  "Günlük Kazandıran Hesap": [],
+  "Hesap Kapanışı": [
+    "Hesap kapatma"
+  ],
+  "Avantajlı Katılma Hesabı": [],
+  "Birikimli Katılma Hesabı": [],
+  "Katılma Hesabı": [],
+  "Altın Biriktiren Hesap": [],
+  "Altın Katılma Hesabı": [],
+  "Gümüş Hesabı": [],
+  "Kıymetli Maden Hesabı": [],
+  "Paladyum Hesabı": [],
+  "Platin Hesabı": [],
+  "Hesap Yenileme": [
+    "Katılma hesabı yenileme"
+  ],
+  "Vadeli Hesap": [],
+  "Vadesiz Hesap": [],
+  "Tahsilat Hesabı": [],
+  "Güneş Katılma Hesabı": [],
+  "KEP": [],
+  "Noter Onayı": [],
+  "Elektronik Tebligat": [],
+  "Temsil Yetkisi": [],
+  "İmza Yetkilisi": [],
+  "Elektronik İmza": [],
+  "Islak İmza": [],
+  "Mobil İmza": [],
+  "Temlik": [
+    "Alacak temliki",
+    "Alacak devri"
+  ],
+  "Temlik Alan": [],
+  "Temlik Eden": [],
+  "Emekli Promosyonu": [],
+  "Kampanya Avantajı": [],
+  "%0 Kâr Payı": [
+    "Sıfır kâr payı"
+  ],
+  "Minimum Harcama Tutarı": [],
+  "Mevcut Müşterilere Özel": [],
+  "Yeni Müşterilere Özel": [
+    "Yeni müşteriye özel"
+  ],
+  "Sektör Bazlı Kampanya": [],
+  "Mağaza İçi Alışveriş": [],
+  "Online Alışveriş": [],
+  "Mobil Başvuruya Özel": [
+    "Mobilden başvurana özel"
+  ],
+  "İnternet Şubesine Özel": [],
+  "Şubeye Özel": [],
+  "Kampanyaya Katıl": [],
+  "Kişi Başı Katılım Sınırı": [],
+  "Kişiye Özel Kampanya": [],
+  "Lokasyon Bazlı Kampanya": [],
+  "Kampanya Kodu": [],
+  "Promosyon Kodu": [
+    "Kupon kodu"
+  ],
+  "Kampanya Koşulu": [],
+  "Maaş Müşterisi Kampanyası": [],
+  "Hoş Geldin Kampanyası": [],
+  "Kampanya Segmenti": [],
+  "Dijital Üyelik Nakit İadesi": [],
+  "Davet Et Kazan": [
+    "Arkadaşını getir kazan"
+  ],
+  "Kazananlar Kulübü": [],
+  "Sadakat Programı": [],
+  "Üyelik Seviyesi": [],
+  "Ücretsiz Sigorta": [],
+  "Stoklarla Sınırlı": [],
+  "Kampanya Dönemi": [],
+  "Taahhüt Süresi": [],
+  "Ödül Kullanım Süresi": [],
+  "Sınırlı Süre": [],
+  "Vade Farksız Taksit": [],
+  "Hakediş Tarihi": [],
+  "Kampanya Katılım Tarihi": [],
+  "Ödül Yükleme Tarihi": [],
+  "İlk Taksit Erteleme": [
+    "İlk taksit öteleme"
+  ],
+  "Kampanya Hakedişi": [],
+  "Maksimum Ödül Tutarı": [],
+  "Promosyon Tutarı": [],
+  "Nakit İade": [
+    "Cashback"
+  ],
+  "Puan Kazanımı": [
+    "Bonus puan",
+    "Worldpuan"
+  ],
+  "Dosya Masrafı Yok": [],
+  "Tahsis Ücreti Muafiyeti": [],
+  "Tahsis Ücreti Yok": [
+    "Tahsis ücreti muafiyeti"
+  ],
+  "HADİ Gold": [],
+  "İndirim Oranı": [],
+  "İndirim Tutarı": [],
+  "Aynı Gün İptal": [],
+  "Ödül İptali": [],
+  "İade Sonrası Hakediş İptali": [],
+  "Kampanya Kapsam Dışı İşlem": [],
+  "Marka İş Birliği": [],
+  "Tek Çekim İşlem": [],
+  "Üye İşyeri Kampanyası": [],
+  "Sektör Kodu": [
+    "MCC"
+  ],
+  "Kart Şeması": [
+    "Kart ağı"
+  ],
+  "Banka Kartı": [
+    "Debit kart"
+  ],
+  "Dönem Borcu": [],
+  "Kredi Kartı Borç Transferi": [],
+  "Kart Sahteciliği": [],
+  "Ek Kart": [],
+  "Pratik Finansman Kart": [],
+  "Ekstre Erteleme": [],
+  "3D Secure": [],
+  "CVV": [
+    "CVC"
+  ],
+  "Dinamik CVV": [],
+  "Kart Şifre Belirleme": [],
+  "Kart Şifre Değiştirme": [],
+  "Kayıp Kart Bildirimi": [],
+  "PIN": [
+    "Kart şifresi"
+  ],
+  "Tokenizasyon": [],
+  "Çalıntı Kart Bildirimi": [],
+  "Şüpheli Kart İşlemi": [],
+  "Mükerrer İşlem": [],
+  "Yurt Dışı Kullanım İzni": [],
+  "İnternet Alışverişi İzni": [],
+  "Kart Aktivasyonu": [],
+  "Kart Blokesi": [],
+  "Kart Yenileme": [],
+  "Kart İptali": [],
+  "Aidatsız Kart": [],
+  "Biz Kart": [],
+  "Kredi Kartı": [],
+  "Kurumsal Kart": [],
+  "Satın Alma Kartı": [
+    "Purchasing card"
+  ],
+  "Temassız İşlem Limiti": [],
+  "Nakit Avans": [],
+  "Taksitli Nakit Avans": [],
+  "Dijital Kart": [],
+  "Sanal Kart": [],
+  "Sanal Pratik Finansman Kart": [],
+  "Sonradan Taksitlendirme": [],
+  "Taksit İptali": [],
+  "İşlem Taksitlendirme": [],
+  "Kart Numarası": [],
+  "Kart Hamili": [
+    "Kart sahibi"
+  ],
+  "Kart Kabul Eden Kuruluş": [
+    "Acquirer"
+  ],
+  "Kart Veren Kuruluş": [
+    "Issuer"
+  ],
+  "Ekstre Kesim Tarihi": [],
+  "Son Kullanma Tarihi": [],
+  "Son Ödeme Tarihi": [],
+  "Anlık Kart Basımı": [],
+  "Kart Teslimatı": [],
+  "Ticari Kart": [
+    "Business kart"
+  ],
+  "Asgari Ödeme Tutarı": [],
+  "Kart Borcu Otomatik Ödeme": [],
+  "Temassız Ödeme": [
+    "Contactless"
+  ],
+  "Hediye Kartı": [],
+  "Ön Ödemeli Kart": [],
+  "Kısmi İade": [],
+  "Tam İade": [],
+  "İade İşlemi": [],
+  "İptal İşlemi": [],
+  "Bekleyen Provizyon": [],
+  "Provizyon": [],
+  "Provizyon İptali": [],
+  "Makasıd": [],
+  "Merkezi Danışma Komitesi": [],
+  "Karz-ı Hasen": [],
+  "Maslahat": [],
+  "İcare": [
+    "İcare Akdi"
+  ],
+  "Fon Havuzu": [],
+  "Günlük Kâr Dağıtımı": [],
+  "Kâr Paylaşım Oranı": [],
+  "Kâr Payı Dağıtımı": [],
+  "Teverruk": [],
+  "Kâr Paylaşımı": [],
+  "Zarar Paylaşımı": [],
+  "Mudârebe": [
+    "Mudarebe Akdi",
+    "Emek-Sermaye Ortaklığı"
+  ],
+  "Müşareke": [
+    "Kâr-Zarar Ortaklığı"
+  ],
+  "Kâr-Zarar Ortaklığı": [
+    "Profit and Loss Sharing"
+  ],
+  "Murabaha": [
+    "Murabaha Akdi",
+    "Cost Plus Financing"
+  ],
+  "Katılım Esasları": [],
+  "Katılım Uyum Birimi": [],
+  "İcazet Belgesi": [],
+  "Yatırım Vekâleti": [],
+  "Yatırım Vekâletine Dayalı Finansman": [],
+  "Gabin": [],
+  "Garar": [],
+  "Hazine Destekli Kefalet": [],
+  "Katılım Finans Kefalet (KFK)": [
+    "KFK"
+  ],
+  "Kefalet Oranı": [],
+  "Borsa İstanbul": [
+    "BIST"
+  ],
+  "BDDK": [
+    "Bankacılık Düzenleme ve Denetleme Kurumu"
+  ],
+  "Elektronik Para Kuruluşu": [],
+  "TKBB": [],
+  "Tarım Kooperatifi": [],
+  "Kredi Kayıt Bürosu": [
+    "KKB"
+  ],
+  "MASAK": [],
+  "TCMB": [],
+  "TMSF": [],
+  "Portföy Yönetim Şirketi": [],
+  "Risk Merkezi": [],
+  "Saklama Kuruluşu": [],
+  "MKK": [],
+  "SPK": [],
+  "Varlık Kiralama Şirketi": [
+    "VKŞ"
+  ],
+  "Takasbank": [],
+  "IPARD": [],
+  "TKDK": [],
+  "TÜRİB": [],
+  "TARSİM": [],
+  "Üretici Birliği": [],
+  "Fon Dağıtım Kuruluşu": [],
+  "Ödeme Kuruluşu": [],
+  "Türk Eximbank": [
+    "Eximbank"
+  ],
+  "Limit Önerisi": [],
+  "Ön Limit": [
+    "Ön onaylı limit"
+  ],
+  "Kullanılabilir Limit": [],
+  "Limit Artırımı": [],
+  "Limit Azaltımı": [],
+  "Kart Limiti": [],
+  "Limit Tahsisi": [],
+  "6292 Sayılı Kanun": [],
+  "Aktif": [],
+  "Duran Varlık": [],
+  "Dönen Varlık": [],
+  "Kısa Vadeli Yükümlülük": [],
+  "Pasif": [],
+  "Uzun Vadeli Yükümlülük": [],
+  "Özkaynak": [],
+  "Brüt Kâr": [],
+  "Faaliyet Kârı": [],
+  "Net Kâr": [],
+  "Net Satışlar": [],
+  "Amortisman": [],
+  "Banka Mutabakatı": [],
+  "Cari Hesap Mutabakatı": [],
+  "Mutabakat": [],
+  "Hedef Müşteri": [
+    "Hedef kitle"
+  ],
+  "KOBİ": [
+    "Küçük ve Orta Büyüklükte İşletme"
+  ],
+  "Çözüm Süresi": [],
+  "İlk Temasta Çözüm": [
+    "FCR"
+  ],
+  "Hizmet Kalitesi": [],
+  "Müşteri Memnuniyeti": [],
+  "Müşteri Efor Skoru": [
+    "CES"
+  ],
+  "Müşteri Memnuniyet Skoru": [
+    "CSAT"
+  ],
+  "Net Tavsiye Skoru": [
+    "NPS"
+  ],
+  "Canlı Destek": [],
+  "Görüntülü Destek": [],
+  "Sesli Yanıt Sistemi": [],
+  "Talep Kaydı": [],
+  "Müşteri İletişim Merkezi": [
+    "Çağrı merkezi"
+  ],
+  "İtiraz Süreci": [],
+  "Şikâyet Kaydı": [],
+  "Erken Tahsilat": [],
+  "Bayi Tahsilat Sistemi": [],
+  "DBS (Doğrudan Borçlandırma Sistemi)": [
+    "DBS"
+  ],
+  "Online Tahsilat Sistemi": [
+    "OTS"
+  ],
+  "Tedarikçi Ödeme Sistemi": [],
+  "Belge Doğrulandı": [],
+  "Belge Eksik": [],
+  "Belge Okunamıyor": [],
+  "Belge Onaylandı": [],
+  "Belge Reddedildi": [],
+  "Belge Süresi Dolmuş": [],
+  "Belge Yüklendi": [],
+  "Belge İncelemede": [],
+  "Birinci Onay": [],
+  "Onay Bekliyor": [],
+  "Onay Geri Çekildi": [],
+  "Onay Reddedildi": [],
+  "İkinci Onay": [],
+  "Düşük Risk": [],
+  "Kabul Edilebilir Risk": [],
+  "Kabul Edilemez Risk": [],
+  "Orta Risk": [],
+  "Yüksek Risk": [],
+  "Çok Yüksek Risk": [],
+  "Başarılı": [],
+  "Başarısız": [],
+  "Beklemede": [],
+  "Mutabakat Bekliyor": [],
+  "Tekrar Denenecek": [],
+  "Ters Kayıt Yapıldı": [],
+  "Zaman Aşımına Uğradı": [],
+  "İşleniyor": [],
+  "Kâr Payı Oranı": [
+    "Kâr oranı",
+    "Finansman oranı",
+    "Kar payı oranı"
+  ],
+  "Kur Riski": [],
+  "Kredi Riski": [],
+  "Kur Koruması": [],
+  "Riskten Korunma": [
+    "Hedge"
+  ],
+  "Likidite Riski": [],
+  "Model Riski": [],
+  "Operasyonel Risk": [],
+  "Piyasa Riski": [],
+  "Maliyet Aşımı Riski": [],
+  "Talep Riski": [],
+  "Tamamlanma Riski": [],
+  "Teknoloji Riski": [],
+  "Siber Risk": [],
+  "Mevzuat Uyum Riski": [],
+  "Politik Risk": [],
+  "İtibar Riski": [],
+  "Finansal Analiz": [],
+  "Kredibilite": [],
+  "Gelir Tespiti": [],
+  "Müşteri Risk Profili": [],
+  "Borç Servis Oranı": [
+    "DSR"
+  ],
+  "Borçluluk Oranı": [],
+  "Finansman / Değer Oranı": [
+    "LTV"
+  ],
+  "Findeks Notu": [],
+  "Kredi Notu": [],
+  "Kredi Değerlendirmesi": [],
+  "İstihbarat Çalışması": [],
+  "Anomali Tespiti": [],
+  "IP Adresi": [],
+  "Cihaz Parmak İzi": [],
+  "Hesap Ele Geçirme": [],
+  "Kimlik Avı": [
+    "Phishing"
+  ],
+  "Sosyal Mühendislik": [],
+  "Dolandırıcılık Tespiti": [],
+  "SIM Kart Değişikliği": [],
+  "Konum Doğrulama": [],
+  "Fidye Yazılımı": [],
+  "Zararlı Yazılım": [],
+  "Ferdi Kaza Sigortası": [],
+  "Hayat Sigortası": [],
+  "Sigorta Değeri": [],
+  "Nakliyat Sigortası": [],
+  "Konut Sigortası": [],
+  "Hasar Dosyası": [],
+  "Sovtaj": [],
+  "Hasar İhbarı": [],
+  "Rücu": [],
+  "İstisna": [],
+  "Tekafül": [
+    "Katılım sigortacılığı"
+  ],
+  "Teknik Kâr": [],
+  "Muafiyet Tutarı": [],
+  "Poliçe Yenileme": [],
+  "Poliçe İptali": [],
+  "Dain-i Mürtehin": [],
+  "Aşkın Sigorta": [],
+  "Eksik Sigorta": [],
+  "Bekleme Süresi": [],
+  "Lehtar Bilgisi": [],
+  "Tekafül Operatörü": [],
+  "Poliçe Başlangıç Tarihi": [],
+  "Poliçe Bitiş Tarihi": [],
+  "Tarımsal Sigorta": [],
+  "Kasko": [],
+  "Zorunlu Trafik Sigortası": [],
+  "Katılım Sigortacılığı": [
+    "Tekafül"
+  ],
+  "Risk Katkı Payı": [],
+  "Katılımcı Risk Fonu": [],
+  "Katılımcı Yatırım Fonu": [],
+  "Hibrit Tekafül Modeli": [],
+  "Mudârebe Modeli": [],
+  "Vekâlet Modeli": [],
+  "Sigorta Teklifi": [],
+  "Ek Teminat": [],
+  "Teminat Kapsamı": [],
+  "Alacak Sigortası": [
+    "Ticari alacak sigortası"
+  ],
+  "İşyeri Sigortası": [],
+  "Sigorta Bedeli": [],
+  "Teknik Zarar": [],
+  "Hasar Tazminatı": [],
+  "Poliçe Primi": [
+    "Sigorta primi"
+  ],
+  "Prim İadesi": [],
+  "Sıfır Atık": [],
+  "Yeşil Bina": [],
+  "Yeşil Dönüşüm": [
+    "Yeşil ekonomik dönüşüm"
+  ],
+  "Döngüsel Ekonomi": [],
+  "Enerji Verimliliği Finansmanı": [],
+  "Isı Pompası": [],
+  "Etik Finans": [],
+  "Sürdürülebilir Finansman": [],
+  "Yeşil Finansman": [],
+  "Çatı GES Finansmanı": [],
+  "Emisyon Ticaret Sistemi": [
+    "ETS"
+  ],
+  "Karbon Kredisi": [],
+  "Sürdürülebilirlik Bağlantılı Finansman": [],
+  "Karbon Piyasası": [],
+  "Yeşil Tahvil": [],
+  "BREEAM Sertifikası": [],
+  "LEED Sertifikası": [],
+  "Finansal Kapsayıcılık": [],
+  "Sosyal Finansman": [],
+  "Atık Su Arıtma Finansmanı": [],
+  "Atık Su Geri Kazanımı": [],
+  "Gri Su Sistemi": [],
+  "Su Verimliliği": [],
+  "Yağmur Suyu Hasadı": [],
+  "Elektrikli Araç Finansmanı": [
+    "Çevre dostu araç finansmanı"
+  ],
+  "Etki Yatırımı": [],
+  "Güneş Enerjisi Santrali Finansmanı": [
+    "GES Finansmanı"
+  ],
+  "Rüzgâr Enerjisi Santrali Finansmanı": [
+    "RES Finansmanı"
+  ],
+  "ESG": [
+    "Environmental Social Governance"
+  ],
+  "Karbon Ayak İzi": [],
+  "Sera Gazı Emisyonu": [],
+  "Karbon Nötr": [],
+  "Net Sıfır": [],
+  "Vade": [
+    "Ödeme süresi"
+  ],
+  "Taksit Sayısı": [],
+  "Başlangıç Tarihi": [],
+  "Bitiş Tarihi": [
+    "Son başvuru tarihi"
+  ],
+  "Dekar": [
+    "Dönüm"
+  ],
+  "Hektar": [],
+  "Arıcılık Finansmanı": [],
+  "Bitkisel Üretim Finansmanı": [],
+  "Lisanslı Depo": [],
+  "Lisanslı Depoculuk": [],
+  "Hazine Kâr Payı Destekli Finansman": [],
+  "Tarımsal Kredi Değerlendirmesi": [],
+  "Ekim Dönemi": [],
+  "Hasat Dönemi": [],
+  "Tarımsal Üretim Döngüsü": [],
+  "Hasat Vadeli Ödeme": [],
+  "Fidan Finansmanı": [],
+  "Gübre Finansmanı": [],
+  "Mazot Gideri": [],
+  "Tarımsal Girdi": [],
+  "Tohum Finansmanı": [],
+  "Yem Finansmanı": [],
+  "Zirai İlaç": [],
+  "Besi Hayvancılığı Finansmanı": [],
+  "Büyükbaş Hayvancılık": [],
+  "Kanatlı Hayvancılık": [],
+  "Küçükbaş Hayvancılık": [],
+  "Süt Hayvancılığı Finansmanı": [],
+  "Genç Çiftçi Desteği": [],
+  "Kırsal Kalkınma Desteği": [],
+  "Mazot ve Gübre Desteği": [],
+  "Prim Desteği": [],
+  "Tarımsal Destekleme": [],
+  "Biçerdöver Finansmanı": [],
+  "Tarım Makinesi Finansmanı": [
+    "Tarımsal ekipman finansmanı"
+  ],
+  "Traktör Finansmanı": [],
+  "Tarımsal Mekanizasyon": [],
+  "Tarla Kirası": [],
+  "Ürün Maliyeti": [],
+  "Sera Finansmanı": [],
+  "Su Ürünleri Yetiştiriciliği": [
+    "Akuakültür"
+  ],
+  "Basınçlı Sulama": [],
+  "Sulama Sistemi Finansmanı": [],
+  "Damla Sulama": [],
+  "Pivot Sulama": [],
+  "Yağmurlama Sulama": [],
+  "Rekolte": [],
+  "Verim Tahmini": [],
+  "Ürün Deseni": [],
+  "Sözleşmeli Üretim": [],
+  "Organik Tarım": [],
+  "Topraksız Tarım": [],
+  "Örtü Altı Tarım": [
+    "Sera üretimi"
+  ],
+  "İyi Tarım Uygulamaları": [
+    "İTU"
+  ],
+  "Tarım ve Hayvancılık Finansmanı": [],
+  "ELÜS": [
+    "Elektronik Ürün Senedi"
+  ],
+  "Tasarruf Finansmanı": [],
+  "Müşteri Bazlı Plan": [],
+  "Peşinatlı Plan": [],
+  "Peşinatsız Plan": [],
+  "Çekilişli Plan": [],
+  "Tahsis Tarihi": [],
+  "Tahsis": [],
+  "Para Birimi": [
+    "TL",
+    "USD",
+    "EUR",
+    "XAU"
+  ],
+  "Ürün": [
+    "Finansal ürün"
+  ],
+  "Kampanya": [],
+  "Banka": [
+    "Katılım bankası"
+  ],
+  "Teminat Değeri": [],
+  "Teminat Değerleme": [],
+  "İpotek": [],
+  "Kefil": [],
+  "Teminat Tesisi": [],
+  "Teminat Oranı": [],
+  "Proje Tamamlama Garantisi": [],
+  "Rehin Tesisi": [],
+  "Rehin Kaldırma": [],
+  "Ürün Senedi Teminatı": [],
+  "İpotek Tesisi": [],
+  "İpotek Fekki": [],
+  "Alacak Yönetimi": [],
+  "Borç Yönetimi": [],
+  "Tahsilat Garantisi": [],
+  "Ödeme Garantisi": [],
+  "Nakit Yönetimi": [],
+  "Tahsilat Yönetimi": [],
+  "Alıcı Firma": [],
+  "Ana Firma": [],
+  "Bayi": [],
+  "Tedarikçi": [],
+  "Alacak Vadesi": [],
+  "Fatura Vadesi": [],
+  "Tedarikçi Vadesi": [],
+  "Çek Karnesi": [],
+  "Çek Yaprağı": [],
+  "Karşılıksız Çek": [],
+  "Ödeme Yönetimi": [],
+  "Fatura Alacağı": [],
+  "Fatura Teminatlı Finansman": [
+    "Fatura teminatlı kredi"
+  ],
+  "Vadeli Alacak": [],
+  "İşletme Sermayesi": [
+    "Çalışma sermayesi"
+  ],
+  "Yapılandırılmış Finansman": [],
+  "Finansal Kiralama": [
+    "Leasing"
+  ],
+  "Mülkiyet Devri": [],
+  "Sat-Geri Kirala": [
+    "Sale and Lease Back"
+  ],
+  "Satın Alma Opsiyonu": [],
+  "Taşıt Kiralama Finansmanı": [],
+  "Tekrar Kullanılabilir Finansman": [],
+  "Esnek Destek Finansmanı": [],
+  "Taksitli Ticari Finansman": [],
+  "Proje Finansmanı": [],
+  "Proje Şirketi (SPV)": [
+    "SPV"
+  ],
+  "Sponsor Firma": [],
+  "Tedarikçi Finansmanı": [
+    "Supply Chain Finance"
+  ],
+  "Kira Sertifikası Teminatlı Finansman": [],
+  "Finansman Tutarı": [
+    "Finansman limiti",
+    "Kullanım tutarı"
+  ],
+  "Bloke Tutar": [],
+  "Toplam Geri Ödeme": [
+    "Ödenecek toplam tutar"
+  ],
+  "Taksit Tutarı": [],
+  "Alarm Üretimi": [],
+  "Kara Paranın Aklanmasının Önlenmesi": [
+    "AML"
+  ],
+  "Senaryo Bazlı İzleme": [],
+  "İşlem İzleme": [],
+  "Şüpheli İşlem Bildirimi": [
+    "ŞİB"
+  ],
+  "Terörizmin Finansmanının Önlenmesi": [
+    "CFT"
+  ],
+  "Uyum Görevlisi": [],
+  "Veri Sorumlusu": [],
+  "Veri İşleyen": [],
+  "Kimlik Tespiti": [],
+  "Müşterini Tanı": [
+    "KYC",
+    "Know Your Customer"
+  ],
+  "Basitleştirilmiş Tedbir": [
+    "SDD"
+  ],
+  "Geliştirilmiş Tedbir": [
+    "EDD"
+  ],
+  "Yakın İzleme": [],
+  "Gerçek Faydalanıcı": [],
+  "Nihai Faydalanıcı": [],
+  "Siyasi Nüfuz Sahibi Kişi": [
+    "PEP"
+  ],
+  "Müşteri Kabul Politikası": [],
+  "Uyum Programı": [],
+  "Veri İhlali": [],
+  "Açık Rıza": [],
+  "Kişisel Verilerin Korunması": [
+    "KVKK"
+  ],
+  "Saklama Süresi": [],
+  "Veri İmha Politikası": [],
+  "Ambargo": [],
+  "Varlık Dondurma": [],
+  "Yaptırım Listesi": [],
+  "Yaptırım Taraması": [],
+  "BSMV": [],
+  "Damga Vergisi": [],
+  "KDV": [],
+  "VRHİB": [],
+  "KKDF": [],
+  "Harç": [],
+  "Vergi Muafiyeti": [],
+  "Vergi İstisnası": [],
+  "Fon Karşılaştırma Ölçütü": [],
+  "Devlet Tahvili": [],
+  "Hazine Bonosu": [],
+  "Döviz Alım-Satımı": [],
+  "Gerçekleşen Emir": [],
+  "Kısmi Gerçekleşme": [],
+  "Emir İptali": [],
+  "Limit Emir": [],
+  "Piyasa Emri": [],
+  "BIST Katılım Endeksi": [],
+  "Katılım Endeksi": [],
+  "Yatırım Fonu": [],
+  "Kazançlı Fon Finansmanı": [],
+  "Birim Pay Değeri": [],
+  "Fon Toplam Değeri": [],
+  "Fon Alım Emri": [],
+  "Fon Bozumu": [],
+  "Fon Satım Emri": [],
+  "Katılma Payı": [
+    "Fon payı"
+  ],
+  "TEFAS": [],
+  "Hızlı Fon Finansmanı": [],
+  "Para Piyasası Katılım Fonu": [],
+  "Şemsiye Fon": [],
+  "Fon Getirisi": [],
+  "Kupon Ödemesi": [],
+  "Dağıtım Yöntemi": [],
+  "Talep Toplama": [],
+  "Katılım Yatırım Fonu": [],
+  "Altın Alım-Satımı": [],
+  "Gümüş Alım-Satımı": [],
+  "Varlığa Dayalı Menkul Kıymet": [
+    "VDMK"
+  ],
+  "Bireysel Yatırımcı": [],
+  "Kurumsal Yatırımcı": [],
+  "Nitelikli Yatırımcı": [],
+  "Repo": [],
+  "Ters Repo": [],
+  "Birincil Piyasa": [],
+  "İkincil Piyasa": [],
+  "Portföy": [],
+  "Portföy Dağılımı": [],
+  "Varlık Dağılımı": [],
+  "Halka Arz": [],
+  "Hisse Senedi": [],
+  "Alım-Satıma Dayalı Kira Sertifikası": [],
+  "Eser Sözleşmesine Dayalı Kira Sertifikası": [],
+  "Kira Sertifikası": [
+    "Sukuk"
+  ],
+  "Kira Sertifikası Getirisi": [],
+  "Kira Sertifikası Türü": [],
+  "Kira Sertifikası İhracı": [],
+  "Ortaklığa Dayalı Kira Sertifikası": [],
+  "Yönetim Sözleşmesine Dayalı Kira Sertifikası": [],
+  "Takas Tarihi": [],
+  "T+1": [],
+  "T+2": [],
+  "İhraççı": [],
+  "Risk Profili Anketi": [],
+  "İtfa Tarihi": [],
+  "Uygunluk Testi": [],
+  "Yerindelik Testi": [],
+  "Emir": [],
+  "Valör": [],
+  "Teftiş": [],
+  "İç Denetim": [],
+  "Dört Göz Prensibi": [],
+  "İç Kontrol": [],
+  "Çift Onay": [],
+  "Risk Yönetimi": [],
+  "Yetki Matrisi": [],
+  "Satıcı Ödemesi": [],
+  "Peşinat": [
+    "Ön ödeme"
+  ],
+  "FAST": [
+    "Fonların Anlık ve Sürekli Transferi"
+  ],
+  "Havale": [],
+  "EFT": [
+    "Elektronik Fon Transferi"
+  ],
+  "Sanal POS": [],
+  "Fatura Ödemesi": [],
+  "IBAN": [
+    "Uluslararası Banka Hesap Numarası"
+  ],
+  "Virman": [],
+  "Gümrük Vergisi Ödemesi": [],
+  "SGK Ödemesi": [],
+  "Vergi Ödemesi": [],
+  "Maaş Ödemesi": [],
+  "Toplu Ödeme": [],
+  "Mobil POS": [],
+  "POS": [
+    "Point of Sale"
+  ],
+  "Blokeli POS": [],
+  "Ertesi Gün POS": [],
+  "Ödeme İste": [],
+  "Düzenli Transfer Talimatı": [],
+  "Otomatik Ödeme Talimatı": [
+    "Otomatik fatura talimatı"
+  ],
+  "Periyodik Transfer": [],
+  "İleri Tarihli Transfer": [],
+  "SWIFT GPI": [],
+  "Kolay Adres": [],
+  "SWIFT": [],
+  "Çek Takası": [],
+  "Chargeback": [
+    "Ters ibraz"
+  ],
+  "Kart İşlem İtirazı": [],
+  "Üye İşyeri": [],
+  "Ekspertiz Ücreti": [],
+  "Finansman Tahsis Ücreti": [],
+  "Masraf": [
+    "Ücret",
+    "Komisyon"
+  ],
+  "Kart Aidatı": [
+    "Yıllık kart ücreti"
+  ],
+  "Kefalet Komisyonu": [],
+  "Üye İşyeri Komisyonu": [
+    "MDR"
+  ],
+  "Organizasyon Bedeli": [],
+  "Fon Yönetim Ücreti": [],
+  "İpotek Tesis Ücreti": [],
+  "Arsa Edindirme Finansmanı": [],
+  "Hepsiburada Alışveriş Finansmanı": [],
+  "Trendyol Alışveriş Finansmanı": [],
+  "Gurbetten Sılaya Gayrimenkul Finansmanı": [
+    "Gurbetçi finansmanı"
+  ],
+  "Konut Edindirme Finansmanı": [],
+  "İlk Evim Konut Finansmanı": [
+    "İlk konut finansmanı"
+  ],
+  "LC Waikiki Alışveriş Finansmanı": [],
+  "Teknosa Alışveriş Finansmanı": [],
+  "Enerya Karz-ı Hasen": [],
+  "TOGG Finansmanı": [],
+  "Taşıt Edindirme Finansmanı": [],
+  "İş Yeri Edindirme Finansmanı": []
+}

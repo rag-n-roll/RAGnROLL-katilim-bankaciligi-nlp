@@ -1,0 +1,2022 @@
+[
+  {
+    "entity": "ACCOUNT_BALANCE",
+    "description": "Hesaplar alanında kullanılan entity türü.",
+    "examples": [
+      "Hesap Açılış Bakiyesi"
+    ]
+  },
+  {
+    "entity": "ACCOUNT_PROCESS",
+    "description": "Hesaplar alanında kullanılan entity türü.",
+    "examples": [
+      "Hesap Kapanışı",
+      "Hesap Yenileme"
+    ]
+  },
+  {
+    "entity": "ACCOUNT_TYPE",
+    "description": "Hesaplar alanında kullanılan entity türü.",
+    "examples": [
+      "FERAH Cari Hesap",
+      "Özel Cari Hesap",
+      "Döviz Katılma Hesabı",
+      "Avantajlı Günlük Hesap",
+      "Günlük Kazandıran Hesap",
+      "Avantajlı Katılma Hesabı"
+    ]
+  },
+  {
+    "entity": "ADVISING_BANK",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "İhbar Bankası"
+    ]
+  },
+  {
+    "entity": "AGRICULTURAL_CYCLE",
+    "description": "Tarım Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Tarımsal Üretim Döngüsü"
+    ]
+  },
+  {
+    "entity": "AGRICULTURAL_INPUT",
+    "description": "Tarım Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Tarımsal Girdi"
+    ]
+  },
+  {
+    "entity": "AGRICULTURAL_INSTRUMENT",
+    "description": "Tarım Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "ELÜS"
+    ]
+  },
+  {
+    "entity": "AGRICULTURAL_MECHANIZATION",
+    "description": "Tarım Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Tarımsal Mekanizasyon"
+    ]
+  },
+  {
+    "entity": "AGRICULTURE_ACTIVITY",
+    "description": "Tarım Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Büyükbaş Hayvancılık",
+      "Kanatlı Hayvancılık",
+      "Küçükbaş Hayvancılık",
+      "Su Ürünleri Yetiştiriciliği"
+    ]
+  },
+  {
+    "entity": "AGRICULTURE_METHOD",
+    "description": "Tarım Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Organik Tarım",
+      "Topraksız Tarım",
+      "Örtü Altı Tarım",
+      "İyi Tarım Uygulamaları"
+    ]
+  },
+  {
+    "entity": "AGRICULTURE_TERM",
+    "description": "Tarım Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Ahır Modernizasyonu",
+      "Altı Ayda Bir Ödeme",
+      "Ayçiçeği Finansmanı",
+      "Ağıl Modernizasyonu",
+      "Bahçe Tesisi Finansmanı",
+      "Bağcılık Finansmanı"
+    ]
+  },
+  {
+    "entity": "ALLOCATION",
+    "description": "Tasarruf Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Tahsis"
+    ]
+  },
+  {
+    "entity": "ALLOCATION_DATE",
+    "description": "Tasarruf Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Tahsis Tarihi"
+    ]
+  },
+  {
+    "entity": "APPLICANT",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Amir"
+    ]
+  },
+  {
+    "entity": "APPLICATION_CHANNEL",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Mobil Başvuru",
+      "Şube Başvurusu",
+      "Başvuru Kanalı"
+    ]
+  },
+  {
+    "entity": "APPLICATION_ID",
+    "description": "Başvuru Süreçleri alanında kullanılan entity türü.",
+    "examples": [
+      "Başvuru Numarası"
+    ]
+  },
+  {
+    "entity": "APPLICATION_TRACKING",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Başvuru İzleme"
+    ]
+  },
+  {
+    "entity": "APPRAISAL_VALUE",
+    "description": "Değerleme alanında kullanılan entity türü.",
+    "examples": [
+      "Ekspertiz Değeri"
+    ]
+  },
+  {
+    "entity": "ASSIGNEE",
+    "description": "Hukuki İşlemler alanında kullanılan entity türü.",
+    "examples": [
+      "Temlik Alan"
+    ]
+  },
+  {
+    "entity": "ASSIGNMENT",
+    "description": "Hukuki İşlemler alanında kullanılan entity türü.",
+    "examples": [
+      "Temlik"
+    ]
+  },
+  {
+    "entity": "ASSIGNOR",
+    "description": "Hukuki İşlemler alanında kullanılan entity türü.",
+    "examples": [
+      "Temlik Eden"
+    ]
+  },
+  {
+    "entity": "AUTO_PAYMENT",
+    "description": "Ödeme Sistemleri alanında kullanılan entity türü.",
+    "examples": [
+      "Otomatik Ödeme Talimatı"
+    ]
+  },
+  {
+    "entity": "AUTO_TRANSFER",
+    "description": "Ödeme Sistemleri alanında kullanılan entity türü.",
+    "examples": [
+      "Düzenli Transfer Talimatı"
+    ]
+  },
+  {
+    "entity": "AVAILABLE_LIMIT",
+    "description": "Limitler alanında kullanılan entity türü.",
+    "examples": [
+      "Kullanılabilir Limit"
+    ]
+  },
+  {
+    "entity": "BANK",
+    "description": "Temel Varlıklar alanında kullanılan entity türü.",
+    "examples": [
+      "Banka"
+    ]
+  },
+  {
+    "entity": "BANKING_SERVICE",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Masrafsız Bankacılık",
+      "Nakit Yönetimi"
+    ]
+  },
+  {
+    "entity": "BENEFICIARY",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Lehtar"
+    ]
+  },
+  {
+    "entity": "BIOMETRIC_AUTHENTICATION",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Biyometrik Doğrulama"
+    ]
+  },
+  {
+    "entity": "BLOCK",
+    "description": "Bankacılık İşlemleri alanında kullanılan entity türü.",
+    "examples": [
+      "Bloke"
+    ]
+  },
+  {
+    "entity": "BLOCKED_AMOUNT",
+    "description": "Tutarlar alanında kullanılan entity türü.",
+    "examples": [
+      "Bloke Tutar"
+    ]
+  },
+  {
+    "entity": "BUSINESS_PARTY",
+    "description": "Ticari Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Alıcı Firma",
+      "Ana Firma",
+      "Bayi",
+      "Tedarikçi"
+    ]
+  },
+  {
+    "entity": "CAMPAIGN",
+    "description": "Temel Varlıklar alanında kullanılan entity türü.",
+    "examples": [
+      "Kampanya"
+    ]
+  },
+  {
+    "entity": "CAMPAIGN_BENEFIT",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "Kampanya Avantajı",
+      "%0 Kâr Payı",
+      "Ücretsiz Sigorta",
+      "Vade Farksız Taksit",
+      "İlk Taksit Erteleme",
+      "Dosya Masrafı Yok"
+    ]
+  },
+  {
+    "entity": "CAMPAIGN_CODE",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "Kampanya Kodu"
+    ]
+  },
+  {
+    "entity": "CAMPAIGN_CONDITION",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "Mevcut Müşterilere Özel",
+      "Yeni Müşterilere Özel",
+      "Mobil Başvuruya Özel",
+      "İnternet Şubesine Özel",
+      "Şubeye Özel",
+      "Kişi Başı Katılım Sınırı"
+    ]
+  },
+  {
+    "entity": "CAMPAIGN_ENROLLMENT",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "Kampanyaya Katıl"
+    ]
+  },
+  {
+    "entity": "CAPITAL_MARKET_INSTRUMENT",
+    "description": "Yatırım alanında kullanılan entity türü.",
+    "examples": [
+      "Kira Sertifikası"
+    ]
+  },
+  {
+    "entity": "CARD_DISPUTE",
+    "description": "Ödeme Sistemleri alanında kullanılan entity türü.",
+    "examples": [
+      "Chargeback",
+      "Kart İşlem İtirazı"
+    ]
+  },
+  {
+    "entity": "CARD_FEATURE",
+    "description": "Kartlar alanında kullanılan entity türü.",
+    "examples": [
+      "Aidatsız Kart",
+      "Temassız Ödeme"
+    ]
+  },
+  {
+    "entity": "CARD_LIMIT",
+    "description": "Limitler alanında kullanılan entity türü.",
+    "examples": [
+      "Kart Limiti"
+    ]
+  },
+  {
+    "entity": "CARD_PRODUCT",
+    "description": "Kartlar alanında kullanılan entity türü.",
+    "examples": [
+      "Banka Kartı",
+      "Ek Kart",
+      "Pratik Finansman Kart",
+      "Biz Kart",
+      "Kredi Kartı",
+      "Sanal Kart"
+    ]
+  },
+  {
+    "entity": "CARD_SERVICE",
+    "description": "Kartlar alanında kullanılan entity türü.",
+    "examples": [
+      "Nakit Avans",
+      "Taksitli Nakit Avans"
+    ]
+  },
+  {
+    "entity": "CARRIER",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Taşıyıcı"
+    ]
+  },
+  {
+    "entity": "CASHBACK",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "Nakit İade"
+    ]
+  },
+  {
+    "entity": "CASHBACK_CAMPAIGN",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "Dijital Üyelik Nakit İadesi"
+    ]
+  },
+  {
+    "entity": "CASH_DEPOSIT_SERVICE",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "A101 Kasadan Para Yatırma",
+      "QR ile Para Yatırma"
+    ]
+  },
+  {
+    "entity": "CASH_FLOW_PROJECTION",
+    "description": "Finansal Analiz alanında kullanılan entity türü.",
+    "examples": [
+      "Nakit Akış Projeksiyonu"
+    ]
+  },
+  {
+    "entity": "CASH_WITHDRAWAL_SERVICE",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "A101 Kasadan Para Çekme",
+      "QR ile Para Çekme"
+    ]
+  },
+  {
+    "entity": "CERTIFICATE",
+    "description": "Sürdürülebilir Finans alanında kullanılan entity türü.",
+    "examples": [
+      "BREEAM Sertifikası",
+      "LEED Sertifikası"
+    ]
+  },
+  {
+    "entity": "CLAIM_FILE",
+    "description": "Sigorta alanında kullanılan entity türü.",
+    "examples": [
+      "Hasar Dosyası"
+    ]
+  },
+  {
+    "entity": "COLLATERAL",
+    "description": "Teminat alanında kullanılan entity türü.",
+    "examples": [
+      "İpotek"
+    ]
+  },
+  {
+    "entity": "COLLATERAL_RATIO",
+    "description": "Teminat alanında kullanılan entity türü.",
+    "examples": [
+      "Teminat Oranı"
+    ]
+  },
+  {
+    "entity": "COLLATERAL_VALUE",
+    "description": "Teminat alanında kullanılan entity türü.",
+    "examples": [
+      "Teminat Değeri"
+    ]
+  },
+  {
+    "entity": "COLLECTION_ACCOUNT",
+    "description": "Hesaplar alanında kullanılan entity türü.",
+    "examples": [
+      "Tahsilat Hesabı"
+    ]
+  },
+  {
+    "entity": "COLLECTION_MANAGEMENT",
+    "description": "Ticari Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Tahsilat Yönetimi"
+    ]
+  },
+  {
+    "entity": "COMMERCIAL_FINANCE_TERM",
+    "description": "Ticari Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Aktif Karlılığı",
+      "Alacak Devir Hızı",
+      "Amortisman",
+      "Ana Ortaklık",
+      "Bağlı Ortaklık",
+      "Bağımsız Denetim Raporu"
+    ]
+  },
+  {
+    "entity": "COMPLAINT",
+    "description": "Müşteri Hizmetleri alanında kullanılan entity türü.",
+    "examples": [
+      "Şikâyet Kaydı"
+    ]
+  },
+  {
+    "entity": "COMPLIANCE_FRAMEWORK",
+    "description": "Uyum alanında kullanılan entity türü.",
+    "examples": [
+      "Kara Paranın Aklanmasının Önlenmesi",
+      "Terörizmin Finansmanının Önlenmesi",
+      "Kişisel Verilerin Korunması"
+    ]
+  },
+  {
+    "entity": "COMPLIANCE_PROCESS",
+    "description": "Uyum alanında kullanılan entity türü.",
+    "examples": [
+      "Şüpheli İşlem Bildirimi",
+      "Müşterini Tanı"
+    ]
+  },
+  {
+    "entity": "COMPLIANCE_TERM",
+    "description": "Uyum ve Mevzuat alanında kullanılan entity türü.",
+    "examples": [
+      "Adres Teyidi",
+      "Adverse Media",
+      "Alarm",
+      "Aydınlatma Metni",
+      "Açık Rıza Metni",
+      "Bankacılık Sırrı"
+    ]
+  },
+  {
+    "entity": "COMPLIANCE_UNIT",
+    "description": "Katılım Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Katılım Uyum Birimi"
+    ]
+  },
+  {
+    "entity": "CONDITION",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "Kampanya Koşulu"
+    ]
+  },
+  {
+    "entity": "CONFIRMING_BANK",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Teyit Bankası"
+    ]
+  },
+  {
+    "entity": "CONSENT",
+    "description": "Uyum alanında kullanılan entity türü.",
+    "examples": [
+      "Açık Rıza"
+    ]
+  },
+  {
+    "entity": "CONSTRUCTION_PROCESS",
+    "description": "Gayrimenkul alanında kullanılan entity türü.",
+    "examples": [
+      "Güçlendirme"
+    ]
+  },
+  {
+    "entity": "CORRESPONDENT_BANK",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Muhabir Banka"
+    ]
+  },
+  {
+    "entity": "COUNTRY_RISK",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Ülke Riski"
+    ]
+  },
+  {
+    "entity": "CREDITWORTHINESS",
+    "description": "Risk ve Değerlendirme alanında kullanılan entity türü.",
+    "examples": [
+      "Kredibilite"
+    ]
+  },
+  {
+    "entity": "CURRENCY",
+    "description": "Temel Varlıklar alanında kullanılan entity türü.",
+    "examples": [
+      "Para Birimi"
+    ]
+  },
+  {
+    "entity": "CUSTOMER_REQUEST",
+    "description": "Müşteri Hizmetleri alanında kullanılan entity türü.",
+    "examples": [
+      "Talep Kaydı"
+    ]
+  },
+  {
+    "entity": "CUSTOMER_SEGMENT",
+    "description": "Müşteri alanında kullanılan entity türü.",
+    "examples": [
+      "KOBİ"
+    ]
+  },
+  {
+    "entity": "CUSTOMS_BROKER",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Gümrük Müşaviri"
+    ]
+  },
+  {
+    "entity": "DAILY_PROFIT_DISTRIBUTION",
+    "description": "Katılım Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Günlük Kâr Dağıtımı"
+    ]
+  },
+  {
+    "entity": "DAILY_TRANSFER_LIMIT",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Günlük Transfer Limiti"
+    ]
+  },
+  {
+    "entity": "DEDUCTIBLE",
+    "description": "Sigorta alanında kullanılan entity türü.",
+    "examples": [
+      "Muafiyet Tutarı"
+    ]
+  },
+  {
+    "entity": "DELIVERY_RISK",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Teslim Riski"
+    ]
+  },
+  {
+    "entity": "DEVICE_BINDING",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Cihaz Eşleştirme"
+    ]
+  },
+  {
+    "entity": "DIGITAL_BANKING_PLATFORM",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "HADİ Uygulaması"
+    ]
+  },
+  {
+    "entity": "DIGITAL_BANKING_TERM",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "API Anahtarı",
+      "API Bankacılığı",
+      "API Kota Limiti",
+      "Anahtar Yönetimi",
+      "Anlık Bildirim",
+      "Ayrıcalıklı Erişim"
+    ]
+  },
+  {
+    "entity": "DIGITAL_CHANNEL",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Mobil Bankacılık",
+      "İnternet Bankacılığı",
+      "Kurumsal İnternet Bankacılığı"
+    ]
+  },
+  {
+    "entity": "DIGITAL_CONTRACT",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Dijital Sözleşme Onayı"
+    ]
+  },
+  {
+    "entity": "DIGITAL_DISBURSEMENT",
+    "description": "Dijital Finansman alanında kullanılan entity türü.",
+    "examples": [
+      "Dijital Kullandırım"
+    ]
+  },
+  {
+    "entity": "DIGITAL_GOLD_SERVICE",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Altın Kesem"
+    ]
+  },
+  {
+    "entity": "DIGITAL_ONBOARDING",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Görüntülü Müşteri Edinimi",
+      "Hemen Hayat'lı Ol",
+      "Uzaktan Müşteri Edinimi"
+    ]
+  },
+  {
+    "entity": "DIGITAL_PAYMENT_SYSTEM",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "CebimPOS"
+    ]
+  },
+  {
+    "entity": "DIGITAL_PLATFORM",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Taksitlio",
+      "ETMP"
+    ]
+  },
+  {
+    "entity": "DIGITAL_PRODUCT",
+    "description": "Gayri Nakdi Finansman alanında kullanılan entity türü.",
+    "examples": [
+      "Elektronik Teminat Mektubu",
+      "Sanal Pratik Finansman Kart"
+    ]
+  },
+  {
+    "entity": "DIGITAL_SERVICE",
+    "description": "Ödeme Sistemleri alanında kullanılan entity türü.",
+    "examples": [
+      "Kolay Adres"
+    ]
+  },
+  {
+    "entity": "DISCOUNTING",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "İskonto İşlemi"
+    ]
+  },
+  {
+    "entity": "DISCOUNT_AMOUNT",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "İndirim Tutarı"
+    ]
+  },
+  {
+    "entity": "DISCOUNT_RATE",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "İndirim Oranı"
+    ]
+  },
+  {
+    "entity": "DISCREPANCY",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Rezerv"
+    ]
+  },
+  {
+    "entity": "DISPUTE_PROCESS",
+    "description": "Müşteri Hizmetleri alanında kullanılan entity türü.",
+    "examples": [
+      "İtiraz Süreci"
+    ]
+  },
+  {
+    "entity": "DOCUMENT",
+    "description": "Belgeler alanında kullanılan entity türü.",
+    "examples": [
+      "İkametgâh Belgesi",
+      "Bilanço",
+      "Gelir Tablosu",
+      "Nakit Akış Tablosu",
+      "Son Üç Yıl Bilançosu",
+      "Tapu Fotokopisi"
+    ]
+  },
+  {
+    "entity": "DOCUMENT_PRESENTATION",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "İbraz"
+    ]
+  },
+  {
+    "entity": "DOCUMENT_RISK",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Belge Riski"
+    ]
+  },
+  {
+    "entity": "DOCUMENT_UPLOAD",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Fatura Yükleme"
+    ]
+  },
+  {
+    "entity": "DOWN_PAYMENT",
+    "description": "Ödeme alanında kullanılan entity türü.",
+    "examples": [
+      "Peşinat"
+    ]
+  },
+  {
+    "entity": "DRAWER",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Keşideci"
+    ]
+  },
+  {
+    "entity": "DUE_DATE",
+    "description": "Kartlar alanında kullanılan entity türü.",
+    "examples": [
+      "Son Ödeme Tarihi"
+    ]
+  },
+  {
+    "entity": "EARLY_CLOSURE",
+    "description": "Finansman Süreçleri alanında kullanılan entity türü.",
+    "examples": [
+      "Erken Kapama"
+    ]
+  },
+  {
+    "entity": "EARLY_COLLECTION",
+    "description": "Nakit Yönetimi alanında kullanılan entity türü.",
+    "examples": [
+      "Erken Tahsilat"
+    ]
+  },
+  {
+    "entity": "EARLY_PAYMENT",
+    "description": "Finansman Süreçleri alanında kullanılan entity türü.",
+    "examples": [
+      "Erken Ödeme"
+    ]
+  },
+  {
+    "entity": "ENDORSEMENT",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Ciro"
+    ]
+  },
+  {
+    "entity": "END_DATE",
+    "description": "Tarihler alanında kullanılan entity türü.",
+    "examples": [
+      "Bitiş Tarihi"
+    ]
+  },
+  {
+    "entity": "ESG_FINANCE_TERM",
+    "description": "Sürdürülebilir Finans alanında kullanılan entity türü.",
+    "examples": [
+      "AB Taksonomisi",
+      "Atık Isı Geri Kazanımı",
+      "Bina Enerji Sınıfı",
+      "Biyoçeşitlilik",
+      "Doğa Pozitif",
+      "Doğrulama"
+    ]
+  },
+  {
+    "entity": "ESG_TERM",
+    "description": "Sürdürülebilir Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Sıfır Atık",
+      "Yeşil Bina",
+      "Döngüsel Ekonomi",
+      "Su Verimliliği",
+      "ESG",
+      "Karbon Ayak İzi"
+    ]
+  },
+  {
+    "entity": "ETHICAL_FINANCE",
+    "description": "Sürdürülebilir Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Etik Finans"
+    ]
+  },
+  {
+    "entity": "EXPENSE",
+    "description": "Ücretler alanında kullanılan entity türü.",
+    "examples": [
+      "Masraf"
+    ]
+  },
+  {
+    "entity": "EXPORTER",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "İhracatçı"
+    ]
+  },
+  {
+    "entity": "EXPORT_COMMITMENT",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "İhracat Taahhüdü"
+    ]
+  },
+  {
+    "entity": "FEE",
+    "description": "Ücretler alanında kullanılan entity türü.",
+    "examples": [
+      "Ekspertiz Ücreti",
+      "Finansman Tahsis Ücreti",
+      "Kart Aidatı",
+      "Kefalet Komisyonu",
+      "Üye İşyeri Komisyonu",
+      "Fon Yönetim Ücreti"
+    ]
+  },
+  {
+    "entity": "FEE_EXEMPTION",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "Tahsis Ücreti Muafiyeti"
+    ]
+  },
+  {
+    "entity": "FINANCIAL_INCLUSION",
+    "description": "Sürdürülebilir Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Finansal Kapsayıcılık"
+    ]
+  },
+  {
+    "entity": "FINANCIAL_INSTRUMENT",
+    "description": "Yatırım alanında kullanılan entity türü.",
+    "examples": [
+      "Devlet Tahvili",
+      "Hazine Bonosu"
+    ]
+  },
+  {
+    "entity": "FINANCIAL_SYSTEM",
+    "description": "Nakit Yönetimi alanında kullanılan entity türü.",
+    "examples": [
+      "DBS (Doğrudan Borçlandırma Sistemi)"
+    ]
+  },
+  {
+    "entity": "FINANCING_AMOUNT",
+    "description": "Tutarlar alanında kullanılan entity türü.",
+    "examples": [
+      "Finansman Tutarı"
+    ]
+  },
+  {
+    "entity": "FINANCING_METHOD",
+    "description": "Ticari Finansman alanında kullanılan entity türü.",
+    "examples": [
+      "Finansal Kiralama"
+    ]
+  },
+  {
+    "entity": "FINANCING_PURPOSE",
+    "description": "Ticari Finansman alanında kullanılan entity türü.",
+    "examples": [
+      "İşletme Sermayesi"
+    ]
+  },
+  {
+    "entity": "FLEXIBLE_REPAYMENT_PLAN",
+    "description": "Finansman Süreçleri alanında kullanılan entity türü.",
+    "examples": [
+      "Esnek Ödeme Planı"
+    ]
+  },
+  {
+    "entity": "FOREIGN_EXCHANGE_EARNING_ACTIVITY",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Döviz Kazandırıcı Faaliyet"
+    ]
+  },
+  {
+    "entity": "FREIGHT_COST",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Navlun"
+    ]
+  },
+  {
+    "entity": "FUND_PURCHASE_ORDER",
+    "description": "Yatırım alanında kullanılan entity türü.",
+    "examples": [
+      "Fon Alım Emri"
+    ]
+  },
+  {
+    "entity": "FUND_REDEMPTION",
+    "description": "Yatırım alanında kullanılan entity türü.",
+    "examples": [
+      "Fon Bozumu"
+    ]
+  },
+  {
+    "entity": "FUND_REDEMPTION_ORDER",
+    "description": "Yatırım alanında kullanılan entity türü.",
+    "examples": [
+      "Fon Satım Emri"
+    ]
+  },
+  {
+    "entity": "FUND_RETURN",
+    "description": "Yatırım alanında kullanılan entity türü.",
+    "examples": [
+      "Fon Getirisi"
+    ]
+  },
+  {
+    "entity": "FUND_STRUCTURE",
+    "description": "Yatırım alanında kullanılan entity türü.",
+    "examples": [
+      "Şemsiye Fon"
+    ]
+  },
+  {
+    "entity": "FUND_UNIT",
+    "description": "Yatırım alanında kullanılan entity türü.",
+    "examples": [
+      "Katılma Payı"
+    ]
+  },
+  {
+    "entity": "FX_RATE",
+    "description": "Döviz alanında kullanılan entity türü.",
+    "examples": [
+      "Alış Kuru",
+      "Satış Kuru"
+    ]
+  },
+  {
+    "entity": "FX_RISK",
+    "description": "Risk Yönetimi alanında kullanılan entity türü.",
+    "examples": [
+      "Kur Riski"
+    ]
+  },
+  {
+    "entity": "FX_SPREAD",
+    "description": "Döviz alanında kullanılan entity türü.",
+    "examples": [
+      "Kur Makası"
+    ]
+  },
+  {
+    "entity": "FX_TRANSACTION",
+    "description": "Yatırım alanında kullanılan entity türü.",
+    "examples": [
+      "Döviz Alım-Satımı"
+    ]
+  },
+  {
+    "entity": "GRACE_PERIOD",
+    "description": "Finansman Süreçleri alanında kullanılan entity türü.",
+    "examples": [
+      "Ödemesiz Dönem"
+    ]
+  },
+  {
+    "entity": "GREEN_FINANCING",
+    "description": "Sürdürülebilir Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Yeşil Finansman",
+      "Atık Su Arıtma Finansmanı"
+    ]
+  },
+  {
+    "entity": "GREEN_FINANCING_PRODUCT",
+    "description": "Sürdürülebilir Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Enerji Verimliliği Finansmanı",
+      "Çatı GES Finansmanı",
+      "Elektrikli Araç Finansmanı",
+      "Güneş Enerjisi Santrali Finansmanı",
+      "Rüzgâr Enerjisi Santrali Finansmanı"
+    ]
+  },
+  {
+    "entity": "GREEN_TRANSFORMATION",
+    "description": "Sürdürülebilir Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Yeşil Dönüşüm"
+    ]
+  },
+  {
+    "entity": "GUARANTEE",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Aval"
+    ]
+  },
+  {
+    "entity": "GUARANTEE_PROGRAM",
+    "description": "Kefalet alanında kullanılan entity türü.",
+    "examples": [
+      "Hazine Destekli Kefalet"
+    ]
+  },
+  {
+    "entity": "GUARANTEE_RATIO",
+    "description": "Kefalet alanında kullanılan entity türü.",
+    "examples": [
+      "Kefalet Oranı"
+    ]
+  },
+  {
+    "entity": "GUARANTEE_TYPE",
+    "description": "Gayri Nakdi Finansman alanında kullanılan entity türü.",
+    "examples": [
+      "Kontrgaranti",
+      "Avans Teminat Mektubu",
+      "Geçici Teminat Mektubu",
+      "Kesin Teminat Mektubu"
+    ]
+  },
+  {
+    "entity": "GUARANTOR",
+    "description": "Teminat alanında kullanılan entity türü.",
+    "examples": [
+      "Kefil"
+    ]
+  },
+  {
+    "entity": "HARVEST_PERIOD",
+    "description": "Tarım Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Hasat Dönemi"
+    ]
+  },
+  {
+    "entity": "HOLDER",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Hamil"
+    ]
+  },
+  {
+    "entity": "HOUSING_PROJECT",
+    "description": "Gayrimenkul alanında kullanılan entity türü.",
+    "examples": [
+      "Anlaşmalı Konut Projesi"
+    ]
+  },
+  {
+    "entity": "IBAN",
+    "description": "Ödeme Sistemleri alanında kullanılan entity türü.",
+    "examples": [
+      "IBAN"
+    ]
+  },
+  {
+    "entity": "IDENTITY_VERIFICATION",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "NFC ile Kimlik Doğrulama"
+    ]
+  },
+  {
+    "entity": "IMPORTER",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "İthalatçı"
+    ]
+  },
+  {
+    "entity": "INCOTERM",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "CFR",
+      "CIF",
+      "DAP",
+      "DDP",
+      "DPU",
+      "EXW"
+    ]
+  },
+  {
+    "entity": "INSTALLMENT_AMOUNT",
+    "description": "Tutarlar alanında kullanılan entity türü.",
+    "examples": [
+      "Taksit Tutarı"
+    ]
+  },
+  {
+    "entity": "INSTALLMENT_CONVERSION",
+    "description": "Kartlar alanında kullanılan entity türü.",
+    "examples": [
+      "Sonradan Taksitlendirme"
+    ]
+  },
+  {
+    "entity": "INSTALLMENT_COUNT",
+    "description": "Süreler alanında kullanılan entity türü.",
+    "examples": [
+      "Taksit Sayısı"
+    ]
+  },
+  {
+    "entity": "INSURANCE_COVERAGE",
+    "description": "Sigorta alanında kullanılan entity türü.",
+    "examples": [
+      "Teminat Kapsamı"
+    ]
+  },
+  {
+    "entity": "INSURANCE_DOCUMENT",
+    "description": "Belgeler alanında kullanılan entity türü.",
+    "examples": [
+      "DASK Poliçesi"
+    ]
+  },
+  {
+    "entity": "INSURANCE_PREMIUM",
+    "description": "Sigorta alanında kullanılan entity türü.",
+    "examples": [
+      "Poliçe Primi"
+    ]
+  },
+  {
+    "entity": "INSURANCE_PRODUCT",
+    "description": "Sigorta alanında kullanılan entity türü.",
+    "examples": [
+      "Ferdi Kaza Sigortası",
+      "Hayat Sigortası",
+      "Nakliyat Sigortası",
+      "Konut Sigortası",
+      "Tarımsal Sigorta",
+      "Kasko"
+    ]
+  },
+  {
+    "entity": "INSURANCE_TERM",
+    "description": "Sigorta ve Tekafül alanında kullanılan entity türü.",
+    "examples": [
+      "Ayrılma Hakkı",
+      "Bekleme Süresi",
+      "Bireysel Emeklilik Sistemi",
+      "Birikim Tutarı",
+      "DASK",
+      "Devlet Katkısı"
+    ]
+  },
+  {
+    "entity": "INTERNATIONAL_RULE",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "UCP 600",
+      "URC 522"
+    ]
+  },
+  {
+    "entity": "INVESTMENT_FUND",
+    "description": "Yatırım alanında kullanılan entity türü.",
+    "examples": [
+      "Yatırım Fonu",
+      "Para Piyasası Katılım Fonu"
+    ]
+  },
+  {
+    "entity": "INVESTMENT_TERM",
+    "description": "Yatırım ve Sermaye Piyasaları alanında kullanılan entity türü.",
+    "examples": [
+      "Altın Fonu",
+      "Alım Valörü",
+      "Birim Pay Değeri",
+      "Birincil Piyasa",
+      "Borsa Yatırım Fonu",
+      "Borsa İstanbul"
+    ]
+  },
+  {
+    "entity": "IRRIGATION_SYSTEM",
+    "description": "Tarım Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Basınçlı Sulama",
+      "Damla Sulama",
+      "Pivot Sulama",
+      "Yağmurlama Sulama"
+    ]
+  },
+  {
+    "entity": "ISLAMIC_CONTRACT",
+    "description": "Katılım Finans alanında kullanılan entity türü.",
+    "examples": [
+      "İcare",
+      "Teverruk",
+      "Mudârebe",
+      "Müşareke",
+      "Murabaha",
+      "Yatırım Vekâleti"
+    ]
+  },
+  {
+    "entity": "ISLAMIC_FINANCE_CONCEPT",
+    "description": "Katılım Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Makasıd",
+      "Karz-ı Hasen",
+      "Maslahat"
+    ]
+  },
+  {
+    "entity": "ISLAMIC_FINANCE_PRINCIPLE",
+    "description": "Katılım Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Katılım Esasları"
+    ]
+  },
+  {
+    "entity": "ISLAMIC_FINANCING_MODEL",
+    "description": "Katılım Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Kâr-Zarar Ortaklığı"
+    ]
+  },
+  {
+    "entity": "ISLAMIC_INVESTMENT_FUND",
+    "description": "Yatırım alanında kullanılan entity türü.",
+    "examples": [
+      "Katılım Yatırım Fonu"
+    ]
+  },
+  {
+    "entity": "ISSUING_BANK",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Amir Banka"
+    ]
+  },
+  {
+    "entity": "IVR_SERVICE",
+    "description": "Müşteri Hizmetleri alanında kullanılan entity türü.",
+    "examples": [
+      "Sesli Yanıt Sistemi"
+    ]
+  },
+  {
+    "entity": "LC_TYPE",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Devredilebilir Akreditif",
+      "Standby Akreditif",
+      "Teyitli Akreditif"
+    ]
+  },
+  {
+    "entity": "LEGAL_REFERENCE",
+    "description": "Mevzuat alanında kullanılan entity türü.",
+    "examples": [
+      "6292 Sayılı Kanun"
+    ]
+  },
+  {
+    "entity": "LICENSED_WAREHOUSE",
+    "description": "Tarım Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Lisanslı Depo"
+    ]
+  },
+  {
+    "entity": "LIMIT_ALLOCATION",
+    "description": "Limitler alanında kullanılan entity türü.",
+    "examples": [
+      "Limit Tahsisi"
+    ]
+  },
+  {
+    "entity": "LIMIT_DECREASE",
+    "description": "Limitler alanında kullanılan entity türü.",
+    "examples": [
+      "Limit Azaltımı"
+    ]
+  },
+  {
+    "entity": "LIMIT_INCREASE",
+    "description": "Limitler alanında kullanılan entity türü.",
+    "examples": [
+      "Limit Artırımı"
+    ]
+  },
+  {
+    "entity": "LIMIT_PROPOSAL",
+    "description": "Limitler alanında kullanılan entity türü.",
+    "examples": [
+      "Limit Önerisi"
+    ]
+  },
+  {
+    "entity": "LIQUIDITY",
+    "description": "Finansal Analiz alanında kullanılan entity türü.",
+    "examples": [
+      "Likidite"
+    ]
+  },
+  {
+    "entity": "LOSS_SHARING",
+    "description": "Katılım Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Zarar Paylaşımı"
+    ]
+  },
+  {
+    "entity": "LOYALTY_PROGRAM",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "Kazananlar Kulübü"
+    ]
+  },
+  {
+    "entity": "MATURITY",
+    "description": "Süreler alanında kullanılan entity türü.",
+    "examples": [
+      "Vade"
+    ]
+  },
+  {
+    "entity": "MAXIMUM_REWARD",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "Maksimum Ödül Tutarı"
+    ]
+  },
+  {
+    "entity": "MEMBERSHIP_PROGRAM",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "HADİ Gold"
+    ]
+  },
+  {
+    "entity": "MERCHANT",
+    "description": "Ödeme Sistemleri alanında kullanılan entity türü.",
+    "examples": [
+      "Üye İşyeri"
+    ]
+  },
+  {
+    "entity": "MINIMUM_PAYMENT",
+    "description": "Kartlar alanında kullanılan entity türü.",
+    "examples": [
+      "Asgari Ödeme Tutarı"
+    ]
+  },
+  {
+    "entity": "MINIMUM_SPEND",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "Minimum Harcama Tutarı"
+    ]
+  },
+  {
+    "entity": "NEGOTIABLE_INSTRUMENT",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Poliçe",
+      "Çek Yaprağı"
+    ]
+  },
+  {
+    "entity": "NON_RECOURSE_FINANCING",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Gayrikabili Rücu Finansman"
+    ]
+  },
+  {
+    "entity": "OPEN_BANKING",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Açık Bankacılık"
+    ]
+  },
+  {
+    "entity": "ORGANIZATION",
+    "description": "Kefalet alanında kullanılan entity türü.",
+    "examples": [
+      "Katılım Finans Kefalet (KFK)",
+      "BDDK",
+      "TKBB",
+      "MASAK",
+      "TCMB",
+      "TMSF"
+    ]
+  },
+  {
+    "entity": "ORGANIZATION_FEE",
+    "description": "Ücretler alanında kullanılan entity türü.",
+    "examples": [
+      "Organizasyon Bedeli"
+    ]
+  },
+  {
+    "entity": "OTP",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Tek Kullanımlık Şifre"
+    ]
+  },
+  {
+    "entity": "OWNERSHIP_TRANSFER",
+    "description": "Ticari Finansman alanında kullanılan entity türü.",
+    "examples": [
+      "Mülkiyet Devri"
+    ]
+  },
+  {
+    "entity": "PARTIAL_EARLY_PAYMENT",
+    "description": "Finansman Süreçleri alanında kullanılan entity türü.",
+    "examples": [
+      "Kısmi Erken Ödeme"
+    ]
+  },
+  {
+    "entity": "PARTICIPATION_FUND_POOL",
+    "description": "Katılım Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Fon Havuzu"
+    ]
+  },
+  {
+    "entity": "PARTY",
+    "description": "Gayri Nakdi Finansman alanında kullanılan entity türü.",
+    "examples": [
+      "Garantör",
+      "Kontrgarantör"
+    ]
+  },
+  {
+    "entity": "PAYABLE_MANAGEMENT",
+    "description": "Ticari Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Borç Yönetimi"
+    ]
+  },
+  {
+    "entity": "PAYMENT_DEFERRAL",
+    "description": "Finansman Süreçleri alanında kullanılan entity türü.",
+    "examples": [
+      "Ödeme Erteleme"
+    ]
+  },
+  {
+    "entity": "PAYMENT_MANAGEMENT",
+    "description": "Ticari Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Ödeme Yönetimi"
+    ]
+  },
+  {
+    "entity": "PAYMENT_METHOD",
+    "description": "Dijital Finansman alanında kullanılan entity türü.",
+    "examples": [
+      "QR Kod ile Finansman",
+      "Peşin Ödeme"
+    ]
+  },
+  {
+    "entity": "PAYMENT_MODEL",
+    "description": "Tasarruf Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Peşinatlı Plan",
+      "Peşinatsız Plan"
+    ]
+  },
+  {
+    "entity": "PAYMENT_SYSTEM",
+    "description": "Nakit Yönetimi alanında kullanılan entity türü.",
+    "examples": [
+      "Bayi Tahsilat Sistemi",
+      "Online Tahsilat Sistemi",
+      "Tedarikçi Ödeme Sistemi",
+      "FAST",
+      "Havale",
+      "EFT"
+    ]
+  },
+  {
+    "entity": "PAYMENT_TERM",
+    "description": "Ödeme Sistemleri alanında kullanılan entity türü.",
+    "examples": [
+      "3D Secure",
+      "3D Secure 2.0",
+      "Abonelik Ödemesi",
+      "Alıcı",
+      "Alıcı Hesap",
+      "Android POS"
+    ]
+  },
+  {
+    "entity": "PLANTING_PERIOD",
+    "description": "Tarım Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Ekim Dönemi"
+    ]
+  },
+  {
+    "entity": "POST_SHIPMENT_FINANCING",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Yükleme Sonrası Finansman"
+    ]
+  },
+  {
+    "entity": "POS_MODEL",
+    "description": "Ödeme Sistemleri alanında kullanılan entity türü.",
+    "examples": [
+      "Blokeli POS",
+      "Ertesi Gün POS"
+    ]
+  },
+  {
+    "entity": "PREAPPROVED_LIMIT",
+    "description": "Limitler alanında kullanılan entity türü.",
+    "examples": [
+      "Ön Limit"
+    ]
+  },
+  {
+    "entity": "PRECIOUS_METAL_ACCOUNT",
+    "description": "Hesaplar alanında kullanılan entity türü.",
+    "examples": [
+      "Altın Biriktiren Hesap",
+      "Altın Katılma Hesabı",
+      "Gümüş Hesabı",
+      "Kıymetli Maden Hesabı",
+      "Paladyum Hesabı",
+      "Platin Hesabı"
+    ]
+  },
+  {
+    "entity": "PRECIOUS_METAL_TRANSACTION",
+    "description": "Yatırım alanında kullanılan entity türü.",
+    "examples": [
+      "Altın Alım-Satımı",
+      "Gümüş Alım-Satımı"
+    ]
+  },
+  {
+    "entity": "PRE_SHIPMENT_FINANCING",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Prefinansman"
+    ]
+  },
+  {
+    "entity": "PRODUCT",
+    "description": "Bireysel Finansman alanında kullanılan entity türü.",
+    "examples": [
+      "Alışveriş Finansmanı",
+      "Eğitim Finansmanı",
+      "Arsa Finansmanı",
+      "Konut Finansmanı",
+      "İş Yeri Finansmanı",
+      "Kentsel Dönüşüm Finansmanı"
+    ]
+  },
+  {
+    "entity": "PRODUCT_FAMILY",
+    "description": "Tarım Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Tarım ve Hayvancılık Finansmanı"
+    ]
+  },
+  {
+    "entity": "PROFIT_DISTRIBUTION",
+    "description": "Katılım Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Kâr Payı Dağıtımı"
+    ]
+  },
+  {
+    "entity": "PROFIT_RATE",
+    "description": "Oranlar alanında kullanılan entity türü.",
+    "examples": [
+      "Kâr Payı Oranı"
+    ]
+  },
+  {
+    "entity": "PROFIT_SHARING",
+    "description": "Katılım Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Kâr Paylaşımı"
+    ]
+  },
+  {
+    "entity": "PROFIT_SHARING_RATIO",
+    "description": "Katılım Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Kâr Paylaşım Oranı"
+    ]
+  },
+  {
+    "entity": "PROJECT_SPONSOR",
+    "description": "Ticari Finansman alanında kullanılan entity türü.",
+    "examples": [
+      "Sponsor Firma"
+    ]
+  },
+  {
+    "entity": "PROMO_CODE",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "Promosyon Kodu"
+    ]
+  },
+  {
+    "entity": "PROPERTY_IDENTIFIER",
+    "description": "Gayrimenkul alanında kullanılan entity türü.",
+    "examples": [
+      "Ada / Parsel Bilgisi"
+    ]
+  },
+  {
+    "entity": "PROPERTY_STATUS",
+    "description": "Gayrimenkul alanında kullanılan entity türü.",
+    "examples": [
+      "Kat Mülkiyeti",
+      "Kat İrtifakı",
+      "Riskli Yapı"
+    ]
+  },
+  {
+    "entity": "PROPERTY_TYPE",
+    "description": "Gayrimenkul alanında kullanılan entity türü.",
+    "examples": [
+      "2B Arazi"
+    ]
+  },
+  {
+    "entity": "PURCHASE_OPTION",
+    "description": "Ticari Finansman alanında kullanılan entity türü.",
+    "examples": [
+      "Satın Alma Opsiyonu"
+    ]
+  },
+  {
+    "entity": "REAL_ESTATE_DEVELOPER",
+    "description": "Gayrimenkul alanında kullanılan entity türü.",
+    "examples": [
+      "Konut Projesi Geliştiricisi"
+    ]
+  },
+  {
+    "entity": "RECEIVABLE",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Vadeli İhracat Alacağı",
+      "Fatura Alacağı",
+      "Vadeli Alacak"
+    ]
+  },
+  {
+    "entity": "RECEIVABLE_MANAGEMENT",
+    "description": "Ticari Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Alacak Yönetimi"
+    ]
+  },
+  {
+    "entity": "REFERRAL_PROGRAM",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "Davet Et Kazan"
+    ]
+  },
+  {
+    "entity": "REGULATORY_BODY",
+    "description": "Katılım Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Merkezi Danışma Komitesi"
+    ]
+  },
+  {
+    "entity": "REPAYMENT_MODEL",
+    "description": "Tarım Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Hasat Vadeli Ödeme"
+    ]
+  },
+  {
+    "entity": "RESTRUCTURING",
+    "description": "Finansman Süreçleri alanında kullanılan entity türü.",
+    "examples": [
+      "Yeniden Yapılandırma"
+    ]
+  },
+  {
+    "entity": "REUSABLE_FINANCING",
+    "description": "Ticari Finansman alanında kullanılan entity türü.",
+    "examples": [
+      "Tekrar Kullanılabilir Finansman"
+    ]
+  },
+  {
+    "entity": "REWARD_POINT",
+    "description": "Kampanya alanında kullanılan entity türü.",
+    "examples": [
+      "Puan Kazanımı"
+    ]
+  },
+  {
+    "entity": "RISK_EVENT",
+    "description": "Ticari Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "Karşılıksız Çek"
+    ]
+  },
+  {
+    "entity": "RISK_PROFILE",
+    "description": "Risk ve Değerlendirme alanında kullanılan entity türü.",
+    "examples": [
+      "Müşteri Risk Profili"
+    ]
+  },
+  {
+    "entity": "RISK_TYPE",
+    "description": "Risk Yönetimi alanında kullanılan entity türü.",
+    "examples": [
+      "Kredi Riski",
+      "Likidite Riski",
+      "Operasyonel Risk",
+      "Piyasa Riski"
+    ]
+  },
+  {
+    "entity": "SALE_AND_LEASEBACK",
+    "description": "Ticari Finansman alanında kullanılan entity türü.",
+    "examples": [
+      "Sat-Geri Kirala"
+    ]
+  },
+  {
+    "entity": "SAVINGS_FINANCING",
+    "description": "Tasarruf Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Tasarruf Finansmanı"
+    ]
+  },
+  {
+    "entity": "SAVINGS_MODEL",
+    "description": "Tasarruf Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Müşteri Bazlı Plan",
+      "Çekilişli Plan"
+    ]
+  },
+  {
+    "entity": "SERVICE_CHANNEL",
+    "description": "Müşteri Hizmetleri alanında kullanılan entity türü.",
+    "examples": [
+      "Canlı Destek",
+      "Görüntülü Destek",
+      "Müşteri İletişim Merkezi"
+    ]
+  },
+  {
+    "entity": "SHARIA_CERTIFICATE",
+    "description": "Katılım Finans alanında kullanılan entity türü.",
+    "examples": [
+      "İcazet Belgesi"
+    ]
+  },
+  {
+    "entity": "SHARIA_PROHIBITION",
+    "description": "Katılım Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Gabin",
+      "Garar"
+    ]
+  },
+  {
+    "entity": "SHIPPING_DOCUMENTS",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Vesaik"
+    ]
+  },
+  {
+    "entity": "SPECIAL_PURPOSE_VEHICLE",
+    "description": "Ticari Finansman alanında kullanılan entity türü.",
+    "examples": [
+      "Proje Şirketi (SPV)"
+    ]
+  },
+  {
+    "entity": "START_DATE",
+    "description": "Tarihler alanında kullanılan entity türü.",
+    "examples": [
+      "Başlangıç Tarihi"
+    ]
+  },
+  {
+    "entity": "STATEMENT_BALANCE",
+    "description": "Kartlar alanında kullanılan entity türü.",
+    "examples": [
+      "Dönem Borcu"
+    ]
+  },
+  {
+    "entity": "STATEMENT_DATE",
+    "description": "Kartlar alanında kullanılan entity türü.",
+    "examples": [
+      "Ekstre Kesim Tarihi"
+    ]
+  },
+  {
+    "entity": "STRUCTURED_FINANCING",
+    "description": "Ticari Finansman alanında kullanılan entity türü.",
+    "examples": [
+      "Yapılandırılmış Finansman"
+    ]
+  },
+  {
+    "entity": "SUBSIDIZED_FINANCING",
+    "description": "Tarım Finansmanı alanında kullanılan entity türü.",
+    "examples": [
+      "Hazine Kâr Payı Destekli Finansman"
+    ]
+  },
+  {
+    "entity": "SUKUK_ISSUANCE",
+    "description": "Yatırım alanında kullanılan entity türü.",
+    "examples": [
+      "Kira Sertifikası İhracı"
+    ]
+  },
+  {
+    "entity": "SUPPLIER_PAYMENT",
+    "description": "Ödeme alanında kullanılan entity türü.",
+    "examples": [
+      "Satıcı Ödemesi"
+    ]
+  },
+  {
+    "entity": "SUSTAINABLE_FINANCING",
+    "description": "Sürdürülebilir Finans alanında kullanılan entity türü.",
+    "examples": [
+      "Sürdürülebilir Finansman"
+    ]
+  },
+  {
+    "entity": "TAKAFUL",
+    "description": "Sigorta alanında kullanılan entity türü.",
+    "examples": [
+      "Tekafül"
+    ]
+  },
+  {
+    "entity": "TARGET_CUSTOMER",
+    "description": "Müşteri alanında kullanılan entity türü.",
+    "examples": [
+      "Hedef Müşteri"
+    ]
+  },
+  {
+    "entity": "TOTAL_PAYMENT",
+    "description": "Tutarlar alanında kullanılan entity türü.",
+    "examples": [
+      "Toplam Geri Ödeme"
+    ]
+  },
+  {
+    "entity": "TRADE_DOCUMENT",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Gözetim Belgesi",
+      "Menşe Şahadetnamesi",
+      "Sigorta Poliçesi",
+      "Ticari Fatura",
+      "Çeki Listesi",
+      "A.TR Dolaşım Belgesi"
+    ]
+  },
+  {
+    "entity": "TRADE_FEE",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Demuraj"
+    ]
+  },
+  {
+    "entity": "TRADE_FINANCE_TERM",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Akreditif Açılışı",
+      "Akreditif Değişikliği",
+      "Akreditif Komisyonu",
+      "Akreditif Teyidi",
+      "Akreditif Tutarı",
+      "Akreditif Vadesi"
+    ]
+  },
+  {
+    "entity": "TRADE_PAYMENT_METHOD",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Kabul Kredili Ödeme",
+      "Mal Mukabili Ödeme",
+      "Vesaik Mukabili Ödeme"
+    ]
+  },
+  {
+    "entity": "TRANSACTION_ID",
+    "description": "Bankacılık İşlemleri alanında kullanılan entity türü.",
+    "examples": [
+      "İşlem Referans Numarası"
+    ]
+  },
+  {
+    "entity": "TRANSACTION_LIMIT",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "İşlem Limiti"
+    ]
+  },
+  {
+    "entity": "TRANSFER_RISK",
+    "description": "Dış Ticaret alanında kullanılan entity türü.",
+    "examples": [
+      "Transfer Riski"
+    ]
+  },
+  {
+    "entity": "TWO_FACTOR_AUTHENTICATION",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "İki Faktörlü Doğrulama"
+    ]
+  },
+  {
+    "entity": "URBAN_TRANSFORMATION_MODEL",
+    "description": "Gayrimenkul alanında kullanılan entity türü.",
+    "examples": [
+      "Yerinde Dönüşüm"
+    ]
+  },
+  {
+    "entity": "VALUE_DATE",
+    "description": "Yatırım alanında kullanılan entity türü.",
+    "examples": [
+      "Valör"
+    ]
+  },
+  {
+    "entity": "VERIFICATION_CODE",
+    "description": "Dijital Bankacılık alanında kullanılan entity türü.",
+    "examples": [
+      "SMS Doğrulama Kodu"
+    ]
+  },
+  {
+    "entity": "ZONING_STATUS",
+    "description": "Gayrimenkul alanında kullanılan entity türü.",
+    "examples": [
+      "İmar Durumu"
+    ]
+  }
+]

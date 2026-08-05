@@ -1,0 +1,187 @@
+{
+  "definition": {
+    "description": "Bir kavramın anlamını veya çalışma şeklini sorar.",
+    "patterns": [
+      "nedir",
+      "ne demek",
+      "nasıl çalışır",
+      "açıklar mısın"
+    ],
+    "target_entities": [
+      "ISLAMIC_CONTRACT",
+      "PRODUCT",
+      "ACCOUNT_TYPE",
+      "PAYMENT_SYSTEM"
+    ]
+  },
+  "product_search": {
+    "description": "Belirli ihtiyaç için uygun ürün arar.",
+    "patterns": [
+      "hangi finansman",
+      "hangi ürün",
+      "uygun ürün",
+      "ne kullanabilirim"
+    ],
+    "target_entities": [
+      "PRODUCT",
+      "PRODUCT_FAMILY",
+      "GREEN_FINANCING_PRODUCT"
+    ]
+  },
+  "product_comparison": {
+    "description": "Ürünleri veya bankaları oran, vade, masraf ve avantaj açısından karşılaştırır.",
+    "patterns": [
+      "karşılaştır",
+      "hangisi daha iyi",
+      "en düşük",
+      "en uzun vade"
+    ],
+    "target_entities": [
+      "PRODUCT",
+      "BANK",
+      "PROFIT_RATE",
+      "MATURITY",
+      "FEE"
+    ]
+  },
+  "application_requirements": {
+    "description": "Başvuru koşullarını ve gerekli belgeleri sorar.",
+    "patterns": [
+      "başvuru şartları",
+      "hangi belgeler",
+      "kimler başvurabilir",
+      "gereken evrak"
+    ],
+    "target_entities": [
+      "DOCUMENT",
+      "TARGET_CUSTOMER",
+      "CONDITION",
+      "APPLICATION_CHANNEL"
+    ]
+  },
+  "rate_query": {
+    "description": "Kâr payı, indirim veya paylaşım oranını sorar.",
+    "patterns": [
+      "oran kaç",
+      "kâr payı",
+      "indirim oranı",
+      "paylaşım oranı"
+    ],
+    "target_entities": [
+      "PROFIT_RATE",
+      "DISCOUNT_RATE",
+      "PROFIT_SHARING_RATIO"
+    ]
+  },
+  "maturity_query": {
+    "description": "Vade, ödeme süresi veya erteleme dönemini sorar.",
+    "patterns": [
+      "kaç ay",
+      "vade",
+      "ödeme süresi",
+      "erteleme"
+    ],
+    "target_entities": [
+      "MATURITY",
+      "GRACE_PERIOD",
+      "INSTALLMENT_COUNT"
+    ]
+  },
+  "campaign_query": {
+    "description": "Kampanya avantajı, koşulu ve geçerlilik tarihini sorar.",
+    "patterns": [
+      "kampanya",
+      "fırsat",
+      "indirim",
+      "nakit iade",
+      "ne zamana kadar"
+    ],
+    "target_entities": [
+      "CAMPAIGN",
+      "CAMPAIGN_BENEFIT",
+      "CONDITION",
+      "START_DATE",
+      "END_DATE"
+    ]
+  },
+  "transaction_howto": {
+    "description": "Dijital veya fiziksel bankacılık işleminin nasıl yapılacağını sorar.",
+    "patterns": [
+      "nasıl yapılır",
+      "nereden yaparım",
+      "nasıl kullanırım",
+      "işlem adımları"
+    ],
+    "target_entities": [
+      "DIGITAL_CHANNEL",
+      "PAYMENT_SYSTEM",
+      "BANKING_SERVICE",
+      "APPLICATION_CHANNEL"
+    ]
+  },
+  "trade_finance_query": {
+    "description": "Dış ticaret ödeme, garanti, akreditif veya belge süreçlerini sorar.",
+    "patterns": [
+      "akreditif",
+      "teminat mektubu",
+      "ithalat",
+      "ihracat",
+      "vesaik"
+    ],
+    "target_entities": [
+      "TRADE_FINANCE_TERM",
+      "TRADE_DOCUMENT",
+      "PAYMENT_METHOD",
+      "GUARANTEE_TYPE"
+    ]
+  },
+  "agriculture_finance_query": {
+    "description": "Tarım, hayvancılık, ekipman veya sezonluk ödeme finansmanı sorar.",
+    "patterns": [
+      "tarım",
+      "çiftçi",
+      "hasat",
+      "hayvancılık",
+      "sera",
+      "traktör"
+    ],
+    "target_entities": [
+      "AGRICULTURE_TERM",
+      "AGRICULTURE_ACTIVITY",
+      "IRRIGATION_SYSTEM",
+      "PRODUCT"
+    ]
+  },
+  "investment_query": {
+    "description": "Fon, kira sertifikası, hesap veya yatırım ürününü sorar.",
+    "patterns": [
+      "fon",
+      "yatırım",
+      "kira sertifikası",
+      "sukuk",
+      "getiri"
+    ],
+    "target_entities": [
+      "INVESTMENT_TERM",
+      "INVESTMENT_FUND",
+      "CAPITAL_MARKET_INSTRUMENT",
+      "ACCOUNT_TYPE"
+    ]
+  },
+  "complaint_support": {
+    "description": "İtiraz, şikâyet, hata veya müşteri hizmeti talebini ifade eder.",
+    "patterns": [
+      "itiraz",
+      "şikâyet",
+      "hata",
+      "işlem olmadı",
+      "destek"
+    ],
+    "target_entities": [
+      "COMPLAINT",
+      "DISPUTE_PROCESS",
+      "SERVICE_CHANNEL",
+      "TRANSACTION_ID"
+    ]
+  }
+}

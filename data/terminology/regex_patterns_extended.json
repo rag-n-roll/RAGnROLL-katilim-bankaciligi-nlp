@@ -1,0 +1,182 @@
+[
+  {
+    "extraction_tag": "PROFIT_RATE",
+    "pattern": "%\\s*\\d+(?:[.,]\\d+)?",
+    "example": "%2,49",
+    "description": "Kâr payı / oran"
+  },
+  {
+    "extraction_tag": "MATURITY",
+    "pattern": "\\b\\d+\\s*(?:ay|yıl)\\b",
+    "example": "36 ay",
+    "description": "Vade"
+  },
+  {
+    "extraction_tag": "INSTALLMENT_COUNT",
+    "pattern": "\\b\\d+\\s*taksit\\b",
+    "example": "12 taksit",
+    "description": "Taksit sayısı"
+  },
+  {
+    "extraction_tag": "AMOUNT",
+    "pattern": "\\b\\d{1,3}(?:[.\\s]\\d{3})*(?:[.,]\\d+)?\\s*(?:TL|₺|USD|EUR|GBP)\\b",
+    "example": "500.000 TL",
+    "description": "Genel tutar"
+  },
+  {
+    "extraction_tag": "DATE",
+    "pattern": "\\b(?:0?[1-9]|[12]\\d|3[01])[./-](?:0?[1-9]|1[0-2])[./-](?:20)?\\d{2}\\b",
+    "example": "31.08.2026",
+    "description": "Tarih"
+  },
+  {
+    "extraction_tag": "PERCENT",
+    "pattern": "%\\s*\\d+(?:[.,]\\d+)?",
+    "example": "%10",
+    "description": "Yüzde"
+  },
+  {
+    "extraction_tag": "CURRENCY",
+    "pattern": "\\b(?:TL|TRY|₺|USD|EUR|GBP|XAU)\\b",
+    "example": "USD",
+    "description": "Para birimi"
+  },
+  {
+    "extraction_tag": "IBAN",
+    "pattern": "\\bTR\\d{24}\\b",
+    "example": "TR1200062000...",
+    "description": "IBAN"
+  },
+  {
+    "extraction_tag": "VKN",
+    "pattern": "\\b\\d{10}\\b",
+    "example": "1234567890",
+    "description": "Vergi kimlik numarası"
+  },
+  {
+    "extraction_tag": "TCKN",
+    "pattern": "\\b\\d{11}\\b",
+    "example": "12345678901",
+    "description": "T.C. kimlik numarası"
+  },
+  {
+    "extraction_tag": "DATE_RANGE",
+    "pattern": "\\b\\d{1,2}[./-]\\d{1,2}[./-]\\d{2,4}\\s*[-–]\\s*\\d{1,2}[./-]\\d{1,2}[./-]\\d{2,4}\\b",
+    "example": "01.08.2026 - 31.08.2026",
+    "description": "Tarih aralığı"
+  },
+  {
+    "extraction_tag": "DOWN_PAYMENT_RATE",
+    "pattern": "%\\s*\\d+(?:[.,]\\d+)?\\s*peşinat",
+    "example": "%20 peşinat",
+    "description": "Peşinat oranı"
+  },
+  {
+    "extraction_tag": "GRACE_PERIOD",
+    "pattern": "\\b\\d+\\s*(?:ay|yıl)\\s*(?:ödemesiz|ertelemeli)\\b",
+    "example": "3 ay ödemesiz",
+    "description": "Ödemesiz dönem"
+  },
+  {
+    "extraction_tag": "MINIMUM_SPEND",
+    "pattern": "\\b(?:en az|min\\.?)\\s*\\d{1,3}(?:[.\\s]\\d{3})*(?:[.,]\\d+)?\\s*(?:TL|₺)\\b",
+    "example": "en az 1.000 TL",
+    "description": "Minimum harcama"
+  },
+  {
+    "extraction_tag": "DISCOUNT_RATE",
+    "pattern": "%\\s*\\d+(?:[.,]\\d+)?\\s*indirim",
+    "example": "%15 indirim",
+    "description": "İndirim oranı"
+  },
+  {
+    "extraction_tag": "REWARD_AMOUNT",
+    "pattern": "\\b\\d{1,3}(?:[.\\s]\\d{3})*(?:[.,]\\d+)?\\s*(?:TL|₺)\\s*(?:puan|iade|ödül)\\b",
+    "example": "500 TL iade",
+    "description": "Ödül tutarı"
+  },
+  {
+    "extraction_tag": "INSTALLMENT_RANGE",
+    "pattern": "\\b\\d+\\s*[-–]\\s*\\d+\\s*taksit\\b",
+    "example": "3-12 taksit",
+    "description": "Taksit aralığı"
+  },
+  {
+    "extraction_tag": "AGE_LIMIT",
+    "pattern": "\\b\\d+\\s*yaş(?:ına)?\\s*(?:kadar|altı|üstü)?\\b",
+    "example": "12 yaşına kadar",
+    "description": "Yaş sınırı"
+  },
+  {
+    "extraction_tag": "CARD_NUMBER",
+    "pattern": "\\b(?:\\d[ -]*?){13,19}\\b",
+    "example": "5400 1234 5678 9012",
+    "description": "Kart numarası"
+  },
+  {
+    "extraction_tag": "CVV",
+    "pattern": "\\b\\d{3,4}\\b",
+    "example": "123",
+    "description": "Kart güvenlik kodu; bağlam kontrolü gerekir"
+  },
+  {
+    "extraction_tag": "GTIP",
+    "pattern": "\\b\\d{4}\\.\\d{2}\\.\\d{2}\\.\\d{2}\\.\\d{2}\\b",
+    "example": "8471.30.00.00.00",
+    "description": "GTİP kodu"
+  },
+  {
+    "extraction_tag": "MERSIS",
+    "pattern": "\\b0?\\d{16}\\b",
+    "example": "0123456789012345",
+    "description": "MERSİS numarası"
+  },
+  {
+    "extraction_tag": "NACE",
+    "pattern": "\\b\\d{2}\\.\\d{2}(?:\\.\\d{2})?\\b",
+    "example": "62.01.01",
+    "description": "NACE faaliyet kodu"
+  },
+  {
+    "extraction_tag": "SWIFT_BIC",
+    "pattern": "\\b[A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\\b",
+    "example": "TCZBTR2A",
+    "description": "SWIFT/BIC kodu"
+  },
+  {
+    "extraction_tag": "PERCENTAGE",
+    "pattern": "%\\s*\\d+(?:[.,]\\d+)?",
+    "example": "%25",
+    "description": "Genel yüzde"
+  },
+  {
+    "extraction_tag": "DATE_TEXT_TR",
+    "pattern": "\\b\\d{1,2}\\s+(?:Ocak|Şubat|Mart|Nisan|Mayıs|Haziran|Temmuz|Ağustos|Eylül|Ekim|Kasım|Aralık)\\s+\\d{4}\\b",
+    "example": "31 Ağustos 2026",
+    "description": "Türkçe yazılı tarih"
+  },
+  {
+    "extraction_tag": "TIME",
+    "pattern": "\\b(?:[01]\\d|2[0-3]):[0-5]\\d\\b",
+    "example": "17:30",
+    "description": "Saat"
+  },
+  {
+    "extraction_tag": "TERM_DAYS",
+    "pattern": "\\b\\d+\\s*gün\\b",
+    "example": "90 gün",
+    "description": "Gün bazlı vade"
+  },
+  {
+    "extraction_tag": "ACCOUNT_NUMBER",
+    "pattern": "\\b\\d{8,16}\\b",
+    "example": "1234567890",
+    "description": "Hesap numarası; bağlam kontrolü gerekir"
+  },
+  {
+    "extraction_tag": "POLICY_NUMBER",
+    "pattern": "\\b[A-Z0-9/-]{6,24}\\b",
+    "example": "POL-2026-123456",
+    "description": "Poliçe numarası; bağlam kontrolü gerekir"
+  }
+]

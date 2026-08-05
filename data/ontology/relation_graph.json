@@ -1,0 +1,2416 @@
+{
+  "metadata": {
+    "edge_count": 266,
+    "relation_types": {
+      "RELATED_TO": 118,
+      "IS_A_DOCUMENT": 49,
+      "IS_A_PRODUCT": 73,
+      "IS_AN_ORGANIZATION": 12,
+      "USES": 2,
+      "DISTRIBUTES": 1,
+      "MAY_REQUIRE": 2,
+      "GOVERNED_BY": 2,
+      "FINANCES": 1,
+      "PAYS": 1,
+      "COLLECTS_FROM": 1,
+      "TARGETS": 2,
+      "USES_PLATFORM": 2
+    }
+  },
+  "edges": [
+    {
+      "source_id": "TRM0016",
+      "source_term": "Risk Tespit Raporu",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0016",
+      "source_term": "Risk Tespit Raporu",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0035",
+      "source_term": "İskân İzni",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0035",
+      "source_term": "İskân İzni",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0042",
+      "source_term": "Alışveriş Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM1220",
+      "target_term": "Üye İşyeri",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0044",
+      "source_term": "Arsa Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0367",
+      "target_term": "İmar Durumu",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0045",
+      "source_term": "Konut Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0785",
+      "target_term": "İpotek",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0045",
+      "source_term": "Konut Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0054",
+      "target_term": "Ekspertiz Değeri",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0045",
+      "source_term": "Konut Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM1110",
+      "target_term": "Peşinat",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0046",
+      "source_term": "İş Yeri Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0785",
+      "target_term": "İpotek",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0047",
+      "source_term": "Kentsel Dönüşüm Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0047",
+      "source_term": "Kentsel Dönüşüm Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0051",
+      "source_term": "Deniz Taşıtları Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0052",
+      "source_term": "Motosiklet Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0050",
+      "target_term": "Araç Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0053",
+      "source_term": "İhtiyaç Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0032",
+      "target_term": "Proforma Fatura",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0054",
+      "source_term": "Ekspertiz Değeri",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0054",
+      "source_term": "Ekspertiz Değeri",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0142",
+      "source_term": "SMS Doğrulama Kodu",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0153",
+      "source_term": "Görüntülü Müşteri Edinimi",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0160",
+      "source_term": "Taksitlio",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0161",
+      "source_term": "Dijital Sözleşme Onayı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0163",
+      "source_term": "CebimPOS",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0164",
+      "source_term": "CebimPOS ile Alışveriş Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0165",
+      "source_term": "Taksitlio Alışveriş Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0169",
+      "source_term": "SMS'li Finansman",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0172",
+      "source_term": "QR Kod ile Finansman",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0347",
+      "source_term": "Yeniden Yapılandırma",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0659",
+      "target_term": "Vade",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0348",
+      "source_term": "Erken Ödeme",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0353",
+      "target_term": "Erken Kapama",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0351",
+      "source_term": "Ödeme Erteleme",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0352",
+      "target_term": "Ödemesiz Dönem",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0353",
+      "source_term": "Erken Kapama",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0348",
+      "target_term": "Erken Ödeme",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0366",
+      "source_term": "2B Arazi",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0366",
+      "source_term": "2B Arazi",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0367",
+      "source_term": "İmar Durumu",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0367",
+      "source_term": "İmar Durumu",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0368",
+      "source_term": "Yerinde Dönüşüm",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0368",
+      "source_term": "Yerinde Dönüşüm",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0371",
+      "source_term": "Kat Mülkiyeti",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0371",
+      "source_term": "Kat Mülkiyeti",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0372",
+      "source_term": "Kat İrtifakı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0372",
+      "source_term": "Kat İrtifakı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0373",
+      "source_term": "Ada / Parsel Bilgisi",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0373",
+      "source_term": "Ada / Parsel Bilgisi",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0374",
+      "source_term": "Riskli Yapı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0374",
+      "source_term": "Riskli Yapı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0375",
+      "source_term": "Güçlendirme",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0375",
+      "source_term": "Güçlendirme",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0378",
+      "source_term": "Özel Cari Hesap",
+      "relation": "RELATED_TO",
+      "target_id": "TRM1115",
+      "target_term": "IBAN",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0378",
+      "source_term": "Özel Cari Hesap",
+      "relation": "RELATED_TO",
+      "target_id": "TRM1112",
+      "target_term": "Havale",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0379",
+      "source_term": "Döviz Katılma Hesabı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0385",
+      "target_term": "Katılma Hesabı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0379",
+      "source_term": "Döviz Katılma Hesabı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0780",
+      "target_term": "Para Birimi",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0384",
+      "source_term": "Birikimli Katılma Hesabı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0385",
+      "target_term": "Katılma Hesabı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0387",
+      "source_term": "Altın Katılma Hesabı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0385",
+      "target_term": "Katılma Hesabı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0392",
+      "source_term": "Hesap Yenileme",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0659",
+      "target_term": "Vade",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0393",
+      "source_term": "Vadeli Hesap",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0659",
+      "target_term": "Vade",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0401",
+      "source_term": "%0 Kâr Payı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0505",
+      "target_term": "Kâr Payı Oranı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0405",
+      "source_term": "Mobil Başvuruya Özel",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0057",
+      "target_term": "Mobil Başvuru",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0418",
+      "source_term": "Sınırlı Süre",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0661",
+      "target_term": "Başlangıç Tarihi",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0418",
+      "source_term": "Sınırlı Süre",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0662",
+      "target_term": "Bitiş Tarihi",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0419",
+      "source_term": "Vade Farksız Taksit",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0660",
+      "target_term": "Taksit Sayısı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0420",
+      "source_term": "İlk Taksit Erteleme",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0351",
+      "target_term": "Ödeme Erteleme",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0433",
+      "source_term": "Pratik Finansman Kart",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0440",
+      "source_term": "Sanal Pratik Finansman Kart",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0447",
+      "source_term": "Makasıd",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0448",
+      "source_term": "Merkezi Danışma Komitesi",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0449",
+      "source_term": "Karz-ı Hasen",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0450",
+      "source_term": "Maslahat",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0451",
+      "source_term": "İcare",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0454",
+      "source_term": "Kâr Paylaşım Oranı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0385",
+      "target_term": "Katılma Hesabı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0455",
+      "source_term": "Kâr Payı Dağıtımı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0385",
+      "target_term": "Katılma Hesabı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0456",
+      "source_term": "Teverruk",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0457",
+      "source_term": "Kâr Paylaşımı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0458",
+      "source_term": "Zarar Paylaşımı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0459",
+      "source_term": "Mudârebe",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0460",
+      "source_term": "Müşareke",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0461",
+      "source_term": "Kâr-Zarar Ortaklığı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0462",
+      "source_term": "Murabaha",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0463",
+      "source_term": "Katılım Esasları",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0464",
+      "source_term": "Katılım Uyum Birimi",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0465",
+      "source_term": "İcazet Belgesi",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0466",
+      "source_term": "Yatırım Vekâleti",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0467",
+      "source_term": "Yatırım Vekâletine Dayalı Finansman",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0468",
+      "source_term": "Gabin",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0469",
+      "source_term": "Garar",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0463",
+      "target_term": "Katılım Esasları",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0481",
+      "source_term": "TARSİM",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0520",
+      "target_term": "Tarımsal Sigorta",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0484",
+      "source_term": "Ön Limit",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0489",
+      "source_term": "Limit Tahsisi",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0485",
+      "target_term": "Kullanılabilir Limit",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0490",
+      "source_term": "6292 Sayılı Kanun",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0490",
+      "source_term": "6292 Sayılı Kanun",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0785",
+      "source_term": "İpotek",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0785",
+      "source_term": "İpotek",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0900",
+      "source_term": "Taşıt Kiralama Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0910",
+      "source_term": "Bloke Tutar",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0001",
+      "target_term": "Bloke",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1110",
+      "source_term": "Peşinat",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1110",
+      "source_term": "Peşinat",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1111",
+      "source_term": "FAST",
+      "relation": "RELATED_TO",
+      "target_id": "TRM1168",
+      "target_term": "Para Transferi",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1112",
+      "source_term": "Havale",
+      "relation": "RELATED_TO",
+      "target_id": "TRM1168",
+      "target_term": "Para Transferi",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1113",
+      "source_term": "EFT",
+      "relation": "RELATED_TO",
+      "target_id": "TRM1168",
+      "target_term": "Para Transferi",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1115",
+      "source_term": "IBAN",
+      "relation": "RELATED_TO",
+      "target_id": "TRM1168",
+      "target_term": "Para Transferi",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1116",
+      "source_term": "Virman",
+      "relation": "RELATED_TO",
+      "target_id": "TRM1168",
+      "target_term": "Para Transferi",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1214",
+      "source_term": "SWIFT GPI",
+      "relation": "RELATED_TO",
+      "target_id": "TRM1216",
+      "target_term": "SWIFT",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1215",
+      "source_term": "Kolay Adres",
+      "relation": "RELATED_TO",
+      "target_id": "TRM1111",
+      "target_term": "FAST",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1230",
+      "source_term": "Arsa Edindirme Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1230",
+      "source_term": "Arsa Edindirme Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1231",
+      "source_term": "Hepsiburada Alışveriş Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1232",
+      "source_term": "Trendyol Alışveriş Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1233",
+      "source_term": "Gurbetten Sılaya Gayrimenkul Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1233",
+      "source_term": "Gurbetten Sılaya Gayrimenkul Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1234",
+      "source_term": "Konut Edindirme Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1234",
+      "source_term": "Konut Edindirme Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1235",
+      "source_term": "İlk Evim Konut Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1235",
+      "source_term": "İlk Evim Konut Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1236",
+      "source_term": "LC Waikiki Alışveriş Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1237",
+      "source_term": "Teknosa Alışveriş Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1239",
+      "source_term": "TOGG Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0042",
+      "target_term": "Alışveriş Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1240",
+      "source_term": "Taşıt Edindirme Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1240",
+      "source_term": "Taşıt Edindirme Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1241",
+      "source_term": "İş Yeri Edindirme Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0045",
+      "target_term": "Konut Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM1241",
+      "source_term": "İş Yeri Edindirme Finansmanı",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0044",
+      "target_term": "Arsa Finansmanı",
+      "confidence": 0.85,
+      "origin": "terminology_related_terms"
+    },
+    {
+      "source_id": "TRM0004",
+      "source_term": "İkametgâh Belgesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0005",
+      "source_term": "Bilanço",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0006",
+      "source_term": "Gelir Tablosu",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0007",
+      "source_term": "Nakit Akış Tablosu",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0008",
+      "source_term": "Son Üç Yıl Bilançosu",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0009",
+      "source_term": "Tapu Fotokopisi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0010",
+      "source_term": "Gelir Belgesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0011",
+      "source_term": "Maaş Bordrosu",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0012",
+      "source_term": "Belge",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0013",
+      "source_term": "Hayvan Varlığı Listesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0014",
+      "source_term": "Hesap Cüzdanı",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0015",
+      "source_term": "Kart Ekstresi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0016",
+      "source_term": "Risk Tespit Raporu",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0017",
+      "source_term": "Pasaport",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0018",
+      "source_term": "Sürücü Belgesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0019",
+      "source_term": "T.C. Kimlik Kartı",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0020",
+      "source_term": "Mizan",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0021",
+      "source_term": "Fizibilite Raporu",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0022",
+      "source_term": "Proje Tanıtım Dosyası",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0023",
+      "source_term": "DASK Poliçesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0024",
+      "source_term": "ÇKS Belgesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0025",
+      "source_term": "İşletme Tescil Belgesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0026",
+      "source_term": "Araç Satış Sözleşmesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0027",
+      "source_term": "Ruhsat Fotokopisi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0028",
+      "source_term": "Trafik Tescil Belgesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0029",
+      "source_term": "Teminat Listesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0030",
+      "source_term": "Faaliyet Belgesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0031",
+      "source_term": "Oda Kayıt Belgesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0032",
+      "source_term": "Proforma Fatura",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0033",
+      "source_term": "Ticaret Sicil Gazetesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0034",
+      "source_term": "Vergi Levhası",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0035",
+      "source_term": "İskân İzni",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0036",
+      "source_term": "İmza Beyannamesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0037",
+      "source_term": "İmza Sirküleri",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0038",
+      "source_term": "SGK Hizmet Dökümü",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0039",
+      "source_term": "Kapasite Raporu",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0040",
+      "source_term": "İş Planı",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0041",
+      "source_term": "Ortaklık Yapısı Belgesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_003",
+      "target_term": "Belgeler",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0042",
+      "source_term": "Alışveriş Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_004",
+      "target_term": "Bireysel Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0043",
+      "source_term": "Eğitim Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_004",
+      "target_term": "Bireysel Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0044",
+      "source_term": "Arsa Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_004",
+      "target_term": "Bireysel Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0045",
+      "source_term": "Konut Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_004",
+      "target_term": "Bireysel Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0046",
+      "source_term": "İş Yeri Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_004",
+      "target_term": "Bireysel Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0047",
+      "source_term": "Kentsel Dönüşüm Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_004",
+      "target_term": "Bireysel Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0048",
+      "source_term": "Seyahat Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_004",
+      "target_term": "Bireysel Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0049",
+      "source_term": "Umre Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_004",
+      "target_term": "Bireysel Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0050",
+      "source_term": "Araç Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_004",
+      "target_term": "Bireysel Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0051",
+      "source_term": "Deniz Taşıtları Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_004",
+      "target_term": "Bireysel Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0052",
+      "source_term": "Motosiklet Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_004",
+      "target_term": "Bireysel Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0053",
+      "source_term": "İhtiyaç Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_004",
+      "target_term": "Bireysel Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0164",
+      "source_term": "CebimPOS ile Alışveriş Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_007",
+      "target_term": "Dijital Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0165",
+      "source_term": "Taksitlio Alışveriş Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_007",
+      "target_term": "Dijital Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0166",
+      "source_term": "Veresiye Alışveriş Kredisi",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_007",
+      "target_term": "Dijital Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0167",
+      "source_term": "KOBİ Anında Finansman",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_007",
+      "target_term": "Dijital Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0169",
+      "source_term": "SMS'li Finansman",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_007",
+      "target_term": "Dijital Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0170",
+      "source_term": "Dijital Taksitli Ticari Finansman Desteği",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_007",
+      "target_term": "Dijital Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0171",
+      "source_term": "Jet Ticari Finansman",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_007",
+      "target_term": "Dijital Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0179",
+      "source_term": "İhracat Akreditifi",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0180",
+      "source_term": "İthalat Akreditifi",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0187",
+      "source_term": "Gözetim Belgesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0188",
+      "source_term": "Menşe Şahadetnamesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0189",
+      "source_term": "Sigorta Poliçesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0190",
+      "source_term": "Ticari Fatura",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0191",
+      "source_term": "Çeki Listesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0195",
+      "source_term": "Sevk Öncesi İhracat Kredisi (SÖİK)",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0200",
+      "source_term": "A.TR Dolaşım Belgesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0201",
+      "source_term": "EUR.1 Dolaşım Belgesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0202",
+      "source_term": "Gümrük Beyannamesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0225",
+      "source_term": "Hava Yolu Taşıma Senedi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0226",
+      "source_term": "Karayolu Taşıma Belgesi",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0227",
+      "source_term": "Konşimento",
+      "relation": "IS_A_DOCUMENT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0229",
+      "source_term": "Eximbank Temlik Teyidi",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0232",
+      "source_term": "Akreditif",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0237",
+      "source_term": "Vadeli İhracat Finansmanı (VİF)",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0343",
+      "source_term": "İthalat Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_009",
+      "target_term": "Dış Ticaret",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0355",
+      "source_term": "Teminat Mektubu",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_012",
+      "target_term": "Gayri Nakdi Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0357",
+      "source_term": "Kabul-Aval Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_012",
+      "target_term": "Gayri Nakdi Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0359",
+      "source_term": "Referans Mektubu",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_012",
+      "target_term": "Gayri Nakdi Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0365",
+      "source_term": "Harici Garanti",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_012",
+      "target_term": "Gayri Nakdi Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0448",
+      "source_term": "Merkezi Danışma Komitesi",
+      "relation": "IS_AN_ORGANIZATION",
+      "target_id": "CAT_018",
+      "target_term": "Katılım Finans",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0467",
+      "source_term": "Yatırım Vekâletine Dayalı Finansman",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_018",
+      "target_term": "Katılım Finans",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0471",
+      "source_term": "Katılım Finans Kefalet (KFK)",
+      "relation": "IS_AN_ORGANIZATION",
+      "target_id": "CAT_019",
+      "target_term": "Kefalet",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0473",
+      "source_term": "BDDK",
+      "relation": "IS_AN_ORGANIZATION",
+      "target_id": "CAT_020",
+      "target_term": "Kurumlar",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0474",
+      "source_term": "TKBB",
+      "relation": "IS_AN_ORGANIZATION",
+      "target_id": "CAT_020",
+      "target_term": "Kurumlar",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0475",
+      "source_term": "MASAK",
+      "relation": "IS_AN_ORGANIZATION",
+      "target_id": "CAT_020",
+      "target_term": "Kurumlar",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0476",
+      "source_term": "TCMB",
+      "relation": "IS_AN_ORGANIZATION",
+      "target_id": "CAT_020",
+      "target_term": "Kurumlar",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0477",
+      "source_term": "TMSF",
+      "relation": "IS_AN_ORGANIZATION",
+      "target_id": "CAT_020",
+      "target_term": "Kurumlar",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0478",
+      "source_term": "Portföy Yönetim Şirketi",
+      "relation": "IS_AN_ORGANIZATION",
+      "target_id": "CAT_020",
+      "target_term": "Kurumlar",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0479",
+      "source_term": "SPK",
+      "relation": "IS_AN_ORGANIZATION",
+      "target_id": "CAT_020",
+      "target_term": "Kurumlar",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0480",
+      "source_term": "TÜRİB",
+      "relation": "IS_AN_ORGANIZATION",
+      "target_id": "CAT_020",
+      "target_term": "Kurumlar",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0481",
+      "source_term": "TARSİM",
+      "relation": "IS_AN_ORGANIZATION",
+      "target_id": "CAT_020",
+      "target_term": "Kurumlar",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0482",
+      "source_term": "Türk Eximbank",
+      "relation": "IS_AN_ORGANIZATION",
+      "target_id": "CAT_020",
+      "target_term": "Kurumlar",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0643",
+      "source_term": "Enerji Verimliliği Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_031",
+      "target_term": "Sürdürülebilir Finans",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0647",
+      "source_term": "Çatı GES Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_031",
+      "target_term": "Sürdürülebilir Finans",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0653",
+      "source_term": "Elektrikli Araç Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_031",
+      "target_term": "Sürdürülebilir Finans",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0654",
+      "source_term": "Güneş Enerjisi Santrali Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_031",
+      "target_term": "Sürdürülebilir Finans",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0655",
+      "source_term": "Rüzgâr Enerjisi Santrali Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_031",
+      "target_term": "Sürdürülebilir Finans",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0663",
+      "source_term": "Arıcılık Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_034",
+      "target_term": "Tarım Finansmanı",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0664",
+      "source_term": "Bitkisel Üretim Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_034",
+      "target_term": "Tarım Finansmanı",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0671",
+      "source_term": "Fidan Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_034",
+      "target_term": "Tarım Finansmanı",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0672",
+      "source_term": "Gübre Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_034",
+      "target_term": "Tarım Finansmanı",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0674",
+      "source_term": "Tohum Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_034",
+      "target_term": "Tarım Finansmanı",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0675",
+      "source_term": "Yem Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_034",
+      "target_term": "Tarım Finansmanı",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0676",
+      "source_term": "Besi Hayvancılığı Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_034",
+      "target_term": "Tarım Finansmanı",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0680",
+      "source_term": "Süt Hayvancılığı Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_034",
+      "target_term": "Tarım Finansmanı",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0681",
+      "source_term": "Biçerdöver Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_034",
+      "target_term": "Tarım Finansmanı",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0682",
+      "source_term": "Tarım Makinesi Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_034",
+      "target_term": "Tarım Finansmanı",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0683",
+      "source_term": "Traktör Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_034",
+      "target_term": "Tarım Finansmanı",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0685",
+      "source_term": "Sera Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_034",
+      "target_term": "Tarım Finansmanı",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0688",
+      "source_term": "Sulama Sistemi Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_034",
+      "target_term": "Tarım Finansmanı",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0771",
+      "source_term": "Tarım ve Hayvancılık Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_034",
+      "target_term": "Tarım Finansmanı",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0781",
+      "source_term": "Ürün",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_036",
+      "target_term": "Temel Varlıklar",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0887",
+      "source_term": "Çek Karnesi",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_038",
+      "target_term": "Ticari Bankacılık",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0892",
+      "source_term": "Fatura Teminatlı Finansman",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_039",
+      "target_term": "Ticari Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0900",
+      "source_term": "Taşıt Kiralama Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_039",
+      "target_term": "Ticari Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0902",
+      "source_term": "Esnek Destek Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_039",
+      "target_term": "Ticari Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0903",
+      "source_term": "Taksitli Ticari Finansman",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_039",
+      "target_term": "Ticari Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0904",
+      "source_term": "Proje Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_039",
+      "target_term": "Ticari Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0907",
+      "source_term": "Tedarikçi Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_039",
+      "target_term": "Ticari Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0908",
+      "source_term": "Kira Sertifikası Teminatlı Finansman",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_039",
+      "target_term": "Ticari Finansman",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0999",
+      "source_term": "Kazançlı Fon Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_043",
+      "target_term": "Yatırım",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM1004",
+      "source_term": "Hızlı Fon Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_043",
+      "target_term": "Yatırım",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM1230",
+      "source_term": "Arsa Edindirme Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_048",
+      "target_term": "Ürün Adları",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM1231",
+      "source_term": "Hepsiburada Alışveriş Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_048",
+      "target_term": "Ürün Adları",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM1232",
+      "source_term": "Trendyol Alışveriş Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_048",
+      "target_term": "Ürün Adları",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM1233",
+      "source_term": "Gurbetten Sılaya Gayrimenkul Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_048",
+      "target_term": "Ürün Adları",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM1234",
+      "source_term": "Konut Edindirme Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_048",
+      "target_term": "Ürün Adları",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM1235",
+      "source_term": "İlk Evim Konut Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_048",
+      "target_term": "Ürün Adları",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM1236",
+      "source_term": "LC Waikiki Alışveriş Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_048",
+      "target_term": "Ürün Adları",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM1237",
+      "source_term": "Teknosa Alışveriş Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_048",
+      "target_term": "Ürün Adları",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM1238",
+      "source_term": "Enerya Karz-ı Hasen",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_048",
+      "target_term": "Ürün Adları",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM1239",
+      "source_term": "TOGG Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_048",
+      "target_term": "Ürün Adları",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM1240",
+      "source_term": "Taşıt Edindirme Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_048",
+      "target_term": "Ürün Adları",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM1241",
+      "source_term": "İş Yeri Edindirme Finansmanı",
+      "relation": "IS_A_PRODUCT",
+      "target_id": "CAT_048",
+      "target_term": "Ürün Adları",
+      "confidence": 1.0,
+      "origin": "entity_rule"
+    },
+    {
+      "source_id": "TRM0462",
+      "source_term": "Murabaha",
+      "relation": "USES",
+      "target_id": "TRM0505",
+      "target_term": "Kâr Payı Oranı",
+      "confidence": 0.95,
+      "origin": "curated_rule"
+    },
+    {
+      "source_id": "TRM0385",
+      "source_term": "Katılma Hesabı",
+      "relation": "DISTRIBUTES",
+      "target_id": "TRM0455",
+      "target_term": "Kâr Payı Dağıtımı",
+      "confidence": 0.95,
+      "origin": "curated_rule"
+    },
+    {
+      "source_id": "TRM0045",
+      "source_term": "Konut Finansmanı",
+      "relation": "MAY_REQUIRE",
+      "target_id": "TRM0785",
+      "target_term": "İpotek",
+      "confidence": 0.95,
+      "origin": "curated_rule"
+    },
+    {
+      "source_id": "TRM0045",
+      "source_term": "Konut Finansmanı",
+      "relation": "MAY_REQUIRE",
+      "target_id": "TRM0054",
+      "target_term": "Ekspertiz Değeri",
+      "confidence": 0.95,
+      "origin": "curated_rule"
+    },
+    {
+      "source_id": "TRM0232",
+      "source_term": "Akreditif",
+      "relation": "GOVERNED_BY",
+      "target_id": "TRM0230",
+      "target_term": "UCP 600",
+      "confidence": 0.95,
+      "origin": "curated_rule"
+    },
+    {
+      "source_id": "TRM0236",
+      "source_term": "Vesaik Mukabili Ödeme",
+      "relation": "GOVERNED_BY",
+      "target_id": "TRM0231",
+      "target_term": "URC 522",
+      "confidence": 0.95,
+      "origin": "curated_rule"
+    },
+    {
+      "source_id": "TRM0237",
+      "source_term": "Vadeli İhracat Finansmanı (VİF)",
+      "relation": "FINANCES",
+      "target_id": "TRM0181",
+      "target_term": "Vadeli İhracat Alacağı",
+      "confidence": 0.95,
+      "origin": "curated_rule"
+    },
+    {
+      "source_id": "TRM0907",
+      "source_term": "Tedarikçi Finansmanı",
+      "relation": "PAYS",
+      "target_id": "TRM0886",
+      "target_term": "Tedarikçi",
+      "confidence": 0.95,
+      "origin": "curated_rule"
+    },
+    {
+      "source_id": "TRM0502",
+      "source_term": "DBS (Doğrudan Borçlandırma Sistemi)",
+      "relation": "COLLECTS_FROM",
+      "target_id": "TRM0885",
+      "target_term": "Bayi",
+      "confidence": 0.95,
+      "origin": "curated_rule"
+    },
+    {
+      "source_id": "TRM0773",
+      "source_term": "Tasarruf Finansmanı",
+      "relation": "USES",
+      "target_id": "TRM0779",
+      "target_term": "Tahsis",
+      "confidence": 0.95,
+      "origin": "curated_rule"
+    },
+    {
+      "source_id": "TRM0047",
+      "source_term": "Kentsel Dönüşüm Finansmanı",
+      "relation": "TARGETS",
+      "target_id": "TRM0374",
+      "target_term": "Riskli Yapı",
+      "confidence": 0.95,
+      "origin": "curated_rule"
+    },
+    {
+      "source_id": "TRM0771",
+      "source_term": "Tarım ve Hayvancılık Finansmanı",
+      "relation": "TARGETS",
+      "target_id": "TRM0673",
+      "target_term": "Tarımsal Girdi",
+      "confidence": 0.95,
+      "origin": "curated_rule"
+    },
+    {
+      "source_id": "TRM0164",
+      "source_term": "CebimPOS ile Alışveriş Finansmanı",
+      "relation": "USES_PLATFORM",
+      "target_id": "TRM0163",
+      "target_term": "CebimPOS",
+      "confidence": 0.95,
+      "origin": "curated_rule"
+    },
+    {
+      "source_id": "TRM0165",
+      "source_term": "Taksitlio Alışveriş Finansmanı",
+      "relation": "USES_PLATFORM",
+      "target_id": "TRM0160",
+      "target_term": "Taksitlio",
+      "confidence": 0.95,
+      "origin": "curated_rule"
+    }
+  ]
+}
