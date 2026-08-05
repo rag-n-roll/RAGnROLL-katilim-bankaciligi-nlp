@@ -138,6 +138,6 @@ Streamlit, Python tabanlı yapısı ve hızlı geliştirme avantajı sayesinde d
 
 Projenin ana sayfa, karşılaştırma, detay, grafik, filtreleme ve chatbot gibi birden fazla arayüz bileşeni içermesi nedeniyle ana frontend teknolojisi olarak React + Next.js seçilmiştir.
 
-Bu kararın uygulanabilmesi için Python tabanlı NLP ve veri işleme modüllerinin FastAPI benzeri açık kaynaklı bir backend aracılığıyla REST API olarak sunulması planlanmaktadır.
+
 
 
