@@ -78,8 +78,14 @@ def run_validate(args: argparse.Namespace) -> int:
                 raise TypeError("Kayıt bir JSON nesnesi olmalı")
             converted = dict(row)
             for name in ("start_date", "end_date"):
-                converted[name] = date.fromisoformat(converted[name]) if converted.get(name) else None
-            converted["scraped_at"] = datetime.fromisoformat(converted["scraped_at"]) if converted.get("scraped_at") else None
+                if converted.get(name):
+                    converted[name] = date.fromisoformat(converted[name])
+                else:
+                    converted[name] = None
+            if converted.get("scraped_at"):
+                converted["scraped_at"] = datetime.fromisoformat(converted["scraped_at"])
+            else:
+                converted["scraped_at"] = None
             records.append(Campaign(**converted))
         except (TypeError, ValueError) as exc:
             source_url = row.get("source_url", "") if isinstance(row, dict) else ""
@@ -108,7 +114,12 @@ def run_preprocess(args: argparse.Namespace) -> int:
 
 
 def add_http_options(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--delay", type=float, default=1.0, help="Aynı sunucu istekleri arasındaki saniye")
+    parser.add_argument(
+        "--delay",
+        type=float,
+        default=1.0,
+        help="Aynı sunucu istekleri arasındaki saniye",
+    )
     parser.add_argument("--timeout", type=float, default=25.0)
     parser.add_argument(
         "--ignore-robots",
@@ -146,7 +157,10 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--output", type=Path, default=Path("outputs/quality_report.json"))
     validate.set_defaults(handler=run_validate)
 
-    preprocess = subparsers.add_parser("preprocess", help="Kampanya metinlerini temizle ve tokenize et")
+    preprocess = subparsers.add_parser(
+        "preprocess",
+        help="Kampanya metinlerini temizle ve tokenize et",
+    )
     preprocess.add_argument("input", type=Path)
     preprocess.add_argument("--output", type=Path, default=Path("data/processed/campaigns.json"))
     preprocess.set_defaults(handler=run_preprocess)

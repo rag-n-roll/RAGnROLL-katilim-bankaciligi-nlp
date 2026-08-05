@@ -39,7 +39,10 @@ def fetch_participation_banks(client: HttpClient | None = None) -> dict[str, Any
         name = re.sub(r"^\s*\d+\.\s*", "", name_element.get_text(" ", strip=True)).strip()
         website_element = item.select_one(".webAdresiContainer a[href]")
         detail = item.select_one("button.detayliGor")
-        digital_text = str(detail.get("data-isdijital", "")) if detail else item.get_text(" ", strip=True)
+        if detail:
+            digital_text = str(detail.get("data-isdijital", ""))
+        else:
+            digital_text = item.get_text(" ", strip=True)
         banks.append(
             {
                 "name": name,
