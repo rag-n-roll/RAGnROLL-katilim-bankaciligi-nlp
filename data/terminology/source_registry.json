@@ -1,0 +1,50 @@
+[
+  {
+    "code": "BDDK",
+    "name": "Bankacılık Düzenleme ve Denetleme Kurumu",
+    "url": "https://www.bddk.org.tr/Kurulus/Liste/77",
+    "scope": "Banka ve finansal kuruluş sınıfları"
+  },
+  {
+    "code": "TCMB",
+    "name": "Türkiye Cumhuriyet Merkez Bankası",
+    "url": "https://www.tcmb.gov.tr/wps/wcm/connect/TR/TCMB+TR/Main+Menu/Temel+Faaliyetler/Odeme+Sistemleri",
+    "scope": "Ödeme sistemleri, FAST ve para transferleri"
+  },
+  {
+    "code": "SPK_FUNDS",
+    "name": "Sermaye Piyasası Kurulu",
+    "url": "https://spk.gov.tr/kurumlar/fonlar/yatirim-fonlari",
+    "scope": "Yatırım fonları ve sermaye piyasaları"
+  },
+  {
+    "code": "SPK_GREEN",
+    "name": "Sermaye Piyasası Kurulu",
+    "url": "https://spk.gov.tr/surdurulebilirlik/yesil-borclanma-araci-surdurulebilir-borclanma-araci-yesil-kira-sertifikasi-surdurulebilir-kira-sertifikasi-rehberi-basin-duyurusu",
+    "scope": "Yeşil ve sürdürülebilir finans araçları"
+  },
+  {
+    "code": "MASAK",
+    "name": "Mali Suçları Araştırma Kurulu",
+    "url": "https://masak.hmb.gov.tr/yukumlulukler",
+    "scope": "Müşterini tanı, AML ve şüpheli işlem bildirimi"
+  },
+  {
+    "code": "TKBB",
+    "name": "Türkiye Katılım Bankaları Birliği",
+    "url": "https://tkbb.org.tr/",
+    "scope": "Katılım bankacılığı ve katılım sigortacılığı"
+  },
+  {
+    "code": "ICC",
+    "name": "International Chamber of Commerce",
+    "url": "https://iccwbo.org/business-solutions/incoterms-rules/",
+    "scope": "Incoterms ve dış ticaret kuralları"
+  },
+  {
+    "code": "SWIFT",
+    "name": "SWIFT",
+    "url": "https://www.swift.com/",
+    "scope": "Uluslararası banka mesajlaşması"
+  }
+]
