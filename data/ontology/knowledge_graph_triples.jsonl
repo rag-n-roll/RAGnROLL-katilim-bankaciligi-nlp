@@ -1,0 +1,266 @@
+{"subject": "Risk Tespit Raporu", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM0016", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "Risk Tespit Raporu", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM0016", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "İskân İzni", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM0035", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "İskân İzni", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM0035", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "Alışveriş Finansmanı", "predicate": "RELATED_TO", "object": "Üye İşyeri", "subject_id": "TRM0042", "object_id": "TRM1220", "confidence": 0.85}
+{"subject": "Arsa Finansmanı", "predicate": "RELATED_TO", "object": "İmar Durumu", "subject_id": "TRM0044", "object_id": "TRM0367", "confidence": 0.85}
+{"subject": "Konut Finansmanı", "predicate": "RELATED_TO", "object": "İpotek", "subject_id": "TRM0045", "object_id": "TRM0785", "confidence": 0.85}
+{"subject": "Konut Finansmanı", "predicate": "RELATED_TO", "object": "Ekspertiz Değeri", "subject_id": "TRM0045", "object_id": "TRM0054", "confidence": 0.85}
+{"subject": "Konut Finansmanı", "predicate": "RELATED_TO", "object": "Peşinat", "subject_id": "TRM0045", "object_id": "TRM1110", "confidence": 0.85}
+{"subject": "İş Yeri Finansmanı", "predicate": "RELATED_TO", "object": "İpotek", "subject_id": "TRM0046", "object_id": "TRM0785", "confidence": 0.85}
+{"subject": "Kentsel Dönüşüm Finansmanı", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM0047", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "Kentsel Dönüşüm Finansmanı", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM0047", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "Deniz Taşıtları Finansmanı", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM0051", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "Motosiklet Finansmanı", "predicate": "RELATED_TO", "object": "Araç Finansmanı", "subject_id": "TRM0052", "object_id": "TRM0050", "confidence": 0.85}
+{"subject": "İhtiyaç Finansmanı", "predicate": "RELATED_TO", "object": "Proforma Fatura", "subject_id": "TRM0053", "object_id": "TRM0032", "confidence": 0.85}
+{"subject": "Ekspertiz Değeri", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM0054", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "Ekspertiz Değeri", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM0054", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "SMS Doğrulama Kodu", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM0142", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "Görüntülü Müşteri Edinimi", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM0153", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "Taksitlio", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM0160", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "Dijital Sözleşme Onayı", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM0161", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "CebimPOS", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM0163", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "CebimPOS ile Alışveriş Finansmanı", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM0164", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "Taksitlio Alışveriş Finansmanı", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM0165", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "SMS'li Finansman", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM0169", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "QR Kod ile Finansman", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM0172", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "Yeniden Yapılandırma", "predicate": "RELATED_TO", "object": "Vade", "subject_id": "TRM0347", "object_id": "TRM0659", "confidence": 0.85}
+{"subject": "Erken Ödeme", "predicate": "RELATED_TO", "object": "Erken Kapama", "subject_id": "TRM0348", "object_id": "TRM0353", "confidence": 0.85}
+{"subject": "Ödeme Erteleme", "predicate": "RELATED_TO", "object": "Ödemesiz Dönem", "subject_id": "TRM0351", "object_id": "TRM0352", "confidence": 0.85}
+{"subject": "Erken Kapama", "predicate": "RELATED_TO", "object": "Erken Ödeme", "subject_id": "TRM0353", "object_id": "TRM0348", "confidence": 0.85}
+{"subject": "2B Arazi", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM0366", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "2B Arazi", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM0366", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "İmar Durumu", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM0367", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "İmar Durumu", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM0367", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "Yerinde Dönüşüm", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM0368", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "Yerinde Dönüşüm", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM0368", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "Kat Mülkiyeti", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM0371", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "Kat Mülkiyeti", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM0371", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "Kat İrtifakı", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM0372", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "Kat İrtifakı", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM0372", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "Ada / Parsel Bilgisi", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM0373", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "Ada / Parsel Bilgisi", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM0373", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "Riskli Yapı", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM0374", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "Riskli Yapı", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM0374", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "Güçlendirme", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM0375", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "Güçlendirme", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM0375", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "Özel Cari Hesap", "predicate": "RELATED_TO", "object": "IBAN", "subject_id": "TRM0378", "object_id": "TRM1115", "confidence": 0.85}
+{"subject": "Özel Cari Hesap", "predicate": "RELATED_TO", "object": "Havale", "subject_id": "TRM0378", "object_id": "TRM1112", "confidence": 0.85}
+{"subject": "Döviz Katılma Hesabı", "predicate": "RELATED_TO", "object": "Katılma Hesabı", "subject_id": "TRM0379", "object_id": "TRM0385", "confidence": 0.85}
+{"subject": "Döviz Katılma Hesabı", "predicate": "RELATED_TO", "object": "Para Birimi", "subject_id": "TRM0379", "object_id": "TRM0780", "confidence": 0.85}
+{"subject": "Birikimli Katılma Hesabı", "predicate": "RELATED_TO", "object": "Katılma Hesabı", "subject_id": "TRM0384", "object_id": "TRM0385", "confidence": 0.85}
+{"subject": "Altın Katılma Hesabı", "predicate": "RELATED_TO", "object": "Katılma Hesabı", "subject_id": "TRM0387", "object_id": "TRM0385", "confidence": 0.85}
+{"subject": "Hesap Yenileme", "predicate": "RELATED_TO", "object": "Vade", "subject_id": "TRM0392", "object_id": "TRM0659", "confidence": 0.85}
+{"subject": "Vadeli Hesap", "predicate": "RELATED_TO", "object": "Vade", "subject_id": "TRM0393", "object_id": "TRM0659", "confidence": 0.85}
+{"subject": "%0 Kâr Payı", "predicate": "RELATED_TO", "object": "Kâr Payı Oranı", "subject_id": "TRM0401", "object_id": "TRM0505", "confidence": 0.85}
+{"subject": "Mobil Başvuruya Özel", "predicate": "RELATED_TO", "object": "Mobil Başvuru", "subject_id": "TRM0405", "object_id": "TRM0057", "confidence": 0.85}
+{"subject": "Sınırlı Süre", "predicate": "RELATED_TO", "object": "Başlangıç Tarihi", "subject_id": "TRM0418", "object_id": "TRM0661", "confidence": 0.85}
+{"subject": "Sınırlı Süre", "predicate": "RELATED_TO", "object": "Bitiş Tarihi", "subject_id": "TRM0418", "object_id": "TRM0662", "confidence": 0.85}
+{"subject": "Vade Farksız Taksit", "predicate": "RELATED_TO", "object": "Taksit Sayısı", "subject_id": "TRM0419", "object_id": "TRM0660", "confidence": 0.85}
+{"subject": "İlk Taksit Erteleme", "predicate": "RELATED_TO", "object": "Ödeme Erteleme", "subject_id": "TRM0420", "object_id": "TRM0351", "confidence": 0.85}
+{"subject": "Pratik Finansman Kart", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM0433", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "Sanal Pratik Finansman Kart", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM0440", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "Makasıd", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0447", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "Merkezi Danışma Komitesi", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0448", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "Karz-ı Hasen", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0449", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "Maslahat", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0450", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "İcare", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0451", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "Kâr Paylaşım Oranı", "predicate": "RELATED_TO", "object": "Katılma Hesabı", "subject_id": "TRM0454", "object_id": "TRM0385", "confidence": 0.85}
+{"subject": "Kâr Payı Dağıtımı", "predicate": "RELATED_TO", "object": "Katılma Hesabı", "subject_id": "TRM0455", "object_id": "TRM0385", "confidence": 0.85}
+{"subject": "Teverruk", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0456", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "Kâr Paylaşımı", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0457", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "Zarar Paylaşımı", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0458", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "Mudârebe", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0459", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "Müşareke", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0460", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "Kâr-Zarar Ortaklığı", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0461", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "Murabaha", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0462", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "Katılım Esasları", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0463", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "Katılım Uyum Birimi", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0464", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "İcazet Belgesi", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0465", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "Yatırım Vekâleti", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0466", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "Yatırım Vekâletine Dayalı Finansman", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0467", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "Gabin", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0468", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "Garar", "predicate": "RELATED_TO", "object": "Katılım Esasları", "subject_id": "TRM0469", "object_id": "TRM0463", "confidence": 0.85}
+{"subject": "TARSİM", "predicate": "RELATED_TO", "object": "Tarımsal Sigorta", "subject_id": "TRM0481", "object_id": "TRM0520", "confidence": 0.85}
+{"subject": "Ön Limit", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM0484", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "Limit Tahsisi", "predicate": "RELATED_TO", "object": "Kullanılabilir Limit", "subject_id": "TRM0489", "object_id": "TRM0485", "confidence": 0.85}
+{"subject": "6292 Sayılı Kanun", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM0490", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "6292 Sayılı Kanun", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM0490", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "İpotek", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM0785", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "İpotek", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM0785", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "Taşıt Kiralama Finansmanı", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM0900", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "Bloke Tutar", "predicate": "RELATED_TO", "object": "Bloke", "subject_id": "TRM0910", "object_id": "TRM0001", "confidence": 0.85}
+{"subject": "Peşinat", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM1110", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "Peşinat", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM1110", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "FAST", "predicate": "RELATED_TO", "object": "Para Transferi", "subject_id": "TRM1111", "object_id": "TRM1168", "confidence": 0.85}
+{"subject": "Havale", "predicate": "RELATED_TO", "object": "Para Transferi", "subject_id": "TRM1112", "object_id": "TRM1168", "confidence": 0.85}
+{"subject": "EFT", "predicate": "RELATED_TO", "object": "Para Transferi", "subject_id": "TRM1113", "object_id": "TRM1168", "confidence": 0.85}
+{"subject": "IBAN", "predicate": "RELATED_TO", "object": "Para Transferi", "subject_id": "TRM1115", "object_id": "TRM1168", "confidence": 0.85}
+{"subject": "Virman", "predicate": "RELATED_TO", "object": "Para Transferi", "subject_id": "TRM1116", "object_id": "TRM1168", "confidence": 0.85}
+{"subject": "SWIFT GPI", "predicate": "RELATED_TO", "object": "SWIFT", "subject_id": "TRM1214", "object_id": "TRM1216", "confidence": 0.85}
+{"subject": "Kolay Adres", "predicate": "RELATED_TO", "object": "FAST", "subject_id": "TRM1215", "object_id": "TRM1111", "confidence": 0.85}
+{"subject": "Arsa Edindirme Finansmanı", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM1230", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "Arsa Edindirme Finansmanı", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM1230", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "Hepsiburada Alışveriş Finansmanı", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM1231", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "Trendyol Alışveriş Finansmanı", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM1232", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "Gurbetten Sılaya Gayrimenkul Finansmanı", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM1233", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "Gurbetten Sılaya Gayrimenkul Finansmanı", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM1233", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "Konut Edindirme Finansmanı", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM1234", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "Konut Edindirme Finansmanı", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM1234", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "İlk Evim Konut Finansmanı", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM1235", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "İlk Evim Konut Finansmanı", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM1235", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "LC Waikiki Alışveriş Finansmanı", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM1236", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "Teknosa Alışveriş Finansmanı", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM1237", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "TOGG Finansmanı", "predicate": "RELATED_TO", "object": "Alışveriş Finansmanı", "subject_id": "TRM1239", "object_id": "TRM0042", "confidence": 0.85}
+{"subject": "Taşıt Edindirme Finansmanı", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM1240", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "Taşıt Edindirme Finansmanı", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM1240", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "İş Yeri Edindirme Finansmanı", "predicate": "RELATED_TO", "object": "Konut Finansmanı", "subject_id": "TRM1241", "object_id": "TRM0045", "confidence": 0.85}
+{"subject": "İş Yeri Edindirme Finansmanı", "predicate": "RELATED_TO", "object": "Arsa Finansmanı", "subject_id": "TRM1241", "object_id": "TRM0044", "confidence": 0.85}
+{"subject": "İkametgâh Belgesi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0004", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Bilanço", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0005", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Gelir Tablosu", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0006", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Nakit Akış Tablosu", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0007", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Son Üç Yıl Bilançosu", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0008", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Tapu Fotokopisi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0009", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Gelir Belgesi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0010", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Maaş Bordrosu", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0011", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Belge", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0012", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Hayvan Varlığı Listesi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0013", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Hesap Cüzdanı", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0014", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Kart Ekstresi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0015", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Risk Tespit Raporu", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0016", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Pasaport", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0017", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Sürücü Belgesi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0018", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "T.C. Kimlik Kartı", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0019", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Mizan", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0020", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Fizibilite Raporu", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0021", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Proje Tanıtım Dosyası", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0022", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "DASK Poliçesi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0023", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "ÇKS Belgesi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0024", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "İşletme Tescil Belgesi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0025", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Araç Satış Sözleşmesi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0026", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Ruhsat Fotokopisi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0027", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Trafik Tescil Belgesi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0028", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Teminat Listesi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0029", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Faaliyet Belgesi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0030", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Oda Kayıt Belgesi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0031", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Proforma Fatura", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0032", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Ticaret Sicil Gazetesi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0033", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Vergi Levhası", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0034", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "İskân İzni", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0035", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "İmza Beyannamesi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0036", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "İmza Sirküleri", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0037", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "SGK Hizmet Dökümü", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0038", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Kapasite Raporu", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0039", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "İş Planı", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0040", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Ortaklık Yapısı Belgesi", "predicate": "IS_A_DOCUMENT", "object": "Belgeler", "subject_id": "TRM0041", "object_id": "CAT_003", "confidence": 1.0}
+{"subject": "Alışveriş Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Bireysel Finansman", "subject_id": "TRM0042", "object_id": "CAT_004", "confidence": 1.0}
+{"subject": "Eğitim Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Bireysel Finansman", "subject_id": "TRM0043", "object_id": "CAT_004", "confidence": 1.0}
+{"subject": "Arsa Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Bireysel Finansman", "subject_id": "TRM0044", "object_id": "CAT_004", "confidence": 1.0}
+{"subject": "Konut Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Bireysel Finansman", "subject_id": "TRM0045", "object_id": "CAT_004", "confidence": 1.0}
+{"subject": "İş Yeri Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Bireysel Finansman", "subject_id": "TRM0046", "object_id": "CAT_004", "confidence": 1.0}
+{"subject": "Kentsel Dönüşüm Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Bireysel Finansman", "subject_id": "TRM0047", "object_id": "CAT_004", "confidence": 1.0}
+{"subject": "Seyahat Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Bireysel Finansman", "subject_id": "TRM0048", "object_id": "CAT_004", "confidence": 1.0}
+{"subject": "Umre Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Bireysel Finansman", "subject_id": "TRM0049", "object_id": "CAT_004", "confidence": 1.0}
+{"subject": "Araç Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Bireysel Finansman", "subject_id": "TRM0050", "object_id": "CAT_004", "confidence": 1.0}
+{"subject": "Deniz Taşıtları Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Bireysel Finansman", "subject_id": "TRM0051", "object_id": "CAT_004", "confidence": 1.0}
+{"subject": "Motosiklet Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Bireysel Finansman", "subject_id": "TRM0052", "object_id": "CAT_004", "confidence": 1.0}
+{"subject": "İhtiyaç Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Bireysel Finansman", "subject_id": "TRM0053", "object_id": "CAT_004", "confidence": 1.0}
+{"subject": "CebimPOS ile Alışveriş Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Dijital Finansman", "subject_id": "TRM0164", "object_id": "CAT_007", "confidence": 1.0}
+{"subject": "Taksitlio Alışveriş Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Dijital Finansman", "subject_id": "TRM0165", "object_id": "CAT_007", "confidence": 1.0}
+{"subject": "Veresiye Alışveriş Kredisi", "predicate": "IS_A_PRODUCT", "object": "Dijital Finansman", "subject_id": "TRM0166", "object_id": "CAT_007", "confidence": 1.0}
+{"subject": "KOBİ Anında Finansman", "predicate": "IS_A_PRODUCT", "object": "Dijital Finansman", "subject_id": "TRM0167", "object_id": "CAT_007", "confidence": 1.0}
+{"subject": "SMS'li Finansman", "predicate": "IS_A_PRODUCT", "object": "Dijital Finansman", "subject_id": "TRM0169", "object_id": "CAT_007", "confidence": 1.0}
+{"subject": "Dijital Taksitli Ticari Finansman Desteği", "predicate": "IS_A_PRODUCT", "object": "Dijital Finansman", "subject_id": "TRM0170", "object_id": "CAT_007", "confidence": 1.0}
+{"subject": "Jet Ticari Finansman", "predicate": "IS_A_PRODUCT", "object": "Dijital Finansman", "subject_id": "TRM0171", "object_id": "CAT_007", "confidence": 1.0}
+{"subject": "İhracat Akreditifi", "predicate": "IS_A_PRODUCT", "object": "Dış Ticaret", "subject_id": "TRM0179", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "İthalat Akreditifi", "predicate": "IS_A_PRODUCT", "object": "Dış Ticaret", "subject_id": "TRM0180", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "Gözetim Belgesi", "predicate": "IS_A_DOCUMENT", "object": "Dış Ticaret", "subject_id": "TRM0187", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "Menşe Şahadetnamesi", "predicate": "IS_A_DOCUMENT", "object": "Dış Ticaret", "subject_id": "TRM0188", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "Sigorta Poliçesi", "predicate": "IS_A_DOCUMENT", "object": "Dış Ticaret", "subject_id": "TRM0189", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "Ticari Fatura", "predicate": "IS_A_DOCUMENT", "object": "Dış Ticaret", "subject_id": "TRM0190", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "Çeki Listesi", "predicate": "IS_A_DOCUMENT", "object": "Dış Ticaret", "subject_id": "TRM0191", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "Sevk Öncesi İhracat Kredisi (SÖİK)", "predicate": "IS_A_PRODUCT", "object": "Dış Ticaret", "subject_id": "TRM0195", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "A.TR Dolaşım Belgesi", "predicate": "IS_A_DOCUMENT", "object": "Dış Ticaret", "subject_id": "TRM0200", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "EUR.1 Dolaşım Belgesi", "predicate": "IS_A_DOCUMENT", "object": "Dış Ticaret", "subject_id": "TRM0201", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "Gümrük Beyannamesi", "predicate": "IS_A_DOCUMENT", "object": "Dış Ticaret", "subject_id": "TRM0202", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "Hava Yolu Taşıma Senedi", "predicate": "IS_A_DOCUMENT", "object": "Dış Ticaret", "subject_id": "TRM0225", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "Karayolu Taşıma Belgesi", "predicate": "IS_A_DOCUMENT", "object": "Dış Ticaret", "subject_id": "TRM0226", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "Konşimento", "predicate": "IS_A_DOCUMENT", "object": "Dış Ticaret", "subject_id": "TRM0227", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "Eximbank Temlik Teyidi", "predicate": "IS_A_PRODUCT", "object": "Dış Ticaret", "subject_id": "TRM0229", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "Akreditif", "predicate": "IS_A_PRODUCT", "object": "Dış Ticaret", "subject_id": "TRM0232", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "Vadeli İhracat Finansmanı (VİF)", "predicate": "IS_A_PRODUCT", "object": "Dış Ticaret", "subject_id": "TRM0237", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "İthalat Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Dış Ticaret", "subject_id": "TRM0343", "object_id": "CAT_009", "confidence": 1.0}
+{"subject": "Teminat Mektubu", "predicate": "IS_A_PRODUCT", "object": "Gayri Nakdi Finansman", "subject_id": "TRM0355", "object_id": "CAT_012", "confidence": 1.0}
+{"subject": "Kabul-Aval Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Gayri Nakdi Finansman", "subject_id": "TRM0357", "object_id": "CAT_012", "confidence": 1.0}
+{"subject": "Referans Mektubu", "predicate": "IS_A_PRODUCT", "object": "Gayri Nakdi Finansman", "subject_id": "TRM0359", "object_id": "CAT_012", "confidence": 1.0}
+{"subject": "Harici Garanti", "predicate": "IS_A_PRODUCT", "object": "Gayri Nakdi Finansman", "subject_id": "TRM0365", "object_id": "CAT_012", "confidence": 1.0}
+{"subject": "Merkezi Danışma Komitesi", "predicate": "IS_AN_ORGANIZATION", "object": "Katılım Finans", "subject_id": "TRM0448", "object_id": "CAT_018", "confidence": 1.0}
+{"subject": "Yatırım Vekâletine Dayalı Finansman", "predicate": "IS_A_PRODUCT", "object": "Katılım Finans", "subject_id": "TRM0467", "object_id": "CAT_018", "confidence": 1.0}
+{"subject": "Katılım Finans Kefalet (KFK)", "predicate": "IS_AN_ORGANIZATION", "object": "Kefalet", "subject_id": "TRM0471", "object_id": "CAT_019", "confidence": 1.0}
+{"subject": "BDDK", "predicate": "IS_AN_ORGANIZATION", "object": "Kurumlar", "subject_id": "TRM0473", "object_id": "CAT_020", "confidence": 1.0}
+{"subject": "TKBB", "predicate": "IS_AN_ORGANIZATION", "object": "Kurumlar", "subject_id": "TRM0474", "object_id": "CAT_020", "confidence": 1.0}
+{"subject": "MASAK", "predicate": "IS_AN_ORGANIZATION", "object": "Kurumlar", "subject_id": "TRM0475", "object_id": "CAT_020", "confidence": 1.0}
+{"subject": "TCMB", "predicate": "IS_AN_ORGANIZATION", "object": "Kurumlar", "subject_id": "TRM0476", "object_id": "CAT_020", "confidence": 1.0}
+{"subject": "TMSF", "predicate": "IS_AN_ORGANIZATION", "object": "Kurumlar", "subject_id": "TRM0477", "object_id": "CAT_020", "confidence": 1.0}
+{"subject": "Portföy Yönetim Şirketi", "predicate": "IS_AN_ORGANIZATION", "object": "Kurumlar", "subject_id": "TRM0478", "object_id": "CAT_020", "confidence": 1.0}
+{"subject": "SPK", "predicate": "IS_AN_ORGANIZATION", "object": "Kurumlar", "subject_id": "TRM0479", "object_id": "CAT_020", "confidence": 1.0}
+{"subject": "TÜRİB", "predicate": "IS_AN_ORGANIZATION", "object": "Kurumlar", "subject_id": "TRM0480", "object_id": "CAT_020", "confidence": 1.0}
+{"subject": "TARSİM", "predicate": "IS_AN_ORGANIZATION", "object": "Kurumlar", "subject_id": "TRM0481", "object_id": "CAT_020", "confidence": 1.0}
+{"subject": "Türk Eximbank", "predicate": "IS_AN_ORGANIZATION", "object": "Kurumlar", "subject_id": "TRM0482", "object_id": "CAT_020", "confidence": 1.0}
+{"subject": "Enerji Verimliliği Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Sürdürülebilir Finans", "subject_id": "TRM0643", "object_id": "CAT_031", "confidence": 1.0}
+{"subject": "Çatı GES Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Sürdürülebilir Finans", "subject_id": "TRM0647", "object_id": "CAT_031", "confidence": 1.0}
+{"subject": "Elektrikli Araç Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Sürdürülebilir Finans", "subject_id": "TRM0653", "object_id": "CAT_031", "confidence": 1.0}
+{"subject": "Güneş Enerjisi Santrali Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Sürdürülebilir Finans", "subject_id": "TRM0654", "object_id": "CAT_031", "confidence": 1.0}
+{"subject": "Rüzgâr Enerjisi Santrali Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Sürdürülebilir Finans", "subject_id": "TRM0655", "object_id": "CAT_031", "confidence": 1.0}
+{"subject": "Arıcılık Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Tarım Finansmanı", "subject_id": "TRM0663", "object_id": "CAT_034", "confidence": 1.0}
+{"subject": "Bitkisel Üretim Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Tarım Finansmanı", "subject_id": "TRM0664", "object_id": "CAT_034", "confidence": 1.0}
+{"subject": "Fidan Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Tarım Finansmanı", "subject_id": "TRM0671", "object_id": "CAT_034", "confidence": 1.0}
+{"subject": "Gübre Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Tarım Finansmanı", "subject_id": "TRM0672", "object_id": "CAT_034", "confidence": 1.0}
+{"subject": "Tohum Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Tarım Finansmanı", "subject_id": "TRM0674", "object_id": "CAT_034", "confidence": 1.0}
+{"subject": "Yem Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Tarım Finansmanı", "subject_id": "TRM0675", "object_id": "CAT_034", "confidence": 1.0}
+{"subject": "Besi Hayvancılığı Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Tarım Finansmanı", "subject_id": "TRM0676", "object_id": "CAT_034", "confidence": 1.0}
+{"subject": "Süt Hayvancılığı Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Tarım Finansmanı", "subject_id": "TRM0680", "object_id": "CAT_034", "confidence": 1.0}
+{"subject": "Biçerdöver Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Tarım Finansmanı", "subject_id": "TRM0681", "object_id": "CAT_034", "confidence": 1.0}
+{"subject": "Tarım Makinesi Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Tarım Finansmanı", "subject_id": "TRM0682", "object_id": "CAT_034", "confidence": 1.0}
+{"subject": "Traktör Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Tarım Finansmanı", "subject_id": "TRM0683", "object_id": "CAT_034", "confidence": 1.0}
+{"subject": "Sera Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Tarım Finansmanı", "subject_id": "TRM0685", "object_id": "CAT_034", "confidence": 1.0}
+{"subject": "Sulama Sistemi Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Tarım Finansmanı", "subject_id": "TRM0688", "object_id": "CAT_034", "confidence": 1.0}
+{"subject": "Tarım ve Hayvancılık Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Tarım Finansmanı", "subject_id": "TRM0771", "object_id": "CAT_034", "confidence": 1.0}
+{"subject": "Ürün", "predicate": "IS_A_PRODUCT", "object": "Temel Varlıklar", "subject_id": "TRM0781", "object_id": "CAT_036", "confidence": 1.0}
+{"subject": "Çek Karnesi", "predicate": "IS_A_PRODUCT", "object": "Ticari Bankacılık", "subject_id": "TRM0887", "object_id": "CAT_038", "confidence": 1.0}
+{"subject": "Fatura Teminatlı Finansman", "predicate": "IS_A_PRODUCT", "object": "Ticari Finansman", "subject_id": "TRM0892", "object_id": "CAT_039", "confidence": 1.0}
+{"subject": "Taşıt Kiralama Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Ticari Finansman", "subject_id": "TRM0900", "object_id": "CAT_039", "confidence": 1.0}
+{"subject": "Esnek Destek Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Ticari Finansman", "subject_id": "TRM0902", "object_id": "CAT_039", "confidence": 1.0}
+{"subject": "Taksitli Ticari Finansman", "predicate": "IS_A_PRODUCT", "object": "Ticari Finansman", "subject_id": "TRM0903", "object_id": "CAT_039", "confidence": 1.0}
+{"subject": "Proje Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Ticari Finansman", "subject_id": "TRM0904", "object_id": "CAT_039", "confidence": 1.0}
+{"subject": "Tedarikçi Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Ticari Finansman", "subject_id": "TRM0907", "object_id": "CAT_039", "confidence": 1.0}
+{"subject": "Kira Sertifikası Teminatlı Finansman", "predicate": "IS_A_PRODUCT", "object": "Ticari Finansman", "subject_id": "TRM0908", "object_id": "CAT_039", "confidence": 1.0}
+{"subject": "Kazançlı Fon Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Yatırım", "subject_id": "TRM0999", "object_id": "CAT_043", "confidence": 1.0}
+{"subject": "Hızlı Fon Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Yatırım", "subject_id": "TRM1004", "object_id": "CAT_043", "confidence": 1.0}
+{"subject": "Arsa Edindirme Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Ürün Adları", "subject_id": "TRM1230", "object_id": "CAT_048", "confidence": 1.0}
+{"subject": "Hepsiburada Alışveriş Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Ürün Adları", "subject_id": "TRM1231", "object_id": "CAT_048", "confidence": 1.0}
+{"subject": "Trendyol Alışveriş Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Ürün Adları", "subject_id": "TRM1232", "object_id": "CAT_048", "confidence": 1.0}
+{"subject": "Gurbetten Sılaya Gayrimenkul Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Ürün Adları", "subject_id": "TRM1233", "object_id": "CAT_048", "confidence": 1.0}
+{"subject": "Konut Edindirme Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Ürün Adları", "subject_id": "TRM1234", "object_id": "CAT_048", "confidence": 1.0}
+{"subject": "İlk Evim Konut Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Ürün Adları", "subject_id": "TRM1235", "object_id": "CAT_048", "confidence": 1.0}
+{"subject": "LC Waikiki Alışveriş Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Ürün Adları", "subject_id": "TRM1236", "object_id": "CAT_048", "confidence": 1.0}
+{"subject": "Teknosa Alışveriş Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Ürün Adları", "subject_id": "TRM1237", "object_id": "CAT_048", "confidence": 1.0}
+{"subject": "Enerya Karz-ı Hasen", "predicate": "IS_A_PRODUCT", "object": "Ürün Adları", "subject_id": "TRM1238", "object_id": "CAT_048", "confidence": 1.0}
+{"subject": "TOGG Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Ürün Adları", "subject_id": "TRM1239", "object_id": "CAT_048", "confidence": 1.0}
+{"subject": "Taşıt Edindirme Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Ürün Adları", "subject_id": "TRM1240", "object_id": "CAT_048", "confidence": 1.0}
+{"subject": "İş Yeri Edindirme Finansmanı", "predicate": "IS_A_PRODUCT", "object": "Ürün Adları", "subject_id": "TRM1241", "object_id": "CAT_048", "confidence": 1.0}
+{"subject": "Murabaha", "predicate": "USES", "object": "Kâr Payı Oranı", "subject_id": "TRM0462", "object_id": "TRM0505", "confidence": 0.95}
+{"subject": "Katılma Hesabı", "predicate": "DISTRIBUTES", "object": "Kâr Payı Dağıtımı", "subject_id": "TRM0385", "object_id": "TRM0455", "confidence": 0.95}
+{"subject": "Konut Finansmanı", "predicate": "MAY_REQUIRE", "object": "İpotek", "subject_id": "TRM0045", "object_id": "TRM0785", "confidence": 0.95}
+{"subject": "Konut Finansmanı", "predicate": "MAY_REQUIRE", "object": "Ekspertiz Değeri", "subject_id": "TRM0045", "object_id": "TRM0054", "confidence": 0.95}
+{"subject": "Akreditif", "predicate": "GOVERNED_BY", "object": "UCP 600", "subject_id": "TRM0232", "object_id": "TRM0230", "confidence": 0.95}
+{"subject": "Vesaik Mukabili Ödeme", "predicate": "GOVERNED_BY", "object": "URC 522", "subject_id": "TRM0236", "object_id": "TRM0231", "confidence": 0.95}
+{"subject": "Vadeli İhracat Finansmanı (VİF)", "predicate": "FINANCES", "object": "Vadeli İhracat Alacağı", "subject_id": "TRM0237", "object_id": "TRM0181", "confidence": 0.95}
+{"subject": "Tedarikçi Finansmanı", "predicate": "PAYS", "object": "Tedarikçi", "subject_id": "TRM0907", "object_id": "TRM0886", "confidence": 0.95}
+{"subject": "DBS (Doğrudan Borçlandırma Sistemi)", "predicate": "COLLECTS_FROM", "object": "Bayi", "subject_id": "TRM0502", "object_id": "TRM0885", "confidence": 0.95}
+{"subject": "Tasarruf Finansmanı", "predicate": "USES", "object": "Tahsis", "subject_id": "TRM0773", "object_id": "TRM0779", "confidence": 0.95}
+{"subject": "Kentsel Dönüşüm Finansmanı", "predicate": "TARGETS", "object": "Riskli Yapı", "subject_id": "TRM0047", "object_id": "TRM0374", "confidence": 0.95}
+{"subject": "Tarım ve Hayvancılık Finansmanı", "predicate": "TARGETS", "object": "Tarımsal Girdi", "subject_id": "TRM0771", "object_id": "TRM0673", "confidence": 0.95}
+{"subject": "CebimPOS ile Alışveriş Finansmanı", "predicate": "USES_PLATFORM", "object": "CebimPOS", "subject_id": "TRM0164", "object_id": "TRM0163", "confidence": 0.95}
+{"subject": "Taksitlio Alışveriş Finansmanı", "predicate": "USES_PLATFORM", "object": "Taksitlio", "subject_id": "TRM0165", "object_id": "TRM0160", "confidence": 0.95}

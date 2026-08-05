@@ -1,0 +1,2213 @@
+[
+  {
+    "group_id": "SYN_0001",
+    "canonical": "İkametgâh Belgesi",
+    "members": [
+      "İkametgâh Belgesi",
+      "Yerleşim yeri belgesi"
+    ],
+    "entity": "DOCUMENT"
+  },
+  {
+    "group_id": "SYN_0002",
+    "canonical": "Sürücü Belgesi",
+    "members": [
+      "Sürücü Belgesi",
+      "Ehliyet"
+    ],
+    "entity": "DOCUMENT"
+  },
+  {
+    "group_id": "SYN_0003",
+    "canonical": "T.C. Kimlik Kartı",
+    "members": [
+      "T.C. Kimlik Kartı",
+      "Kimlik belgesi"
+    ],
+    "entity": "DOCUMENT"
+  },
+  {
+    "group_id": "SYN_0004",
+    "canonical": "ÇKS Belgesi",
+    "members": [
+      "ÇKS Belgesi",
+      "Çiftçi Kayıt Sistemi Belgesi"
+    ],
+    "entity": "DOCUMENT"
+  },
+  {
+    "group_id": "SYN_0005",
+    "canonical": "Oda Kayıt Belgesi",
+    "members": [
+      "Oda Kayıt Belgesi",
+      "Oda sicil kayıt belgesi"
+    ],
+    "entity": "DOCUMENT"
+  },
+  {
+    "group_id": "SYN_0006",
+    "canonical": "İskân İzni",
+    "members": [
+      "İskân İzni",
+      "Yapı Kullanım İzin Belgesi"
+    ],
+    "entity": "DOCUMENT"
+  },
+  {
+    "group_id": "SYN_0007",
+    "canonical": "Alışveriş Finansmanı",
+    "members": [
+      "Alışveriş Finansmanı",
+      "Alışveriş kredisi"
+    ],
+    "entity": "PRODUCT"
+  },
+  {
+    "group_id": "SYN_0008",
+    "canonical": "Eğitim Finansmanı",
+    "members": [
+      "Eğitim Finansmanı",
+      "Okul finansmanı"
+    ],
+    "entity": "PRODUCT"
+  },
+  {
+    "group_id": "SYN_0009",
+    "canonical": "Konut Finansmanı",
+    "members": [
+      "Konut Finansmanı",
+      "Ev finansmanı"
+    ],
+    "entity": "PRODUCT"
+  },
+  {
+    "group_id": "SYN_0010",
+    "canonical": "Seyahat Finansmanı",
+    "members": [
+      "Seyahat Finansmanı",
+      "Tatil finansmanı"
+    ],
+    "entity": "PRODUCT"
+  },
+  {
+    "group_id": "SYN_0011",
+    "canonical": "Araç Finansmanı",
+    "members": [
+      "Araç Finansmanı",
+      "Taşıt Finansmanı"
+    ],
+    "entity": "PRODUCT"
+  },
+  {
+    "group_id": "SYN_0012",
+    "canonical": "Motosiklet Finansmanı",
+    "members": [
+      "Motosiklet Finansmanı",
+      "Motor finansmanı"
+    ],
+    "entity": "PRODUCT"
+  },
+  {
+    "group_id": "SYN_0013",
+    "canonical": "Anlık Bildirim",
+    "members": [
+      "Anlık Bildirim",
+      "Push bildirimi"
+    ],
+    "entity": "DIGITAL_BANKING_TERM"
+  },
+  {
+    "group_id": "SYN_0014",
+    "canonical": "Canlılık Kontrolü",
+    "members": [
+      "Canlılık Kontrolü",
+      "Liveness"
+    ],
+    "entity": "DIGITAL_BANKING_TERM"
+  },
+  {
+    "group_id": "SYN_0015",
+    "canonical": "Cihaz Parmak İzi",
+    "members": [
+      "Cihaz Parmak İzi",
+      "Device fingerprint"
+    ],
+    "entity": "DIGITAL_BANKING_TERM"
+  },
+  {
+    "group_id": "SYN_0016",
+    "canonical": "Denetim İzi",
+    "members": [
+      "Denetim İzi",
+      "Audit trail"
+    ],
+    "entity": "DIGITAL_BANKING_TERM"
+  },
+  {
+    "group_id": "SYN_0017",
+    "canonical": "Elektronik İmza",
+    "members": [
+      "Elektronik İmza",
+      "E-imza"
+    ],
+    "entity": "DIGITAL_BANKING_TERM"
+  },
+  {
+    "group_id": "SYN_0018",
+    "canonical": "Erişim Jetonu",
+    "members": [
+      "Erişim Jetonu",
+      "Access token"
+    ],
+    "entity": "DIGITAL_BANKING_TERM"
+  },
+  {
+    "group_id": "SYN_0019",
+    "canonical": "Hesap Bilgisi Hizmeti",
+    "members": [
+      "Hesap Bilgisi Hizmeti",
+      "AIS"
+    ],
+    "entity": "DIGITAL_BANKING_TERM"
+  },
+  {
+    "group_id": "SYN_0020",
+    "canonical": "Hesap Ele Geçirme",
+    "members": [
+      "Hesap Ele Geçirme",
+      "Account takeover"
+    ],
+    "entity": "DIGITAL_BANKING_TERM"
+  },
+  {
+    "group_id": "SYN_0021",
+    "canonical": "Oltalama",
+    "members": [
+      "Oltalama",
+      "Phishing"
+    ],
+    "entity": "DIGITAL_BANKING_TERM"
+  },
+  {
+    "group_id": "SYN_0022",
+    "canonical": "Oturum Açma",
+    "members": [
+      "Oturum Açma",
+      "Login"
+    ],
+    "entity": "DIGITAL_BANKING_TERM"
+  },
+  {
+    "group_id": "SYN_0023",
+    "canonical": "Oturum Kapatma",
+    "members": [
+      "Oturum Kapatma",
+      "Logout"
+    ],
+    "entity": "DIGITAL_BANKING_TERM"
+  },
+  {
+    "group_id": "SYN_0024",
+    "canonical": "Rol Tabanlı Erişim",
+    "members": [
+      "Rol Tabanlı Erişim",
+      "RBAC"
+    ],
+    "entity": "DIGITAL_BANKING_TERM"
+  },
+  {
+    "group_id": "SYN_0025",
+    "canonical": "Servis Modeli Bankacılığı",
+    "members": [
+      "Servis Modeli Bankacılığı",
+      "BaaS"
+    ],
+    "entity": "DIGITAL_BANKING_TERM"
+  },
+  {
+    "group_id": "SYN_0026",
+    "canonical": "Zararlı Yazılım",
+    "members": [
+      "Zararlı Yazılım",
+      "Malware"
+    ],
+    "entity": "DIGITAL_BANKING_TERM"
+  },
+  {
+    "group_id": "SYN_0027",
+    "canonical": "Ödeme Emri Başlatma Hizmeti",
+    "members": [
+      "Ödeme Emri Başlatma Hizmeti",
+      "PIS"
+    ],
+    "entity": "DIGITAL_BANKING_TERM"
+  },
+  {
+    "group_id": "SYN_0028",
+    "canonical": "İşlem Zaman Aşımı",
+    "members": [
+      "İşlem Zaman Aşımı",
+      "Timeout"
+    ],
+    "entity": "DIGITAL_BANKING_TERM"
+  },
+  {
+    "group_id": "SYN_0029",
+    "canonical": "SMS Doğrulama Kodu",
+    "members": [
+      "SMS Doğrulama Kodu",
+      "Onay kodu"
+    ],
+    "entity": "VERIFICATION_CODE"
+  },
+  {
+    "group_id": "SYN_0030",
+    "canonical": "Tek Kullanımlık Şifre",
+    "members": [
+      "Tek Kullanımlık Şifre",
+      "OTP"
+    ],
+    "entity": "OTP"
+  },
+  {
+    "group_id": "SYN_0031",
+    "canonical": "İki Faktörlü Doğrulama",
+    "members": [
+      "İki Faktörlü Doğrulama",
+      "2FA"
+    ],
+    "entity": "TWO_FACTOR_AUTHENTICATION"
+  },
+  {
+    "group_id": "SYN_0032",
+    "canonical": "Başvuru Kanalı",
+    "members": [
+      "Başvuru Kanalı",
+      "Mobil başvuru",
+      "Şube başvurusu",
+      "İnternet şubesi"
+    ],
+    "entity": "APPLICATION_CHANNEL"
+  },
+  {
+    "group_id": "SYN_0033",
+    "canonical": "İnternet Bankacılığı",
+    "members": [
+      "İnternet Bankacılığı",
+      "İnternet şubesi"
+    ],
+    "entity": "DIGITAL_CHANNEL"
+  },
+  {
+    "group_id": "SYN_0034",
+    "canonical": "Görüntülü Müşteri Edinimi",
+    "members": [
+      "Görüntülü Müşteri Edinimi",
+      "Görüntülü müşteri olma"
+    ],
+    "entity": "DIGITAL_ONBOARDING"
+  },
+  {
+    "group_id": "SYN_0035",
+    "canonical": "CebimPOS",
+    "members": [
+      "CebimPOS",
+      "Mobil POS"
+    ],
+    "entity": "DIGITAL_PAYMENT_SYSTEM"
+  },
+  {
+    "group_id": "SYN_0036",
+    "canonical": "QR Kod ile Finansman",
+    "members": [
+      "QR Kod ile Finansman",
+      "QR ile ödeme"
+    ],
+    "entity": "PAYMENT_METHOD"
+  },
+  {
+    "group_id": "SYN_0037",
+    "canonical": "Kur Makası",
+    "members": [
+      "Kur Makası",
+      "FX makası",
+      "Dar makas"
+    ],
+    "entity": "FX_SPREAD"
+  },
+  {
+    "group_id": "SYN_0038",
+    "canonical": "Gözetim Belgesi",
+    "members": [
+      "Gözetim Belgesi",
+      "Inspection Certificate"
+    ],
+    "entity": "TRADE_DOCUMENT"
+  },
+  {
+    "group_id": "SYN_0039",
+    "canonical": "Menşe Şahadetnamesi",
+    "members": [
+      "Menşe Şahadetnamesi",
+      "Certificate of Origin"
+    ],
+    "entity": "TRADE_DOCUMENT"
+  },
+  {
+    "group_id": "SYN_0040",
+    "canonical": "Ticari Fatura",
+    "members": [
+      "Ticari Fatura",
+      "Commercial Invoice"
+    ],
+    "entity": "TRADE_DOCUMENT"
+  },
+  {
+    "group_id": "SYN_0041",
+    "canonical": "Çeki Listesi",
+    "members": [
+      "Çeki Listesi",
+      "Packing List"
+    ],
+    "entity": "TRADE_DOCUMENT"
+  },
+  {
+    "group_id": "SYN_0042",
+    "canonical": "Vesaik",
+    "members": [
+      "Vesaik",
+      "Sevkiyat belgeleri"
+    ],
+    "entity": "SHIPPING_DOCUMENTS"
+  },
+  {
+    "group_id": "SYN_0043",
+    "canonical": "İbraz",
+    "members": [
+      "İbraz",
+      "Belge ibrazı"
+    ],
+    "entity": "DOCUMENT_PRESENTATION"
+  },
+  {
+    "group_id": "SYN_0044",
+    "canonical": "Sevk Öncesi İhracat Kredisi (SÖİK)",
+    "members": [
+      "Sevk Öncesi İhracat Kredisi (SÖİK)",
+      "SÖİK"
+    ],
+    "entity": "PRODUCT"
+  },
+  {
+    "group_id": "SYN_0045",
+    "canonical": "Gayrikabili Rücu Finansman",
+    "members": [
+      "Gayrikabili Rücu Finansman",
+      "Non-recourse financing"
+    ],
+    "entity": "NON_RECOURSE_FINANCING"
+  },
+  {
+    "group_id": "SYN_0046",
+    "canonical": "Demuraj",
+    "members": [
+      "Demuraj",
+      "Demurrage"
+    ],
+    "entity": "TRADE_FEE"
+  },
+  {
+    "group_id": "SYN_0047",
+    "canonical": "A.TR Dolaşım Belgesi",
+    "members": [
+      "A.TR Dolaşım Belgesi",
+      "ATR"
+    ],
+    "entity": "TRADE_DOCUMENT"
+  },
+  {
+    "group_id": "SYN_0048",
+    "canonical": "EUR.1 Dolaşım Belgesi",
+    "members": [
+      "EUR.1 Dolaşım Belgesi",
+      "EUR1"
+    ],
+    "entity": "TRADE_DOCUMENT"
+  },
+  {
+    "group_id": "SYN_0049",
+    "canonical": "CFR",
+    "members": [
+      "CFR",
+      "Cost and Freight"
+    ],
+    "entity": "INCOTERM"
+  },
+  {
+    "group_id": "SYN_0050",
+    "canonical": "CIF",
+    "members": [
+      "CIF",
+      "Cost Insurance and Freight"
+    ],
+    "entity": "INCOTERM"
+  },
+  {
+    "group_id": "SYN_0051",
+    "canonical": "DAP",
+    "members": [
+      "DAP",
+      "Delivered At Place"
+    ],
+    "entity": "INCOTERM"
+  },
+  {
+    "group_id": "SYN_0052",
+    "canonical": "DDP",
+    "members": [
+      "DDP",
+      "Delivered Duty Paid"
+    ],
+    "entity": "INCOTERM"
+  },
+  {
+    "group_id": "SYN_0053",
+    "canonical": "DPU",
+    "members": [
+      "DPU",
+      "Delivered at Place Unloaded"
+    ],
+    "entity": "INCOTERM"
+  },
+  {
+    "group_id": "SYN_0054",
+    "canonical": "EXW",
+    "members": [
+      "EXW",
+      "Ex Works"
+    ],
+    "entity": "INCOTERM"
+  },
+  {
+    "group_id": "SYN_0055",
+    "canonical": "FCA",
+    "members": [
+      "FCA",
+      "Free Carrier"
+    ],
+    "entity": "INCOTERM"
+  },
+  {
+    "group_id": "SYN_0056",
+    "canonical": "FOB",
+    "members": [
+      "FOB",
+      "Free On Board"
+    ],
+    "entity": "INCOTERM"
+  },
+  {
+    "group_id": "SYN_0057",
+    "canonical": "Hava Yolu Taşıma Senedi",
+    "members": [
+      "Hava Yolu Taşıma Senedi",
+      "Air Waybill",
+      "AWB"
+    ],
+    "entity": "TRADE_DOCUMENT"
+  },
+  {
+    "group_id": "SYN_0058",
+    "canonical": "Karayolu Taşıma Belgesi",
+    "members": [
+      "Karayolu Taşıma Belgesi",
+      "CMR"
+    ],
+    "entity": "TRADE_DOCUMENT"
+  },
+  {
+    "group_id": "SYN_0059",
+    "canonical": "Konşimento",
+    "members": [
+      "Konşimento",
+      "Bill of Lading",
+      "B/L"
+    ],
+    "entity": "TRADE_DOCUMENT"
+  },
+  {
+    "group_id": "SYN_0060",
+    "canonical": "Navlun",
+    "members": [
+      "Navlun",
+      "Freight"
+    ],
+    "entity": "FREIGHT_COST"
+  },
+  {
+    "group_id": "SYN_0061",
+    "canonical": "Akreditif",
+    "members": [
+      "Akreditif",
+      "Letter of Credit",
+      "L/C"
+    ],
+    "entity": "PRODUCT"
+  },
+  {
+    "group_id": "SYN_0062",
+    "canonical": "Mal Mukabili Ödeme",
+    "members": [
+      "Mal Mukabili Ödeme",
+      "Open Account"
+    ],
+    "entity": "TRADE_PAYMENT_METHOD"
+  },
+  {
+    "group_id": "SYN_0063",
+    "canonical": "Vesaik Mukabili Ödeme",
+    "members": [
+      "Vesaik Mukabili Ödeme",
+      "Documents Against Payment"
+    ],
+    "entity": "TRADE_PAYMENT_METHOD"
+  },
+  {
+    "group_id": "SYN_0064",
+    "canonical": "Vadeli İhracat Finansmanı (VİF)",
+    "members": [
+      "Vadeli İhracat Finansmanı (VİF)",
+      "VİF",
+      "Vadeli İhracatın Finansmanı"
+    ],
+    "entity": "PRODUCT"
+  },
+  {
+    "group_id": "SYN_0065",
+    "canonical": "Prefinansman",
+    "members": [
+      "Prefinansman",
+      "Sevk öncesi finansman"
+    ],
+    "entity": "PRE_SHIPMENT_FINANCING"
+  },
+  {
+    "group_id": "SYN_0066",
+    "canonical": "Yükleme Sonrası Finansman",
+    "members": [
+      "Yükleme Sonrası Finansman",
+      "Sevk sonrası finansman"
+    ],
+    "entity": "POST_SHIPMENT_FINANCING"
+  },
+  {
+    "group_id": "SYN_0067",
+    "canonical": "Akreditif Değişikliği",
+    "members": [
+      "Akreditif Değişikliği",
+      "Amendment"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0068",
+    "canonical": "Aktarma",
+    "members": [
+      "Aktarma",
+      "Transshipment"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0069",
+    "canonical": "CIP",
+    "members": [
+      "CIP",
+      "Carriage and Insurance Paid To"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0070",
+    "canonical": "CPT",
+    "members": [
+      "CPT",
+      "Carriage Paid To"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0071",
+    "canonical": "Dahilde İşleme Rejimi",
+    "members": [
+      "Dahilde İşleme Rejimi",
+      "DİR"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0072",
+    "canonical": "Döviz Alım Belgesi",
+    "members": [
+      "Döviz Alım Belgesi",
+      "DAB"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0073",
+    "canonical": "Döviz Satım Belgesi",
+    "members": [
+      "Döviz Satım Belgesi",
+      "DSB"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0074",
+    "canonical": "FAS",
+    "members": [
+      "FAS",
+      "Free Alongside Ship"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0075",
+    "canonical": "Görüldüğünde Ödemeli Akreditif",
+    "members": [
+      "Görüldüğünde Ödemeli Akreditif",
+      "Sight L/C"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0076",
+    "canonical": "Gümrük Tarife İstatistik Pozisyonu",
+    "members": [
+      "Gümrük Tarife İstatistik Pozisyonu",
+      "GTİP"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0077",
+    "canonical": "Karşılıklı Akreditif",
+    "members": [
+      "Karşılıklı Akreditif",
+      "Back-to-back L/C"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0078",
+    "canonical": "Katma Değer Vergisi",
+    "members": [
+      "Katma Değer Vergisi",
+      "KDV"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0079",
+    "canonical": "Kaynak Kullanımını Destekleme Fonu",
+    "members": [
+      "Kaynak Kullanımını Destekleme Fonu",
+      "KKDF"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0080",
+    "canonical": "Kırmızı Şartlı Akreditif",
+    "members": [
+      "Kırmızı Şartlı Akreditif",
+      "Red clause L/C"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0081",
+    "canonical": "Rambursman",
+    "members": [
+      "Rambursman",
+      "Reimbursement"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0082",
+    "canonical": "Rambursman Bankası",
+    "members": [
+      "Rambursman Bankası",
+      "Reimbursing bank"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0083",
+    "canonical": "Rotatif Akreditif",
+    "members": [
+      "Rotatif Akreditif",
+      "Revolving L/C"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0084",
+    "canonical": "Serbest Süre",
+    "members": [
+      "Serbest Süre",
+      "Free time"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0085",
+    "canonical": "Standby Letter of Credit",
+    "members": [
+      "Standby Letter of Credit",
+      "SBLC"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0086",
+    "canonical": "Tahmini Kalkış Tarihi",
+    "members": [
+      "Tahmini Kalkış Tarihi",
+      "ETD"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0087",
+    "canonical": "Tahmini Varış Tarihi",
+    "members": [
+      "Tahmini Varış Tarihi",
+      "ETA"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0088",
+    "canonical": "Uygun İbraz",
+    "members": [
+      "Uygun İbraz",
+      "Complying presentation"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0089",
+    "canonical": "Vadeli Akreditif",
+    "members": [
+      "Vadeli Akreditif",
+      "Usance L/C"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0090",
+    "canonical": "Yeşil Şartlı Akreditif",
+    "members": [
+      "Yeşil Şartlı Akreditif",
+      "Green clause L/C"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0091",
+    "canonical": "Ödeme Bankası",
+    "members": [
+      "Ödeme Bankası",
+      "Nominated bank"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0092",
+    "canonical": "Özel Tüketim Vergisi",
+    "members": [
+      "Özel Tüketim Vergisi",
+      "ÖTV"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0093",
+    "canonical": "İhracat Bedeli Kabul Belgesi",
+    "members": [
+      "İhracat Bedeli Kabul Belgesi",
+      "İBKB"
+    ],
+    "entity": "TRADE_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0094",
+    "canonical": "Nakit Akış Projeksiyonu",
+    "members": [
+      "Nakit Akış Projeksiyonu",
+      "Nakit akış tahmini"
+    ],
+    "entity": "CASH_FLOW_PROJECTION"
+  },
+  {
+    "group_id": "SYN_0095",
+    "canonical": "Yeniden Yapılandırma",
+    "members": [
+      "Yeniden Yapılandırma",
+      "Refinansman"
+    ],
+    "entity": "RESTRUCTURING"
+  },
+  {
+    "group_id": "SYN_0096",
+    "canonical": "Esnek Ödeme Planı",
+    "members": [
+      "Esnek Ödeme Planı",
+      "Esnek taksit planı"
+    ],
+    "entity": "FLEXIBLE_REPAYMENT_PLAN"
+  },
+  {
+    "group_id": "SYN_0097",
+    "canonical": "Ödemesiz Dönem",
+    "members": [
+      "Ödemesiz Dönem",
+      "Geri ödemesiz dönem"
+    ],
+    "entity": "GRACE_PERIOD"
+  },
+  {
+    "group_id": "SYN_0098",
+    "canonical": "Elektronik Teminat Mektubu",
+    "members": [
+      "Elektronik Teminat Mektubu",
+      "e-Teminat"
+    ],
+    "entity": "DIGITAL_PRODUCT"
+  },
+  {
+    "group_id": "SYN_0099",
+    "canonical": "Kat Mülkiyeti",
+    "members": [
+      "Kat Mülkiyeti",
+      "Kat mülkiyeti tapusu"
+    ],
+    "entity": "PROPERTY_STATUS"
+  },
+  {
+    "group_id": "SYN_0100",
+    "canonical": "Kat İrtifakı",
+    "members": [
+      "Kat İrtifakı",
+      "Kat irtifakı tapusu"
+    ],
+    "entity": "PROPERTY_STATUS"
+  },
+  {
+    "group_id": "SYN_0101",
+    "canonical": "Hesap Açılış Bakiyesi",
+    "members": [
+      "Hesap Açılış Bakiyesi",
+      "Minimum hesap açılış bakiyesi"
+    ],
+    "entity": "ACCOUNT_BALANCE"
+  },
+  {
+    "group_id": "SYN_0102",
+    "canonical": "Özel Cari Hesap",
+    "members": [
+      "Özel Cari Hesap",
+      "Cari hesap"
+    ],
+    "entity": "ACCOUNT_TYPE"
+  },
+  {
+    "group_id": "SYN_0103",
+    "canonical": "Hesap Kapanışı",
+    "members": [
+      "Hesap Kapanışı",
+      "Hesap kapatma"
+    ],
+    "entity": "ACCOUNT_PROCESS"
+  },
+  {
+    "group_id": "SYN_0104",
+    "canonical": "Hesap Yenileme",
+    "members": [
+      "Hesap Yenileme",
+      "Katılma hesabı yenileme"
+    ],
+    "entity": "ACCOUNT_PROCESS"
+  },
+  {
+    "group_id": "SYN_0105",
+    "canonical": "Temlik",
+    "members": [
+      "Temlik",
+      "Alacak temliki",
+      "Alacak devri"
+    ],
+    "entity": "ASSIGNMENT"
+  },
+  {
+    "group_id": "SYN_0106",
+    "canonical": "%0 Kâr Payı",
+    "members": [
+      "%0 Kâr Payı",
+      "Sıfır kâr payı"
+    ],
+    "entity": "CAMPAIGN_BENEFIT"
+  },
+  {
+    "group_id": "SYN_0107",
+    "canonical": "Yeni Müşterilere Özel",
+    "members": [
+      "Yeni Müşterilere Özel",
+      "Yeni müşteriye özel"
+    ],
+    "entity": "CAMPAIGN_CONDITION"
+  },
+  {
+    "group_id": "SYN_0108",
+    "canonical": "Mobil Başvuruya Özel",
+    "members": [
+      "Mobil Başvuruya Özel",
+      "Mobilden başvurana özel"
+    ],
+    "entity": "CAMPAIGN_CONDITION"
+  },
+  {
+    "group_id": "SYN_0109",
+    "canonical": "Promosyon Kodu",
+    "members": [
+      "Promosyon Kodu",
+      "Kupon kodu"
+    ],
+    "entity": "PROMO_CODE"
+  },
+  {
+    "group_id": "SYN_0110",
+    "canonical": "Davet Et Kazan",
+    "members": [
+      "Davet Et Kazan",
+      "Arkadaşını getir kazan"
+    ],
+    "entity": "REFERRAL_PROGRAM"
+  },
+  {
+    "group_id": "SYN_0111",
+    "canonical": "İlk Taksit Erteleme",
+    "members": [
+      "İlk Taksit Erteleme",
+      "İlk taksit öteleme"
+    ],
+    "entity": "CAMPAIGN_BENEFIT"
+  },
+  {
+    "group_id": "SYN_0112",
+    "canonical": "Nakit İade",
+    "members": [
+      "Nakit İade",
+      "Cashback"
+    ],
+    "entity": "CASHBACK"
+  },
+  {
+    "group_id": "SYN_0113",
+    "canonical": "Puan Kazanımı",
+    "members": [
+      "Puan Kazanımı",
+      "Bonus puan",
+      "Worldpuan"
+    ],
+    "entity": "REWARD_POINT"
+  },
+  {
+    "group_id": "SYN_0114",
+    "canonical": "Tahsis Ücreti Yok",
+    "members": [
+      "Tahsis Ücreti Yok",
+      "Tahsis ücreti muafiyeti"
+    ],
+    "entity": "CAMPAIGN_BENEFIT"
+  },
+  {
+    "group_id": "SYN_0115",
+    "canonical": "Banka Kartı",
+    "members": [
+      "Banka Kartı",
+      "Debit kart"
+    ],
+    "entity": "CARD_PRODUCT"
+  },
+  {
+    "group_id": "SYN_0116",
+    "canonical": "Ticari Kart",
+    "members": [
+      "Ticari Kart",
+      "Business kart"
+    ],
+    "entity": "CARD_PRODUCT"
+  },
+  {
+    "group_id": "SYN_0117",
+    "canonical": "Temassız Ödeme",
+    "members": [
+      "Temassız Ödeme",
+      "Contactless"
+    ],
+    "entity": "CARD_FEATURE"
+  },
+  {
+    "group_id": "SYN_0118",
+    "canonical": "İcare",
+    "members": [
+      "İcare",
+      "İcare Akdi"
+    ],
+    "entity": "ISLAMIC_CONTRACT"
+  },
+  {
+    "group_id": "SYN_0119",
+    "canonical": "Mudârebe",
+    "members": [
+      "Mudârebe",
+      "Mudarebe Akdi",
+      "Emek-Sermaye Ortaklığı"
+    ],
+    "entity": "ISLAMIC_CONTRACT"
+  },
+  {
+    "group_id": "SYN_0120",
+    "canonical": "Müşareke",
+    "members": [
+      "Müşareke",
+      "Kâr-Zarar Ortaklığı"
+    ],
+    "entity": "ISLAMIC_CONTRACT"
+  },
+  {
+    "group_id": "SYN_0121",
+    "canonical": "Kâr-Zarar Ortaklığı",
+    "members": [
+      "Kâr-Zarar Ortaklığı",
+      "Profit and Loss Sharing"
+    ],
+    "entity": "ISLAMIC_FINANCING_MODEL"
+  },
+  {
+    "group_id": "SYN_0122",
+    "canonical": "Murabaha",
+    "members": [
+      "Murabaha",
+      "Murabaha Akdi",
+      "Cost Plus Financing"
+    ],
+    "entity": "ISLAMIC_CONTRACT"
+  },
+  {
+    "group_id": "SYN_0123",
+    "canonical": "Katılım Finans Kefalet (KFK)",
+    "members": [
+      "Katılım Finans Kefalet (KFK)",
+      "KFK"
+    ],
+    "entity": "ORGANIZATION"
+  },
+  {
+    "group_id": "SYN_0124",
+    "canonical": "BDDK",
+    "members": [
+      "BDDK",
+      "Bankacılık Düzenleme ve Denetleme Kurumu"
+    ],
+    "entity": "ORGANIZATION"
+  },
+  {
+    "group_id": "SYN_0125",
+    "canonical": "Türk Eximbank",
+    "members": [
+      "Türk Eximbank",
+      "Eximbank"
+    ],
+    "entity": "ORGANIZATION"
+  },
+  {
+    "group_id": "SYN_0126",
+    "canonical": "Ön Limit",
+    "members": [
+      "Ön Limit",
+      "Ön onaylı limit"
+    ],
+    "entity": "PREAPPROVED_LIMIT"
+  },
+  {
+    "group_id": "SYN_0127",
+    "canonical": "Hedef Müşteri",
+    "members": [
+      "Hedef Müşteri",
+      "Hedef kitle"
+    ],
+    "entity": "TARGET_CUSTOMER"
+  },
+  {
+    "group_id": "SYN_0128",
+    "canonical": "KOBİ",
+    "members": [
+      "KOBİ",
+      "Küçük ve Orta Büyüklükte İşletme"
+    ],
+    "entity": "CUSTOMER_SEGMENT"
+  },
+  {
+    "group_id": "SYN_0129",
+    "canonical": "Müşteri İletişim Merkezi",
+    "members": [
+      "Müşteri İletişim Merkezi",
+      "Çağrı merkezi"
+    ],
+    "entity": "SERVICE_CHANNEL"
+  },
+  {
+    "group_id": "SYN_0130",
+    "canonical": "DBS (Doğrudan Borçlandırma Sistemi)",
+    "members": [
+      "DBS (Doğrudan Borçlandırma Sistemi)",
+      "DBS"
+    ],
+    "entity": "FINANCIAL_SYSTEM"
+  },
+  {
+    "group_id": "SYN_0131",
+    "canonical": "Online Tahsilat Sistemi",
+    "members": [
+      "Online Tahsilat Sistemi",
+      "OTS"
+    ],
+    "entity": "PAYMENT_SYSTEM"
+  },
+  {
+    "group_id": "SYN_0132",
+    "canonical": "Kâr Payı Oranı",
+    "members": [
+      "Kâr Payı Oranı",
+      "Kâr oranı",
+      "Finansman oranı",
+      "Kar payı oranı"
+    ],
+    "entity": "PROFIT_RATE"
+  },
+  {
+    "group_id": "SYN_0133",
+    "canonical": "Tekafül",
+    "members": [
+      "Tekafül",
+      "Katılım sigortacılığı"
+    ],
+    "entity": "TAKAFUL"
+  },
+  {
+    "group_id": "SYN_0134",
+    "canonical": "Alacak Sigortası",
+    "members": [
+      "Alacak Sigortası",
+      "Ticari alacak sigortası"
+    ],
+    "entity": "INSURANCE_PRODUCT"
+  },
+  {
+    "group_id": "SYN_0135",
+    "canonical": "Poliçe Primi",
+    "members": [
+      "Poliçe Primi",
+      "Sigorta primi"
+    ],
+    "entity": "INSURANCE_PREMIUM"
+  },
+  {
+    "group_id": "SYN_0136",
+    "canonical": "Bireysel Emeklilik Sistemi",
+    "members": [
+      "Bireysel Emeklilik Sistemi",
+      "BES"
+    ],
+    "entity": "INSURANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0137",
+    "canonical": "Fazla Dağıtımı",
+    "members": [
+      "Fazla Dağıtımı",
+      "Surplus distribution"
+    ],
+    "entity": "INSURANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0138",
+    "canonical": "Katılım Sigortacılığı",
+    "members": [
+      "Katılım Sigortacılığı",
+      "Tekafül"
+    ],
+    "entity": "INSURANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0139",
+    "canonical": "Operatör",
+    "members": [
+      "Operatör",
+      "Tekafül işletmecisi"
+    ],
+    "entity": "INSURANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0140",
+    "canonical": "Otomatik Katılım Sistemi",
+    "members": [
+      "Otomatik Katılım Sistemi",
+      "OKS"
+    ],
+    "entity": "INSURANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0141",
+    "canonical": "Yeşil Dönüşüm",
+    "members": [
+      "Yeşil Dönüşüm",
+      "Yeşil ekonomik dönüşüm"
+    ],
+    "entity": "GREEN_TRANSFORMATION"
+  },
+  {
+    "group_id": "SYN_0142",
+    "canonical": "Dış Görüş",
+    "members": [
+      "Dış Görüş",
+      "Second Party Opinion"
+    ],
+    "entity": "ESG_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0143",
+    "canonical": "Emisyon Ticaret Sistemi",
+    "members": [
+      "Emisyon Ticaret Sistemi",
+      "ETS"
+    ],
+    "entity": "ESG_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0144",
+    "canonical": "Enerji Kimlik Belgesi",
+    "members": [
+      "Enerji Kimlik Belgesi",
+      "EKB"
+    ],
+    "entity": "ESG_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0145",
+    "canonical": "Kapsam 1 Emisyonu",
+    "members": [
+      "Kapsam 1 Emisyonu",
+      "Scope 1"
+    ],
+    "entity": "ESG_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0146",
+    "canonical": "Kapsam 2 Emisyonu",
+    "members": [
+      "Kapsam 2 Emisyonu",
+      "Scope 2"
+    ],
+    "entity": "ESG_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0147",
+    "canonical": "Kapsam 3 Emisyonu",
+    "members": [
+      "Kapsam 3 Emisyonu",
+      "Scope 3"
+    ],
+    "entity": "ESG_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0148",
+    "canonical": "Net Sıfır",
+    "members": [
+      "Net Sıfır",
+      "Net zero"
+    ],
+    "entity": "ESG_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0149",
+    "canonical": "Sürdürülebilirlik Performans Hedefi",
+    "members": [
+      "Sürdürülebilirlik Performans Hedefi",
+      "SPT"
+    ],
+    "entity": "ESG_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0150",
+    "canonical": "Temel Performans Göstergesi",
+    "members": [
+      "Temel Performans Göstergesi",
+      "KPI"
+    ],
+    "entity": "ESG_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0151",
+    "canonical": "Türkiye Sürdürülebilirlik Raporlama Standartları",
+    "members": [
+      "Türkiye Sürdürülebilirlik Raporlama Standartları",
+      "TSRS"
+    ],
+    "entity": "ESG_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0152",
+    "canonical": "Yeşil Yıkama",
+    "members": [
+      "Yeşil Yıkama",
+      "Greenwashing"
+    ],
+    "entity": "ESG_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0153",
+    "canonical": "Çevresel Etki Değerlendirmesi",
+    "members": [
+      "Çevresel Etki Değerlendirmesi",
+      "ÇED"
+    ],
+    "entity": "ESG_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0154",
+    "canonical": "Çevresel ve Sosyal Eylem Planı",
+    "members": [
+      "Çevresel ve Sosyal Eylem Planı",
+      "ESAP"
+    ],
+    "entity": "ESG_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0155",
+    "canonical": "Çevresel ve Sosyal Risk Değerlendirmesi",
+    "members": [
+      "Çevresel ve Sosyal Risk Değerlendirmesi",
+      "ESRA"
+    ],
+    "entity": "ESG_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0156",
+    "canonical": "Elektrikli Araç Finansmanı",
+    "members": [
+      "Elektrikli Araç Finansmanı",
+      "Çevre dostu araç finansmanı"
+    ],
+    "entity": "GREEN_FINANCING_PRODUCT"
+  },
+  {
+    "group_id": "SYN_0157",
+    "canonical": "Güneş Enerjisi Santrali Finansmanı",
+    "members": [
+      "Güneş Enerjisi Santrali Finansmanı",
+      "GES Finansmanı"
+    ],
+    "entity": "GREEN_FINANCING_PRODUCT"
+  },
+  {
+    "group_id": "SYN_0158",
+    "canonical": "Rüzgâr Enerjisi Santrali Finansmanı",
+    "members": [
+      "Rüzgâr Enerjisi Santrali Finansmanı",
+      "RES Finansmanı"
+    ],
+    "entity": "GREEN_FINANCING_PRODUCT"
+  },
+  {
+    "group_id": "SYN_0159",
+    "canonical": "ESG",
+    "members": [
+      "ESG",
+      "Environmental Social Governance"
+    ],
+    "entity": "ESG_TERM"
+  },
+  {
+    "group_id": "SYN_0160",
+    "canonical": "Vade",
+    "members": [
+      "Vade",
+      "Ödeme süresi"
+    ],
+    "entity": "MATURITY"
+  },
+  {
+    "group_id": "SYN_0161",
+    "canonical": "Bitiş Tarihi",
+    "members": [
+      "Bitiş Tarihi",
+      "Son başvuru tarihi"
+    ],
+    "entity": "END_DATE"
+  },
+  {
+    "group_id": "SYN_0162",
+    "canonical": "Tarım Makinesi Finansmanı",
+    "members": [
+      "Tarım Makinesi Finansmanı",
+      "Tarımsal ekipman finansmanı"
+    ],
+    "entity": "PRODUCT"
+  },
+  {
+    "group_id": "SYN_0163",
+    "canonical": "Su Ürünleri Yetiştiriciliği",
+    "members": [
+      "Su Ürünleri Yetiştiriciliği",
+      "Akuakültür"
+    ],
+    "entity": "AGRICULTURE_ACTIVITY"
+  },
+  {
+    "group_id": "SYN_0164",
+    "canonical": "Dekar",
+    "members": [
+      "Dekar",
+      "Dönüm"
+    ],
+    "entity": "AGRICULTURE_TERM"
+  },
+  {
+    "group_id": "SYN_0165",
+    "canonical": "Elektronik Ürün Senedi Teminatı",
+    "members": [
+      "Elektronik Ürün Senedi Teminatı",
+      "ELÜS teminatı"
+    ],
+    "entity": "AGRICULTURE_TERM"
+  },
+  {
+    "group_id": "SYN_0166",
+    "canonical": "Hayvancılık Bilgi Sistemi",
+    "members": [
+      "Hayvancılık Bilgi Sistemi",
+      "HAYBİS"
+    ],
+    "entity": "AGRICULTURE_TERM"
+  },
+  {
+    "group_id": "SYN_0167",
+    "canonical": "Çiftçi Kayıt Sistemi",
+    "members": [
+      "Çiftçi Kayıt Sistemi",
+      "ÇKS"
+    ],
+    "entity": "AGRICULTURE_TERM"
+  },
+  {
+    "group_id": "SYN_0168",
+    "canonical": "Örtü Altı Tarım",
+    "members": [
+      "Örtü Altı Tarım",
+      "Sera üretimi"
+    ],
+    "entity": "AGRICULTURE_METHOD"
+  },
+  {
+    "group_id": "SYN_0169",
+    "canonical": "İyi Tarım Uygulamaları",
+    "members": [
+      "İyi Tarım Uygulamaları",
+      "İTU"
+    ],
+    "entity": "AGRICULTURE_METHOD"
+  },
+  {
+    "group_id": "SYN_0170",
+    "canonical": "ELÜS",
+    "members": [
+      "ELÜS",
+      "Elektronik Ürün Senedi"
+    ],
+    "entity": "AGRICULTURAL_INSTRUMENT"
+  },
+  {
+    "group_id": "SYN_0171",
+    "canonical": "Para Birimi",
+    "members": [
+      "Para Birimi",
+      "TL",
+      "USD",
+      "EUR",
+      "XAU"
+    ],
+    "entity": "CURRENCY"
+  },
+  {
+    "group_id": "SYN_0172",
+    "canonical": "Ürün",
+    "members": [
+      "Ürün",
+      "Finansal ürün"
+    ],
+    "entity": "PRODUCT"
+  },
+  {
+    "group_id": "SYN_0173",
+    "canonical": "Banka",
+    "members": [
+      "Banka",
+      "Katılım bankası"
+    ],
+    "entity": "BANK"
+  },
+  {
+    "group_id": "SYN_0174",
+    "canonical": "Aktif Karlılığı",
+    "members": [
+      "Aktif Karlılığı",
+      "ROA"
+    ],
+    "entity": "COMMERCIAL_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0175",
+    "canonical": "Borç Servis Karşılama Oranı",
+    "members": [
+      "Borç Servis Karşılama Oranı",
+      "DSCR"
+    ],
+    "entity": "COMMERCIAL_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0176",
+    "canonical": "FAVÖK",
+    "members": [
+      "FAVÖK",
+      "EBITDA"
+    ],
+    "entity": "COMMERCIAL_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0177",
+    "canonical": "Likidite Oranı",
+    "members": [
+      "Likidite Oranı",
+      "Asit-test oranı"
+    ],
+    "entity": "COMMERCIAL_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0178",
+    "canonical": "Net Bugünkü Değer",
+    "members": [
+      "Net Bugünkü Değer",
+      "NBD",
+      "NPV"
+    ],
+    "entity": "COMMERCIAL_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0179",
+    "canonical": "Operasyonel Harcama",
+    "members": [
+      "Operasyonel Harcama",
+      "OPEX"
+    ],
+    "entity": "COMMERCIAL_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0180",
+    "canonical": "Sermaye Harcaması",
+    "members": [
+      "Sermaye Harcaması",
+      "CAPEX"
+    ],
+    "entity": "COMMERCIAL_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0181",
+    "canonical": "Vergi Kimlik Numarası",
+    "members": [
+      "Vergi Kimlik Numarası",
+      "VKN"
+    ],
+    "entity": "COMMERCIAL_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0182",
+    "canonical": "Yatırımın Geri Dönüş Süresi",
+    "members": [
+      "Yatırımın Geri Dönüş Süresi",
+      "Payback period"
+    ],
+    "entity": "COMMERCIAL_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0183",
+    "canonical": "Özkaynak Karlılığı",
+    "members": [
+      "Özkaynak Karlılığı",
+      "ROE"
+    ],
+    "entity": "COMMERCIAL_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0184",
+    "canonical": "İç Verim Oranı",
+    "members": [
+      "İç Verim Oranı",
+      "İVO",
+      "IRR"
+    ],
+    "entity": "COMMERCIAL_FINANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0185",
+    "canonical": "Fatura Teminatlı Finansman",
+    "members": [
+      "Fatura Teminatlı Finansman",
+      "Fatura teminatlı kredi"
+    ],
+    "entity": "PRODUCT"
+  },
+  {
+    "group_id": "SYN_0186",
+    "canonical": "İşletme Sermayesi",
+    "members": [
+      "İşletme Sermayesi",
+      "Çalışma sermayesi"
+    ],
+    "entity": "FINANCING_PURPOSE"
+  },
+  {
+    "group_id": "SYN_0187",
+    "canonical": "Finansal Kiralama",
+    "members": [
+      "Finansal Kiralama",
+      "Leasing"
+    ],
+    "entity": "FINANCING_METHOD"
+  },
+  {
+    "group_id": "SYN_0188",
+    "canonical": "Sat-Geri Kirala",
+    "members": [
+      "Sat-Geri Kirala",
+      "Sale and Lease Back"
+    ],
+    "entity": "SALE_AND_LEASEBACK"
+  },
+  {
+    "group_id": "SYN_0189",
+    "canonical": "Proje Şirketi (SPV)",
+    "members": [
+      "Proje Şirketi (SPV)",
+      "SPV"
+    ],
+    "entity": "SPECIAL_PURPOSE_VEHICLE"
+  },
+  {
+    "group_id": "SYN_0190",
+    "canonical": "Tedarikçi Finansmanı",
+    "members": [
+      "Tedarikçi Finansmanı",
+      "Supply Chain Finance"
+    ],
+    "entity": "PRODUCT"
+  },
+  {
+    "group_id": "SYN_0191",
+    "canonical": "Finansman Tutarı",
+    "members": [
+      "Finansman Tutarı",
+      "Finansman limiti",
+      "Kullanım tutarı"
+    ],
+    "entity": "FINANCING_AMOUNT"
+  },
+  {
+    "group_id": "SYN_0192",
+    "canonical": "Toplam Geri Ödeme",
+    "members": [
+      "Toplam Geri Ödeme",
+      "Ödenecek toplam tutar"
+    ],
+    "entity": "TOTAL_PAYMENT"
+  },
+  {
+    "group_id": "SYN_0193",
+    "canonical": "Kara Paranın Aklanmasının Önlenmesi",
+    "members": [
+      "Kara Paranın Aklanmasının Önlenmesi",
+      "AML"
+    ],
+    "entity": "COMPLIANCE_FRAMEWORK"
+  },
+  {
+    "group_id": "SYN_0194",
+    "canonical": "Şüpheli İşlem Bildirimi",
+    "members": [
+      "Şüpheli İşlem Bildirimi",
+      "ŞİB"
+    ],
+    "entity": "COMPLIANCE_PROCESS"
+  },
+  {
+    "group_id": "SYN_0195",
+    "canonical": "Terörizmin Finansmanının Önlenmesi",
+    "members": [
+      "Terörizmin Finansmanının Önlenmesi",
+      "CFT"
+    ],
+    "entity": "COMPLIANCE_FRAMEWORK"
+  },
+  {
+    "group_id": "SYN_0196",
+    "canonical": "Müşterini Tanı",
+    "members": [
+      "Müşterini Tanı",
+      "KYC",
+      "Know Your Customer"
+    ],
+    "entity": "COMPLIANCE_PROCESS"
+  },
+  {
+    "group_id": "SYN_0197",
+    "canonical": "Kişisel Verilerin Korunması",
+    "members": [
+      "Kişisel Verilerin Korunması",
+      "KVKK"
+    ],
+    "entity": "COMPLIANCE_FRAMEWORK"
+  },
+  {
+    "group_id": "SYN_0198",
+    "canonical": "Adverse Media",
+    "members": [
+      "Adverse Media",
+      "Olumsuz haber taraması"
+    ],
+    "entity": "COMPLIANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0199",
+    "canonical": "Alarm",
+    "members": [
+      "Alarm",
+      "Uyarı"
+    ],
+    "entity": "COMPLIANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0200",
+    "canonical": "Fon Kaynağı",
+    "members": [
+      "Fon Kaynağı",
+      "Source of funds"
+    ],
+    "entity": "COMPLIANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0201",
+    "canonical": "Nihai Faydalanıcı",
+    "members": [
+      "Nihai Faydalanıcı",
+      "Gerçek faydalanıcı",
+      "UBO"
+    ],
+    "entity": "COMPLIANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0202",
+    "canonical": "Servet Kaynağı",
+    "members": [
+      "Servet Kaynağı",
+      "Source of wealth"
+    ],
+    "entity": "COMPLIANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0203",
+    "canonical": "Siyasi Nüfuz Sahibi Kişi",
+    "members": [
+      "Siyasi Nüfuz Sahibi Kişi",
+      "PEP"
+    ],
+    "entity": "COMPLIANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0204",
+    "canonical": "İleti Yönetim Sistemi",
+    "members": [
+      "İleti Yönetim Sistemi",
+      "İYS"
+    ],
+    "entity": "COMPLIANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0205",
+    "canonical": "İşlem İzleme",
+    "members": [
+      "İşlem İzleme",
+      "Transaction monitoring"
+    ],
+    "entity": "COMPLIANCE_TERM"
+  },
+  {
+    "group_id": "SYN_0206",
+    "canonical": "Katılma Payı",
+    "members": [
+      "Katılma Payı",
+      "Fon payı"
+    ],
+    "entity": "FUND_UNIT"
+  },
+  {
+    "group_id": "SYN_0207",
+    "canonical": "Kira Sertifikası",
+    "members": [
+      "Kira Sertifikası",
+      "Sukuk"
+    ],
+    "entity": "CAPITAL_MARKET_INSTRUMENT"
+  },
+  {
+    "group_id": "SYN_0208",
+    "canonical": "Borsa Yatırım Fonu",
+    "members": [
+      "Borsa Yatırım Fonu",
+      "BYF",
+      "ETF"
+    ],
+    "entity": "INVESTMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0209",
+    "canonical": "Borsa İstanbul",
+    "members": [
+      "Borsa İstanbul",
+      "BIST"
+    ],
+    "entity": "INVESTMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0210",
+    "canonical": "Fon Karşılaştırma Ölçütü",
+    "members": [
+      "Fon Karşılaştırma Ölçütü",
+      "Benchmark"
+    ],
+    "entity": "INVESTMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0211",
+    "canonical": "Gayrimenkul Yatırım Fonu",
+    "members": [
+      "Gayrimenkul Yatırım Fonu",
+      "GYF"
+    ],
+    "entity": "INVESTMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0212",
+    "canonical": "Girişim Sermayesi Yatırım Fonu",
+    "members": [
+      "Girişim Sermayesi Yatırım Fonu",
+      "GSYF"
+    ],
+    "entity": "INVESTMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0213",
+    "canonical": "Hisse Senedi",
+    "members": [
+      "Hisse Senedi",
+      "Pay senedi"
+    ],
+    "entity": "INVESTMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0214",
+    "canonical": "Merkezi Kayıt Kuruluşu",
+    "members": [
+      "Merkezi Kayıt Kuruluşu",
+      "MKK"
+    ],
+    "entity": "INVESTMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0215",
+    "canonical": "TEFAS",
+    "members": [
+      "TEFAS",
+      "Türkiye Elektronik Fon Alım Satım Platformu"
+    ],
+    "entity": "INVESTMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0216",
+    "canonical": "Varlık Dağılımı",
+    "members": [
+      "Varlık Dağılımı",
+      "Asset allocation"
+    ],
+    "entity": "INVESTMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0217",
+    "canonical": "Varlık Kiralama Şirketi",
+    "members": [
+      "Varlık Kiralama Şirketi",
+      "VKŞ"
+    ],
+    "entity": "INVESTMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0218",
+    "canonical": "Peşinat",
+    "members": [
+      "Peşinat",
+      "Ön ödeme"
+    ],
+    "entity": "DOWN_PAYMENT"
+  },
+  {
+    "group_id": "SYN_0219",
+    "canonical": "FAST",
+    "members": [
+      "FAST",
+      "Fonların Anlık ve Sürekli Transferi"
+    ],
+    "entity": "PAYMENT_SYSTEM"
+  },
+  {
+    "group_id": "SYN_0220",
+    "canonical": "EFT",
+    "members": [
+      "EFT",
+      "Elektronik Fon Transferi"
+    ],
+    "entity": "PAYMENT_SYSTEM"
+  },
+  {
+    "group_id": "SYN_0221",
+    "canonical": "IBAN",
+    "members": [
+      "IBAN",
+      "Uluslararası Banka Hesap Numarası"
+    ],
+    "entity": "IBAN"
+  },
+  {
+    "group_id": "SYN_0222",
+    "canonical": "Alıcı",
+    "members": [
+      "Alıcı",
+      "Lehtar müşteri"
+    ],
+    "entity": "PAYMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0223",
+    "canonical": "BKM",
+    "members": [
+      "BKM",
+      "Bankalararası Kart Merkezi"
+    ],
+    "entity": "PAYMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0224",
+    "canonical": "Elektronik Para",
+    "members": [
+      "Elektronik Para",
+      "E-para"
+    ],
+    "entity": "PAYMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0225",
+    "canonical": "Gönderen",
+    "members": [
+      "Gönderen",
+      "Ödeyen"
+    ],
+    "entity": "PAYMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0226",
+    "canonical": "HCE",
+    "members": [
+      "HCE",
+      "Host Card Emulation"
+    ],
+    "entity": "PAYMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0227",
+    "canonical": "Kart Doğrulama Kodu",
+    "members": [
+      "Kart Doğrulama Kodu",
+      "CVV",
+      "CVC"
+    ],
+    "entity": "PAYMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0228",
+    "canonical": "Kart Numarası",
+    "members": [
+      "Kart Numarası",
+      "PAN"
+    ],
+    "entity": "PAYMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0229",
+    "canonical": "Kart Veren Banka",
+    "members": [
+      "Kart Veren Banka",
+      "Issuer"
+    ],
+    "entity": "PAYMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0230",
+    "canonical": "Kart Şifresi",
+    "members": [
+      "Kart Şifresi",
+      "PIN"
+    ],
+    "entity": "PAYMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0231",
+    "canonical": "Kişiden Kişiye Ödeme",
+    "members": [
+      "Kişiden Kişiye Ödeme",
+      "P2P ödeme"
+    ],
+    "entity": "PAYMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0232",
+    "canonical": "Kişiden İşyerine Ödeme",
+    "members": [
+      "Kişiden İşyerine Ödeme",
+      "P2M ödeme"
+    ],
+    "entity": "PAYMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0233",
+    "canonical": "Tekrarlayan Ödeme",
+    "members": [
+      "Tekrarlayan Ödeme",
+      "Recurring payment"
+    ],
+    "entity": "PAYMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0234",
+    "canonical": "Ödeme İste",
+    "members": [
+      "Ödeme İste",
+      "Request to Pay"
+    ],
+    "entity": "PAYMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0235",
+    "canonical": "Üye İşyeri Bankası",
+    "members": [
+      "Üye İşyeri Bankası",
+      "Acquirer"
+    ],
+    "entity": "PAYMENT_TERM"
+  },
+  {
+    "group_id": "SYN_0236",
+    "canonical": "POS",
+    "members": [
+      "POS",
+      "Point of Sale"
+    ],
+    "entity": "PAYMENT_SYSTEM"
+  },
+  {
+    "group_id": "SYN_0237",
+    "canonical": "Otomatik Ödeme Talimatı",
+    "members": [
+      "Otomatik Ödeme Talimatı",
+      "Otomatik fatura talimatı"
+    ],
+    "entity": "AUTO_PAYMENT"
+  },
+  {
+    "group_id": "SYN_0238",
+    "canonical": "Chargeback",
+    "members": [
+      "Chargeback",
+      "Ters ibraz"
+    ],
+    "entity": "CARD_DISPUTE"
+  },
+  {
+    "group_id": "SYN_0239",
+    "canonical": "Masraf",
+    "members": [
+      "Masraf",
+      "Ücret",
+      "Komisyon"
+    ],
+    "entity": "EXPENSE"
+  },
+  {
+    "group_id": "SYN_0240",
+    "canonical": "Kart Aidatı",
+    "members": [
+      "Kart Aidatı",
+      "Yıllık kart ücreti"
+    ],
+    "entity": "FEE"
+  },
+  {
+    "group_id": "SYN_0241",
+    "canonical": "Üye İşyeri Komisyonu",
+    "members": [
+      "Üye İşyeri Komisyonu",
+      "MDR"
+    ],
+    "entity": "FEE"
+  },
+  {
+    "group_id": "SYN_0242",
+    "canonical": "Gurbetten Sılaya Gayrimenkul Finansmanı",
+    "members": [
+      "Gurbetten Sılaya Gayrimenkul Finansmanı",
+      "Gurbetçi finansmanı"
+    ],
+    "entity": "PRODUCT"
+  },
+  {
+    "group_id": "SYN_0243",
+    "canonical": "İlk Evim Konut Finansmanı",
+    "members": [
+      "İlk Evim Konut Finansmanı",
+      "İlk konut finansmanı"
+    ],
+    "entity": "PRODUCT"
+  }
+]
