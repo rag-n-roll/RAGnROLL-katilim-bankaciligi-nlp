@@ -1,0 +1,49 @@
+{
+  "synthetic_data_notice": "Bu veri setleri şablon tabanlı sentetik örneklerdir; gerçek kullanıcı verisi veya resmî ürün oranı içermez.",
+  "counts": {
+    "classifier": 3446,
+    "ner": 2800,
+    "extraction": 2200,
+    "dialogues": 500,
+    "tool_calling": 400,
+    "evaluation": 500
+  },
+  "intent_distribution": {
+    "investment_query": 250,
+    "trade_finance_query": 250,
+    "application_requirements": 73,
+    "product_comparison": 350,
+    "campaign_query": 250,
+    "transaction_howto": 250,
+    "definition": 900,
+    "maturity_query": 300,
+    "agriculture_finance_query": 250,
+    "rate_query": 300,
+    "complaint_support": 200,
+    "product_search": 73
+  },
+  "ner_label_distribution": {
+    "BANK": 2300,
+    "PRODUCT": 1800,
+    "MATURITY": 1800,
+    "PROFIT_RATE": 1800,
+    "FINANCING_AMOUNT": 1212,
+    "APPLICATION_CHANNEL": 1187,
+    "TRADE_FINANCE_TERM": 500,
+    "DOCUMENT": 500,
+    "CAMPAIGN": 500,
+    "END_DATE": 500,
+    "CONDITION": 500,
+    "CAMPAIGN_BENEFIT": 500
+  },
+  "task_distribution": {
+    "product_extraction": 1200,
+    "campaign_extraction": 600,
+    "trade_finance_extraction": 400
+  },
+  "recommended_split": {
+    "classifier": "80/10/10",
+    "ner": "mevcut train/validation + ayrı test",
+    "extraction": "80/10/10"
+  }
+}

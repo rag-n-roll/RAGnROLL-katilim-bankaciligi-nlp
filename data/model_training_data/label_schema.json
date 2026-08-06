@@ -1,0 +1,51 @@
+{
+  "intent_labels": [
+    "agriculture_finance_query",
+    "application_requirements",
+    "campaign_query",
+    "complaint_support",
+    "definition",
+    "investment_query",
+    "maturity_query",
+    "product_comparison",
+    "product_search",
+    "rate_query",
+    "trade_finance_query",
+    "transaction_howto"
+  ],
+  "ner_labels": [
+    "APPLICATION_CHANNEL",
+    "BANK",
+    "CAMPAIGN",
+    "CAMPAIGN_BENEFIT",
+    "CONDITION",
+    "DOCUMENT",
+    "END_DATE",
+    "FINANCING_AMOUNT",
+    "MATURITY",
+    "PRODUCT",
+    "PROFIT_RATE",
+    "TRADE_FINANCE_TERM"
+  ],
+  "extraction_fields": [
+    "application_channel",
+    "bank",
+    "benefit",
+    "campaign",
+    "condition",
+    "document",
+    "end_date",
+    "financing_amount",
+    "maturity",
+    "organization",
+    "product",
+    "profit_rate",
+    "trade_term"
+  ],
+  "tool_names": [
+    "search_campaign_kb",
+    "search_investment_kb",
+    "search_product_kb",
+    "search_trade_finance_kb"
+  ]
+}
