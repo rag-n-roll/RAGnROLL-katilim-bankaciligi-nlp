@@ -1,0 +1,100 @@
+.navbar {
+  width: 100%;
+  height: 72px;
+  background: linear-gradient(
+    90deg,
+    var(--petrol) 0%,
+    var(--petrol-secondary) 100%
+  );
+
+  display: flex;
+  align-items: center;
+}
+
+.container {
+  width: min(1440px, calc(100% - 96px));
+  height: 100%;
+  margin: 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  color: white;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.navigation {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 44px;
+}
+
+.navLink {
+  position: relative;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.navLink.active::after {
+  content: "";
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  bottom: 12px;
+
+  height: 3px;
+  background: var(--yellow);
+  border-radius: 10px;
+}
+
+.aiButton {
+  min-width: 155px;
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  padding: 0 20px;
+
+  border: 1.5px solid var(--turquoise);
+  border-radius: 10px;
+
+  color: var(--turquoise);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.aiIcon {
+  font-size: 24px;
+}
+
+.aiButton:hover,
+.aiActive {
+  background: rgba(18, 184, 176, 0.08);
+}
+
+@media (max-width: 900px) {
+  .container {
+    width: calc(100% - 40px);
+  }
+
+  .navigation {
+    gap: 20px;
+  }
+}

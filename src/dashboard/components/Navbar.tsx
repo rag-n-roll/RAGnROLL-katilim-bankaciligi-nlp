@@ -1,59 +1,49 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import styles from "./Navbar.module.css";
+
+const navItems = [
+  { label: "Ana Sayfa", href: "/" },
+  { label: "Karşılaştırma", href: "/compare" },
+  { label: "Kampanyalar", href: "/campaigns" },
+];
 
 export default function Navbar() {
+  const pathname = usePathname();
+
   return (
-    <nav
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "16px 32px",
-        borderBottom: "1px solid #dddddd",
-      }}
-    >
-      <Link
-        href="/"
-        style={{
-          fontSize: "20px",
-          fontWeight: "bold",
-          textDecoration: "none",
-          color: "black",
-        }}
-      >
-        Katılım Bankacılığı
-      </Link>
-
-      <div
-        style={{
-          display: "flex",
-          gap: "24px",
-        }}
-      >
-        <Link href="/" style={{ textDecoration: "none", color: "black" }}>
-          Ana Sayfa
+    <header className={styles.navbar}>
+      <div className={styles.container}>
+        <Link href="/" className={styles.brand}>
+          Katılım Bankacılığı
         </Link>
 
-        <Link
-          href="/compare"
-          style={{ textDecoration: "none", color: "black" }}
-        >
-          Karşılaştırma
-        </Link>
+        <nav className={styles.navigation}>
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`${styles.navLink} ${
+                pathname === item.href ? styles.active : ""
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
 
-        <Link
-          href="/campaigns"
-          style={{ textDecoration: "none", color: "black" }}
-        >
-          Kampanyalar
-        </Link>
-
-        <Link
-          href="/chatbot"
-          style={{ textDecoration: "none", color: "black" }}
-        >
-          Chatbot
-        </Link>
+          <Link
+            href="/chatbot"
+            className={`${styles.aiButton} ${
+              pathname === "/chatbot" ? styles.aiActive : ""
+            }`}
+          >
+            <span className={styles.aiIcon}>✦</span>
+            AI Asistan
+          </Link>
+        </nav>
       </div>
-    </nav>
+    </header>
   );
 }

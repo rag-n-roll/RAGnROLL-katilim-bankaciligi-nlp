@@ -1,40 +1,38 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --petrol: #002b3a;
+  --petrol-secondary: #003d4f;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+  --turquoise: #12b8b0;
+  --turquoise-light: #e3f8f6;
 
-html {
-  height: 100%;
-}
+  --yellow: #e7aa2d;
+  --yellow-light: #fff4dd;
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
+  --background: #f7f9fa;
+  --card: #ffffff;
+  --surface: #f4f7f8;
+  --border: #e3e9eb;
 
-body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --text-primary: #102f3d;
+  --text-secondary: #62737b;
 }
 
 * {
   box-sizing: border-box;
-  padding: 0;
   margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--text-primary);
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 a {
@@ -42,8 +40,8 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+button,
+input,
+select {
+  font: inherit;
 }
