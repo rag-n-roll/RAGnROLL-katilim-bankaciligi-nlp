@@ -4,6 +4,7 @@
   "error_count": 0,
   "warning_count": 24,
   "fetch_failure_count": 0,
+  "duplicate_count": 0,
   "quality_score": 1.0,
   "issues": [
     {
@@ -30,27 +31,6 @@
     {
       "record_id": "726179c6d29f2e3fe923",
       "bank_slug": "turkiye-finans",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "5419a406e536789f0629",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "d8e30a4e58d0c5e91966",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "df9e6fe83ba817d7b775",
-      "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
@@ -112,7 +92,7 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "929afbe144b060ea13cb",
+      "record_id": "f0b8b29aa72d7ed00374",
       "bank_slug": "emlak-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -126,54 +106,76 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "d3493f25f17b32084faf",
+      "record_id": "101843643753f2f1407e",
       "bank_slug": "emlak-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "520aae7bc8ab22d41351",
+      "record_id": "08b48c292a891b01747f",
       "bank_slug": "emlak-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "b1ae49966307fc47fa86",
+      "record_id": "e101e82f61ca02fead19",
       "bank_slug": "emlak-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "84879bb43a6a3f479fe9",
+      "record_id": "ebca03a8335f2f61fa7c",
       "bank_slug": "emlak-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "763280a81b32bb82322e",
+      "record_id": "6407e9b57ff0f8f5f1eb",
       "bank_slug": "emlak-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "ad5d5cf283124fe1589f",
+      "record_id": "24f9a751add244c2d27b",
       "bank_slug": "emlak-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "48c9b51108cf77ce2f67",
+      "record_id": "603baf4315299554b1cc",
+      "bank_slug": "emlak-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a86aceb1f396c190c140",
+      "bank_slug": "emlak-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "678ca0b6b8f0b5c9ad4a",
+      "bank_slug": "emlak-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "4627baa4369de0a685ad",
       "bank_slug": "emlak-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
     }
   ],
-  "fetch_failures": []
+  "fetch_failures": [],
+  "duplicates": []
 }
