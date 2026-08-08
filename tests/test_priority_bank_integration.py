@@ -30,11 +30,30 @@ class FixtureClient:
 
 
 @pytest.mark.parametrize(
-    ("scraper_class", "fixture_prefix", "expected_url"),
+    (
+        "scraper_class",
+        "fixture_prefix",
+        "expected_slug",
+        "expected_bank_name",
+        "expected_title",
+        "expected_summary",
+        "expected_content",
+        "expected_url",
+    ),
     [
         (
             KuveytTurkScraper,
             "kuveyt_turk",
+            "kuveyt-turk",
+            "Kuveyt Türk Katılım Bankası A.Ş.",
+            "Kuveyt Türk Örnek Kampanyası",
+            "1 Ağustos - 31 Ağustos 2026 tarihleri arasında geçerlidir.",
+            (
+                "1 Ağustos - 31 Ağustos 2026 tarihleri arasında geçerlidir.\n"
+                "Kuveyt Türk müşterilerine özel kampanya koşullarını ve "
+                "katılım "
+                "ayrıntılarını açıklayan yeterince uzun içerik metnidir."
+            ),
             (
                 "https://www.kuveytturk.com.tr/kampanyalar/kendim-icin/"
                 "kart-kampanyalari/ornek-firsat"
@@ -43,11 +62,31 @@ class FixtureClient:
         (
             AlbarakaScraper,
             "albaraka",
+            "albaraka-turk",
+            "Albaraka Türk Katılım Bankası A.Ş.",
+            "Albaraka Türk Örnek Kampanyası",
+            "1 Ağustos - 31 Ağustos 2026 tarihleri arasında geçerlidir.",
+            (
+                "1 Ağustos - 31 Ağustos 2026 tarihleri arasında geçerlidir.\n"
+                "Albaraka Türk müşterilerine özel kampanya koşullarını ve "
+                "katılım "
+                "ayrıntılarını açıklayan yeterince uzun içerik metnidir."
+            ),
             "https://www.albaraka.com.tr/tr/kampanyalar/detay/ornek-firsat",
         ),
         (
             TurkiyeFinansScraper,
             "turkiye_finans",
+            "turkiye-finans",
+            "Türkiye Finans Katılım Bankası A.Ş.",
+            "Türkiye Finans Örnek Kampanyası",
+            "1 Ağustos - 31 Ağustos 2026 tarihleri arasında geçerlidir.",
+            (
+                "1 Ağustos - 31 Ağustos 2026 tarihleri arasında geçerlidir.\n"
+                "Türkiye Finans müşterilerine özel kampanya koşullarını ve "
+                "katılım "
+                "ayrıntılarını açıklayan yeterince uzun içerik metnidir."
+            ),
             (
                 "https://www.turkiyefinans.com.tr/tr-tr/kampanyalar/"
                 "Sayfalar/ornek-firsat.aspx"
@@ -56,7 +95,14 @@ class FixtureClient:
     ],
 )
 def test_priority_bank_fixture_pipeline(
-    scraper_class, fixture_prefix: str, expected_url: str
+    scraper_class,
+    fixture_prefix: str,
+    expected_slug: str,
+    expected_bank_name: str,
+    expected_title: str,
+    expected_summary: str,
+    expected_content: str,
+    expected_url: str,
 ) -> None:
     listing_path = FIXTURES / f"{fixture_prefix}_listing.html"
     detail_path = FIXTURES / f"{fixture_prefix}_detail.html"
@@ -71,13 +117,13 @@ def test_priority_bank_fixture_pipeline(
     assert client.requests.count(expected_url) == 1
 
     record = records[0]
-    assert record.bank_slug == scraper_class.config.slug
-    assert record.bank_name == scraper_class.config.bank_name
+    assert record.bank_slug == expected_slug
+    assert record.bank_name == expected_bank_name
+    assert record.title == expected_title
+    assert record.summary == expected_summary
+    assert record.content == expected_content
     assert record.source_url == expected_url
     assert record.source_url.startswith("https://")
-    assert record.title
-    assert record.summary
-    assert record.content
     assert record.start_date == date(2026, 8, 1)
     assert record.end_date == date(2026, 8, 31)
     assert not re.search(r"<[^>]+>", record.content)
