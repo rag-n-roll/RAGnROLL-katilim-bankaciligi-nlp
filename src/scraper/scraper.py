@@ -36,6 +36,8 @@ def run_banks(args: argparse.Namespace) -> int:
 
 
 def run_campaigns(args: argparse.Namespace) -> int:
+    if args.output.resolve() == args.quality_report.resolve():
+        raise ValueError("Campaign and quality report output paths must differ")
     bank_slugs = resolve_banks(args.banks)
     client = _client(args)
     records = []

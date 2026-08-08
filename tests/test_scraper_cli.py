@@ -1,6 +1,8 @@
 import json
 from argparse import Namespace
 
+import pytest
+
 from src.scraper.models import Campaign
 from src.scraper import scraper
 from src.scraper.scraper import run_campaigns, run_validate
@@ -170,6 +172,29 @@ def test_campaigns_preserves_last_known_good_dataset_when_all_banks_fail(
     args.output.unlink()
     assert run_campaigns(args) == 2
     assert not args.output.exists()
+
+
+@pytest.mark.parametrize(
+    ("bank_slug", "scraper_class"),
+    [("working", WorkingScraper), ("broken", BrokenScraper)],
+)
+def test_campaigns_rejects_colliding_output_paths_before_scraping(
+    tmp_path, monkeypatch, bank_slug, scraper_class
+):
+    monkeypatch.setitem(scraper.SCRAPERS, bank_slug, scraper_class)
+    args = campaign_args(tmp_path, bank_slug)
+    shared_output = tmp_path / "shared-output.json"
+    args.output = tmp_path / "aliases" / ".." / "shared-output.json"
+    args.quality_report = shared_output
+    sentinel = b'{"records": ["last-known-good"]}\n'
+    shared_output.write_bytes(sentinel)
+
+    with pytest.raises(
+        ValueError, match="Campaign and quality report output paths must differ"
+    ):
+        run_campaigns(args)
+
+    assert shared_output.read_bytes() == sentinel
 
 
 def test_validate_separates_conversion_errors_from_fetch_failures(tmp_path):
