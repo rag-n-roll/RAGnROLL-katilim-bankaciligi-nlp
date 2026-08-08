@@ -325,6 +325,39 @@ def test_does_not_merge_later_reward_period_into_campaign_end():
     assert extract_date_range(text) == (None, date(2026, 12, 31))
 
 
+def test_does_not_use_earned_points_usage_range_as_campaign_period():
+    text = "Kazanılan puanlar 1 Ekim 2026 - 5 Ekim 2026 arasında kullanılabilir."
+
+    assert extract_date_range(text) == (None, None)
+
+
+def test_does_not_use_campaign_reward_usage_range_as_campaign_period():
+    text = (
+        "Kampanya kapsamında kazanacağınız bonuslar "
+        "1 Ekim 2026 - 5 Ekim 2026 arasında kullanılabilir."
+    )
+
+    assert extract_date_range(text) == (None, None)
+
+
+def test_does_not_use_unused_reward_deletion_range_as_campaign_period():
+    text = (
+        "Kullanılmayan ParafPara 1 Ekim 2026 - 5 Ekim 2026 "
+        "döneminde silinecektir."
+    )
+
+    assert extract_date_range(text) == (None, None)
+
+
+def test_preserves_campaign_range_before_later_reward_usage_range():
+    text = (
+        "Kampanya 1 Temmuz 2026 - 31 Temmuz 2026 tarihleri arasında geçerlidir. "
+        "Kazanılan puanlar 1 Ekim 2026 - 5 Ekim 2026 arasında kullanılabilir."
+    )
+
+    assert extract_date_range(text) == (date(2026, 7, 1), date(2026, 7, 31))
+
+
 def test_splits_semicolon_before_lowercase_reward_period():
     text = (
         "Kampanya 31 Aralık 2026 tarihine kadar geçerlidir; "
@@ -505,6 +538,29 @@ def test_parse_detail_rejects_implausible_primary_metadata_for_full_content_rang
 
     assert record.start_date == date(2026, 7, 1)
     assert record.end_date == date(2026, 7, 31)
+
+
+def test_parse_detail_rejects_short_primary_metadata_far_in_the_future():
+    current_year = date.today().year
+    future_year = current_year + 50
+    html = f"""
+    <html><body>
+      <div class="page-chrome">
+        <strong>Kampanya Tarihleri</strong>
+        <span>1.07.{future_year} - 31.07.{future_year}</span>
+      </div>
+      <h1>Güncel Kampanya</h1>
+      <article>
+        <p>Kampanya 1 Temmuz {current_year} - 31 Temmuz {current_year}
+        tarihleri arasında geçerlidir.</p>
+      </article>
+    </body></html>
+    """
+
+    record = ExampleScraper().parse_detail("https://bank.example/kampanyalar/guncel", html)
+
+    assert record.start_date == date(current_year, 7, 1)
+    assert record.end_date == date(current_year, 7, 31)
 
 
 def test_parse_detail_falls_back_to_page_date_when_campaign_content_has_none():

@@ -46,6 +46,7 @@ PRIMARY_DATE_LABEL_RE = re.compile(
     re.IGNORECASE,
 )
 MAX_CAMPAIGN_DURATION_DAYS = 5 * 366
+MAX_CAMPAIGN_FUTURE_YEARS = 10
 
 
 def build_failure(bank_slug: str, stage: str, url: str, exc: Exception) -> dict[str, Any]:
@@ -162,11 +163,27 @@ def _normalized_context(value: str) -> str:
 
 
 def _is_reward_expiry(context: str) -> bool:
-    reward_action = any(word in context for word in ("kazan", "kullanılmayan", "kullanilmayan"))
+    reward_action = any(
+        word in context
+        for word in (
+            "kazan",
+            "kullanılabilir",
+            "kullanilabilir",
+            "kullanılmayan",
+            "kullanilmayan",
+            "silinecek",
+        )
+    )
     reward_value = any(
         word in context for word in ("parafpara", "puan", "bonus", "ödül", "hediye")
     )
     return reward_action and reward_value
+
+
+def _has_campaign_validity(context: str) -> bool:
+    campaign = "kampanya" in context or "fırsat" in context or "firsat" in context
+    validity = "geçerli" in context or "gecerli" in context
+    return campaign and validity
 
 
 def _extract_end_only(segment: str) -> tuple[date | None, date | None]:
@@ -245,7 +262,14 @@ def extract_date_range(text: str) -> tuple[date | None, date | None]:
     """Ayni kampanya segmentindeki donemleri kapsayan ana tarih araligini dondurur."""
     candidates: list[tuple[int, int, tuple[date | None, date | None]]] = []
     for index, segment in enumerate(_date_segments(text)):
+        context = _normalized_context(segment)
         result = _extract_explicit_ranges(segment)
+        if (
+            result != (None, None)
+            and _is_reward_expiry(context)
+            and not _has_campaign_validity(context)
+        ):
+            continue
         if result == (None, None):
             result = _extract_end_only(segment)
         if result != (None, None):
@@ -258,7 +282,13 @@ def extract_date_range(text: str) -> tuple[date | None, date | None]:
 
 def _is_plausible_campaign_range(value: tuple[date | None, date | None]) -> bool:
     start, end = value
-    return bool(start and end and 0 <= (end - start).days <= MAX_CAMPAIGN_DURATION_DAYS)
+    latest_year = date.today().year + MAX_CAMPAIGN_FUTURE_YEARS
+    return bool(
+        start
+        and end
+        and 0 <= (end - start).days <= MAX_CAMPAIGN_DURATION_DAYS
+        and end.year <= latest_year
+    )
 
 
 def _merge_campaign_dates(
