@@ -1,3 +1,5 @@
+import pytest
+
 from src.scraper.models import Campaign
 from src.scraper.validation import (
     build_quality_report,
@@ -47,23 +49,28 @@ def test_empty_bank_identity_fields_are_errors_on_their_own_fields():
     }
 
 
-def test_html_tag_residue_in_content_is_an_error():
+@pytest.mark.parametrize(
+    "residue",
+    [
+        "<p>metin</p>",
+        "Kampanya kosullari</p>",
+        "Ilk satir<br>ikinci satir",
+        "Gorsel <img src='x'> ile sunuluyor",
+        "<!-- residue -->",
+    ],
+)
+def test_html_tag_residue_in_content_is_an_error(residue):
     campaign = valid_campaign()
-    campaign.content = f"<p>{campaign.content}</p>"
+    campaign.content = f"{residue} {campaign.content}"
 
     issues = validate_campaign(campaign)
 
-    assert issues == [
+    assert [issue for issue in issues if issue["severity"] == "error"] == [
         {
             "severity": "error",
             "field": "content",
             "message": "Kampanya metninde HTML etiketi kalmis",
-        },
-        {
-            "severity": "warning",
-            "field": "date_range",
-            "message": "Tarih araligi eksik veya ayiklanamadi",
-        },
+        }
     ]
 
 
@@ -78,6 +85,24 @@ def test_content_comparisons_are_not_treated_as_html_tags():
             "message": "Tarih araligi eksik veya ayiklanamadi",
         }
     ]
+
+
+def test_angle_bracket_prose_is_not_treated_as_html_tags():
+    campaign = valid_campaign()
+    campaign.content = (
+        "Iletisim icin <info@bank.example> adresine yazin, "
+        "<https://bank.example/path> baglantisini acin ve <limit> degerini kontrol edin; "
+        "2 < 5 karsilastirmasi da gecerlidir. "
+        + campaign.content
+    )
+
+    issues = validate_campaign(campaign)
+
+    assert not any(
+        issue["field"] == "content"
+        and issue["message"] == "Kampanya metninde HTML etiketi kalmis"
+        for issue in issues
+    )
 
 
 def test_deduplicate_campaigns_removes_tracking_and_fragment_variants():
