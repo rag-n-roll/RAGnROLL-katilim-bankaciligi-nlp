@@ -116,7 +116,9 @@ def run_collect(args: argparse.Namespace) -> int:
             store = CampaignStore(database)
             store.upsert_rows(
                 processed["records"],
-                run_status="partial" if failures or quality["error_count"] else "success",
+                run_status=(
+                    "partial" if failures or quality["error_count"] else "success"
+                ),
             )
             raw, processed = store.export_datasets()
         write_json(args.raw_output, raw)
@@ -286,7 +288,9 @@ def run_validate(args: argparse.Namespace) -> int:
                 else:
                     converted[name] = None
             if converted.get("scraped_at"):
-                converted["scraped_at"] = datetime.fromisoformat(converted["scraped_at"])
+                converted["scraped_at"] = datetime.fromisoformat(
+                    converted["scraped_at"]
+                )
             else:
                 converted["scraped_at"] = None
             records.append(Campaign(**converted))
@@ -337,7 +341,9 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     banks = subparsers.add_parser("banks", help="BDDK katılım bankası listesini çek")
-    banks.add_argument("--output", type=Path, default=Path("data/raw/participation_banks.json"))
+    banks.add_argument(
+        "--output", type=Path, default=Path("data/raw/participation_banks.json")
+    )
     add_http_options(banks)
     banks.set_defaults(handler=run_banks)
 
@@ -348,7 +354,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="priority, all veya virgülle ayrılmış banka slug'ları",
     )
     campaigns.add_argument("--max-per-bank", type=int, default=20)
-    campaigns.add_argument("--output", type=Path, default=Path("data/raw/campaigns.json"))
+    campaigns.add_argument(
+        "--output", type=Path, default=Path("data/raw/campaigns.json")
+    )
     campaigns.add_argument(
         "--quality-report", type=Path, default=Path("outputs/quality_report.json")
     )
@@ -380,9 +388,13 @@ def build_parser() -> argparse.ArgumentParser:
     add_http_options(collect)
     collect.set_defaults(handler=run_collect)
 
-    validate = subparsers.add_parser("validate", help="Mevcut kampanya JSON'unu doğrula")
+    validate = subparsers.add_parser(
+        "validate", help="Mevcut kampanya JSON'unu doğrula"
+    )
     validate.add_argument("input", type=Path)
-    validate.add_argument("--output", type=Path, default=Path("outputs/quality_report.json"))
+    validate.add_argument(
+        "--output", type=Path, default=Path("outputs/quality_report.json")
+    )
     validate.set_defaults(handler=run_validate)
 
     preprocess = subparsers.add_parser(
@@ -390,7 +402,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="Kampanya metinlerini temizle ve tokenize et",
     )
     preprocess.add_argument("input", type=Path)
-    preprocess.add_argument("--output", type=Path, default=Path("data/processed/campaigns.json"))
+    preprocess.add_argument(
+        "--output", type=Path, default=Path("data/processed/campaigns.json")
+    )
     preprocess.set_defaults(handler=run_preprocess)
 
     database = subparsers.add_parser("db", help="SQLite kalıcılık işlemleri")
@@ -398,14 +412,22 @@ def build_parser() -> argparse.ArgumentParser:
     db_init = database_subparsers.add_parser("init", help="SQLite şemasını oluştur")
     db_init.add_argument("--database", type=Path, default=DEFAULT_DATABASE_PATH)
     db_init.set_defaults(handler=run_db_init)
-    db_import = database_subparsers.add_parser("import-json", help="JSON veri setini SQLite'a aktar")
+    db_import = database_subparsers.add_parser(
+        "import-json", help="JSON veri setini SQLite'a aktar"
+    )
     db_import.add_argument("input", type=Path)
     db_import.add_argument("--database", type=Path, default=DEFAULT_DATABASE_PATH)
     db_import.set_defaults(handler=run_db_import)
-    db_export = database_subparsers.add_parser("export-json", help="SQLite verisini JSON'a aktar")
+    db_export = database_subparsers.add_parser(
+        "export-json", help="SQLite verisini JSON'a aktar"
+    )
     db_export.add_argument("--database", type=Path, default=DEFAULT_DATABASE_PATH)
-    db_export.add_argument("--raw-output", type=Path, default=Path("data/raw/campaigns.json"))
-    db_export.add_argument("--processed-output", type=Path, default=Path("data/processed/campaigns.json"))
+    db_export.add_argument(
+        "--raw-output", type=Path, default=Path("data/raw/campaigns.json")
+    )
+    db_export.add_argument(
+        "--processed-output", type=Path, default=Path("data/processed/campaigns.json")
+    )
     db_export.set_defaults(handler=run_db_export)
 
     compare = subparsers.add_parser("compare", help="SQLite kampanyalarını karşılaştır")

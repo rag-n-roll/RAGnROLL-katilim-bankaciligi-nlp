@@ -7,7 +7,6 @@ from typing import Any
 
 from src.normalization import normalize_duration, normalize_money, normalize_rate
 
-
 NUMBER = r"\d[\d.,]*"
 PROFIT_PATTERNS = (
     re.compile(rf"%\s*({NUMBER})\s*k[aâ]r\s+pay[ıi](?:\s+oran[ıi])?", re.IGNORECASE),
@@ -22,7 +21,9 @@ DURATION_PATTERN = re.compile(
     r"(?<!\d)\d{1,4}\s*(?:gün|gun|ay|yıl|yil)(?:\s*(?:vade|vadeli))?",
     re.IGNORECASE,
 )
-INSTALLMENT_PATTERN = re.compile(r"(?<!\d)(\d{1,3})\s*(?:aya\s+varan\s+)?taksit", re.IGNORECASE)
+INSTALLMENT_PATTERN = re.compile(
+    r"(?<!\d)(\d{1,3})\s*(?:aya\s+varan\s+)?taksit", re.IGNORECASE
+)
 MONEY_PATTERN = re.compile(
     rf"(?:[₺$€£]\s*{NUMBER}|{NUMBER}(?:\s+milyon)?\s*(?:TL|₺|TRY|USD|\$|EUR|€|GBP|£))",
     re.IGNORECASE,
@@ -68,7 +69,10 @@ def _product_type(text: str) -> str | None:
     )
     if any(word in text for word in investment_words):
         return "investment"
-    if any(word in text for word in ("alışveriş puan", "alisveris puan", "worldpuan", "parafpara")):
+    if any(
+        word in text
+        for word in ("alışveriş puan", "alisveris puan", "worldpuan", "parafpara")
+    ):
         return "shopping_points"
     new_customer_words = (
         "yeni müşteri",
@@ -91,7 +95,9 @@ def _financing_type(text: str) -> str | None:
     return None
 
 
-def _first_match(patterns: tuple[re.Pattern[str], ...], text: str) -> re.Match[str] | None:
+def _first_match(
+    patterns: tuple[re.Pattern[str], ...], text: str
+) -> re.Match[str] | None:
     for pattern in patterns:
         match = pattern.search(text)
         if match:
@@ -193,16 +199,24 @@ def extract_prd_fields(
         product_evidence_patterns = {
             "financing": r"[^\s.]+\s+finansman[ıi]",
             "card": r"kart|bonus",
-            "investment": r"yatırım|yatirim|katılma hesabı|katilma hesabı|altın|altin",
-            "shopping_points": r"alışveriş puanı|alisveris puanı|alisveris puan|worldpuan|parafpara",
+            "investment": (
+                r"yatırım|yatirim|katılma hesabı|katilma hesabı|altın|altin"
+            ),
+            "shopping_points": (
+                r"alışveriş puanı|alisveris puanı|alisveris puan|worldpuan|parafpara"
+            ),
             "new_customer": r"yeni müşteri|yeni musteri|ilk kez müşteri|ilk kez musteri",
         }
-        match = re.search(product_evidence_patterns[product_type], source, re.IGNORECASE)
+        match = re.search(
+            product_evidence_patterns[product_type], source, re.IGNORECASE
+        )
         if match:
             evidence["product_type"] = match.group(0)
     financing_type = _financing_type(normalized)
     if financing_type:
-        match = re.search(r"konut|taşıt|tasit|araç|arac|ihtiyaç|ihtiyac", source, re.IGNORECASE)
+        match = re.search(
+            r"konut|taşıt|tasit|araç|arac|ihtiyaç|ihtiyac", source, re.IGNORECASE
+        )
         if match:
             evidence["financing_type"] = match.group(0)
 
@@ -217,7 +231,9 @@ def extract_prd_fields(
         "profit_share_rate": profit_share_rate,
         "term_months": int(term_match.group(1)) if term_match else None,
         "duration": duration.to_dict() if duration else None,
-        "installment_count": int(installment_match.group(1)) if installment_match else None,
+        "installment_count": (
+            int(installment_match.group(1)) if installment_match else None
+        ),
         "campaign_benefit": _benefit(source),
         "reward_amount": reward_amount,
         "min_amount": min_amount,

@@ -17,19 +17,52 @@ class ComparisonConfig:
     campaign_weights: dict[str, float] | None = None
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "matching_weights", self.matching_weights or {
-            "product_type": 0.35, "subcategory": 0.20, "duration": 0.15,
-            "amount": 0.10, "eligibility": 0.10, "title": 0.10,
-        })
-        object.__setattr__(self, "financing_weights", self.financing_weights or {
-            "rate": 0.45, "amount": 0.30, "fee": 0.15, "eligibility": 0.10,
-        })
-        object.__setattr__(self, "investment_weights", self.investment_weights or {
-            "rate": 0.60, "amount": 0.20, "duration": 0.10, "eligibility": 0.10,
-        })
-        object.__setattr__(self, "campaign_weights", self.campaign_weights or {
-            "discount": 0.35, "reward": 0.35, "installment": 0.20, "eligibility": 0.10,
-        })
+        object.__setattr__(
+            self,
+            "matching_weights",
+            self.matching_weights
+            or {
+                "product_type": 0.35,
+                "subcategory": 0.20,
+                "duration": 0.15,
+                "amount": 0.10,
+                "eligibility": 0.10,
+                "title": 0.10,
+            },
+        )
+        object.__setattr__(
+            self,
+            "financing_weights",
+            self.financing_weights
+            or {
+                "rate": 0.45,
+                "amount": 0.30,
+                "fee": 0.15,
+                "eligibility": 0.10,
+            },
+        )
+        object.__setattr__(
+            self,
+            "investment_weights",
+            self.investment_weights
+            or {
+                "rate": 0.60,
+                "amount": 0.20,
+                "duration": 0.10,
+                "eligibility": 0.10,
+            },
+        )
+        object.__setattr__(
+            self,
+            "campaign_weights",
+            self.campaign_weights
+            or {
+                "discount": 0.35,
+                "reward": 0.35,
+                "installment": 0.20,
+                "eligibility": 0.10,
+            },
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,43 +118,89 @@ def _amount(record: dict[str, Any], field: str) -> float | None:
         return None
 
 
-def _normalized_scores(rows: list[dict[str, Any]], field: str, *, lower_is_better: bool) -> dict[str, float]:
+def _normalized_scores(
+    rows: list[dict[str, Any]], field: str, *, lower_is_better: bool
+) -> dict[str, float]:
     values = {str(row["id"]): row["_values"].get(field) for row in rows}
     known = [float(value) for value in values.values() if value is not None]
     if len(known) == 1:
-        return {identifier: 0.5 for identifier, value in values.items() if value is not None}
+        return {
+            identifier: 0.5 for identifier, value in values.items() if value is not None
+        }
     if not known:
         return {}
     low, high = min(known), max(known)
     if low == high:
-        return {identifier: 0.5 for identifier, value in values.items() if value is not None}
+        return {
+            identifier: 0.5 for identifier, value in values.items() if value is not None
+        }
     return {
-        identifier: ((high - float(value)) if lower_is_better else (float(value) - low)) / (high - low)
-        for identifier, value in values.items() if value is not None
+        identifier: ((high - float(value)) if lower_is_better else (float(value) - low))
+        / (high - low)
+        for identifier, value in values.items()
+        if value is not None
     }
 
 
-def _matching_score(record: dict[str, Any], query: ComparisonQuery, config: ComparisonConfig) -> float:
+def _matching_score(
+    record: dict[str, Any], query: ComparisonQuery, config: ComparisonConfig
+) -> float:
     structured = _structured(record)
     known: list[tuple[float, float]] = []
     if structured.get("product_type"):
-        known.append((config.matching_weights["product_type"], float(structured["product_type"] == query.product_type)))
+        known.append(
+            (
+                config.matching_weights["product_type"],
+                float(structured["product_type"] == query.product_type),
+            )
+        )
     if query.financing_type and structured.get("financing_type"):
-        known.append((config.matching_weights["subcategory"], float(structured["financing_type"] == query.financing_type)))
+        known.append(
+            (
+                config.matching_weights["subcategory"],
+                float(structured["financing_type"] == query.financing_type),
+            )
+        )
     if query.eligibility and structured.get("target_audience"):
-        known.append((config.matching_weights["eligibility"], float(structured["target_audience"] == query.eligibility)))
+        known.append(
+            (
+                config.matching_weights["eligibility"],
+                float(structured["target_audience"] == query.eligibility),
+            )
+        )
     if query.duration_days and isinstance(structured.get("duration"), dict):
-        distance = abs(int(structured["duration"].get("approx_days", 0)) - query.duration_days)
-        known.append((config.matching_weights["duration"], max(0.0, 1 - distance / max(query.duration_days, 1))))
+        distance = abs(
+            int(structured["duration"].get("approx_days", 0)) - query.duration_days
+        )
+        known.append(
+            (
+                config.matching_weights["duration"],
+                max(0.0, 1 - distance / max(query.duration_days, 1)),
+            )
+        )
     if query.amount is not None:
         amount = _amount(record, "max_amount")
         if amount is not None:
-            known.append((config.matching_weights["amount"], max(0.0, 1 - abs(amount - query.amount) / max(query.amount, 1))))
+            known.append(
+                (
+                    config.matching_weights["amount"],
+                    max(0.0, 1 - abs(amount - query.amount) / max(query.amount, 1)),
+                )
+            )
     if query.title and record.get("title"):
-        known.append((config.matching_weights["title"], _title_similarity(str(record["title"]), query.title)))
+        known.append(
+            (
+                config.matching_weights["title"],
+                _title_similarity(str(record["title"]), query.title),
+            )
+        )
     if not known:
         return 0.0
-    return round(sum(weight * score for weight, score in known) / sum(weight for weight, _ in known), 4)
+    return round(
+        sum(weight * score for weight, score in known)
+        / sum(weight for weight, _ in known),
+        4,
+    )
 
 
 def _title_similarity(left: str, right: str) -> float:
@@ -130,7 +209,9 @@ def _title_similarity(left: str, right: str) -> float:
     return SequenceMatcher(a=left_tokens, b=right_tokens).ratio()
 
 
-def _weights_for(product_type: str, config: ComparisonConfig, duration_requested: bool) -> dict[str, float]:
+def _weights_for(
+    product_type: str, config: ComparisonConfig, duration_requested: bool
+) -> dict[str, float]:
     if product_type == "financing":
         return dict(config.financing_weights)
     if product_type == "investment":
@@ -142,7 +223,9 @@ def _weights_for(product_type: str, config: ComparisonConfig, duration_requested
 
 
 def compare_records(
-    records: Iterable[dict[str, Any]], query: ComparisonQuery, config: ComparisonConfig | None = None
+    records: Iterable[dict[str, Any]],
+    query: ComparisonQuery,
+    config: ComparisonConfig | None = None,
 ) -> dict[str, Any]:
     """Query ile uyumlu kayıtları sıralar; eksik alanları cezalandırmaz."""
     config = config or ComparisonConfig()
@@ -158,30 +241,46 @@ def compare_records(
         if currency is not None and currency != query.currency:
             excluded.append({"id": identifier, "reason": "currency_mismatch"})
             continue
-        if query.eligibility and structured.get("target_audience") not in (None, query.eligibility):
+        if query.eligibility and structured.get("target_audience") not in (
+            None,
+            query.eligibility,
+        ):
             excluded.append({"id": identifier, "reason": "eligibility_mismatch"})
             continue
-        included.append({
-            "id": identifier,
-            "title": str(record.get("title") or ""),
-            "record": record,
-            "match_score": _matching_score(record, query, config),
-            "_values": {
-                "rate": structured.get("profit_share_rate"),
-                "amount": _amount(record, "max_amount"),
-                "discount": structured.get("discount_rate"),
-                "reward": _amount(record, "reward_amount"),
-                "installment": structured.get("installment_count"),
-                "fee": 1.0 if structured.get("fee_information") == "masrafsız" else None,
-                "eligibility": 1.0 if structured.get("target_audience") else None,
-                "duration": structured.get("duration", {}).get("approx_days") if isinstance(structured.get("duration"), dict) and query.duration_days else None,
-            },
-        })
+        included.append(
+            {
+                "id": identifier,
+                "title": str(record.get("title") or ""),
+                "record": record,
+                "match_score": _matching_score(record, query, config),
+                "_values": {
+                    "rate": structured.get("profit_share_rate"),
+                    "amount": _amount(record, "max_amount"),
+                    "discount": structured.get("discount_rate"),
+                    "reward": _amount(record, "reward_amount"),
+                    "installment": structured.get("installment_count"),
+                    "fee": (
+                        1.0
+                        if structured.get("fee_information") == "masrafsız"
+                        else None
+                    ),
+                    "eligibility": 1.0 if structured.get("target_audience") else None,
+                    "duration": (
+                        structured.get("duration", {}).get("approx_days")
+                        if isinstance(structured.get("duration"), dict)
+                        and query.duration_days
+                        else None
+                    ),
+                },
+            }
+        )
     weights = _weights_for(query.product_type, config, query.duration_days is not None)
     numeric_scores: dict[str, dict[str, float]] = {}
     for criterion in weights:
         numeric_scores[criterion] = _normalized_scores(
-            included, criterion, lower_is_better=(query.product_type == "financing" and criterion == "rate")
+            included,
+            criterion,
+            lower_is_better=(query.product_type == "financing" and criterion == "rate"),
         )
     for row in included:
         criteria: dict[str, dict[str, float]] = {}
@@ -191,29 +290,54 @@ def compare_records(
             score = numeric_scores[criterion].get(row["id"])
             if score is None:
                 continue
-            criteria[criterion] = {"value": float(row["_values"][criterion]), "score": round(score, 4), "weight": weight}
+            criteria[criterion] = {
+                "value": float(row["_values"][criterion]),
+                "score": round(score, 4),
+                "weight": weight,
+            }
             total_weight += weight
             total_score += score * weight
         row["criteria"] = criteria
-        row["missing_fields"] = [criterion for criterion in weights if criterion not in criteria]
+        row["missing_fields"] = [
+            criterion for criterion in weights if criterion not in criteria
+        ]
         if total_weight:
             for criterion in criteria.values():
                 criterion["contribution"] = round(
                     criterion["score"] * criterion["weight"] / total_weight, 4
                 )
-        row["advantage_score"] = round(total_score / total_weight, 4) if total_weight else None
+        row["advantage_score"] = (
+            round(total_score / total_weight, 4) if total_weight else None
+        )
         reasons = []
         if "rate" in criteria:
-            reasons.append("düşük kâr payı oranı" if query.product_type == "financing" else "yüksek kâr payı oranı")
+            reasons.append(
+                "düşük kâr payı oranı"
+                if query.product_type == "financing"
+                else "yüksek kâr payı oranı"
+            )
         if "amount" in criteria:
             reasons.append("açık tutar")
         if "reward" in criteria:
             reasons.append("ödül tutarı")
-        row["ranking_reason"] = ", ".join(reasons) if reasons else "Yeterli karşılaştırılabilir alan yok"
+        row["ranking_reason"] = (
+            ", ".join(reasons) if reasons else "Yeterli karşılaştırılabilir alan yok"
+        )
         row.pop("record")
         row.pop("_values")
-    included.sort(key=lambda row: (row["advantage_score"] is not None, row["advantage_score"] or -1, row["match_score"]), reverse=True)
-    pair_cache_keys = [":".join(sorted((left["id"], right["id"]))) for index, left in enumerate(included) for right in included[index + 1:]]
+    included.sort(
+        key=lambda row: (
+            row["advantage_score"] is not None,
+            row["advantage_score"] or -1,
+            row["match_score"],
+        ),
+        reverse=True,
+    )
+    pair_cache_keys = [
+        ":".join(sorted((left["id"], right["id"])))
+        for index, left in enumerate(included)
+        for right in included[index + 1 :]
+    ]
     return ComparisonResult(
         included=included,
         excluded=excluded,

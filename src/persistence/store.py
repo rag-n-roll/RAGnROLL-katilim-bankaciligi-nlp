@@ -12,7 +12,6 @@ from typing import Any, Iterable
 from src.preprocessing.clean_text import preprocess_record
 from src.scraper.models import SCHEMA_VERSION
 
-
 _DERIVED_FIELDS = frozenset({"clean_text", "tokens", "token_count", "structured"})
 
 
@@ -30,8 +29,7 @@ class CampaignStore:
 
     def initialize(self) -> None:
         with self._connect() as connection:
-            connection.executescript(
-                """
+            connection.executescript("""
                 CREATE TABLE IF NOT EXISTS schema_meta (
                     key TEXT PRIMARY KEY,
                     value TEXT NOT NULL
@@ -90,8 +88,7 @@ class CampaignStore:
                     updated_at TEXT NOT NULL,
                     scraped_at TEXT
                 );
-                """
-            )
+                """)
             connection.execute(
                 "INSERT OR REPLACE INTO schema_meta(key, value) VALUES (?, ?)",
                 ("schema_version", "1"),
@@ -151,12 +148,16 @@ class CampaignStore:
             for row in prepared:
                 self._upsert_row(connection, row, now)
             connection.execute(
-                "INSERT INTO scrape_runs(started_at, completed_at, status, record_count) VALUES (?, ?, ?, ?)",
+                "INSERT INTO scrape_runs("
+                "started_at, completed_at, status, record_count"
+                ") VALUES (?, ?, ?, ?)",
                 (now, now, run_status, len(prepared)),
             )
 
     def _prepare_row(self, row: dict[str, Any]) -> dict[str, Any]:
-        raw = {key: value for key, value in dict(row).items() if key not in _DERIVED_FIELDS}
+        raw = {
+            key: value for key, value in dict(row).items() if key not in _DERIVED_FIELDS
+        }
         raw.setdefault("record_kind", "campaign")
         if raw["record_kind"] not in {"campaign", "product"}:
             raw["record_kind"] = "campaign"
@@ -173,9 +174,13 @@ class CampaignStore:
         except (ArithmeticError, KeyError, TypeError, ValueError):
             return None, None
 
-    def _upsert_row(self, connection: sqlite3.Connection, row: dict[str, Any], now: str) -> None:
+    def _upsert_row(
+        self, connection: sqlite3.Connection, row: dict[str, Any], now: str
+    ) -> None:
         raw = {key: value for key, value in row.items() if key not in _DERIVED_FIELDS}
-        structured = row.get("structured") if isinstance(row.get("structured"), dict) else {}
+        structured = (
+            row.get("structured") if isinstance(row.get("structured"), dict) else {}
+        )
         slug = str(raw.get("bank_slug") or "")
         name = str(raw.get("bank_name") or "")
         if not slug or not name or not raw.get("id"):
@@ -183,22 +188,46 @@ class CampaignStore:
         connection.execute(
             """INSERT INTO banks(slug, name, created_at, updated_at)
                VALUES (?, ?, ?, ?)
-               ON CONFLICT(slug) DO UPDATE SET name=excluded.name, updated_at=excluded.updated_at""",
+               ON CONFLICT(slug) DO UPDATE SET
+                 name=excluded.name,
+                 updated_at=excluded.updated_at""",
             (slug, name, now, now),
         )
-        bank_id = connection.execute("SELECT id FROM banks WHERE slug = ?", (slug,)).fetchone()[0]
+        bank_id = connection.execute(
+            "SELECT id FROM banks WHERE slug = ?", (slug,)
+        ).fetchone()[0]
         raw_json = json.dumps(raw, ensure_ascii=False, sort_keys=True)
         structured_json = json.dumps(structured, ensure_ascii=False, sort_keys=True)
         record_id = str(raw["id"])
         if raw.get("record_kind") == "product":
             connection.execute(
-                """INSERT INTO products(id, bank_id, name, product_type, financing_type, currency, source_url, raw_json, structured_json, created_at, updated_at)
+                """INSERT INTO products(
+                     id, bank_id, name, product_type, financing_type, currency,
+                     source_url, raw_json, structured_json, created_at, updated_at
+                   )
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                   ON CONFLICT(id) DO UPDATE SET name=excluded.name, product_type=excluded.product_type,
-                     financing_type=excluded.financing_type, currency=excluded.currency, source_url=excluded.source_url,
-                     raw_json=excluded.raw_json, structured_json=excluded.structured_json, updated_at=excluded.updated_at""",
-                (record_id, bank_id, raw.get("title", ""), structured.get("product_type"), structured.get("financing_type"), None,
-                 raw.get("source_url", ""), raw_json, structured_json, now, now),
+                   ON CONFLICT(id) DO UPDATE SET
+                     name=excluded.name,
+                     product_type=excluded.product_type,
+                     financing_type=excluded.financing_type,
+                     currency=excluded.currency,
+                     source_url=excluded.source_url,
+                     raw_json=excluded.raw_json,
+                     structured_json=excluded.structured_json,
+                     updated_at=excluded.updated_at""",
+                (
+                    record_id,
+                    bank_id,
+                    raw.get("title", ""),
+                    structured.get("product_type"),
+                    structured.get("financing_type"),
+                    None,
+                    raw.get("source_url", ""),
+                    raw_json,
+                    structured_json,
+                    now,
+                    now,
+                ),
             )
             return
         product_matches = connection.execute(
@@ -208,45 +237,105 @@ class CampaignStore:
         product_id = product_matches[0][0] if len(product_matches) == 1 else None
         reward_minor, reward_currency = self._minor(structured.get("reward_amount"))
         max_minor, max_currency = self._minor(structured.get("max_amount"))
-        duration = structured.get("duration") if isinstance(structured.get("duration"), dict) else {}
+        duration = (
+            structured.get("duration")
+            if isinstance(structured.get("duration"), dict)
+            else {}
+        )
         connection.execute(
             """INSERT INTO campaigns(
-                  id, bank_id, product_id, title, source_url, product_type, financing_type, profit_share_rate,
-                  discount_rate, reward_amount_minor, reward_currency, max_amount_minor, max_amount_currency,
-                  duration_value, duration_unit, duration_days, eligibility, fee_information, raw_json, processed_json,
-                  created_at, updated_at, scraped_at)
+                  id, bank_id, product_id, title, source_url, product_type,
+                  financing_type, profit_share_rate, discount_rate,
+                  reward_amount_minor, reward_currency, max_amount_minor,
+                  max_amount_currency, duration_value, duration_unit,
+                  duration_days, eligibility, fee_information, raw_json,
+                  processed_json, created_at, updated_at, scraped_at
+               )
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-               ON CONFLICT(id) DO UPDATE SET bank_id=excluded.bank_id, product_id=excluded.product_id,
-                  title=excluded.title, source_url=excluded.source_url, product_type=excluded.product_type,
-                  financing_type=excluded.financing_type, profit_share_rate=excluded.profit_share_rate,
-                  discount_rate=excluded.discount_rate, reward_amount_minor=excluded.reward_amount_minor,
-                  reward_currency=excluded.reward_currency, max_amount_minor=excluded.max_amount_minor,
-                  max_amount_currency=excluded.max_amount_currency, duration_value=excluded.duration_value,
-                  duration_unit=excluded.duration_unit, duration_days=excluded.duration_days, eligibility=excluded.eligibility,
-                  fee_information=excluded.fee_information, raw_json=excluded.raw_json,
-                  processed_json=excluded.processed_json, updated_at=excluded.updated_at,
+               ON CONFLICT(id) DO UPDATE SET
+                  bank_id=excluded.bank_id,
+                  product_id=excluded.product_id,
+                  title=excluded.title,
+                  source_url=excluded.source_url,
+                  product_type=excluded.product_type,
+                  financing_type=excluded.financing_type,
+                  profit_share_rate=excluded.profit_share_rate,
+                  discount_rate=excluded.discount_rate,
+                  reward_amount_minor=excluded.reward_amount_minor,
+                  reward_currency=excluded.reward_currency,
+                  max_amount_minor=excluded.max_amount_minor,
+                  max_amount_currency=excluded.max_amount_currency,
+                  duration_value=excluded.duration_value,
+                  duration_unit=excluded.duration_unit,
+                  duration_days=excluded.duration_days,
+                  eligibility=excluded.eligibility,
+                  fee_information=excluded.fee_information,
+                  raw_json=excluded.raw_json,
+                  processed_json=excluded.processed_json,
+                  updated_at=excluded.updated_at,
                   scraped_at=excluded.scraped_at""",
-            (record_id, bank_id, product_id, raw.get("title", ""), raw.get("source_url", ""), structured.get("product_type"),
-             structured.get("financing_type"), structured.get("profit_share_rate"), structured.get("discount_rate"),
-             reward_minor, reward_currency, max_minor, max_currency, duration.get("value"), duration.get("unit"),
-             duration.get("approx_days"), structured.get("target_audience"), structured.get("fee_information"), raw_json,
-             json.dumps(row, ensure_ascii=False, sort_keys=True), now, now, raw.get("scraped_at")),
+            (
+                record_id,
+                bank_id,
+                product_id,
+                raw.get("title", ""),
+                raw.get("source_url", ""),
+                structured.get("product_type"),
+                structured.get("financing_type"),
+                structured.get("profit_share_rate"),
+                structured.get("discount_rate"),
+                reward_minor,
+                reward_currency,
+                max_minor,
+                max_currency,
+                duration.get("value"),
+                duration.get("unit"),
+                duration.get("approx_days"),
+                structured.get("target_audience"),
+                structured.get("fee_information"),
+                raw_json,
+                json.dumps(row, ensure_ascii=False, sort_keys=True),
+                now,
+                now,
+                raw.get("scraped_at"),
+            ),
         )
 
     def export_datasets(self) -> tuple[dict[str, Any], dict[str, Any]]:
         self.initialize()
         with self._connect() as connection:
-            rows = connection.execute("SELECT raw_json, processed_json FROM campaigns ORDER BY id").fetchall()
-            product_rows = connection.execute("SELECT raw_json, structured_json FROM products ORDER BY id").fetchall()
+            rows = connection.execute(
+                "SELECT raw_json, processed_json FROM campaigns ORDER BY id"
+            ).fetchall()
+            product_rows = connection.execute(
+                "SELECT raw_json, structured_json FROM products ORDER BY id"
+            ).fetchall()
         raw_records = [json.loads(row[0]) for row in rows]
         processed_records = [json.loads(row[1]) for row in rows]
         for raw_json, structured_json in product_rows:
             raw = json.loads(raw_json)
             raw_records.append(raw)
-            processed_records.append(preprocess_record(raw) if not structured_json else {**preprocess_record(raw), "structured": json.loads(structured_json)})
+            processed_records.append(
+                preprocess_record(raw)
+                if not structured_json
+                else {
+                    **preprocess_record(raw),
+                    "structured": json.loads(structured_json),
+                }
+            )
         generated_at = datetime.now(timezone.utc).isoformat()
-        raw = {"schema_version": SCHEMA_VERSION, "generated_at": generated_at, "record_count": len(raw_records), "records": raw_records}
-        processed = {**raw, "preprocessed_at": generated_at, "records": processed_records, "record_count": len(processed_records)}
+        raw = {
+            "schema_version": SCHEMA_VERSION,
+            "generated_at": generated_at,
+            "record_count": len(raw_records),
+            "records": raw_records,
+        }
+        processed = {
+            **raw,
+            "preprocessed_at": generated_at,
+            "records": processed_records,
+            "record_count": len(processed_records),
+        }
         return raw, processed
 
     def list_campaigns(self) -> list[dict[str, Any]]:
@@ -254,7 +343,9 @@ class CampaignStore:
         with self._connect() as connection:
             campaigns = [
                 json.loads(row[0])
-                for row in connection.execute("SELECT processed_json FROM campaigns ORDER BY id")
+                for row in connection.execute(
+                    "SELECT processed_json FROM campaigns ORDER BY id"
+                )
             ]
             products = [
                 (json.loads(raw_json), json.loads(structured_json))
