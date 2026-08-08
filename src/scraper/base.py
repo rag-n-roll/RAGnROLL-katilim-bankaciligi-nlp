@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timezone
+import logging
+from typing import Any
 from urllib.parse import urldefrag, urljoin, urlparse
 
 from bs4 import BeautifulSoup, Tag
@@ -12,6 +14,8 @@ from bs4 import BeautifulSoup, Tag
 from .http import HttpClient
 from .models import Campaign
 
+
+LOGGER = logging.getLogger(__name__)
 
 MONTHS = {
     "ocak": 1,
@@ -34,6 +38,21 @@ MONTHS = {
     "aralik": 12,
 }
 MONTH_PATTERN = "|".join(MONTHS)
+
+
+def build_failure(bank_slug: str, stage: str, url: str, exc: Exception) -> dict[str, Any]:
+    """Scrape sirasinda olusan hatayi standartlastirilmis kayda donusturur."""
+    response = getattr(exc, "response", None)
+    status_code = getattr(response, "status_code", None)
+    return {
+        "bank_slug": bank_slug,
+        "stage": stage,
+        "url": url,
+        "error_type": type(exc).__name__,
+        "error": str(exc),
+        "http_status": int(status_code) if isinstance(status_code, int) else None,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 def clean_lines(text: str) -> str:
@@ -219,15 +238,31 @@ class BaseBankScraper:
             image_url=image_url,
         )
 
-    def scrape(self, *, limit: int | None = None) -> tuple[list[Campaign], list[dict[str, str]]]:
-        urls = self.discover_urls()
+    def scrape(self, *, limit: int | None = None) -> tuple[list[Campaign], list[dict[str, Any]]]:
+        try:
+            urls = self.discover_urls()
+        except Exception as exc:
+            discovery_url = (
+                self.config.listing_urls[0] if self.config.listing_urls else self.config.base_url
+            )
+            LOGGER.exception("Campaign URL discovery failed for %s", self.config.slug)
+            return [], [build_failure(self.config.slug, "discovery", discovery_url, exc)]
+
+        LOGGER.info("Discovered %d campaign URLs for %s", len(urls), self.config.slug)
         if limit is not None:
             urls = urls[: max(0, limit)]
         records: list[Campaign] = []
-        failures: list[dict[str, str]] = []
+        failures: list[dict[str, Any]] = []
         for url in urls:
             try:
-                records.append(self.parse_detail(url, self.client.get_text(url)))
+                html = self.client.get_text(url)
+            except Exception as exc:
+                LOGGER.exception("Campaign detail fetch failed for %s: %s", self.config.slug, url)
+                failures.append(build_failure(self.config.slug, "fetch", url, exc))
+                continue
+            try:
+                records.append(self.parse_detail(url, html))
             except Exception as exc:  # Bir bozuk sayfa tum toplama isini durdurmamali.
-                failures.append({"bank_slug": self.config.slug, "url": url, "error": str(exc)})
+                LOGGER.exception("Campaign detail parse failed for %s: %s", self.config.slug, url)
+                failures.append(build_failure(self.config.slug, "parse", url, exc))
         return records, failures
