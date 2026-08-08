@@ -310,6 +310,16 @@ def test_extracts_covering_range_from_multiple_campaign_periods():
     assert extract_date_range(text) == (date(2026, 7, 1), date(2026, 9, 7))
 
 
+def test_keeps_comma_separated_pazarama_periods_together():
+    text = (
+        "Kampanya 1 Temmuz 2026 - 7 Temmuz 2026, "
+        "1 Ağustos 2026 - 7 Ağustos 2026 ve "
+        "1 Eylül 2026 - 7 Eylül 2026 tarihleri arasında geçerlidir."
+    )
+
+    assert extract_date_range(text) == (date(2026, 7, 1), date(2026, 9, 7))
+
+
 def test_does_not_use_reward_expiry_as_campaign_end():
     text = "Kampanya süresizdir. Kazanılan ParafPara 15 Ekim 2026 tarihine kadar kullanılabilir."
 
@@ -356,6 +366,15 @@ def test_preserves_campaign_range_before_later_reward_usage_range():
     )
 
     assert extract_date_range(text) == (date(2026, 7, 1), date(2026, 7, 31))
+
+
+def test_isolates_inline_reward_usage_range_after_campaign_period():
+    text = (
+        "Kampanya 1 Ağustos 2026 - 31 Ağustos 2026 tarihleri arasında geçerlidir, "
+        "kazanılan puanlar 1 Ekim 2026 - 5 Ekim 2026 arasında kullanılabilir."
+    )
+
+    assert extract_date_range(text) == (date(2026, 8, 1), date(2026, 8, 31))
 
 
 def test_preserves_spending_range_that_earns_points():

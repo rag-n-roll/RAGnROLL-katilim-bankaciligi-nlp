@@ -45,6 +45,11 @@ PRIMARY_DATE_LABEL_RE = re.compile(
     r"\bkampanya\s+(?:tarihleri|başlangıç\s+ve\s+bitiş|dönemi)\b",
     re.IGNORECASE,
 )
+INLINE_REWARD_CLAUSE_RE = re.compile(
+    r",\s+(?=(?:kazan\w*|kullanılmayan|kullanilmayan|"
+    r"parafpara|puan\w*|bonus\w*|ödül\w*|hediye\w*)\b)",
+    re.IGNORECASE,
+)
 MAX_CAMPAIGN_DURATION_DAYS = 5 * 366
 MAX_CAMPAIGN_FUTURE_YEARS = 10
 
@@ -265,10 +270,11 @@ def _date_segments(text: str) -> list[str]:
             if _extract_explicit_ranges(combined) != (None, None):
                 line = combined
                 index += 1
-        for part in re.split(r"(?<=[.!?;])\s+", line):
-            compact = re.sub(r"\s+", " ", part).strip()
-            if compact:
-                segments.append(compact)
+        for reward_part in INLINE_REWARD_CLAUSE_RE.split(line):
+            for part in re.split(r"(?<=[.!?;])\s+", reward_part):
+                compact = re.sub(r"\s+", " ", part).strip()
+                if compact:
+                    segments.append(compact)
         index += 1
     return segments
 
