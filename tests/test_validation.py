@@ -165,12 +165,25 @@ def test_deduplicate_campaigns_removes_tracking_and_fragment_variants():
 
 
 def test_deduplicate_campaigns_keeps_distinct_compound_page_items():
-    first = valid_campaign()
-    first.source_url = "https://ornek.example/kampanyalar"
-    first.source_item_key = "restoran"
-    second = valid_campaign()
-    second.source_url = "https://ornek.example/kampanyalar"
-    second.source_item_key = "okul"
+    base = valid_campaign()
+    first = Campaign(
+        bank_slug=base.bank_slug,
+        bank_name=base.bank_name,
+        title=base.title,
+        content=base.content,
+        summary=base.summary,
+        source_url="https://ornek.example/kampanyalar",
+        source_item_key="restoran",
+    )
+    second = Campaign(
+        bank_slug=base.bank_slug,
+        bank_name=base.bank_name,
+        title=base.title,
+        content=base.content,
+        summary=base.summary,
+        source_url="https://ornek.example/kampanyalar",
+        source_item_key="okul",
+    )
 
     unique_records, duplicate_rows = deduplicate_campaigns([first, second])
 
