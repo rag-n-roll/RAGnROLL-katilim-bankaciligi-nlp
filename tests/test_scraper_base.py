@@ -248,6 +248,20 @@ def test_extracts_textual_single_campaign_end_date_with_clock_text():
     )
 
 
+def test_extracts_textual_single_campaign_end_date_with_year_suffix():
+    assert extract_date_range("Kampanya 31 Aralık 2026’ya kadar geçerlidir.") == (
+        None,
+        date(2026, 12, 31),
+    )
+
+
+def test_extracts_numeric_single_campaign_end_date_with_year_suffix():
+    assert extract_date_range("Kampanya 31.12.2026'ya kadar geçerlidir.") == (
+        None,
+        date(2026, 12, 31),
+    )
+
+
 def test_does_not_treat_unrelated_single_date_as_campaign_end():
     assert extract_date_range(
         "Kullanılmayan ParafPara'lar 15 Ekim 2026 tarihinde geri alınacaktır."
@@ -302,6 +316,24 @@ def test_does_not_use_reward_expiry_as_campaign_end():
     assert extract_date_range(text) == (None, None)
 
 
+def test_does_not_merge_later_reward_period_into_campaign_end():
+    text = (
+        "Kampanya 31 Aralık 2026 tarihine kadar geçerlidir. "
+        "Puanlar 1 Ocak 2027 - 5 Ocak 2027 arasında kullanılabilir."
+    )
+
+    assert extract_date_range(text) == (None, date(2026, 12, 31))
+
+
+def test_does_not_use_future_reward_morphology_as_campaign_end():
+    text = (
+        "Kampanya kapsamında kazanacağınız bonus "
+        "15 Ekim 2026 tarihine kadar kullanılabilir."
+    )
+
+    assert extract_date_range(text) == (None, None)
+
+
 def test_parses_campaign_detail_and_removes_script():
     html = """
     <html><head><meta property="og:image" content="/image.jpg"></head><body>
@@ -332,6 +364,82 @@ def test_parse_detail_prefers_campaign_content_date_over_page_chrome():
 
     assert record.start_date is None
     assert record.end_date == date(2026, 7, 31)
+
+
+def test_parse_detail_fills_partial_content_range_from_matching_page_metadata():
+    html = """
+    <html><body>
+      <div class="page-chrome">Kampanya Tarihleri 21.07.2026 - 31.12.2026</div>
+      <h1>Barçın Spor Kampanyası</h1>
+      <article><p>Kampanya 31 Aralık 2026 tarihine kadar geçerlidir.</p></article>
+    </body></html>
+    """
+
+    record = ExampleScraper().parse_detail("https://bank.example/kampanyalar/barcin", html)
+
+    assert record.start_date == date(2026, 7, 21)
+    assert record.end_date == date(2026, 12, 31)
+
+
+def test_parse_detail_recognizes_campaign_start_and_end_metadata_label():
+    html = """
+    <html><body>
+      <div class="page-chrome">
+        <span>Kampanya Başlangıç ve Bitiş</span>
+        <span>14.04.2024</span><span>-</span><span>31.12.2026</span>
+      </div>
+      <h1>Yakınını Davet Et Kampanyası</h1>
+      <article><p>Kampanya 31 Aralık 2026 tarihine kadar geçerlidir.</p></article>
+    </body></html>
+    """
+
+    record = ExampleScraper().parse_detail("https://bank.example/kampanyalar/davet", html)
+
+    assert record.start_date == date(2024, 4, 14)
+    assert record.end_date == date(2026, 12, 31)
+
+
+def test_parse_detail_recognizes_split_campaign_period_metadata():
+    html = """
+    <html><body>
+      <div class="page-chrome">
+        <span>Kampanya Dönemi</span>
+        <span>08-08-2026</span><span>-</span><span>07-09-2026</span>
+      </div>
+      <h1>Optik Kampanyası</h1>
+      <article>
+        <p>Kampanya 8 Ağustos – 7 Eylül</p>
+        <p>2026</p>
+      </article>
+    </body></html>
+    """
+
+    record = ExampleScraper().parse_detail("https://bank.example/kampanyalar/optik", html)
+
+    assert record.start_date == date(2026, 8, 8)
+    assert record.end_date == date(2026, 9, 7)
+
+
+def test_parse_detail_prefers_primary_metadata_over_subcampaign_periods():
+    html = """
+    <html><body>
+      <div class="page-chrome">Kampanya Tarihleri 22.04.2026 - 31.12.2026</div>
+      <h1>Evlilik Paketi</h1>
+      <article>
+        <p>Yeni evli çiftlere özel ana kampanya avantajları sunulur.</p>
+        <section>
+          <h2>Qatar Airways İndirimi</h2>
+          <p>Kampanya dönemi: 15 Mayıs 2025 - 10 Mayıs 2026 tarihleri arasında, seyahat
+          dönemi 15 Mayıs 2025- 30 Eylül 2026 tarihleri arasında olacaktır.</p>
+        </section>
+      </article>
+    </body></html>
+    """
+
+    record = ExampleScraper().parse_detail("https://bank.example/kampanyalar/evlilik", html)
+
+    assert record.start_date == date(2026, 4, 22)
+    assert record.end_date == date(2026, 12, 31)
 
 
 def test_parse_detail_falls_back_to_page_date_when_campaign_content_has_none():

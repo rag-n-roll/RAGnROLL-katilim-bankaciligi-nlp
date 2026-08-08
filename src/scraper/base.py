@@ -91,14 +91,12 @@ def _parse_date(value: str, default_year: int | None = None) -> date | None:
         return None
 
 
-def extract_date_range(text: str) -> tuple[date | None, date | None]:
-    """Acik kampanya donemlerini kapsayan tarih araligini dondurur."""
-    compact = clean_lines(text).replace("\n", " ")
+def _extract_explicit_ranges(segment: str) -> tuple[date | None, date | None]:
     ranges: list[tuple[date, date]] = []
 
     numeric_ranges = re.finditer(
         rf"({NUMERIC_DATE_PATTERN})\s+(?:-|–|—)\s+({NUMERIC_DATE_PATTERN})",
-        compact,
+        segment,
         re.IGNORECASE,
     )
     for match in numeric_ranges:
@@ -111,7 +109,7 @@ def extract_date_range(text: str) -> tuple[date | None, date | None]:
         rf"({TEXTUAL_DATE_PATTERN})\s*"
         rf"(?:saat\s+\d{{1,2}}[.:]\d{{2}}\s*)?"
         rf"(?:-|–|—)\s*({FULL_TEXTUAL_DATE_PATTERN})",
-        compact,
+        segment,
         re.IGNORECASE,
     )
     for match in textual_ranges:
@@ -123,7 +121,7 @@ def extract_date_range(text: str) -> tuple[date | None, date | None]:
     shared_month_ranges = re.finditer(
         rf"(?<!\d)(\d{{1,2}})\s*(?:-|–|—)\s*(?<!\d)(\d{{1,2}})\s+"
         rf"({MONTH_PATTERN})\s+(\d{{4}})(?=\s+tarih(?:leri|lerinde)\b)",
-        compact,
+        segment,
         re.IGNORECASE,
     )
     for match in shared_month_ranges:
@@ -138,25 +136,33 @@ def extract_date_range(text: str) -> tuple[date | None, date | None]:
 
     if ranges:
         return min(start for start, _ in ranges), max(end for _, end in ranges)
+    return None, None
+
+
+def _normalized_context(value: str) -> str:
+    return value.casefold().replace("i̇", "i")
+
+
+def _is_reward_expiry(context: str) -> bool:
+    reward_action = any(word in context for word in ("kazan", "kullanılmayan", "kullanilmayan"))
+    reward_value = any(
+        word in context for word in ("parafpara", "puan", "bonus", "ödül", "hediye")
+    )
+    return reward_action and reward_value
+
+
+def _extract_end_only(segment: str) -> tuple[date | None, date | None]:
+    context = _normalized_context(segment)
 
     end_only_matches = re.finditer(
         rf"({NUMERIC_DATE_PATTERN}|{FULL_TEXTUAL_DATE_PATTERN})"
-        rf"(?:\s+tarihine|\s+saat\s+\d{{1,2}}[.:]\d{{2}}(?:['’]?[a-zçğıöşü]+)?)?"
+        rf"(?:\s+tarihine|\s+saat\s+\d{{1,2}}[.:]\d{{2}}(?:['’]?[a-zçğıöşü]+)?|"
+        rf"['’](?:a|e|ya|ye))?"
         rf"\s+kadar\b",
-        compact,
+        segment,
         re.IGNORECASE,
     )
     for match in end_only_matches:
-        left = max(compact.rfind(mark, 0, match.start()) for mark in ".!?;") + 1
-        right_candidates = [compact.find(mark, match.end()) for mark in ".!?;"]
-        right = min(
-            (position for position in right_candidates if position >= 0),
-            default=len(compact),
-        )
-        context = compact[left:right].casefold().replace("i̇", "i")
-        reward_expiry = any(word in context for word in ("kazanılan", "kullanılmayan")) and any(
-            word in context for word in ("parafpara", "puan", "bonus", "ödül", "hediye")
-        )
         campaign_context = any(
             word in context
             for word in (
@@ -175,9 +181,86 @@ def extract_date_range(text: str) -> tuple[date | None, date | None]:
                 "bilet",
             )
         )
-        if campaign_context and not reward_expiry:
+        if campaign_context and not _is_reward_expiry(context):
             return None, _parse_date(match.group(1))
     return None, None
+
+
+def _date_context_score(segment: str) -> int:
+    context = _normalized_context(segment)
+    score = 0
+    if "kampanya tarih" in context:
+        score += 6
+    if "kampanya dönemi" in context or "kampanya donemi" in context:
+        score += 4
+    if "kampanya" in context:
+        score += 2
+    if "geçerli" in context or "gecerli" in context:
+        score += 2
+    if any(word in context for word in ("parafpara", "puan", "bonus", "ödül", "hediye")):
+        score -= 3
+    if _is_reward_expiry(context):
+        score -= 4
+    return score
+
+
+def _date_segments(text: str) -> list[str]:
+    segments: list[str] = []
+    for line in clean_lines(text).splitlines():
+        for part in re.split(r"(?<=[.!?;])\s+(?=[A-ZÇĞİÖŞÜ0-9])", line):
+            compact = re.sub(r"\s+", " ", part).strip()
+            if compact:
+                segments.append(compact)
+    return segments
+
+
+def extract_date_range(text: str) -> tuple[date | None, date | None]:
+    """Ayni kampanya segmentindeki donemleri kapsayan ana tarih araligini dondurur."""
+    candidates: list[tuple[int, int, tuple[date | None, date | None]]] = []
+    for index, segment in enumerate(_date_segments(text)):
+        result = _extract_explicit_ranges(segment)
+        if result == (None, None):
+            result = _extract_end_only(segment)
+        if result != (None, None):
+            candidates.append((_date_context_score(segment), index, result))
+
+    if not candidates:
+        return None, None
+    return max(candidates, key=lambda candidate: (candidate[0], -candidate[1]))[2]
+
+
+def _extract_page_date_range(text: str) -> tuple[tuple[date | None, date | None], bool]:
+    compact = clean_lines(text).replace("\n", " ")
+    marker = re.search(
+        r"\bkampanya\s+(?:tarihleri|başlangıç\s+ve\s+bitiş|dönemi)\b",
+        compact,
+        re.IGNORECASE,
+    )
+    if marker:
+        metadata = compact[marker.start() : marker.end() + 120]
+        dates = _extract_explicit_ranges(metadata)
+        if dates != (None, None):
+            return dates, True
+    return extract_date_range(text), False
+
+
+def _merge_campaign_dates(
+    scoped: tuple[date | None, date | None],
+    page: tuple[date | None, date | None],
+    *,
+    page_is_primary: bool,
+) -> tuple[date | None, date | None]:
+    scoped_start, scoped_end = scoped
+    page_start, page_end = page
+    if scoped == (None, None):
+        return page
+    if page == (None, None):
+        return scoped
+    if scoped_start is None and scoped_end and page_start and page_end == scoped_end:
+        return page_start, scoped_end
+    if scoped_start and scoped_end and page_start and page_end and page_is_primary:
+        return page
+    return scoped
 
 
 @dataclass(frozen=True, slots=True)
@@ -322,11 +405,15 @@ class BaseBankScraper:
                 image_url = urljoin(url, str(image.get("src") or image.get("data-src")))
 
         campaign_text = clean_lines("\n".join((title, description, content)))
-        start_date, end_date = extract_date_range(campaign_text)
-        if start_date is None and end_date is None:
-            # Bazi eski sayfalarda tarih yalnizca icerik kapsami disindaki ust bilgide bulunur.
-            full_text = clean_lines(soup.get_text("\n", strip=True))
-            start_date, end_date = extract_date_range(full_text)
+        scoped_dates = extract_date_range(campaign_text)
+        full_text = clean_lines(soup.get_text("\n", strip=True))
+        page_dates, page_is_primary = _extract_page_date_range(full_text)
+        # Tam sayfa tarihi yalnizca ana metadata ise veya scoped bitisle uyusuyorsa kullanilir.
+        start_date, end_date = _merge_campaign_dates(
+            scoped_dates,
+            page_dates,
+            page_is_primary=page_is_primary,
+        )
         return Campaign(
             bank_slug=self.config.slug,
             bank_name=self.config.bank_name,
