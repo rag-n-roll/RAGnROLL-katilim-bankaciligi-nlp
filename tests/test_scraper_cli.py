@@ -184,6 +184,9 @@ def test_campaigns_removes_duplicates_and_logs_milestones(tmp_path, monkeypatch,
     assert report["warning_count"] > 0
     assert report["duplicate_count"] == 1
     assert report["duplicates"][0]["duplicate_of"] == dataset["records"][0]["id"]
+    assert {row["duplicate_of"] for row in report["duplicates"]} <= {
+        row["id"] for row in dataset["records"]
+    }
     assert "duplicates removed" in caplog.text.lower()
     assert "persist" in caplog.text.lower()
 
@@ -262,6 +265,9 @@ def test_campaigns_validates_duplicate_candidates_before_selecting_persisted_rec
             "source_url": source_url,
         }
     ]
+    assert {row["duplicate_of"] for row in report["duplicates"]} <= {
+        row["id"] for row in dataset["records"]
+    }
     assert report["quality_score"] == 0.5
     assert {issue["field"] for issue in report["issues"] if issue["severity"] == "error"} == {
         "title",
@@ -340,6 +346,138 @@ def test_campaigns_rejects_later_exact_id_collision_across_distinct_urls(
     assert report["error_count"] == 1
     assert report["issues"][-1]["field"] == "id"
     assert report["quality_score"] == 0.5
+
+
+def test_campaigns_uses_noncolliding_fallback_in_duplicate_url_group(
+    tmp_path, monkeypatch
+):
+    first = campaign(
+        bank_slug="fallback",
+        bank_name="Fallback Katılım",
+        source_url="https://fallback.example/kampanya/a",
+    )
+    colliding = campaign(
+        bank_slug="fallback",
+        bank_name="Fallback Katılım",
+        source_url="https://fallback.example/kampanya/b",
+    )
+    fallback = campaign(
+        bank_slug="fallback",
+        bank_name="Fallback Katılım",
+        source_url="https://fallback.example/kampanya/b",
+    )
+    first.id = colliding.id = "X"
+    fallback.id = "Y"
+    monkeypatch.setitem(
+        scraper.SCRAPERS,
+        "fallback",
+        scraper_returning([first, colliding, fallback]),
+    )
+    args = campaign_args(tmp_path, "fallback")
+
+    exit_code = run_campaigns(args)
+
+    dataset = json.loads(args.output.read_text(encoding="utf-8"))
+    report = json.loads(args.quality_report.read_text(encoding="utf-8"))
+    assert exit_code == 2
+    assert [(row["source_url"], row["id"]) for row in dataset["records"]] == [
+        ("https://fallback.example/kampanya/a", "X"),
+        ("https://fallback.example/kampanya/b", "Y"),
+    ]
+    assert report["record_count"] == 2
+    assert report["input_record_count"] == 3
+    assert report["rejected_record_count"] == 1
+    assert report["error_count"] == 1
+    assert report["duplicates"] == [
+        {
+            "record_id": "X",
+            "duplicate_of": "Y",
+            "bank_slug": "fallback",
+            "source_url": "https://fallback.example/kampanya/b",
+        }
+    ]
+    assert {row["duplicate_of"] for row in report["duplicates"]} <= {
+        row["id"] for row in dataset["records"]
+    }
+
+
+def test_campaigns_omits_duplicate_audit_when_duplicate_group_is_all_invalid(
+    tmp_path, monkeypatch
+):
+    records = [
+        Campaign(
+            bank_slug="all-invalid-group",
+            bank_name="All Invalid Group Katılım",
+            title="",
+            content="",
+            source_url="https://all-invalid-group.example/kampanya/1",
+            id=record_id,
+        )
+        for record_id in ("invalid-1", "invalid-2")
+    ]
+    monkeypatch.setitem(
+        scraper.SCRAPERS,
+        "all-invalid-group",
+        scraper_returning(records),
+    )
+    args = campaign_args(tmp_path, "all-invalid-group")
+
+    exit_code = run_campaigns(args)
+
+    report = json.loads(args.quality_report.read_text(encoding="utf-8"))
+    assert exit_code == 2
+    assert not args.output.exists()
+    assert report["record_count"] == 0
+    assert report["input_record_count"] == 2
+    assert report["rejected_record_count"] == 2
+    assert report["duplicate_count"] == 0
+    assert report["duplicates"] == []
+
+
+def test_campaigns_omits_audit_when_all_group_candidates_collide_with_prior_ids(
+    tmp_path, monkeypatch
+):
+    first = campaign(
+        bank_slug="all-collide",
+        bank_name="All Collide Katılım",
+        source_url="https://all-collide.example/kampanya/a",
+    )
+    second = campaign(
+        bank_slug="all-collide",
+        bank_name="All Collide Katılım",
+        source_url="https://all-collide.example/kampanya/c",
+    )
+    collision_x = campaign(
+        bank_slug="all-collide",
+        bank_name="All Collide Katılım",
+        source_url="https://all-collide.example/kampanya/b",
+    )
+    collision_y = campaign(
+        bank_slug="all-collide",
+        bank_name="All Collide Katılım",
+        source_url="https://all-collide.example/kampanya/b",
+    )
+    first.id = collision_x.id = "X"
+    second.id = collision_y.id = "Y"
+    monkeypatch.setitem(
+        scraper.SCRAPERS,
+        "all-collide",
+        scraper_returning([first, second, collision_x, collision_y]),
+    )
+    args = campaign_args(tmp_path, "all-collide")
+
+    exit_code = run_campaigns(args)
+
+    dataset = json.loads(args.output.read_text(encoding="utf-8"))
+    report = json.loads(args.quality_report.read_text(encoding="utf-8"))
+    assert exit_code == 2
+    assert [row["id"] for row in dataset["records"]] == ["X", "Y"]
+    assert report["record_count"] == 2
+    assert report["input_record_count"] == 4
+    assert report["rejected_record_count"] == 2
+    assert report["error_count"] == 2
+    assert report["duplicate_count"] == 0
+    assert report["duplicates"] == []
 
 
 def test_campaigns_preserves_existing_dataset_when_all_records_are_invalid(

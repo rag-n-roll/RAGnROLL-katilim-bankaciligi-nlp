@@ -75,12 +75,7 @@ def _select_url_representatives(
     records: Sequence[Campaign],
     record_issues: Sequence[Sequence[dict[str, str]]],
 ) -> tuple[list[Campaign], list[dict[str, str]], list[int]]:
-    grouped_indexes: dict[tuple[str, str], list[int]] = {}
-    record_keys: list[tuple[str, str]] = []
-    for index, record in enumerate(records):
-        key = (record.bank_slug.casefold(), normalize_source_url(record.source_url))
-        record_keys.append(key)
-        grouped_indexes.setdefault(key, []).append(index)
+    grouped_indexes, record_keys = _group_record_indexes(records)
 
     selected_indexes_by_key: dict[tuple[str, str], int] = {}
     for key, indexes in grouped_indexes.items():
@@ -97,14 +92,30 @@ def _select_url_representatives(
         if index == selected_index:
             continue
         duplicate_rows.append(
-            {
-                "record_id": str(record.id),
-                "duplicate_of": str(records[selected_index].id),
-                "bank_slug": str(record.bank_slug),
-                "source_url": str(record.source_url),
-            }
+            _duplicate_row(record, records[selected_index])
         )
     return unique_records, duplicate_rows, selected_indexes
+
+
+def _group_record_indexes(
+    records: Sequence[Campaign],
+) -> tuple[dict[tuple[str, str], list[int]], list[tuple[str, str]]]:
+    grouped_indexes: dict[tuple[str, str], list[int]] = {}
+    record_keys: list[tuple[str, str]] = []
+    for index, record in enumerate(records):
+        key = (record.bank_slug.casefold(), normalize_source_url(record.source_url))
+        record_keys.append(key)
+        grouped_indexes.setdefault(key, []).append(index)
+    return grouped_indexes, record_keys
+
+
+def _duplicate_row(record: Campaign, representative: Campaign) -> dict[str, str]:
+    return {
+        "record_id": str(record.id),
+        "duplicate_of": str(representative.id),
+        "bank_slug": str(record.bank_slug),
+        "source_url": str(record.source_url),
+    }
 
 
 def select_valid_campaigns(
@@ -117,28 +128,38 @@ def select_valid_campaigns(
     """Dogrula, URL gruplarindan gecerli temsilci sec ve ID tekilligini uygula."""
     records = list(records)
     record_issues = [validate_campaign(record) for record in records]
-    representatives, duplicates, selected_indexes = _select_url_representatives(
-        records, record_issues
-    )
-
+    grouped_indexes, _ = _group_record_indexes(records)
     valid_records: list[Campaign] = []
-    first_indexes_by_id: dict[tuple[type, object], int] = {}
-    for record, index in zip(representatives, selected_indexes):
-        if _has_error(record_issues[index]):
+    duplicate_rows: list[dict[str, str]] = []
+    used_ids: set[tuple[type, object]] = set()
+    for indexes in grouped_indexes.values():
+        selected_index: int | None = None
+        for index in indexes:
+            if _has_error(record_issues[index]):
+                continue
+            record = records[index]
+            exact_id = (type(record.id), record.id)
+            if exact_id in used_ids:
+                record_issues[index].append(
+                    {
+                        "severity": "error",
+                        "field": "id",
+                        "message": "Tekrarlanan kayit kimligi",
+                    }
+                )
+                continue
+            selected_index = index
+            used_ids.add(exact_id)
+            valid_records.append(record)
+            break
+        if selected_index is None:
             continue
-        exact_id = (type(record.id), record.id)
-        if exact_id in first_indexes_by_id:
-            record_issues[index].append(
-                {
-                    "severity": "error",
-                    "field": "id",
-                    "message": "Tekrarlanan kayit kimligi",
-                }
-            )
-            continue
-        first_indexes_by_id[exact_id] = index
-        valid_records.append(record)
-    return valid_records, duplicates, record_issues
+        duplicate_rows.extend(
+            _duplicate_row(records[index], records[selected_index])
+            for index in indexes
+            if index != selected_index
+        )
+    return valid_records, duplicate_rows, record_issues
 
 
 def build_quality_report(
