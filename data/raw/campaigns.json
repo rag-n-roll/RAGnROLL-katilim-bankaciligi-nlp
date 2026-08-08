@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "generated_at": "2026-08-08T16:45:58.185723+00:00",
+  "generated_at": "2026-08-08T16:59:46.635613+00:00",
   "record_count": 79,
   "records": [
     {
@@ -14,7 +14,7 @@
       "start_date": "2026-08-06",
       "end_date": "2026-12-31",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3855.vsf",
-      "scraped_at": "2026-08-08T16:44:00.242165+00:00",
+      "scraped_at": "2026-08-08T16:57:49.561610+00:00",
       "id": "ce1e9c83f2a76640fb55",
       "schema_version": "1.0.0"
     },
@@ -29,7 +29,7 @@
       "start_date": "2026-08-01",
       "end_date": "2026-08-31",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3841.vsf",
-      "scraped_at": "2026-08-08T16:44:01.365397+00:00",
+      "scraped_at": "2026-08-08T16:57:50.757506+00:00",
       "id": "b3ae167385444ca7e392",
       "schema_version": "1.0.0"
     },
@@ -44,7 +44,7 @@
       "start_date": "2026-07-21",
       "end_date": "2026-12-31",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3762.vsf",
-      "scraped_at": "2026-08-08T16:44:02.485991+00:00",
+      "scraped_at": "2026-08-08T16:57:51.938561+00:00",
       "id": "6b67d0d0175cc736991e",
       "schema_version": "1.0.0"
     },
@@ -59,7 +59,7 @@
       "start_date": "2026-07-28",
       "end_date": "2026-12-31",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3869.vsf",
-      "scraped_at": "2026-08-08T16:44:03.638478+00:00",
+      "scraped_at": "2026-08-08T16:57:53.112803+00:00",
       "id": "eb8f0c498a9e769fc60b",
       "schema_version": "1.0.0"
     },
@@ -74,7 +74,7 @@
       "start_date": "2026-07-07",
       "end_date": "2026-12-31",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3533.vsf",
-      "scraped_at": "2026-08-08T16:44:04.655599+00:00",
+      "scraped_at": "2026-08-08T16:57:54.271683+00:00",
       "id": "d2f1589b54a91ff1ee37",
       "schema_version": "1.0.0"
     },
@@ -89,7 +89,7 @@
       "start_date": "2026-07-30",
       "end_date": "2026-09-30",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3838.vsf",
-      "scraped_at": "2026-08-08T16:44:05.822246+00:00",
+      "scraped_at": "2026-08-08T16:57:55.457167+00:00",
       "id": "44239dfd6e1296e7d9c0",
       "schema_version": "1.0.0"
     },
@@ -104,7 +104,7 @@
       "start_date": "2026-07-16",
       "end_date": "2026-12-31",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3677.vsf",
-      "scraped_at": "2026-08-08T16:44:06.987496+00:00",
+      "scraped_at": "2026-08-08T16:57:56.635151+00:00",
       "id": "add32e5d810b653a4730",
       "schema_version": "1.0.0"
     },
@@ -119,7 +119,7 @@
       "start_date": "2026-07-01",
       "end_date": "2076-07-31",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3792.vsf",
-      "scraped_at": "2026-08-08T16:44:08.145193+00:00",
+      "scraped_at": "2026-08-08T16:57:57.809191+00:00",
       "id": "001b9faa5cdc061f031e",
       "schema_version": "1.0.0"
     },
@@ -134,7 +134,7 @@
       "start_date": "2026-07-01",
       "end_date": "2026-12-31",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3512.vsf",
-      "scraped_at": "2026-08-08T16:44:09.311044+00:00",
+      "scraped_at": "2026-08-08T16:57:58.988265+00:00",
       "id": "9d3e79dd01b5bc737905",
       "schema_version": "1.0.0"
     },
@@ -149,7 +149,7 @@
       "start_date": "2026-07-20",
       "end_date": "2026-12-31",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3697.vsf",
-      "scraped_at": "2026-08-08T16:44:10.478576+00:00",
+      "scraped_at": "2026-08-08T16:58:00.169321+00:00",
       "id": "0310a748565233e2d329",
       "schema_version": "1.0.0"
     },
@@ -164,7 +164,7 @@
       "start_date": "2026-04-30",
       "end_date": "2026-12-31",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3766.vsf",
-      "scraped_at": "2026-08-08T16:44:11.648552+00:00",
+      "scraped_at": "2026-08-08T16:58:01.332090+00:00",
       "id": "9c7665cc6dcacd9d3cd6",
       "schema_version": "1.0.0"
     },
@@ -179,7 +179,7 @@
       "start_date": "2024-02-01",
       "end_date": "2026-12-31",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3767.vsf",
-      "scraped_at": "2026-08-08T16:44:12.804333+00:00",
+      "scraped_at": "2026-08-08T16:58:02.516811+00:00",
       "id": "b2c2068c8cb7eb403eb2",
       "schema_version": "1.0.0"
     },
@@ -194,7 +194,7 @@
       "start_date": "2025-06-15",
       "end_date": "2026-12-31",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3770.vsf",
-      "scraped_at": "2026-08-08T16:44:13.928307+00:00",
+      "scraped_at": "2026-08-08T16:58:03.671804+00:00",
       "id": "a3b08bd574f4e012a7b1",
       "schema_version": "1.0.0"
     },
@@ -209,7 +209,7 @@
       "start_date": "2025-06-23",
       "end_date": "2026-12-31",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3771.vsf",
-      "scraped_at": "2026-08-08T16:44:15.087299+00:00",
+      "scraped_at": "2026-08-08T16:58:04.890134+00:00",
       "id": "ee2882d6e428bf081856",
       "schema_version": "1.0.0"
     },
@@ -224,7 +224,7 @@
       "start_date": "2026-05-15",
       "end_date": "2026-09-01",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3528.vsf",
-      "scraped_at": "2026-08-08T16:44:16.248930+00:00",
+      "scraped_at": "2026-08-08T16:58:06.065054+00:00",
       "id": "702bd326150168aa8c6a",
       "schema_version": "1.0.0"
     },
@@ -239,7 +239,7 @@
       "start_date": "2025-10-22",
       "end_date": "2026-12-31",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3772.vsf",
-      "scraped_at": "2026-08-08T16:44:17.267370+00:00",
+      "scraped_at": "2026-08-08T16:58:07.251595+00:00",
       "id": "619f51b2eedb4752e5cd",
       "schema_version": "1.0.0"
     },
@@ -254,7 +254,7 @@
       "start_date": "2026-04-22",
       "end_date": "2026-12-31",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3674.vsf",
-      "scraped_at": "2026-08-08T16:44:18.455322+00:00",
+      "scraped_at": "2026-08-08T16:58:08.294393+00:00",
       "id": "202430d4232488b98728",
       "schema_version": "1.0.0"
     },
@@ -269,7 +269,7 @@
       "start_date": "2025-03-07",
       "end_date": "2026-12-31",
       "image_url": "https://www.kuveytturk.com.tr/medium/Campaign-DetailImage-3531.vsf",
-      "scraped_at": "2026-08-08T16:44:19.599173+00:00",
+      "scraped_at": "2026-08-08T16:58:09.469733+00:00",
       "id": "80d28f89e942def3e9bb",
       "schema_version": "1.0.0"
     },
@@ -284,7 +284,7 @@
       "start_date": "2026-01-01",
       "end_date": "2026-12-31",
       "image_url": "https://www.albaraka.com.tr/documents/kampanya/vade_farksiz_140k.png",
-      "scraped_at": "2026-08-08T16:44:22.389802+00:00",
+      "scraped_at": "2026-08-08T16:58:12.837090+00:00",
       "id": "4cb85bd48e98e02a6cff",
       "schema_version": "1.0.0"
     },
@@ -299,7 +299,7 @@
       "start_date": "2026-08-01",
       "end_date": "2026-08-31",
       "image_url": "https://www.albaraka.com.tr/documents/kampanya/oft2026_2x_yeni.png",
-      "scraped_at": "2026-08-08T16:44:24.215442+00:00",
+      "scraped_at": "2026-08-08T16:58:14.916510+00:00",
       "id": "daca8a4e45ce1b2ff03c",
       "schema_version": "1.0.0"
     },
@@ -314,7 +314,7 @@
       "start_date": "2026-07-01",
       "end_date": "2026-08-31",
       "image_url": "https://www.albaraka.com.tr/documents/kampanya/2x_y.d.c.h.png",
-      "scraped_at": "2026-08-08T16:44:26.044750+00:00",
+      "scraped_at": "2026-08-08T16:58:16.990237+00:00",
       "id": "e3a1f07e8db4cf25ccc9",
       "schema_version": "1.0.0"
     },
@@ -329,7 +329,7 @@
       "start_date": "2024-04-14",
       "end_date": "2026-12-31",
       "image_url": "https://www.albaraka.com.tr/documents/kampanya/2x_yakinini.png",
-      "scraped_at": "2026-08-08T16:44:27.881597+00:00",
+      "scraped_at": "2026-08-08T16:58:18.844199+00:00",
       "id": "f2ef72c56b05e87226d5",
       "schema_version": "1.0.0"
     },
@@ -344,7 +344,7 @@
       "start_date": "2026-04-01",
       "end_date": "2026-12-31",
       "image_url": "https://www.albaraka.com.tr/documents/kampanya/35-varan-kar-oranli-dijital-katilma-hesabi-albaraka\\u0027da!@2x.jpg",
-      "scraped_at": "2026-08-08T16:44:29.759062+00:00",
+      "scraped_at": "2026-08-08T16:58:20.887111+00:00",
       "id": "32e19ba6616975306636",
       "schema_version": "1.0.0"
     },
@@ -359,7 +359,7 @@
       "start_date": "2026-01-01",
       "end_date": "2026-12-31",
       "image_url": "https://www.albaraka.com.tr/documents/kampanya/dijital-musterilere-ozel-ucretsiz-ispark-kampanyasi2x.png",
-      "scraped_at": "2026-08-08T16:44:32.323718+00:00",
+      "scraped_at": "2026-08-08T16:58:22.856669+00:00",
       "id": "756795eeb4ee60770910",
       "schema_version": "1.0.0"
     },
@@ -374,7 +374,7 @@
       "start_date": "2026-08-01",
       "end_date": "2026-08-31",
       "image_url": "https://www.albaraka.com.tr/documents/kampanya/troy_saglik_web.png",
-      "scraped_at": "2026-08-08T16:44:34.882901+00:00",
+      "scraped_at": "2026-08-08T16:58:24.698217+00:00",
       "id": "b298b27c523dec89e1f2",
       "schema_version": "1.0.0"
     },
@@ -389,7 +389,7 @@
       "start_date": "2026-07-01",
       "end_date": "2026-09-30",
       "image_url": "https://www.albaraka.com.tr/documents/kampanya/egitim_2x.png",
-      "scraped_at": "2026-08-08T16:44:37.035349+00:00",
+      "scraped_at": "2026-08-08T16:58:27.166918+00:00",
       "id": "9e4ae2c48480b5b88361",
       "schema_version": "1.0.0"
     },
@@ -404,7 +404,7 @@
       "start_date": "2026-06-01",
       "end_date": "2026-09-30",
       "image_url": "https://www.albaraka.com.tr/documents/kampanya/kirtasiye_kamp_yeni2x.png",
-      "scraped_at": "2026-08-08T16:44:39.595007+00:00",
+      "scraped_at": "2026-08-08T16:58:29.180611+00:00",
       "id": "5d104ed53be1ee873351",
       "schema_version": "1.0.0"
     },
@@ -419,7 +419,7 @@
       "start_date": "2026-08-01",
       "end_date": "2026-08-31",
       "image_url": "https://www.turkiyefinans.com.tr/tr-tr/kampanyalar/PublishingImages/nakit-destegi-50-liste.png",
-      "scraped_at": "2026-08-08T16:44:44.746592+00:00",
+      "scraped_at": "2026-08-08T16:58:34.652188+00:00",
       "id": "77f69d9a85fd0f1e46a1",
       "schema_version": "1.0.0"
     },
@@ -434,7 +434,7 @@
       "start_date": "2026-08-01",
       "end_date": "2026-08-31",
       "image_url": "https://www.turkiyefinans.com.tr/tr-tr/kampanyalar/PublishingImages/fatura-odeme-liste.png",
-      "scraped_at": "2026-08-08T16:44:45.923491+00:00",
+      "scraped_at": "2026-08-08T16:58:35.838535+00:00",
       "id": "2779151f6613f4494202",
       "schema_version": "1.0.0"
     },
@@ -449,7 +449,7 @@
       "start_date": "2026-08-01",
       "end_date": "2026-08-31",
       "image_url": "https://www.turkiyefinans.com.tr/tr-tr/kampanyalar/PublishingImages/kart-kampanyalari/mobilden-tanis-liste-2025-3.png",
-      "scraped_at": "2026-08-08T16:44:47.129882+00:00",
+      "scraped_at": "2026-08-08T16:58:37.081243+00:00",
       "id": "d3145099652c01801d4e",
       "schema_version": "1.0.0"
     },
@@ -464,7 +464,7 @@
       "start_date": null,
       "end_date": null,
       "image_url": "https://www.turkiyefinans.com.tr/tr-tr/kampanyalar/PublishingImages/masrafsiz-liste-4.png",
-      "scraped_at": "2026-08-08T16:44:48.373740+00:00",
+      "scraped_at": "2026-08-08T16:58:38.299800+00:00",
       "id": "227ba9e1a04ea4e5a433",
       "schema_version": "1.0.0"
     },
@@ -479,7 +479,7 @@
       "start_date": "2026-08-01",
       "end_date": "2026-08-31",
       "image_url": "https://www.turkiyefinans.com.tr/tr-tr/kampanyalar/PublishingImages/kart-kampanyalari/yakinini-davet-edin-liste.png",
-      "scraped_at": "2026-08-08T16:44:49.624233+00:00",
+      "scraped_at": "2026-08-08T16:58:39.533439+00:00",
       "id": "691cbe5e045dd7a1f3e5",
       "schema_version": "1.0.0"
     },
@@ -494,7 +494,7 @@
       "start_date": null,
       "end_date": null,
       "image_url": "https://www.turkiyefinans.com.tr/tr-tr/kampanyalar/PublishingImages/kart-kampanyalari/mastercard-business-kart-firsat-liste.png",
-      "scraped_at": "2026-08-08T16:44:50.841369+00:00",
+      "scraped_at": "2026-08-08T16:58:40.747944+00:00",
       "id": "5cd46cb44ccace9a8ed0",
       "schema_version": "1.0.0"
     },
@@ -509,7 +509,7 @@
       "start_date": null,
       "end_date": null,
       "image_url": "https://www.turkiyefinans.com.tr/tr-tr/PublishingImages/tf-logo-200x200.png",
-      "scraped_at": "2026-08-08T16:44:52.050778+00:00",
+      "scraped_at": "2026-08-08T16:58:41.988423+00:00",
       "id": "7a1ca5a6baf7dc2d8ec2",
       "schema_version": "1.0.0"
     },
@@ -524,7 +524,7 @@
       "start_date": null,
       "end_date": null,
       "image_url": "https://www.turkiyefinans.com.tr/tr-tr/PublishingImages/tf-logo-200x200.png",
-      "scraped_at": "2026-08-08T16:44:53.286264+00:00",
+      "scraped_at": "2026-08-08T16:58:43.225751+00:00",
       "id": "726179c6d29f2e3fe923",
       "schema_version": "1.0.0"
     },
@@ -539,7 +539,7 @@
       "start_date": "2026-08-01",
       "end_date": "2026-10-31",
       "image_url": "https://www.turkiyefinans.com.tr/tr-tr/kampanyalar/PublishingImages/sifir-komisyon-liste.png",
-      "scraped_at": "2026-08-08T16:44:54.465590+00:00",
+      "scraped_at": "2026-08-08T16:58:44.417629+00:00",
       "id": "38942faa3c40b8733abb",
       "schema_version": "1.0.0"
     },
@@ -554,7 +554,7 @@
       "start_date": "2026-08-08",
       "end_date": "2026-09-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:44:55.998362+00:00",
+      "scraped_at": "2026-08-08T16:58:45.940576+00:00",
       "id": "91513ac1e20de35a6323",
       "schema_version": "1.0.0"
     },
@@ -569,7 +569,7 @@
       "start_date": "2026-08-08",
       "end_date": "2026-09-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:44:57.323040+00:00",
+      "scraped_at": "2026-08-08T16:58:47.273031+00:00",
       "id": "6b23bae3e4195f2f5781",
       "schema_version": "1.0.0"
     },
@@ -584,7 +584,7 @@
       "start_date": "2026-08-08",
       "end_date": "2026-09-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:44:58.662471+00:00",
+      "scraped_at": "2026-08-08T16:58:48.613101+00:00",
       "id": "6618cc7f989132e4706f",
       "schema_version": "1.0.0"
     },
@@ -599,7 +599,7 @@
       "start_date": "2026-08-08",
       "end_date": "2026-09-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:44:59.944962+00:00",
+      "scraped_at": "2026-08-08T16:58:50.060068+00:00",
       "id": "6ddb72744c2d60227afb",
       "schema_version": "1.0.0"
     },
@@ -614,7 +614,7 @@
       "start_date": "2026-08-08",
       "end_date": "2026-09-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:45:01.229828+00:00",
+      "scraped_at": "2026-08-08T16:58:51.451979+00:00",
       "id": "130735b4f6fffdaea5d2",
       "schema_version": "1.0.0"
     },
@@ -629,7 +629,7 @@
       "start_date": "2026-08-08",
       "end_date": "2026-09-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:45:02.514712+00:00",
+      "scraped_at": "2026-08-08T16:58:52.810823+00:00",
       "id": "bb15881a796298d43018",
       "schema_version": "1.0.0"
     },
@@ -644,7 +644,7 @@
       "start_date": "2026-08-08",
       "end_date": "2026-09-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:45:03.797387+00:00",
+      "scraped_at": "2026-08-08T16:58:54.151953+00:00",
       "id": "e9729b9606fad07dc5b5",
       "schema_version": "1.0.0"
     },
@@ -659,7 +659,7 @@
       "start_date": "2026-08-08",
       "end_date": "2026-09-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:45:05.114370+00:00",
+      "scraped_at": "2026-08-08T16:58:55.505776+00:00",
       "id": "2648e0101d9eb21a0915",
       "schema_version": "1.0.0"
     },
@@ -674,7 +674,7 @@
       "start_date": "2026-08-08",
       "end_date": "2026-09-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:45:06.773921+00:00",
+      "scraped_at": "2026-08-08T16:58:56.877684+00:00",
       "id": "424b94f1df1c6bac5f5a",
       "schema_version": "1.0.0"
     },
@@ -689,7 +689,7 @@
       "start_date": "2026-08-08",
       "end_date": "2026-09-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:45:08.053568+00:00",
+      "scraped_at": "2026-08-08T16:58:58.223305+00:00",
       "id": "9e6e20a4d9596005be12",
       "schema_version": "1.0.0"
     },
@@ -704,7 +704,7 @@
       "start_date": "2026-08-08",
       "end_date": "2026-09-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:45:09.340020+00:00",
+      "scraped_at": "2026-08-08T16:58:59.598186+00:00",
       "id": "d52f3b499293e37d86aa",
       "schema_version": "1.0.0"
     },
@@ -719,7 +719,7 @@
       "start_date": "2026-08-08",
       "end_date": "2026-09-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:45:10.647475+00:00",
+      "scraped_at": "2026-08-08T16:59:00.985753+00:00",
       "id": "13486a99f198833f7a0b",
       "schema_version": "1.0.0"
     },
@@ -734,7 +734,7 @@
       "start_date": "2026-08-08",
       "end_date": "2026-09-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:45:11.912569+00:00",
+      "scraped_at": "2026-08-08T16:59:02.301551+00:00",
       "id": "0115a9419704cd3bef62",
       "schema_version": "1.0.0"
     },
@@ -749,7 +749,7 @@
       "start_date": "2026-08-08",
       "end_date": "2026-09-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:45:13.244353+00:00",
+      "scraped_at": "2026-08-08T16:59:03.651624+00:00",
       "id": "ad4fd7c0c00f22b620a6",
       "schema_version": "1.0.0"
     },
@@ -764,7 +764,7 @@
       "start_date": "2026-08-08",
       "end_date": "2026-09-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:45:14.595569+00:00",
+      "scraped_at": "2026-08-08T16:59:04.964566+00:00",
       "id": "485e5fc23aafa13dccb7",
       "schema_version": "1.0.0"
     },
@@ -779,7 +779,7 @@
       "start_date": "2026-07-10",
       "end_date": "2026-08-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:45:15.802689+00:00",
+      "scraped_at": "2026-08-08T16:59:05.987975+00:00",
       "id": "b135bc96e56a0fb08bdd",
       "schema_version": "1.0.0"
     },
@@ -794,7 +794,7 @@
       "start_date": "2026-07-10",
       "end_date": "2026-08-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:45:16.852857+00:00",
+      "scraped_at": "2026-08-08T16:59:07.019938+00:00",
       "id": "9e3cbbe01bd04ab5111e",
       "schema_version": "1.0.0"
     },
@@ -809,7 +809,7 @@
       "start_date": "2026-07-10",
       "end_date": "2026-08-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:45:18.076903+00:00",
+      "scraped_at": "2026-08-08T16:59:08.056309+00:00",
       "id": "c5548309f6c082e24c84",
       "schema_version": "1.0.0"
     },
@@ -824,7 +824,7 @@
       "start_date": "2026-07-10",
       "end_date": "2026-08-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:45:19.105567+00:00",
+      "scraped_at": "2026-08-08T16:59:09.084723+00:00",
       "id": "cdf47939ab52f2702dbd",
       "schema_version": "1.0.0"
     },
@@ -839,7 +839,7 @@
       "start_date": "2026-07-10",
       "end_date": "2026-08-07",
       "image_url": "https://www.ziraatkatilim.com.tr/sites/default/files/2026-08/paylastikca-daha-fazlasi.jpg",
-      "scraped_at": "2026-08-08T16:45:20.143338+00:00",
+      "scraped_at": "2026-08-08T16:59:10.118127+00:00",
       "id": "f1252e5c65cd02bed1fc",
       "schema_version": "1.0.0"
     },
@@ -854,7 +854,7 @@
       "start_date": "2026-05-08",
       "end_date": "2026-11-30",
       "image_url": "https://www.vakifkatilim.com.tr",
-      "scraped_at": "2026-08-08T16:45:21.522734+00:00",
+      "scraped_at": "2026-08-08T16:59:11.425063+00:00",
       "id": "16acdf5ea2f5d78cf4d6",
       "schema_version": "1.0.0"
     },
@@ -869,7 +869,7 @@
       "start_date": "2025-07-01",
       "end_date": "2029-12-31",
       "image_url": "https://www.vakifkatilim.com.tr",
-      "scraped_at": "2026-08-08T16:45:22.657701+00:00",
+      "scraped_at": "2026-08-08T16:59:12.546783+00:00",
       "id": "2d60813b098cd0af800e",
       "schema_version": "1.0.0"
     },
@@ -884,7 +884,7 @@
       "start_date": "2026-04-22",
       "end_date": "2026-12-31",
       "image_url": "https://www.vakifkatilim.com.tr",
-      "scraped_at": "2026-08-08T16:45:23.784622+00:00",
+      "scraped_at": "2026-08-08T16:59:13.662037+00:00",
       "id": "9d0670f19a2bc78aef81",
       "schema_version": "1.0.0"
     },
@@ -897,9 +897,9 @@
       "summary": "Emlak Katılım Paraf ve Emlak Katılım Debit ile Biletinial Etkinliklerinde %20 İndirim!",
       "category": null,
       "start_date": null,
-      "end_date": null,
+      "end_date": "2026-12-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/7/ek1_ea1a3079adf148389f064c42237dcd8a.png",
-      "scraped_at": "2026-08-08T16:45:27.858469+00:00",
+      "scraped_at": "2026-08-08T16:59:16.285921+00:00",
       "id": "d753aa1ffdad12348b99",
       "schema_version": "1.0.0"
     },
@@ -912,9 +912,9 @@
       "summary": "Marina Mayo’da Tüm Ürünlerde %15 İndirim!",
       "category": null,
       "start_date": null,
-      "end_date": null,
+      "end_date": "2026-12-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/7/ek1_7de183bc70f247a3984cb4beebb89876.png",
-      "scraped_at": "2026-08-08T16:45:29.435799+00:00",
+      "scraped_at": "2026-08-08T16:59:17.905782+00:00",
       "id": "165091778435f1bde50e",
       "schema_version": "1.0.0"
     },
@@ -927,9 +927,9 @@
       "summary": "Modanisa’da Tüm İndirimlere Ek %15 İndirim Fırsatı!",
       "category": null,
       "start_date": null,
-      "end_date": null,
+      "end_date": "2026-12-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/7/modanisa.png",
-      "scraped_at": "2026-08-08T16:45:31.054171+00:00",
+      "scraped_at": "2026-08-08T16:59:19.528020+00:00",
       "id": "df8f6da1fbf3ca3a8c76",
       "schema_version": "1.0.0"
     },
@@ -942,9 +942,9 @@
       "summary": "Enterprise Araç Kiralamalarında %35 İndirim Fırsatı!",
       "category": null,
       "start_date": null,
-      "end_date": null,
+      "end_date": "2026-12-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/6/ek2_ec86e033db1a4b82ba5e1b4ded953147.jpg",
-      "scraped_at": "2026-08-08T16:45:32.670991+00:00",
+      "scraped_at": "2026-08-08T16:59:21.133159+00:00",
       "id": "ccc2afbb91965d38ff05",
       "schema_version": "1.0.0"
     },
@@ -957,9 +957,9 @@
       "summary": "Kampanyaya Nasıl Katılırım?",
       "category": null,
       "start_date": null,
-      "end_date": null,
+      "end_date": "2026-12-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/7/ek2_944ac77e379e4b17878dd8c45ce6ffe0.png",
-      "scraped_at": "2026-08-08T16:45:34.288741+00:00",
+      "scraped_at": "2026-08-08T16:59:22.701754+00:00",
       "id": "f75788c03de929f3285d",
       "schema_version": "1.0.0"
     },
@@ -972,9 +972,9 @@
       "summary": "Hızlı Çiçek’te Tüm İndirimlere Ek %20 İndirim Fırsatı!",
       "category": null,
       "start_date": null,
-      "end_date": null,
+      "end_date": "2026-12-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/6/ek2_47f390379dd748e4acf78bc9e7cd5b7a.png",
-      "scraped_at": "2026-08-08T16:45:35.898761+00:00",
+      "scraped_at": "2026-08-08T16:59:24.325873+00:00",
       "id": "ec837732e669b7e1a7f3",
       "schema_version": "1.0.0"
     },
@@ -986,10 +986,10 @@
       "source_url": "https://www.emlakkatilim.com.tr/tr/bireysel/kampanyalar/kampanya/ucak-bileti-harcamalariniza-2000-tl-parafpara",
       "summary": "Uçak Bileti Harcamalarınıza 2.000 TL ParafPara!",
       "category": null,
-      "start_date": null,
-      "end_date": null,
+      "start_date": "2026-08-01",
+      "end_date": "2026-08-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/7/ucak-bileti_600x960.png",
-      "scraped_at": "2026-08-08T16:45:37.528082+00:00",
+      "scraped_at": "2026-08-08T16:59:26.010875+00:00",
       "id": "824fcadd52f0a284eeed",
       "schema_version": "1.0.0"
     },
@@ -1001,10 +1001,10 @@
       "source_url": "https://www.emlakkatilim.com.tr/tr/bireysel/kampanyalar/kampanya/seyahat-alisverislerinize-3500-tlye-varan-parafpara",
       "summary": "Seyahat Alışverişlerinize 3.500 TL'ye varan ParafPara!",
       "category": null,
-      "start_date": null,
-      "end_date": null,
+      "start_date": "2026-08-01",
+      "end_date": "2026-08-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/7/seyahat_600x960.png",
-      "scraped_at": "2026-08-08T16:45:39.106105+00:00",
+      "scraped_at": "2026-08-08T16:59:27.615305+00:00",
       "id": "56ee34479aaec042a030",
       "schema_version": "1.0.0"
     },
@@ -1016,10 +1016,10 @@
       "source_url": "https://www.emlakkatilim.com.tr/tr/bireysel/kampanyalar/kampanya/akaryakit-harcamalariniza-400-tl-parafpara",
       "summary": "Kampanyaya Nasıl Katılırım?",
       "category": null,
-      "start_date": null,
-      "end_date": null,
+      "start_date": "2026-08-01",
+      "end_date": "2026-08-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/8/ek2_7601ac481c7147628d0bd1025b44354d.jpg",
-      "scraped_at": "2026-08-08T16:45:40.745647+00:00",
+      "scraped_at": "2026-08-08T16:59:29.146912+00:00",
       "id": "f0b8b29aa72d7ed00374",
       "schema_version": "1.0.0"
     },
@@ -1031,10 +1031,10 @@
       "source_url": "https://www.emlakkatilim.com.tr/tr/bireysel/kampanyalar/kampanya/elektrikli-arac-sarj-istasyonu-harcamalariniza-200-tl-parafpara",
       "summary": "Elektrikli Araç Şarj İstasyonu Harcamalarınıza 200 TL’ye Varan ParafPara!",
       "category": null,
-      "start_date": null,
-      "end_date": null,
+      "start_date": "2026-08-01",
+      "end_date": "2026-08-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/5/ek2_18b0c0a1d9ee4ece9e96b27e9f0c4f5c.png",
-      "scraped_at": "2026-08-08T16:45:42.320386+00:00",
+      "scraped_at": "2026-08-08T16:59:30.707138+00:00",
       "id": "95df0784a0022fbb87e3",
       "schema_version": "1.0.0"
     },
@@ -1046,10 +1046,10 @@
       "source_url": "https://www.emlakkatilim.com.tr/tr/bireysel/kampanyalar/kampanya/beyaz-esya-ve-elektronik-alisverislerinize-5000-tlye-varan-parafpara",
       "summary": "Kampanyaya Nasıl Katılırım?",
       "category": null,
-      "start_date": null,
-      "end_date": null,
+      "start_date": "2026-08-01",
+      "end_date": "2026-08-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/8/ek2_727d710a56b54df092375878dd492214.jpg",
-      "scraped_at": "2026-08-08T16:45:43.900697+00:00",
+      "scraped_at": "2026-08-08T16:59:32.257350+00:00",
       "id": "101843643753f2f1407e",
       "schema_version": "1.0.0"
     },
@@ -1061,10 +1061,10 @@
       "source_url": "https://www.emlakkatilim.com.tr/tr/bireysel/kampanyalar/kampanya/mobilya-dekorasyon-ve-yapi-marketi-alisverisinize-1250-tlye-varan-parafpara",
       "summary": "Kampanyaya Nasıl Katılırım?",
       "category": null,
-      "start_date": null,
-      "end_date": null,
+      "start_date": "2026-08-01",
+      "end_date": "2026-08-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/8/ek2_b170f73c303747c49ee66477e91443a9.jpg",
-      "scraped_at": "2026-08-08T16:45:45.502754+00:00",
+      "scraped_at": "2026-08-08T16:59:33.832424+00:00",
       "id": "08b48c292a891b01747f",
       "schema_version": "1.0.0"
     },
@@ -1076,10 +1076,10 @@
       "source_url": "https://www.emlakkatilim.com.tr/tr/bireysel/kampanyalar/kampanya/market-alisverislerinize-800-tl-parafpara-hediye",
       "summary": "Market Alışverişlerinize 800 TL ParafPara Hediye!",
       "category": null,
-      "start_date": null,
-      "end_date": null,
+      "start_date": "2026-08-01",
+      "end_date": "2026-08-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/8/market-800.jpg",
-      "scraped_at": "2026-08-08T16:45:47.103333+00:00",
+      "scraped_at": "2026-08-08T16:59:35.417168+00:00",
       "id": "e101e82f61ca02fead19",
       "schema_version": "1.0.0"
     },
@@ -1091,10 +1091,10 @@
       "source_url": "https://www.emlakkatilim.com.tr/tr/bireysel/kampanyalar/kampanya/market-alisverislerinize-2000-tl-parafpara-hediye",
       "summary": "Kampanyaya Nasıl Katılırım?",
       "category": null,
-      "start_date": null,
-      "end_date": null,
+      "start_date": "2026-08-01",
+      "end_date": "2026-08-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/8/ek2_c19876a8e7e44666abe03e2ca40e91be.jpg",
-      "scraped_at": "2026-08-08T16:45:48.677292+00:00",
+      "scraped_at": "2026-08-08T16:59:37.019022+00:00",
       "id": "ebca03a8335f2f61fa7c",
       "schema_version": "1.0.0"
     },
@@ -1106,10 +1106,10 @@
       "source_url": "https://www.emlakkatilim.com.tr/tr/bireysel/kampanyalar/kampanya/giyim-ve-kozmetik-alisverislerinize-2500-tl-parafpara",
       "summary": "Kampanyaya Nasıl Katılırım?",
       "category": null,
-      "start_date": null,
-      "end_date": null,
+      "start_date": "2026-08-01",
+      "end_date": "2026-08-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/8/giyim-2500.jpg",
-      "scraped_at": "2026-08-08T16:45:50.289562+00:00",
+      "scraped_at": "2026-08-08T16:59:38.621567+00:00",
       "id": "6407e9b57ff0f8f5f1eb",
       "schema_version": "1.0.0"
     },
@@ -1121,10 +1121,10 @@
       "source_url": "https://www.emlakkatilim.com.tr/tr/bireysel/kampanyalar/kampanya/paraf-ile-secili-e-ticaret-alisverislerinize-2000-tlye-varan-parafpara",
       "summary": "Paraf ile Seçili E-Ticaret Alışverişlerinize 2.000 TL'ye varan ParafPara!",
       "category": null,
-      "start_date": null,
-      "end_date": null,
+      "start_date": "2026-08-01",
+      "end_date": "2026-08-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/6/secili-e-ticaret-alisverislerinize-2_000-tlye-varan-parafpara.png",
-      "scraped_at": "2026-08-08T16:45:51.882939+00:00",
+      "scraped_at": "2026-08-08T16:59:40.267228+00:00",
       "id": "24f9a751add244c2d27b",
       "schema_version": "1.0.0"
     },
@@ -1136,10 +1136,10 @@
       "source_url": "https://www.emlakkatilim.com.tr/tr/bireysel/kampanyalar/kampanya/paraf-ile-secili-e-ticaret-alisverislerinize-1500-tlye-varan-parafpara",
       "summary": "Paraf ile Seçili E-Ticaret Alışverişlerinize 1.500 TL'ye varan ParafPara!",
       "category": null,
-      "start_date": null,
-      "end_date": null,
+      "start_date": "2026-08-01",
+      "end_date": "2026-08-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/6/ek1_4e05a93b06ba4929a76e04ffbeccec4e.png",
-      "scraped_at": "2026-08-08T16:45:53.444015+00:00",
+      "scraped_at": "2026-08-08T16:59:41.863953+00:00",
       "id": "603baf4315299554b1cc",
       "schema_version": "1.0.0"
     },
@@ -1151,10 +1151,10 @@
       "source_url": "https://www.emlakkatilim.com.tr/tr/bireysel/kampanyalar/kampanya/pazaramada-ayin-ilk-haftasi-troy-haftasi",
       "summary": "TROY logolu Emlak Katılım Debit, Emlak Katılım Paraf ve Emlak Katılım Paraf Premium ile Pazarama’da tek seferde 1.000 TL ve üzeri alışverişe 200 TL indirim!",
       "category": null,
-      "start_date": null,
-      "end_date": null,
+      "start_date": "2026-07-01",
+      "end_date": "2026-07-07",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/7/troy-pazarama-600x900-kirpilmis-2.jpg",
-      "scraped_at": "2026-08-08T16:45:55.068646+00:00",
+      "scraped_at": "2026-08-08T16:59:43.418657+00:00",
       "id": "a86aceb1f396c190c140",
       "schema_version": "1.0.0"
     },
@@ -1166,10 +1166,10 @@
       "source_url": "https://www.emlakkatilim.com.tr/tr/bireysel/kampanyalar/kampanya/troy-ile-idefixte-3000-tl-indirim-firsati",
       "summary": "TROY Logolu Emlak Katılım Paraf ve Emlak Katılım Debit Kart ile idefix’te 3.000 TL’ye Varan Anında İndirim Fırsatı!",
       "category": null,
-      "start_date": null,
-      "end_date": null,
+      "start_date": "2026-06-10",
+      "end_date": "2026-08-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/6/ek2_b01c9ff81b0047f3a276748a30c3729d.png",
-      "scraped_at": "2026-08-08T16:45:56.633797+00:00",
+      "scraped_at": "2026-08-08T16:59:45.030926+00:00",
       "id": "678ca0b6b8f0b5c9ad4a",
       "schema_version": "1.0.0"
     },
@@ -1182,9 +1182,9 @@
       "summary": "31 Ağustos 2026 tarihine kadar Troy Apple mağazaları veya www.troyestore.com’de Paraf POS’undan yapılacak taksitli alışverişlerde vade farksız 5 aya varan taksit imkanı sunulacaktır.",
       "category": null,
       "start_date": null,
-      "end_date": null,
+      "end_date": "2026-08-31",
       "image_url": "https://asset.emlakkatilim.com.tr/documents/bireysel/kampanya/2026/8/ek2_0af5b4232f124ec8a2bcae3f68c334d7.jpg",
-      "scraped_at": "2026-08-08T16:45:58.185158+00:00",
+      "scraped_at": "2026-08-08T16:59:46.634873+00:00",
       "id": "4627baa4369de0a685ad",
       "schema_version": "1.0.0"
     }
