@@ -102,6 +102,7 @@ def extract_date_range(text: str) -> tuple[date | None, date | None]:
 
     textual = re.search(
         rf"(\d{{1,2}}\s+(?:{MONTH_PATTERN})(?:\s+\d{{4}})?)\s*"
+        rf"(?:saat\s+\d{{1,2}}[.:]\d{{2}}\s*)?"
         rf"(?:-|–|—)\s*(\d{{1,2}}\s+(?:{MONTH_PATTERN})\s+\d{{4}})",
         compact,
         re.IGNORECASE,
@@ -110,6 +111,34 @@ def extract_date_range(text: str) -> tuple[date | None, date | None]:
         end = _parse_date(textual.group(2))
         start = _parse_date(textual.group(1), default_year=end.year if end else None)
         return start, end
+
+    shared_month = re.search(
+        rf"(\d{{1,2}})\s*(?:-|–|—)\s*(\d{{1,2}})\s+"
+        rf"({MONTH_PATTERN})\s+(\d{{4}})(?=\s+tarih(?:leri|lerinde)\b)",
+        compact,
+        re.IGNORECASE,
+    )
+    if shared_month:
+        start = _parse_date(
+            f"{shared_month.group(1)} {shared_month.group(3)} {shared_month.group(4)}"
+        )
+        end = _parse_date(
+            f"{shared_month.group(2)} {shared_month.group(3)} {shared_month.group(4)}"
+        )
+        if start and end and start <= end:
+            return start, end
+        return None, None
+
+    end_only = re.search(
+        rf"(\d{{1,2}}[./-]\d{{1,2}}[./-]\d{{4}}|"
+        rf"\d{{1,2}}\s+(?:{MONTH_PATTERN})\s+\d{{4}})"
+        rf"(?:\s+tarihine|\s+saat\s+\d{{1,2}}[.:]\d{{2}}(?:['’]?[a-zçğıöşü]+)?)?"
+        rf"\s+kadar\b",
+        compact,
+        re.IGNORECASE,
+    )
+    if end_only:
+        return None, _parse_date(end_only.group(1))
     return None, None
 
 

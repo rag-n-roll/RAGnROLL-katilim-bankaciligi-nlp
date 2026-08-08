@@ -215,6 +215,52 @@ def test_extracts_numeric_date_range():
     )
 
 
+def test_extracts_compact_turkish_date_range_with_shared_month():
+    assert extract_date_range("Kampanya 1-31 Ağustos 2026 tarihleri arasında geçerlidir.") == (
+        date(2026, 8, 1),
+        date(2026, 8, 31),
+    )
+
+
+def test_extracts_textual_date_range_with_clock_text_before_separator():
+    assert extract_date_range(
+        "10 Haziran 2026 saat 00.01 – 31 Ağustos 2026 saat 23.59 "
+        "tarihleri arasında geçerlidir."
+    ) == (
+        date(2026, 6, 10),
+        date(2026, 8, 31),
+    )
+
+
+def test_extracts_numeric_single_campaign_end_date():
+    assert extract_date_range("Kampanya 31.12.2026 tarihine kadar geçerlidir.") == (
+        None,
+        date(2026, 12, 31),
+    )
+
+
+def test_extracts_textual_single_campaign_end_date_with_clock_text():
+    assert extract_date_range(
+        "İndirim kodları en geç 31 Aralık 2026 saat 23:59'a kadar kullanılabilir."
+    ) == (
+        None,
+        date(2026, 12, 31),
+    )
+
+
+def test_does_not_treat_unrelated_single_date_as_campaign_end():
+    assert extract_date_range(
+        "Kullanılmayan ParafPara'lar 15 Ekim 2026 tarihinde geri alınacaktır."
+    ) == (None, None)
+
+
+def test_rejects_invalid_compact_date_range():
+    assert extract_date_range("Kampanya 1-32 Ağustos 2026 tarihleri arasında geçerlidir.") == (
+        None,
+        None,
+    )
+
+
 def test_parses_campaign_detail_and_removes_script():
     html = """
     <html><head><meta property="og:image" content="/image.jpg"></head><body>
