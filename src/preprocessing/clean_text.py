@@ -13,6 +13,8 @@ from typing import Any
 
 from bs4 import BeautifulSoup
 
+from src.extraction.campaign_fields import extract_prd_fields
+
 TOKEN_RE = re.compile(r"\d+(?:[.,]\d+)*|[^\W\d_]+(?:['’][^\W\d_]+)?", re.UNICODE)
 TURKISH_LOWER_TRANSLATION = str.maketrans({"I": "ı", "İ": "i"})
 
@@ -51,6 +53,11 @@ def preprocess_record(record: dict[str, Any]) -> dict[str, Any]:
     result["clean_text"] = cleaned
     result["tokens"] = tokens
     result["token_count"] = len(tokens)
+    result["structured"] = extract_prd_fields(
+        "\n".join(filter(None, [str(record.get("title") or ""), cleaned])),
+        start_date=record.get("start_date"),
+        end_date=record.get("end_date"),
+    )
     return result
 
 
