@@ -83,6 +83,47 @@ class DuplicateScraper:
         ], []
 
 
+class MixedValidityScraper:
+    config = Namespace(base_url="https://mixed.example")
+
+    def __init__(self, *, client) -> None:
+        self.client = client
+
+    def scrape(self, *, limit):
+        return [
+            campaign(
+                bank_slug="mixed",
+                bank_name="Mixed Katılım",
+                source_url="https://mixed.example/kampanya/valid",
+            ),
+            Campaign(
+                bank_slug="mixed",
+                bank_name="Mixed Katılım",
+                title="",
+                content="",
+                source_url="http://mixed.example/kampanya/invalid",
+            ),
+        ], []
+
+
+class InvalidOnlyScraper:
+    config = Namespace(base_url="https://invalid.example")
+
+    def __init__(self, *, client) -> None:
+        self.client = client
+
+    def scrape(self, *, limit):
+        return [
+            Campaign(
+                bank_slug="invalid",
+                bank_name="Invalid Katılım",
+                title="",
+                content="",
+                source_url="http://invalid.example/kampanya/1",
+            )
+        ], []
+
+
 def test_campaigns_isolates_scrape_failure_and_persists_later_bank(
     tmp_path, monkeypatch, caplog
 ):
@@ -126,6 +167,67 @@ def test_campaigns_removes_duplicates_and_logs_milestones(tmp_path, monkeypatch,
     assert report["duplicates"][0]["duplicate_of"] == dataset["records"][0]["id"]
     assert "duplicates removed" in caplog.text.lower()
     assert "persist" in caplog.text.lower()
+
+
+def test_campaigns_discards_error_invalid_records_but_reports_their_issues(
+    tmp_path, monkeypatch, caplog
+):
+    monkeypatch.setitem(scraper.SCRAPERS, "mixed", MixedValidityScraper)
+    args = campaign_args(tmp_path, "mixed")
+
+    with caplog.at_level("INFO"):
+        exit_code = run_campaigns(args)
+
+    dataset = json.loads(args.output.read_text(encoding="utf-8"))
+    report = json.loads(args.quality_report.read_text(encoding="utf-8"))
+    assert exit_code == 2
+    assert dataset["record_count"] == 1
+    assert dataset["records"][0]["source_url"].endswith("/valid")
+    assert report["record_count"] == 2
+    assert report["valid_record_count"] == 1
+    assert report["error_count"] == 3
+    assert {issue["field"] for issue in report["issues"] if issue["severity"] == "error"} == {
+        "title",
+        "content",
+        "source_url",
+    }
+    assert "discarded invalid campaign records: 1" in caplog.text.lower()
+
+
+def test_campaigns_preserves_existing_dataset_when_all_records_are_invalid(
+    tmp_path, monkeypatch, caplog
+):
+    monkeypatch.setitem(scraper.SCRAPERS, "invalid", InvalidOnlyScraper)
+    args = campaign_args(tmp_path, "invalid")
+    sentinel = b'{"records": ["last-known-good"]}\n'
+    args.output.write_bytes(sentinel)
+
+    with caplog.at_level("INFO"):
+        exit_code = run_campaigns(args)
+
+    report = json.loads(args.quality_report.read_text(encoding="utf-8"))
+    assert exit_code == 2
+    assert args.output.read_bytes() == sentinel
+    assert report["record_count"] == 1
+    assert report["valid_record_count"] == 0
+    assert report["error_count"] == 3
+    assert "preserv" in caplog.text.lower()
+
+
+def test_campaigns_does_not_create_dataset_when_all_records_are_invalid(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setitem(scraper.SCRAPERS, "invalid", InvalidOnlyScraper)
+    args = campaign_args(tmp_path, "invalid")
+
+    exit_code = run_campaigns(args)
+
+    report = json.loads(args.quality_report.read_text(encoding="utf-8"))
+    assert exit_code == 2
+    assert not args.output.exists()
+    assert report["record_count"] == 1
+    assert report["valid_record_count"] == 0
+    assert report["error_count"] == 3
 
 
 def test_campaigns_isolates_missing_scraper_config_and_persists_later_bank(

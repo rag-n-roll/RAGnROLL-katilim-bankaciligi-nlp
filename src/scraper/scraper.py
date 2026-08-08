@@ -69,10 +69,17 @@ def run_campaigns(args: argparse.Namespace) -> int:
 
     records, duplicates = deduplicate_campaigns(records)
     LOGGER.info("Duplicates removed: %d", len(duplicates))
-    dataset = campaign_dataset(records)
     report = build_quality_report(records, failures, duplicates)
     LOGGER.info("Validation completed: %d errors", report["error_count"])
-    if records:
+    invalid_record_ids = {
+        issue["record_id"]
+        for issue in report["issues"]
+        if issue["severity"] == "error"
+    }
+    valid_records = [record for record in records if str(record.id) not in invalid_record_ids]
+    LOGGER.info("Discarded invalid campaign records: %d", len(records) - len(valid_records))
+    dataset = campaign_dataset(valid_records)
+    if valid_records:
         write_json(args.output, dataset)
         LOGGER.info("Data persisted: campaign dataset %s", args.output)
     else:
@@ -82,9 +89,9 @@ def run_campaigns(args: argparse.Namespace) -> int:
         )
     write_json(args.quality_report, report)
     LOGGER.info("Quality report persisted: %s", args.quality_report)
-    if records:
+    if valid_records:
         print(
-            f"{len(records)} kampanya yazıldı: {args.output} "
+            f"{len(valid_records)} kampanya yazıldı: {args.output} "
             f"(kalite skoru={report['quality_score']:.2%}, çekme hatası={len(failures)}, "
             f"yinelenen={len(duplicates)})"
         )
