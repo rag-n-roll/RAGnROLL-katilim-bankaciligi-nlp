@@ -10,10 +10,11 @@ from pathlib import Path
 from src.preprocessing.clean_text import preprocess_dataset
 
 from .bddk import fetch_participation_banks
+from .base import build_failure
 from .http import HttpClient
 from .registry import SCRAPERS, resolve_banks
 from .storage import campaign_dataset, write_json
-from .validation import build_quality_report
+from .validation import build_quality_report, deduplicate_campaigns
 
 LOGGER = logging.getLogger(__name__)
 
@@ -39,22 +40,39 @@ def run_campaigns(args: argparse.Namespace) -> int:
     records = []
     failures: list[dict[str, str]] = []
     for slug in bank_slugs:
-        LOGGER.info("%s kampanyalari toplaniyor", slug)
-        scraper = SCRAPERS[slug](client=client)
-        bank_records, bank_failures = scraper.scrape(limit=args.max_per_bank)
+        scraper_class = SCRAPERS[slug]
+        bank_base_url = scraper_class.config.base_url
+        LOGGER.info("Scraper started for %s", slug)
+        try:
+            bank_scraper = scraper_class(client=client)
+            bank_records, bank_failures = bank_scraper.scrape(limit=args.max_per_bank)
+        except Exception as exc:
+            LOGGER.exception("Scraper failed for %s", slug)
+            failures.append(build_failure(slug, "scrape", bank_base_url, exc))
+            continue
         records.extend(bank_records)
         failures.extend(bank_failures)
-        LOGGER.info("%s: %d kayit, %d hata", slug, len(bank_records), len(bank_failures))
+        LOGGER.info(
+            "Bank completed for %s: %d records, %d failures",
+            slug,
+            len(bank_records),
+            len(bank_failures),
+        )
 
+    records, duplicates = deduplicate_campaigns(records)
+    LOGGER.info("Duplicates removed: %d", len(duplicates))
     dataset = campaign_dataset(records)
-    report = build_quality_report(records, failures)
+    report = build_quality_report(records, failures, duplicates)
+    LOGGER.info("Validation completed: %d errors", report["error_count"])
     write_json(args.output, dataset)
     write_json(args.quality_report, report)
+    LOGGER.info("Data persisted: %s and %s", args.output, args.quality_report)
     print(
         f"{len(records)} kampanya yazıldı: {args.output} "
-        f"(kalite skoru={report['quality_score']:.2%}, çekme hatası={len(failures)})"
+        f"(kalite skoru={report['quality_score']:.2%}, çekme hatası={len(failures)}, "
+        f"yinelenen={len(duplicates)})"
     )
-    if not records or report["error_count"]:
+    if not records or report["error_count"] or failures:
         return 2
     return 0
 
