@@ -6,6 +6,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
+from typing import Any
 
 from src.preprocessing.clean_text import preprocess_dataset
 
@@ -38,12 +39,17 @@ def run_campaigns(args: argparse.Namespace) -> int:
     bank_slugs = resolve_banks(args.banks)
     client = _client(args)
     records = []
-    failures: list[dict[str, str]] = []
+    failures: list[dict[str, Any]] = []
     for slug in bank_slugs:
         scraper_class = SCRAPERS[slug]
-        bank_base_url = scraper_class.config.base_url
+        bank_base_url = ""
         LOGGER.info("Scraper started for %s", slug)
         try:
+            configured_base_url = getattr(
+                getattr(scraper_class, "config", None), "base_url", ""
+            )
+            if isinstance(configured_base_url, str):
+                bank_base_url = configured_base_url
             bank_scraper = scraper_class(client=client)
             bank_records, bank_failures = bank_scraper.scrape(limit=args.max_per_bank)
         except Exception as exc:
@@ -64,14 +70,28 @@ def run_campaigns(args: argparse.Namespace) -> int:
     dataset = campaign_dataset(records)
     report = build_quality_report(records, failures, duplicates)
     LOGGER.info("Validation completed: %d errors", report["error_count"])
-    write_json(args.output, dataset)
+    if records:
+        write_json(args.output, dataset)
+        LOGGER.info("Data persisted: campaign dataset %s", args.output)
+    else:
+        LOGGER.info(
+            "Campaign data preserved: no records collected; skipped write to %s",
+            args.output,
+        )
     write_json(args.quality_report, report)
-    LOGGER.info("Data persisted: %s and %s", args.output, args.quality_report)
-    print(
-        f"{len(records)} kampanya yazıldı: {args.output} "
-        f"(kalite skoru={report['quality_score']:.2%}, çekme hatası={len(failures)}, "
-        f"yinelenen={len(duplicates)})"
-    )
+    LOGGER.info("Quality report persisted: %s", args.quality_report)
+    if records:
+        print(
+            f"{len(records)} kampanya yazıldı: {args.output} "
+            f"(kalite skoru={report['quality_score']:.2%}, çekme hatası={len(failures)}, "
+            f"yinelenen={len(duplicates)})"
+        )
+    else:
+        print(
+            f"Kampanya veri seti yazılmadı: {args.output} "
+            f"(kalite skoru={report['quality_score']:.2%}, çekme hatası={len(failures)}, "
+            f"yinelenen={len(duplicates)})"
+        )
     if not records or report["error_count"] or failures:
         return 2
     return 0
