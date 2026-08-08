@@ -6,14 +6,16 @@ import argparse
 import json
 import logging
 from pathlib import Path
+from typing import Any
 
 from src.preprocessing.clean_text import preprocess_dataset
 
 from .bddk import fetch_participation_banks
+from .base import build_failure
 from .http import HttpClient
 from .registry import SCRAPERS, resolve_banks
 from .storage import campaign_dataset, write_json
-from .validation import build_quality_report
+from .validation import build_quality_report, select_valid_campaigns
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,27 +36,80 @@ def run_banks(args: argparse.Namespace) -> int:
 
 
 def run_campaigns(args: argparse.Namespace) -> int:
+    if args.output.resolve() == args.quality_report.resolve():
+        raise ValueError("Campaign and quality report output paths must differ")
     bank_slugs = resolve_banks(args.banks)
     client = _client(args)
     records = []
-    failures: list[dict[str, str]] = []
+    failures: list[dict[str, Any]] = []
     for slug in bank_slugs:
-        LOGGER.info("%s kampanyalari toplaniyor", slug)
-        scraper = SCRAPERS[slug](client=client)
-        bank_records, bank_failures = scraper.scrape(limit=args.max_per_bank)
+        scraper_class = SCRAPERS[slug]
+        bank_base_url = ""
+        LOGGER.info("Scraper started for %s", slug)
+        try:
+            configured_base_url = getattr(
+                getattr(scraper_class, "config", None), "base_url", ""
+            )
+            if isinstance(configured_base_url, str):
+                bank_base_url = configured_base_url
+            bank_scraper = scraper_class(client=client)
+            bank_records, bank_failures = bank_scraper.scrape(limit=args.max_per_bank)
+        except Exception as exc:
+            LOGGER.exception("Scraper failed for %s", slug)
+            failures.append(build_failure(slug, "scrape", bank_base_url, exc))
+            continue
         records.extend(bank_records)
         failures.extend(bank_failures)
-        LOGGER.info("%s: %d kayit, %d hata", slug, len(bank_records), len(bank_failures))
+        LOGGER.info(
+            "Bank completed for %s: %d records, %d failures",
+            slug,
+            len(bank_records),
+            len(bank_failures),
+        )
 
-    dataset = campaign_dataset(records)
-    report = build_quality_report(records, failures)
-    write_json(args.output, dataset)
-    write_json(args.quality_report, report)
-    print(
-        f"{len(records)} kampanya yazıldı: {args.output} "
-        f"(kalite skoru={report['quality_score']:.2%}, çekme hatası={len(failures)})"
+    valid_records, duplicates, record_issues = select_valid_campaigns(records)
+    LOGGER.info("Duplicates removed: %d", len(duplicates))
+    report = build_quality_report(
+        records,
+        failures,
+        duplicates,
+        record_issues=record_issues,
+        persisted_records=valid_records,
     )
-    if not records or report["error_count"]:
+    LOGGER.info("Validation completed: %d errors", report["error_count"])
+    LOGGER.info(
+        "Discarded invalid campaign records: %d", report["rejected_record_count"]
+    )
+    dataset = campaign_dataset(valid_records)
+    if valid_records:
+        write_json(args.output, dataset)
+        LOGGER.info("Data persisted: campaign dataset %s", args.output)
+    elif records:
+        LOGGER.info(
+            "Campaign data preserved: all collected records rejected by validation; "
+            "skipped write to %s",
+            args.output,
+        )
+    else:
+        LOGGER.info(
+            "Campaign data preserved: no records collected; skipped write to %s",
+            args.output,
+        )
+    write_json(args.quality_report, report)
+    LOGGER.info("Quality report persisted: %s", args.quality_report)
+    if valid_records:
+        print(
+            f"{len(valid_records)} kampanya yazıldı: {args.output} "
+            f"(kalite skoru={report['quality_score']:.2%}, çekme hatası={len(failures)}, "
+            f"yinelenen={len(duplicates)})"
+        )
+    else:
+        print(
+            f"0 kampanya için veri seti yazılmadı: {args.output} "
+            f"(kalite skoru={report['quality_score']:.2%}, çekme hatası={len(failures)}, "
+            f"yinelenen={len(duplicates)})"
+        )
+    if not records or report["error_count"] or failures:
         return 2
     return 0
 

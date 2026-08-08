@@ -61,11 +61,31 @@ Hata oluşturan kurallar:
 - kayıt kimliği ve kaynak URL tekil olmalı.
 
 Eksik tarih veya özet uyarıdır; bazı sürekli kampanyalarda tarih gerçekten
-bulunmayabilir. `quality_score`, modele başarıyla dönüştürülen kayıtlar içindeki
-hatasız kayıt oranıdır. `validate` komutunun `overall_quality_score` alanı ise
+bulunmayabilir. Tarama raporunda `record_count` ve `valid_record_count` kalıcı
+çıktıdaki doğrulanmış, tekil kayıt sayısını; `input_record_count` scraper'lardan
+gelen toplam kayıt sayısını; `rejected_record_count` ise validation veya kayıt
+kimliği çakışması nedeniyle reddedilen occurrence sayısını gösterir.
+`quality_score`, tekrarlar hariç tutulmadan `(input - rejected) / input` olarak
+hesaplanır; tek başına URL tekrarı skoru düşürmez. `validate` komutunun
+`overall_quality_score` alanı ise
 dönüşemeyen girdileri de paydaya dahil eder. Ağ ve HTML ayrıştırma hataları
 `fetch_failures`, JSON/model dönüşüm hataları `conversion_errors` alanında
 birbirinden ayrı tutulur ve sessizce kaybedilmez.
+
+### Tekrar ve hata raporu
+
+`quality_report.json` içindeki `duplicate_count`, kalıcı depolamadan önce
+çıkarılan tekrar sayısını; `duplicates` ise her çıkarılan occurrence'ın kayıt
+kimliğini, seçilen validation-geçerli temsilcinin kayıt kimliğini, banka kodunu
+ve normalize edilmiş kaynak URL'sini gösterir. Tekilleştirme anahtarı
+`bank_slug + normalize edilmiş source_url` birleşimidir.
+`fetch_failures` kayıtları banka kodunu (`bank_slug`), işlem aşamasını, URL'yi,
+hata türü ve mesajını, varsa HTTP durumunu ve UTC zaman damgasını içerir.
+
+`raw/campaigns.json` kaynaktan ayıklanan ortak şemayı ve geri dönülebilir ham
+metni korur. `processed/campaigns.json` aynı kayıtlara temiz metin ve token
+alanlarını ekler; ham içeriğin üzerine yazmaz. `quality_report.json` ise
+doğrulama sonuçlarını, çıkarılan tekrarları ve tarama hatalarını raporlar.
 
 ## Ön işleme yaklaşımı
 

@@ -41,14 +41,34 @@ raporunu üretin:
 ```bash
 python -m src.scraper.scraper --verbose campaigns \
   --banks priority \
-  --max-per-bank 10
+  --max-per-bank 10 \
+  --output outputs/smoke_campaigns.json \
+  --quality-report outputs/smoke_quality_report.json
 ```
 
 Altı bankanın tümünü çalıştırın:
 
 ```bash
-python -m src.scraper.scraper campaigns --banks all --max-per-bank 20
+python -m src.scraper.scraper campaigns \
+  --banks all \
+  --max-per-bank 20 \
+  --output data/raw/campaigns.json \
+  --quality-report outputs/quality_report.json
 ```
+
+`--banks priority` ile düşük `--max-per-bank` sınırı kullanan çalıştırmalar
+geçici smoke kontrolleri içindir; `outputs/smoke_*.json` dosyaları Git tarafından
+yok sayılır ve kanonik veri setinin üzerine yazmaz. Kalıcı yenilemede altı
+bankayı kapsayan `--banks all` komutu ile `data/raw/campaigns.json` ve
+`outputs/quality_report.json`, ardından preprocess komutuyla
+`data/processed/campaigns.json` güncellenir.
+
+Bir bankadaki hata diğer bankaların taramasını durdurmaz; başarılı kayıtlar
+yazılır ve kısmi başarı durumunda komut `2` çıkış koduyla tamamlanır. Banka,
+aşama, URL, hata türü/mesajı, HTTP durumu ve UTC zamanı içeren ayrıntılar kalite
+raporunun `fetch_failures` alanında tutulur. Hiç kayıt alınamayan toplam
+kesintide son bilinen iyi kampanya dosyası korunur. Kampanya çıktısı ile kalite
+raporu için aynı dosya yolu verilmesi de veri kaybını önlemek üzere reddedilir.
 
 Ham metinleri temizleyip tokenize edin:
 
@@ -60,8 +80,12 @@ python -m src.scraper.scraper preprocess data/raw/campaigns.json \
 Mevcut bir veri setini yeniden doğrulayın:
 
 ```bash
-python -m src.scraper.scraper validate data/raw/campaigns.json
+python -m src.scraper.scraper validate data/raw/campaigns.json \
+  --output outputs/validation_report.json
 ```
+
+Bu ayrı doğrulama raporu, tarama sırasında üretilen tekrar ve `fetch_failures`
+ayrıntılarını içeren kanonik `outputs/quality_report.json` dosyasını korur.
 
 Testler:
 
@@ -88,4 +112,9 @@ olarak uygular, aynı alan adına istekler arasında bekler ve geçici hatalarda
 kontrollü tekrar dener. `--ignore-robots` yalnızca site sahibinden açık izin
 alındığında kullanılmalıdır. Üretilen verinin yeniden yayımlanmasından önce
 ilgili sitelerin kullanım şartları ve içerik hakları ayrıca kontrol edilmelidir.
+
+Kaynak URL'lerdeki `utm_*`, `gclid`, `fbclid` gibi izleme parametreleri kararlı
+kayıt kimliği üretilmeden önce kaldırılır. Kayıtlar kalıcı depolamadan önce
+`bank_slug + normalize edilmiş source_url` anahtarıyla tekilleştirilir;
+çıkarılan kayıtların ayrıntıları kalite raporunun `duplicates` alanına yazılır.
 
