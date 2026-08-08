@@ -40,7 +40,10 @@ class TomKatilimScraper(BaseBankScraper):
         except Exception as exc:
             return [], [build_failure(self.config.slug, "fetch", url, exc)]
 
-        sections = soup.select(".campaign-list .campaign-item")
+        sections = soup.select(
+            ".col-lg > .d-flex.flex-column-reverse.flex-lg-row."
+            "align-items-start.mb-4"
+        )
         if limit is not None:
             sections = sections[: max(0, limit)]
         records: list[Campaign] = []

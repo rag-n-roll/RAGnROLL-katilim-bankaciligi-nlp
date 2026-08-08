@@ -38,11 +38,25 @@ def _product_type(text: str) -> str | None:
         return "financing"
     if any(word in text for word in ("kart", "bonus")):
         return "card"
-    if any(word in text for word in ("yatırım", "yatirim", "katılma hesab", "katilma hesab", "altın", "altin")):
+    investment_words = (
+        "yatırım",
+        "yatirim",
+        "katılma hesab",
+        "katilma hesab",
+        "altın",
+        "altin",
+    )
+    if any(word in text for word in investment_words):
         return "investment"
     if any(word in text for word in ("alışveriş puan", "alisveris puan", "worldpuan", "parafpara")):
         return "shopping_points"
-    if any(word in text for word in ("yeni müşteri", "yeni musteri", "ilk kez müşteri", "ilk kez musteri")):
+    new_customer_words = (
+        "yeni müşteri",
+        "yeni musteri",
+        "ilk kez müşteri",
+        "ilk kez musteri",
+    )
+    if any(word in text for word in new_customer_words):
         return "new_customer"
     return None
 
@@ -68,7 +82,16 @@ def _first_match(patterns: tuple[re.Pattern[str], ...], text: str) -> re.Match[s
 def _benefit(text: str) -> str | None:
     for sentence in re.split(r"(?<=[.!?])\s+", text.strip()):
         normalized = _normalized(sentence)
-        if any(word in normalized for word in ("avantaj", "indirim", "ödül", "odul", "iade", "masrafsız", "masrafsiz")):
+        benefit_words = (
+            "avantaj",
+            "indirim",
+            "ödül",
+            "odul",
+            "iade",
+            "masrafsız",
+            "masrafsiz",
+        )
+        if any(word in normalized for word in benefit_words):
             return sentence[:500]
     return None
 
@@ -111,7 +134,13 @@ def extract_prd_fields(
         }
 
     target_audience = None
-    if any(word in normalized for word in ("yeni müşteri", "yeni musteri", "ilk kez müşteri", "ilk kez musteri")):
+    new_customer_words = (
+        "yeni müşteri",
+        "yeni musteri",
+        "ilk kez müşteri",
+        "ilk kez musteri",
+    )
+    if any(word in normalized for word in new_customer_words):
         target_audience = "new_customer"
 
     fee_information = None
