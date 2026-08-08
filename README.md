@@ -50,6 +50,17 @@ Altı bankanın tümünü çalıştırın:
 python -m src.scraper.scraper campaigns --banks all --max-per-bank 20
 ```
 
+`--banks priority` ile düşük `--max-per-bank` sınırı kullanan çalıştırmalar
+geçici smoke kontrolleri içindir. Kalıcı veri seti yenilenirken altı bankayı
+kapsayan `--banks all` komutu kullanılmalıdır.
+
+Bir bankadaki hata diğer bankaların taramasını durdurmaz; başarılı kayıtlar
+yazılır ve kısmi başarı durumunda komut `2` çıkış koduyla tamamlanır. Banka,
+aşama, URL, hata türü/mesajı, HTTP durumu ve UTC zamanı içeren ayrıntılar kalite
+raporunun `fetch_failures` alanında tutulur. Hiç kayıt alınamayan toplam
+kesintide son bilinen iyi kampanya dosyası korunur. Kampanya çıktısı ile kalite
+raporu için aynı dosya yolu verilmesi de veri kaybını önlemek üzere reddedilir.
+
 Ham metinleri temizleyip tokenize edin:
 
 ```bash
@@ -88,4 +99,9 @@ olarak uygular, aynı alan adına istekler arasında bekler ve geçici hatalarda
 kontrollü tekrar dener. `--ignore-robots` yalnızca site sahibinden açık izin
 alındığında kullanılmalıdır. Üretilen verinin yeniden yayımlanmasından önce
 ilgili sitelerin kullanım şartları ve içerik hakları ayrıca kontrol edilmelidir.
+
+Kaynak URL'lerdeki `utm_*`, `gclid`, `fbclid` gibi izleme parametreleri kararlı
+kayıt kimliği üretilmeden önce kaldırılır. Kayıtlar kalıcı depolamadan önce
+`bank_slug + normalize edilmiş source_url` anahtarıyla tekilleştirilir;
+çıkarılan kayıtların ayrıntıları kalite raporunun `duplicates` alanına yazılır.
 

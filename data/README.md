@@ -67,6 +67,21 @@ dönüşemeyen girdileri de paydaya dahil eder. Ağ ve HTML ayrıştırma hatala
 `fetch_failures`, JSON/model dönüşüm hataları `conversion_errors` alanında
 birbirinden ayrı tutulur ve sessizce kaybedilmez.
 
+### Tekrar ve hata raporu
+
+`quality_report.json` içindeki `duplicate_count`, kalıcı depolamadan önce
+çıkarılan tekrar sayısını; `duplicates` ise her tekrarın kayıt kimliğini,
+eşleştiği ilk kayıt kimliğini, banka kodunu ve normalize edilmiş kaynak URL'sini
+gösterir. Tekilleştirme anahtarı
+`bank_slug + normalize edilmiş source_url` birleşimidir.
+`fetch_failures` kayıtları banka kodunu (`bank_slug`), işlem aşamasını, URL'yi,
+hata türü ve mesajını, varsa HTTP durumunu ve UTC zaman damgasını içerir.
+
+`raw/campaigns.json` kaynaktan ayıklanan ortak şemayı ve geri dönülebilir ham
+metni korur. `processed/campaigns.json` aynı kayıtlara temiz metin ve token
+alanlarını ekler; ham içeriğin üzerine yazmaz. `quality_report.json` ise
+doğrulama sonuçlarını, çıkarılan tekrarları ve tarama hatalarını raporlar.
+
 ## Ön işleme yaklaşımı
 
 - Unicode NFC normalizasyonu yapılır.
