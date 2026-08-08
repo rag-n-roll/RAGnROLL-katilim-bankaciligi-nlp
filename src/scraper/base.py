@@ -46,7 +46,8 @@ PRIMARY_DATE_LABEL_RE = re.compile(
     re.IGNORECASE,
 )
 INLINE_REWARD_CLAUSE_RE = re.compile(
-    r",\s+(?=(?:kazan\w*|kullanılmayan|kullanilmayan|"
+    r",\s+(?=(?:(?:kampanya\s+kapsam(?:ında|inda)|bu\s+kapsamda)\s+)?"
+    r"(?:kazan\w*|kullanılmayan|kullanilmayan|"
     r"parafpara|puan\w*|bonus\w*|ödül\w*|hediye\w*)\b)",
     re.IGNORECASE,
 )

@@ -377,6 +377,26 @@ def test_isolates_inline_reward_usage_range_after_campaign_period():
     assert extract_date_range(text) == (date(2026, 8, 1), date(2026, 8, 31))
 
 
+def test_isolates_campaign_scoped_inline_reward_usage_range():
+    text = (
+        "Kampanya 1 Ağustos 2026 - 31 Ağustos 2026 tarihleri arasında geçerlidir, "
+        "kampanya kapsamında kazanacağınız bonuslar "
+        "1 Ekim 2026 - 5 Ekim 2026 arasında kullanılabilir."
+    )
+
+    assert extract_date_range(text) == (date(2026, 8, 1), date(2026, 8, 31))
+
+
+def test_isolates_this_scope_inline_reward_usage_range():
+    text = (
+        "Kampanya 1 Ağustos 2026 - 31 Ağustos 2026 tarihleri arasında geçerlidir, "
+        "bu kapsamda kazanılan puanlar "
+        "1 Ekim 2026 - 5 Ekim 2026 arasında kullanılabilir."
+    )
+
+    assert extract_date_range(text) == (date(2026, 8, 1), date(2026, 8, 31))
+
+
 def test_preserves_spending_range_that_earns_points():
     text = (
         "1 Ağustos 2026 - 31 Ağustos 2026 tarihleri arasında yapacağınız "
