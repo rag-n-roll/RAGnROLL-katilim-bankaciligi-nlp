@@ -176,6 +176,12 @@ def test_campaigns_removes_duplicates_and_logs_milestones(tmp_path, monkeypatch,
     report = json.loads(args.quality_report.read_text(encoding="utf-8"))
     assert exit_code == 0
     assert dataset["record_count"] == 1
+    assert report["record_count"] == 1
+    assert report["valid_record_count"] == 1
+    assert report["input_record_count"] == 2
+    assert report["rejected_record_count"] == 0
+    assert report["quality_score"] == 1.0
+    assert report["warning_count"] > 0
     assert report["duplicate_count"] == 1
     assert report["duplicates"][0]["duplicate_of"] == dataset["records"][0]["id"]
     assert "duplicates removed" in caplog.text.lower()
@@ -196,9 +202,12 @@ def test_campaigns_discards_error_invalid_records_but_reports_their_issues(
     assert exit_code == 2
     assert dataset["record_count"] == 1
     assert dataset["records"][0]["source_url"].endswith("/valid")
-    assert report["record_count"] == 2
+    assert report["record_count"] == 1
     assert report["valid_record_count"] == 1
+    assert report["input_record_count"] == 2
+    assert report["rejected_record_count"] == 1
     assert report["error_count"] == 3
+    assert report["quality_score"] == 0.5
     assert {issue["field"] for issue in report["issues"] if issue["severity"] == "error"} == {
         "title",
         "content",
@@ -223,7 +232,9 @@ def test_campaigns_validates_duplicate_candidates_before_selecting_persisted_rec
         title="",
         content="",
         source_url=source_url,
+        id="invalid-occurrence",
     )
+    valid.id = "valid-representative"
     records = [valid, invalid] if valid_first else [invalid, valid]
     monkeypatch.setitem(
         scraper.SCRAPERS, "duplicate-order", scraper_returning(records)
@@ -237,10 +248,21 @@ def test_campaigns_validates_duplicate_candidates_before_selecting_persisted_rec
     assert exit_code == 2
     assert dataset["record_count"] == 1
     assert dataset["records"][0]["title"] == "Geçerli Kampanya"
-    assert report["record_count"] == 2
+    assert report["record_count"] == 1
     assert report["valid_record_count"] == 1
+    assert report["input_record_count"] == 2
+    assert report["rejected_record_count"] == 1
     assert report["error_count"] == 2
     assert report["duplicate_count"] == 1
+    assert report["duplicates"] == [
+        {
+            "record_id": "invalid-occurrence",
+            "duplicate_of": "valid-representative",
+            "bank_slug": "duplicate-order",
+            "source_url": source_url,
+        }
+    ]
+    assert report["quality_score"] == 0.5
     assert {issue["field"] for issue in report["issues"] if issue["severity"] == "error"} == {
         "title",
         "content",
@@ -277,9 +299,47 @@ def test_campaigns_filters_validation_by_record_object_not_stringified_id(
     assert dataset["record_count"] == 1
     assert dataset["records"][0]["source_url"].endswith("/valid")
     assert dataset["records"][0]["id"] == "1"
-    assert report["record_count"] == 2
+    assert report["record_count"] == 1
     assert report["valid_record_count"] == 1
+    assert report["input_record_count"] == 2
+    assert report["rejected_record_count"] == 1
     assert report["error_count"] == 2
+    assert report["quality_score"] == 0.5
+
+
+def test_campaigns_rejects_later_exact_id_collision_across_distinct_urls(
+    tmp_path, monkeypatch
+):
+    first = campaign(
+        bank_slug="id-collision",
+        bank_name="ID Collision Katılım",
+        source_url="https://id-collision.example/kampanya/first",
+    )
+    second = campaign(
+        bank_slug="id-collision",
+        bank_name="ID Collision Katılım",
+        source_url="https://id-collision.example/kampanya/second",
+    )
+    first.id = second.id = "shared-id"
+    monkeypatch.setitem(
+        scraper.SCRAPERS, "id-collision", scraper_returning([first, second])
+    )
+    args = campaign_args(tmp_path, "id-collision")
+
+    exit_code = run_campaigns(args)
+
+    dataset = json.loads(args.output.read_text(encoding="utf-8"))
+    report = json.loads(args.quality_report.read_text(encoding="utf-8"))
+    assert exit_code == 2
+    assert dataset["record_count"] == 1
+    assert dataset["records"][0]["source_url"].endswith("/first")
+    assert report["record_count"] == 1
+    assert report["valid_record_count"] == 1
+    assert report["input_record_count"] == 2
+    assert report["rejected_record_count"] == 1
+    assert report["error_count"] == 1
+    assert report["issues"][-1]["field"] == "id"
+    assert report["quality_score"] == 0.5
 
 
 def test_campaigns_preserves_existing_dataset_when_all_records_are_invalid(
@@ -296,8 +356,10 @@ def test_campaigns_preserves_existing_dataset_when_all_records_are_invalid(
     report = json.loads(args.quality_report.read_text(encoding="utf-8"))
     assert exit_code == 2
     assert args.output.read_bytes() == sentinel
-    assert report["record_count"] == 1
+    assert report["record_count"] == 0
     assert report["valid_record_count"] == 0
+    assert report["input_record_count"] == 1
+    assert report["rejected_record_count"] == 1
     assert report["error_count"] == 3
     assert "all collected records rejected by validation" in caplog.text.lower()
 
@@ -313,8 +375,10 @@ def test_campaigns_does_not_create_dataset_when_all_records_are_invalid(
     report = json.loads(args.quality_report.read_text(encoding="utf-8"))
     assert exit_code == 2
     assert not args.output.exists()
-    assert report["record_count"] == 1
+    assert report["record_count"] == 0
     assert report["valid_record_count"] == 0
+    assert report["input_record_count"] == 1
+    assert report["rejected_record_count"] == 1
     assert report["error_count"] == 3
 
 
@@ -352,6 +416,8 @@ def test_campaigns_preserves_last_known_good_dataset_when_all_banks_fail(
     assert exit_code == 2
     assert args.output.read_bytes() == sentinel
     assert report["record_count"] == 0
+    assert report["input_record_count"] == 0
+    assert report["rejected_record_count"] == 0
     assert report["fetch_failure_count"] == 1
     assert report["fetch_failures"][0]["stage"] == "scrape"
     assert "no records collected" in caplog.text.lower()

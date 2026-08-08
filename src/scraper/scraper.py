@@ -15,7 +15,7 @@ from .base import build_failure
 from .http import HttpClient
 from .registry import SCRAPERS, resolve_banks
 from .storage import campaign_dataset, write_json
-from .validation import build_quality_report, deduplicate_campaigns, validate_campaign
+from .validation import build_quality_report, select_valid_campaigns
 
 LOGGER = logging.getLogger(__name__)
 
@@ -67,27 +67,19 @@ def run_campaigns(args: argparse.Namespace) -> int:
             len(bank_failures),
         )
 
-    validation_results = [
-        (record, validate_campaign(record))
-        for record in records
-    ]
-    valid_candidates = [
-        record
-        for record, issues in validation_results
-        if not any(issue["severity"] == "error" for issue in issues)
-    ]
-    invalid_record_count = len(records) - len(valid_candidates)
-    _, duplicates = deduplicate_campaigns(records)
-    valid_records, _ = deduplicate_campaigns(valid_candidates)
+    valid_records, duplicates, record_issues = select_valid_campaigns(records)
     LOGGER.info("Duplicates removed: %d", len(duplicates))
     report = build_quality_report(
         records,
         failures,
         duplicates,
-        check_duplicate_records=False,
+        record_issues=record_issues,
+        persisted_records=valid_records,
     )
     LOGGER.info("Validation completed: %d errors", report["error_count"])
-    LOGGER.info("Discarded invalid campaign records: %d", invalid_record_count)
+    LOGGER.info(
+        "Discarded invalid campaign records: %d", report["rejected_record_count"]
+    )
     dataset = campaign_dataset(valid_records)
     if valid_records:
         write_json(args.output, dataset)
