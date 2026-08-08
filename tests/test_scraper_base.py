@@ -45,7 +45,23 @@ class StubClient:
 
 DETAIL_URL = "https://bank.example/kampanyalar/firsat"
 OTHER_DETAIL_URL = "https://bank.example/kampanyalar/diger-firsat"
+OVERRIDE_DETAIL_URL = "https://bank.example/kampanyalar/gecersiz-kaynak"
 LISTING_HTML = f'<a href="{DETAIL_URL}">Fırsat</a>'
+
+
+class OverrideDiscoveryScraper(ExampleScraper):
+    def __init__(self, client: StubClient) -> None:
+        super().__init__(client)
+        self.discovery_calls = 0
+
+    def discover_urls(self) -> list[str]:
+        self.discovery_calls += 1
+        return [OVERRIDE_DETAIL_URL]
+
+
+class FailingOverrideDiscoveryScraper(ExampleScraper):
+    def discover_urls(self) -> list[str]:
+        raise requests.Timeout("slow")
 
 
 def test_scrape_reports_timeout_during_discovery_as_structured_failure():
@@ -67,6 +83,30 @@ def test_scrape_reports_timeout_during_discovery_as_structured_failure():
     timestamp = datetime.fromisoformat(str(failure["timestamp"]))
     assert timestamp.tzinfo is not None
     assert timestamp.utcoffset().total_seconds() == 0
+
+
+def test_scrape_honors_discover_urls_override_once():
+    scraper = OverrideDiscoveryScraper(
+        StubClient({OVERRIDE_DETAIL_URL: "<article><h1>Özel</h1><p>İçerik</p></article>"})
+    )
+
+    records, failures = scraper.scrape()
+
+    assert scraper.discovery_calls == 1
+    assert [record.source_url for record in records] == [OVERRIDE_DETAIL_URL]
+    assert failures == []
+
+
+def test_scrape_reports_failure_from_discover_urls_override():
+    scraper = FailingOverrideDiscoveryScraper(StubClient({}))
+
+    records, failures = scraper.scrape()
+
+    assert records == []
+    assert len(failures) == 1
+    assert failures[0]["stage"] == "discovery"
+    assert failures[0]["url"] == "https://bank.example/kampanyalar"
+    assert failures[0]["error_type"] == "Timeout"
 
 
 def test_scrape_reports_connection_error_during_detail_fetch():

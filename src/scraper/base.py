@@ -170,6 +170,31 @@ class BaseBankScraper:
             urls.extend(self._discover_listing_urls(listing_url, seen))
         return urls
 
+    def _discover_urls_for_scrape(self) -> tuple[list[str], list[dict[str, Any]]]:
+        if type(self).discover_urls is not BaseBankScraper.discover_urls:
+            try:
+                return self.discover_urls(), []
+            except Exception as exc:
+                discovery_url = self.config.listing_urls[0] if self.config.listing_urls else ""
+                if not discovery_url:
+                    discovery_url = self.config.base_url
+                LOGGER.exception("Campaign URL discovery failed for %s", self.config.slug)
+                failure = build_failure(self.config.slug, "discovery", discovery_url, exc)
+                return [], [failure]
+
+        urls: list[str] = []
+        seen: set[str] = set()
+        failures: list[dict[str, Any]] = []
+        for listing_url in self.config.listing_urls:
+            try:
+                urls.extend(self._discover_listing_urls(listing_url, seen))
+            except Exception as exc:
+                LOGGER.exception(
+                    "Campaign URL discovery failed for %s: %s", self.config.slug, listing_url
+                )
+                failures.append(build_failure(self.config.slug, "discovery", listing_url, exc))
+        return urls, failures
+
     def _content_nodes(self, soup: BeautifulSoup) -> list[Tag]:
         nodes: list[Tag] = []
         for selector in self.config.content_selectors:
@@ -244,17 +269,7 @@ class BaseBankScraper:
         )
 
     def scrape(self, *, limit: int | None = None) -> tuple[list[Campaign], list[dict[str, Any]]]:
-        urls: list[str] = []
-        seen: set[str] = set()
-        failures: list[dict[str, Any]] = []
-        for listing_url in self.config.listing_urls:
-            try:
-                urls.extend(self._discover_listing_urls(listing_url, seen))
-            except Exception as exc:
-                LOGGER.exception(
-                    "Campaign URL discovery failed for %s: %s", self.config.slug, listing_url
-                )
-                failures.append(build_failure(self.config.slug, "discovery", listing_url, exc))
+        urls, failures = self._discover_urls_for_scrape()
 
         LOGGER.info("Discovered %d campaign URLs for %s", len(urls), self.config.slug)
         if limit is not None:
