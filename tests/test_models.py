@@ -3,14 +3,16 @@ import pytest
 from src.scraper.models import Campaign, normalize_source_url
 
 
-def campaign(source_url: str) -> Campaign:
-    return Campaign(
-        bank_slug="ornek",
-        bank_name="Örnek Katılım",
-        title="Kampanya",
-        content="Kampanya koşullarını açıklayan yeterince uzun içerik.",
-        source_url=source_url,
-    )
+def campaign(source_url: str, **overrides: object) -> Campaign:
+    values: dict[str, object] = {
+        "bank_slug": "ornek",
+        "bank_name": "Örnek Katılım",
+        "title": "Kampanya",
+        "content": "Kampanya koşullarını açıklayan yeterince uzun içerik.",
+        "source_url": source_url,
+    }
+    values.update(overrides)
+    return Campaign(**values)  # type: ignore[arg-type]
 
 
 def test_normalize_source_url_removes_tracking_and_preserves_functional_query_order():
@@ -44,3 +46,36 @@ def test_campaign_rejects_non_string_required_text_field():
 def test_normalize_source_url_rejects_non_string_value():
     with pytest.raises(TypeError, match="source_url string olmali"):
         normalize_source_url(123)  # type: ignore[arg-type]
+
+
+def test_normalize_source_url_preserves_accepted_raw_query_parts():
+    value = (
+        "https://bank.example/kampanya?flag&message=a%20b&signature=x%2By%2Fz&"
+        "utm_source=email#f"
+    )
+
+    assert normalize_source_url(value) == (
+        "https://bank.example/kampanya?flag&message=a%20b&signature=x%2By%2Fz"
+    )
+
+
+def test_campaigns_keep_distinct_invalid_percent_encoded_functional_values():
+    first = campaign("https://bank.example/kampanya?campaign=%FF")
+    second = campaign("https://bank.example/kampanya?campaign=%FE")
+
+    assert first.source_url == "https://bank.example/kampanya?campaign=%FF"
+    assert second.source_url == "https://bank.example/kampanya?campaign=%FE"
+    assert first.id != second.id
+
+
+@pytest.mark.parametrize(("field", "value"), [("summary", 1), ("category", []), ("image_url", {})])
+def test_campaign_rejects_non_string_optional_text_field(field: str, value: object):
+    with pytest.raises(TypeError, match=rf"{field} string veya None olmali"):
+        campaign("https://bank.example/kampanya", **{field: value})
+
+
+@pytest.mark.parametrize("field", ["summary", "category", "image_url"])
+def test_campaign_converts_whitespace_only_optional_text_to_none(field: str):
+    record = campaign("https://bank.example/kampanya", **{field: " \t "})
+
+    assert getattr(record, field) is None

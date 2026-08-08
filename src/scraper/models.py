@@ -6,19 +6,21 @@ from dataclasses import asdict, dataclass
 from datetime import date, datetime, timezone
 from hashlib import sha256
 from typing import Any
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.parse import unquote, urlsplit, urlunsplit
 
 
 SCHEMA_VERSION = "1.0.0"
-TRACKING_QUERY_KEYS = {
-    "dclid",
-    "fbclid",
-    "gclid",
-    "mc_cid",
-    "mc_eid",
-    "msclkid",
-    "yclid",
-}
+TRACKING_QUERY_KEYS = frozenset(
+    {
+        "dclid",
+        "fbclid",
+        "gclid",
+        "mc_cid",
+        "mc_eid",
+        "msclkid",
+        "yclid",
+    }
+)
 
 
 def normalize_source_url(value: str) -> str:
@@ -27,17 +29,20 @@ def normalize_source_url(value: str) -> str:
         raise TypeError("source_url string olmali")
 
     parsed = urlsplit(value.strip())
-    query = [
-        (key, item)
-        for key, item in parse_qsl(parsed.query, keep_blank_values=True)
-        if not key.lower().startswith("utm_") and key.lower() not in TRACKING_QUERY_KEYS
-    ]
+    query = "&".join(
+        part
+        for part in parsed.query.split("&")
+        if not (
+            (key := unquote(part.partition("=")[0]).lower()).startswith("utm_")
+            or key in TRACKING_QUERY_KEYS
+        )
+    )
     return urlunsplit(
         (
             parsed.scheme.lower(),
             parsed.netloc.lower(),
             parsed.path,
-            urlencode(query),
+            query,
             "",
         )
     )
