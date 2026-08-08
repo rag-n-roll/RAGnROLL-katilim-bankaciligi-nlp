@@ -34,6 +34,7 @@ PRD_FIELDS = (
     "reward_amount",
     "discount_rate",
     "target_audience",
+    "campaign_start_date",
     "campaign_end_date",
     "fee_information",
 )
