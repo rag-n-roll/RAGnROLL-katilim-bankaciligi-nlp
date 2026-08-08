@@ -16,17 +16,15 @@ FIXTURES = Path(__file__).parent / "fixtures" / "banks"
 
 
 class FixtureClient:
-    def __init__(
-        self, listing_urls: tuple[str, ...], listing: str, detail: str
-    ) -> None:
-        self.listing_urls = set(listing_urls)
-        self.listing = listing
-        self.detail = detail
+    def __init__(self, responses: dict[str, str]) -> None:
+        self.responses = responses
         self.requests: list[str] = []
 
     def get_text(self, url: str) -> str:
         self.requests.append(url)
-        return self.listing if url in self.listing_urls else self.detail
+        if url not in self.responses:
+            raise AssertionError(f"Unexpected fixture URL: {url}")
+        return self.responses[url]
 
 
 @pytest.mark.parametrize(
@@ -108,13 +106,21 @@ def test_priority_bank_fixture_pipeline(
     detail_path = FIXTURES / f"{fixture_prefix}_detail.html"
     listing = listing_path.read_text(encoding="utf-8")
     detail = detail_path.read_text(encoding="utf-8")
-    client = FixtureClient(scraper_class.config.listing_urls, listing, detail)
+    client = FixtureClient(
+        {
+            **{url: listing for url in scraper_class.config.listing_urls},
+            expected_url: detail,
+        }
+    )
 
     records, failures = scraper_class(client=client).scrape(limit=1)
 
     assert failures == []
     assert len(records) == 1
     assert client.requests.count(expected_url) == 1
+    expected_requests = list(scraper_class.config.listing_urls)
+    expected_requests.append(expected_url)
+    assert client.requests == expected_requests
 
     record = records[0]
     assert record.bank_slug == expected_slug
