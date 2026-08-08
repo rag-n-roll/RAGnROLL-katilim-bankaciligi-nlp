@@ -99,11 +99,19 @@ def _select_url_representatives(
 
 def _group_record_indexes(
     records: Sequence[Campaign],
-) -> tuple[dict[tuple[str, str], list[int]], list[tuple[str, str]]]:
-    grouped_indexes: dict[tuple[str, str], list[int]] = {}
-    record_keys: list[tuple[str, str]] = []
+) -> tuple[
+    dict[tuple[str, str, str, str], list[int]],
+    list[tuple[str, str, str, str]],
+]:
+    grouped_indexes: dict[tuple[str, str, str, str], list[int]] = {}
+    record_keys: list[tuple[str, str, str, str]] = []
     for index, record in enumerate(records):
-        key = (record.bank_slug.casefold(), normalize_source_url(record.source_url))
+        key = (
+            record.bank_slug.casefold(),
+            normalize_source_url(record.source_url),
+            record.source_item_key or "",
+            record.record_kind,
+        )
         record_keys.append(key)
         grouped_indexes.setdefault(key, []).append(index)
     return grouped_indexes, record_keys

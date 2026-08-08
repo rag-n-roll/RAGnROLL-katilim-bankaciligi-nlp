@@ -129,6 +129,20 @@ def test_deduplicate_campaigns_removes_tracking_and_fragment_variants():
     ]
 
 
+def test_deduplicate_campaigns_keeps_distinct_compound_page_items():
+    first = valid_campaign()
+    first.source_url = "https://ornek.example/kampanyalar"
+    first.source_item_key = "restoran"
+    second = valid_campaign()
+    second.source_url = "https://ornek.example/kampanyalar"
+    second.source_item_key = "okul"
+
+    unique_records, duplicate_rows = deduplicate_campaigns([first, second])
+
+    assert unique_records == [first, second]
+    assert duplicate_rows == []
+
+
 def test_quality_report_exposes_removed_duplicates():
     first = valid_campaign()
     first.id = "first-record"

@@ -32,6 +32,25 @@ def test_campaigns_with_tracking_variants_share_source_url_and_id():
     assert first.id == second.id
 
 
+def test_campaign_defaults_to_campaign_record_kind():
+    value = campaign("https://bank.example/kampanya")
+
+    assert value.record_kind == "campaign"
+    assert value.source_item_key is None
+
+
+def test_same_page_items_have_distinct_ids():
+    first = campaign("https://bank.example/kampanyalar", source_item_key="restoran")
+    second = campaign("https://bank.example/kampanyalar", source_item_key="okul")
+
+    assert first.id != second.id
+
+
+def test_record_kind_rejects_unknown_value():
+    with pytest.raises(ValueError, match="record_kind"):
+        campaign("https://bank.example/x", record_kind="news")
+
+
 def test_campaign_rejects_non_string_required_text_field():
     with pytest.raises(TypeError, match="title string olmali"):
         Campaign(
