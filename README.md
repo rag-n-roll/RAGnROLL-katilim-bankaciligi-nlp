@@ -11,6 +11,9 @@ kampanyalarını toplayan ve Türkçe NLP işlemine hazırlayan veri hattı.
 - Sürümlü ortak JSON şeması ve atomik dosya yazımı
 - Kayıt, tarih, URL, tekrar ve çekme hatası kalite kontrolleri
 - Unicode/Türkçe uyumlu temizleme ve hafif tokenizasyon
+- SQLite ana kaynak, geriye uyumlu ham/işlenmiş JSON export'ları
+- Deterministik sayı, para birimi, oran ve süre normalizasyonu
+- Açıklanabilir ürün/kampanya karşılaştırması
 
 BDDK listesi Ağustos 2026 itibarıyla 10 banka içerir. Veri hattı bu katalogdaki
 hiçbir bankayı sessizce atlamaz. Adil Katılım'ın kamuya açık ürün/hizmet metni,
@@ -37,11 +40,13 @@ python -m src.scraper.scraper --verbose collect \
   --banks-output data/raw/participation_banks.json \
   --raw-output data/raw/campaigns.json \
   --processed-output data/processed/campaigns.json \
-  --quality-report outputs/quality_report.json
+  --quality-report outputs/quality_report.json \
+  --database data/ragnroll.sqlite3
 ```
 
 Komut BDDK kapsam raporunu, ham kayıtları, PRD alanları çıkarılmış işlenmiş
-veriyi ve banka/alan doluluk metriklerini birlikte üretir. Eksik banka, sıfır
+veriyi ve banka/alan doluluk metriklerini birlikte üretir. SQLite ana kaynaktır;
+JSON çıktıları başarılı veritabanı yazımından sonra üretilir. Eksik banka, sıfır
 kayıtlı banka, ağ/ayrıştırma hatası veya doğrulama hatası varsa `2` ile çıkar.
 
 BDDK listesini çekin:
@@ -101,6 +106,43 @@ python -m src.scraper.scraper validate data/raw/campaigns.json \
 Bu ayrı doğrulama raporu, tarama sırasında üretilen tekrar ve `fetch_failures`
 ayrıntılarını içeren kanonik `outputs/quality_report.json` dosyasını korur.
 
+### SQLite ve karşılaştırma
+
+SQLite şemasını güvenle oluşturun:
+
+```bash
+python -m src.scraper.scraper db init --database data/ragnroll.sqlite3
+```
+
+Önceki JSON veri setini açıkça içe aktarın; komut tekrar çalıştırıldığında kayıt
+çoğaltmaz:
+
+```bash
+python -m src.scraper.scraper db import-json data/processed/campaigns.json \
+  --database data/ragnroll.sqlite3
+```
+
+SQLite'tan geriye uyumlu snapshot üretin:
+
+```bash
+python -m src.scraper.scraper db export-json --database data/ragnroll.sqlite3 \
+  --raw-output data/raw/campaigns.json \
+  --processed-output data/processed/campaigns.json
+```
+
+Aynı ürün türü ve para birimindeki kayıtları karşılaştırın:
+
+```bash
+python -m src.scraper.scraper compare --database data/ragnroll.sqlite3 \
+  --product-type financing --currency TRY --output outputs/comparison.json
+```
+
+`RAGNROLL_DB_PATH` ortam değişkeni varsayılan veritabanı yolunu değiştirir.
+Karşılaştırma currency conversion yapmaz; açıkça farklı para birimleri sonuçtan
+`currency_mismatch` gerekçesiyle elenir. Eksik alanlar sıfır kabul edilmez.
+Önceki uyumlu SQLite şemalarında eksik indeks alanları güvenle eklenir; bilinmeyen
+ve eksik zorunlu kolonlu şemalar sessiz veri kaybı yerine açık hata ile reddedilir.
+
 Testler:
 
 ```bash
@@ -113,6 +155,7 @@ python -m pytest
 - `data/raw/campaigns.json`: ortak şemadaki ham kampanyalar
 - `data/processed/campaigns.json`: temiz metin, tokenlar ve PRD `structured` alanları
 - `outputs/quality_report.json`: kapsam, alan doluluğu, kayıt ve çekme hata raporu
+- `data/ragnroll.sqlite3`: bankalar, ürünler, kampanyalar ve scrape-run kayıtları
 
 Alan tanımları, kalite ölçütleri, veri kökeni ve kullanım notları için
 [`data/README.md`](data/README.md), teknik kararlar için

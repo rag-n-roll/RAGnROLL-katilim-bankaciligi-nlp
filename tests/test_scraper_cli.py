@@ -5,7 +5,15 @@ import pytest
 
 from src.scraper.models import Campaign
 from src.scraper import scraper
-from src.scraper.scraper import run_campaigns, run_collect, run_validate
+from src.scraper.scraper import (
+    run_campaigns,
+    run_collect,
+    run_compare,
+    run_db_export,
+    run_db_import,
+    run_db_init,
+    run_validate,
+)
 
 
 def campaign(
@@ -73,7 +81,9 @@ def catalog(*slugs: str):
 
 
 def test_collect_uses_bddk_catalog_and_writes_all_outputs(tmp_path, monkeypatch):
-    monkeypatch.setattr(scraper, "fetch_participation_banks", lambda client: catalog("working"))
+    monkeypatch.setattr(
+        scraper, "fetch_participation_banks", lambda client: catalog("working")
+    )
     monkeypatch.setattr(scraper, "SCRAPERS", {"working": WorkingScraper})
     args = collect_args(tmp_path)
 
@@ -85,6 +95,63 @@ def test_collect_uses_bddk_catalog_and_writes_all_outputs(tmp_path, monkeypatch)
     quality = read_json(args.quality_report)
     assert quality["coverage"]["complete"] is True
     assert quality["processed_coverage"]["bank_coverage"]["ratio"] == 1.0
+
+
+def test_collect_persists_sqlite_then_exports_compatible_json(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        scraper, "fetch_participation_banks", lambda client: catalog("working")
+    )
+    monkeypatch.setattr(scraper, "SCRAPERS", {"working": WorkingScraper})
+    args = collect_args(tmp_path)
+    args.database = tmp_path / "campaigns.sqlite3"
+
+    assert run_collect(args) == 0
+    assert args.database.exists()
+    assert (
+        read_json(args.processed_output)["records"][0]["structured"][
+            "extraction_method"
+        ]
+        == "rules-v1"
+    )
+
+
+def test_database_cli_handlers_import_export_and_compare(tmp_path):
+    source = tmp_path / "legacy.json"
+    source.write_text(json.dumps({"records": [campaign().to_dict()]}), encoding="utf-8")
+    database = tmp_path / "campaigns.sqlite3"
+    raw_output, processed_output, comparison_output = (
+        tmp_path / "raw.json",
+        tmp_path / "processed.json",
+        tmp_path / "comparison.json",
+    )
+
+    assert run_db_init(Namespace(database=database)) == 0
+    assert run_db_import(Namespace(input=source, database=database)) == 0
+    assert (
+        run_db_export(
+            Namespace(
+                database=database,
+                raw_output=raw_output,
+                processed_output=processed_output,
+            )
+        )
+        == 0
+    )
+    assert (
+        run_compare(
+            Namespace(
+                database=database,
+                product_type="financing",
+                currency="TRY",
+                duration_days=None,
+                eligibility=None,
+                output=comparison_output,
+            )
+        )
+        == 0
+    )
+    assert read_json(raw_output)["record_count"] == 1
+    assert "included" in read_json(comparison_output)
 
 
 def test_collect_reports_unsupported_bddk_bank_and_returns_partial_status(
@@ -152,7 +219,9 @@ class DuplicateScraper:
     def scrape(self, *, limit):
         return [
             campaign(),
-            campaign(source_url="https://ornek.example/kampanya/1?utm_source=bulten#kosullar"),
+            campaign(
+                source_url="https://ornek.example/kampanya/1?utm_source=bulten#kosullar"
+            ),
         ], []
 
 
@@ -238,7 +307,9 @@ def test_campaigns_isolates_scrape_failure_and_persists_later_bank(
     assert "data persisted" in caplog.text.lower()
 
 
-def test_campaigns_removes_duplicates_and_logs_milestones(tmp_path, monkeypatch, caplog):
+def test_campaigns_removes_duplicates_and_logs_milestones(
+    tmp_path, monkeypatch, caplog
+):
     monkeypatch.setitem(scraper.SCRAPERS, "duplicate", DuplicateScraper)
     args = campaign_args(tmp_path, "duplicate")
 
@@ -284,7 +355,9 @@ def test_campaigns_discards_error_invalid_records_but_reports_their_issues(
     assert report["rejected_record_count"] == 1
     assert report["error_count"] == 3
     assert report["quality_score"] == 0.5
-    assert {issue["field"] for issue in report["issues"] if issue["severity"] == "error"} == {
+    assert {
+        issue["field"] for issue in report["issues"] if issue["severity"] == "error"
+    } == {
         "title",
         "content",
         "source_url",
@@ -292,7 +365,9 @@ def test_campaigns_discards_error_invalid_records_but_reports_their_issues(
     assert "discarded invalid campaign records: 1" in caplog.text.lower()
 
 
-@pytest.mark.parametrize("valid_first", [False, True], ids=["invalid-first", "valid-first"])
+@pytest.mark.parametrize(
+    "valid_first", [False, True], ids=["invalid-first", "valid-first"]
+)
 def test_campaigns_validates_duplicate_candidates_before_selecting_persisted_record(
     tmp_path, monkeypatch, valid_first
 ):
@@ -312,9 +387,7 @@ def test_campaigns_validates_duplicate_candidates_before_selecting_persisted_rec
     )
     valid.id = "valid-representative"
     records = [valid, invalid] if valid_first else [invalid, valid]
-    monkeypatch.setitem(
-        scraper.SCRAPERS, "duplicate-order", scraper_returning(records)
-    )
+    monkeypatch.setitem(scraper.SCRAPERS, "duplicate-order", scraper_returning(records))
     args = campaign_args(tmp_path, "duplicate-order")
 
     exit_code = run_campaigns(args)
@@ -342,7 +415,9 @@ def test_campaigns_validates_duplicate_candidates_before_selecting_persisted_rec
         row["id"] for row in dataset["records"]
     }
     assert report["quality_score"] == 0.5
-    assert {issue["field"] for issue in report["issues"] if issue["severity"] == "error"} == {
+    assert {
+        issue["field"] for issue in report["issues"] if issue["severity"] == "error"
+    } == {
         "title",
         "content",
     }
