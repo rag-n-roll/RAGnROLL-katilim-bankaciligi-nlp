@@ -41,6 +41,11 @@ MONTH_PATTERN = "|".join(MONTHS)
 NUMERIC_DATE_PATTERN = r"(?<!\d)\d{1,2}[./-]\d{1,2}[./-]\d{4}"
 TEXTUAL_DATE_PATTERN = rf"(?<!\d)\d{{1,2}}\s+(?:{MONTH_PATTERN})(?:\s+\d{{4}})?"
 FULL_TEXTUAL_DATE_PATTERN = rf"(?<!\d)\d{{1,2}}\s+(?:{MONTH_PATTERN})\s+\d{{4}}"
+PRIMARY_DATE_LABEL_RE = re.compile(
+    r"\bkampanya\s+(?:tarihleri|başlangıç\s+ve\s+bitiş|dönemi)\b",
+    re.IGNORECASE,
+)
+MAX_CAMPAIGN_DURATION_DAYS = 5 * 366
 
 
 def build_failure(bank_slug: str, stage: str, url: str, exc: Exception) -> dict[str, Any]:
@@ -91,8 +96,8 @@ def _parse_date(value: str, default_year: int | None = None) -> date | None:
         return None
 
 
-def _extract_explicit_ranges(segment: str) -> tuple[date | None, date | None]:
-    ranges: list[tuple[date, date]] = []
+def _find_explicit_ranges(segment: str) -> list[tuple[int, date, date]]:
+    ranges: list[tuple[int, date, date]] = []
 
     numeric_ranges = re.finditer(
         rf"({NUMERIC_DATE_PATTERN})\s+(?:-|–|—)\s+({NUMERIC_DATE_PATTERN})",
@@ -103,7 +108,7 @@ def _extract_explicit_ranges(segment: str) -> tuple[date | None, date | None]:
         start = _parse_date(match.group(1))
         end = _parse_date(match.group(2))
         if start and end and start <= end:
-            ranges.append((start, end))
+            ranges.append((match.start(), start, end))
 
     textual_ranges = re.finditer(
         rf"({TEXTUAL_DATE_PATTERN})\s*"
@@ -116,7 +121,7 @@ def _extract_explicit_ranges(segment: str) -> tuple[date | None, date | None]:
         end = _parse_date(match.group(2))
         start = _parse_date(match.group(1), default_year=end.year if end else None)
         if start and end and start <= end:
-            ranges.append((start, end))
+            ranges.append((match.start(), start, end))
 
     shared_month_ranges = re.finditer(
         rf"(?<!\d)(\d{{1,2}})\s*(?:-|–|—)\s*(?<!\d)(\d{{1,2}})\s+"
@@ -132,10 +137,23 @@ def _extract_explicit_ranges(segment: str) -> tuple[date | None, date | None]:
             f"{match.group(2)} {match.group(3)} {match.group(4)}"
         )
         if start and end and start <= end:
-            ranges.append((start, end))
+            ranges.append((match.start(), start, end))
 
+    return sorted(ranges, key=lambda item: item[0])
+
+
+def _extract_explicit_ranges(segment: str) -> tuple[date | None, date | None]:
+    ranges = _find_explicit_ranges(segment)
     if ranges:
-        return min(start for start, _ in ranges), max(end for _, end in ranges)
+        return min(start for _, start, _ in ranges), max(end for _, _, end in ranges)
+    return None, None
+
+
+def _extract_first_explicit_range(segment: str) -> tuple[date | None, date | None]:
+    ranges = _find_explicit_ranges(segment)
+    if ranges:
+        _, start, end = ranges[0]
+        return start, end
     return None, None
 
 
@@ -206,11 +224,20 @@ def _date_context_score(segment: str) -> int:
 
 def _date_segments(text: str) -> list[str]:
     segments: list[str] = []
-    for line in clean_lines(text).splitlines():
-        for part in re.split(r"(?<=[.!?;])\s+(?=[A-ZÇĞİÖŞÜ0-9])", line):
+    lines = clean_lines(text).splitlines()
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        if index + 1 < len(lines) and re.match(r"^\d{4}\b", lines[index + 1]):
+            combined = f"{line} {lines[index + 1]}"
+            if _extract_explicit_ranges(combined) != (None, None):
+                line = combined
+                index += 1
+        for part in re.split(r"(?<=[.!?;])\s+", line):
             compact = re.sub(r"\s+", " ", part).strip()
             if compact:
                 segments.append(compact)
+        index += 1
     return segments
 
 
@@ -229,19 +256,9 @@ def extract_date_range(text: str) -> tuple[date | None, date | None]:
     return max(candidates, key=lambda candidate: (candidate[0], -candidate[1]))[2]
 
 
-def _extract_page_date_range(text: str) -> tuple[tuple[date | None, date | None], bool]:
-    compact = clean_lines(text).replace("\n", " ")
-    marker = re.search(
-        r"\bkampanya\s+(?:tarihleri|başlangıç\s+ve\s+bitiş|dönemi)\b",
-        compact,
-        re.IGNORECASE,
-    )
-    if marker:
-        metadata = compact[marker.start() : marker.end() + 120]
-        dates = _extract_explicit_ranges(metadata)
-        if dates != (None, None):
-            return dates, True
-    return extract_date_range(text), False
+def _is_plausible_campaign_range(value: tuple[date | None, date | None]) -> bool:
+    start, end = value
+    return bool(start and end and 0 <= (end - start).days <= MAX_CAMPAIGN_DURATION_DAYS)
 
 
 def _merge_campaign_dates(
@@ -252,6 +269,9 @@ def _merge_campaign_dates(
 ) -> tuple[date | None, date | None]:
     scoped_start, scoped_end = scoped
     page_start, page_end = page
+    if page_start and page_end and not _is_plausible_campaign_range(page):
+        page = (None, None)
+        page_start, page_end = page
     if scoped == (None, None):
         return page
     if page == (None, None):
@@ -357,6 +377,34 @@ class BaseBankScraper:
                 nodes.append(fallback)
         return nodes
 
+    def _primary_page_date_range(
+        self,
+        soup: BeautifulSoup,
+        content_nodes: list[Tag],
+    ) -> tuple[date | None, date | None]:
+        for text_node in soup.find_all(string=PRIMARY_DATE_LABEL_RE):
+            label = text_node.parent
+            if not isinstance(label, Tag):
+                continue
+            if any(label is node or label in node.descendants for node in content_nodes):
+                continue
+
+            container = label
+            for _ in range(4):
+                value = clean_lines(container.get_text(" ", strip=True))
+                marker = PRIMARY_DATE_LABEL_RE.search(value)
+                if marker:
+                    dates = _extract_first_explicit_range(
+                        value[marker.start() : marker.end() + 160]
+                    )
+                    if dates != (None, None):
+                        return dates
+                parent = container.parent
+                if not isinstance(parent, Tag) or parent.name in {"body", "html"}:
+                    break
+                container = parent
+        return None, None
+
     def _extract_content(self, soup: BeautifulSoup) -> tuple[str, list[Tag]]:
         nodes = self._content_nodes(soup)
         chunks: list[str] = []
@@ -407,7 +455,10 @@ class BaseBankScraper:
         campaign_text = clean_lines("\n".join((title, description, content)))
         scoped_dates = extract_date_range(campaign_text)
         full_text = clean_lines(soup.get_text("\n", strip=True))
-        page_dates, page_is_primary = _extract_page_date_range(full_text)
+        page_dates = self._primary_page_date_range(soup, nodes)
+        page_is_primary = page_dates != (None, None)
+        if not page_is_primary:
+            page_dates = extract_date_range(full_text)
         # Tam sayfa tarihi yalnizca ana metadata ise veya scoped bitisle uyusuyorsa kullanilir.
         start_date, end_date = _merge_campaign_dates(
             scoped_dates,
