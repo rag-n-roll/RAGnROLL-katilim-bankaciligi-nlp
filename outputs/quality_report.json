@@ -2,63 +2,14 @@
   "record_count": 79,
   "valid_record_count": 79,
   "error_count": 0,
-  "warning_count": 19,
+  "warning_count": 12,
   "fetch_failure_count": 0,
   "duplicate_count": 0,
   "quality_score": 1.0,
   "issues": [
     {
-      "record_id": "ce1e9c83f2a76640fb55",
-      "bank_slug": "kuveyt-turk",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "6b67d0d0175cc736991e",
-      "bank_slug": "kuveyt-turk",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "eb8f0c498a9e769fc60b",
-      "bank_slug": "kuveyt-turk",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "44239dfd6e1296e7d9c0",
-      "bank_slug": "kuveyt-turk",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "add32e5d810b653a4730",
-      "bank_slug": "kuveyt-turk",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
       "record_id": "001b9faa5cdc061f031e",
       "bank_slug": "kuveyt-turk",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "9d3e79dd01b5bc737905",
-      "bank_slug": "kuveyt-turk",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "f2ef72c56b05e87226d5",
-      "bank_slug": "albaraka-turk",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
