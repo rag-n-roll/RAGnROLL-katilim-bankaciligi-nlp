@@ -5,7 +5,15 @@ import pytest
 
 from src.scraper.models import Campaign
 from src.scraper import scraper
-from src.scraper.scraper import run_campaigns, run_collect, run_validate
+from src.scraper.scraper import (
+    run_campaigns,
+    run_collect,
+    run_compare,
+    run_db_export,
+    run_db_import,
+    run_db_init,
+    run_validate,
+)
 
 
 def campaign(
@@ -85,6 +93,34 @@ def test_collect_uses_bddk_catalog_and_writes_all_outputs(tmp_path, monkeypatch)
     quality = read_json(args.quality_report)
     assert quality["coverage"]["complete"] is True
     assert quality["processed_coverage"]["bank_coverage"]["ratio"] == 1.0
+
+
+def test_collect_persists_sqlite_then_exports_compatible_json(tmp_path, monkeypatch):
+    monkeypatch.setattr(scraper, "fetch_participation_banks", lambda client: catalog("working"))
+    monkeypatch.setattr(scraper, "SCRAPERS", {"working": WorkingScraper})
+    args = collect_args(tmp_path)
+    args.database = tmp_path / "campaigns.sqlite3"
+
+    assert run_collect(args) == 0
+    assert args.database.exists()
+    assert read_json(args.processed_output)["records"][0]["structured"]["extraction_method"] == "rules-v1"
+
+
+def test_database_cli_handlers_import_export_and_compare(tmp_path):
+    source = tmp_path / "legacy.json"
+    source.write_text(json.dumps({"records": [campaign().to_dict()]}), encoding="utf-8")
+    database = tmp_path / "campaigns.sqlite3"
+    raw_output, processed_output, comparison_output = (
+        tmp_path / "raw.json", tmp_path / "processed.json", tmp_path / "comparison.json"
+    )
+
+    assert run_db_init(Namespace(database=database)) == 0
+    assert run_db_import(Namespace(input=source, database=database)) == 0
+    assert run_db_export(Namespace(database=database, raw_output=raw_output, processed_output=processed_output)) == 0
+    assert run_compare(Namespace(database=database, product_type="financing", currency="TRY", duration_days=None,
+                                 eligibility=None, output=comparison_output)) == 0
+    assert read_json(raw_output)["record_count"] == 1
+    assert "included" in read_json(comparison_output)
 
 
 def test_collect_reports_unsupported_bddk_bank_and_returns_partial_status(

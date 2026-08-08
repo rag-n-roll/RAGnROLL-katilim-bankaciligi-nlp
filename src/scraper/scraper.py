@@ -5,9 +5,12 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
+from src.comparison import ComparisonQuery, compare_records
+from src.persistence import CampaignStore
 from src.preprocessing.clean_text import preprocess_dataset
 
 from .bddk import fetch_participation_banks
@@ -23,6 +26,7 @@ from .validation import (
 )
 
 LOGGER = logging.getLogger(__name__)
+DEFAULT_DATABASE_PATH = Path(os.getenv("RAGNROLL_DB_PATH", "data/ragnroll.sqlite3"))
 
 
 def _client(args: argparse.Namespace) -> HttpClient:
@@ -107,6 +111,14 @@ def run_collect(args: argparse.Namespace) -> int:
 
     write_json(args.banks_output, catalog)
     if valid_records:
+        database = getattr(args, "database", None)
+        if database is not None:
+            store = CampaignStore(database)
+            store.upsert_rows(
+                processed["records"],
+                run_status="partial" if failures or quality["error_count"] else "success",
+            )
+            raw, processed = store.export_datasets()
         write_json(args.raw_output, raw)
         write_json(args.processed_output, processed)
     write_json(args.quality_report, quality)
@@ -126,6 +138,48 @@ def run_collect(args: argparse.Namespace) -> int:
         or not bank_complete
     ):
         return 2
+    return 0
+
+
+def run_db_init(args: argparse.Namespace) -> int:
+    CampaignStore(args.database).initialize()
+    print(f"SQLite schema hazır: {args.database}")
+    return 0
+
+
+def run_db_import(args: argparse.Namespace) -> int:
+    with args.input.open(encoding="utf-8") as stream:
+        payload = json.load(stream)
+    count = CampaignStore(args.database).import_dataset(payload)
+    print(f"{count} kayıt SQLite'a içe aktarıldı: {args.database}")
+    return 0
+
+
+def run_db_export(args: argparse.Namespace) -> int:
+    _require_distinct_paths(args.raw_output, args.processed_output)
+    raw, processed = CampaignStore(args.database).export_datasets()
+    write_json(args.raw_output, raw)
+    write_json(args.processed_output, processed)
+    print(f"{raw['record_count']} kayıt JSON'a aktarıldı")
+    return 0
+
+
+def run_compare(args: argparse.Namespace) -> int:
+    store = CampaignStore(args.database)
+    result = compare_records(
+        store.list_campaigns(),
+        ComparisonQuery(
+            product_type=args.product_type,
+            currency=args.currency,
+            duration_days=args.duration_days,
+            eligibility=args.eligibility,
+            financing_type=getattr(args, "financing_type", None),
+            amount=getattr(args, "amount", None),
+            title=getattr(args, "title", None),
+        ),
+    )
+    write_json(args.output, result.to_dict())
+    print(f"{len(result['included'])} karşılaştırılabilir kayıt yazıldı: {args.output}")
     return 0
 
 
@@ -322,6 +376,7 @@ def build_parser() -> argparse.ArgumentParser:
     collect.add_argument(
         "--quality-report", type=Path, default=Path("outputs/quality_report.json")
     )
+    collect.add_argument("--database", type=Path, default=DEFAULT_DATABASE_PATH)
     add_http_options(collect)
     collect.set_defaults(handler=run_collect)
 
@@ -337,6 +392,33 @@ def build_parser() -> argparse.ArgumentParser:
     preprocess.add_argument("input", type=Path)
     preprocess.add_argument("--output", type=Path, default=Path("data/processed/campaigns.json"))
     preprocess.set_defaults(handler=run_preprocess)
+
+    database = subparsers.add_parser("db", help="SQLite kalıcılık işlemleri")
+    database_subparsers = database.add_subparsers(dest="db_command", required=True)
+    db_init = database_subparsers.add_parser("init", help="SQLite şemasını oluştur")
+    db_init.add_argument("--database", type=Path, default=DEFAULT_DATABASE_PATH)
+    db_init.set_defaults(handler=run_db_init)
+    db_import = database_subparsers.add_parser("import-json", help="JSON veri setini SQLite'a aktar")
+    db_import.add_argument("input", type=Path)
+    db_import.add_argument("--database", type=Path, default=DEFAULT_DATABASE_PATH)
+    db_import.set_defaults(handler=run_db_import)
+    db_export = database_subparsers.add_parser("export-json", help="SQLite verisini JSON'a aktar")
+    db_export.add_argument("--database", type=Path, default=DEFAULT_DATABASE_PATH)
+    db_export.add_argument("--raw-output", type=Path, default=Path("data/raw/campaigns.json"))
+    db_export.add_argument("--processed-output", type=Path, default=Path("data/processed/campaigns.json"))
+    db_export.set_defaults(handler=run_db_export)
+
+    compare = subparsers.add_parser("compare", help="SQLite kampanyalarını karşılaştır")
+    compare.add_argument("--database", type=Path, default=DEFAULT_DATABASE_PATH)
+    compare.add_argument("--product-type", required=True)
+    compare.add_argument("--currency", required=True)
+    compare.add_argument("--duration-days", type=int)
+    compare.add_argument("--eligibility")
+    compare.add_argument("--financing-type")
+    compare.add_argument("--amount", type=float)
+    compare.add_argument("--title")
+    compare.add_argument("--output", type=Path, default=Path("outputs/comparison.json"))
+    compare.set_defaults(handler=run_compare)
     return parser
 
 

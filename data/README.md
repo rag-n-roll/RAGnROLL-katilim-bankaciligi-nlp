@@ -32,6 +32,7 @@ durumlarıyla görünür; hiçbir katalog bankası sessizce atlanmaz.
 | `raw/participation_banks.json` | Ham | BDDK banka adları, web adresleri ve dijital banka işareti |
 | `raw/campaigns.json` | Ham | Sayfadan ayıklanan ortak kampanya kayıtları |
 | `processed/campaigns.json` | İşlenmiş | Temiz metin, tokenlar ve PRD `structured` alanları |
+| `../data/ragnroll.sqlite3` | Ana kaynak | `banks`, `products`, `campaigns`, `scrape_runs` ve şema metadatası |
 | `../outputs/quality_report.json` | Rapor | BDDK kapsamı, alan doluluğu, doğrulama ve ağ/ayrıştırma hataları |
 
 ## Kampanya JSON şeması (`1.0.0`)
@@ -58,6 +59,26 @@ durumlarıyla görünür; hiçbir katalog bankası sessizce atlanmaz.
 ekler. `structured`; ürün/finansman türü, kâr payı, vade, taksit, avantaj,
 ödül, indirim, hedef kitle, kampanya tarihleri, masraf, kanıt metni ve çıkarım
 yöntemini içerir. Bulunamayan alanlar `null` kalır; ham `content` üzerine yazılmaz.
+
+`structured` ayrıca açık metinden çıkarılabilen `min_amount`, `max_amount` ve
+`duration` alanlarını içerir. Para değerleri `{ "amount": 10000.0, "currency":
+"TRY" }`, süre `{ "value": 3, "unit": "month", "approx_days": 90 }`
+biçimindedir. SQLite parasal alanları hassas saklama için minor-unit integer
+olarak tutar. `%45`, `45%` ve `45,5%` sırasıyla `0.45`, `0.45`, `0.455` fraction
+olarak saklanır; işaretsiz sayılar oran olarak tahmin edilmez.
+
+## SQLite ilişkileri
+
+```text
+banks ──< products
+  └────< campaigns >── products (yalnızca kesin ürün bağı varsa)
+```
+
+`campaigns` ham ve işlenmiş JSON snapshot'larını, sorgulanabilir normalized
+alanları ve nullable `product_id` ilişkisini taşır. Aynı stable kayıt kimliği
+yeniden içe aktarıldığında upsert yapılır; `created_at` korunur.
+Uyumlu önceki şemalarda eksik indeks/metadata kolonları idempotent eklenir;
+zorunlu alanları olmayan bilinmeyen şemalar veri kaybını önlemek için reddedilir.
 
 ## Kalite kuralları
 
