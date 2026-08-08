@@ -5,17 +5,17 @@ kampanyalarını toplayan ve Türkçe NLP işlemine hazırlayan veri hattı.
 
 ## 1. hafta veri mühendisliği kapsamı
 
-- BDDK'nın resmî kuruluş sayfasından güncel katılım bankası listesi
-- Altı yerleşik banka için bağımsız scraper modülleri
+- BDDK'nın resmî Türkçe `/Kurulus/Liste/77` sayfasından güncel katılım bankası listesi
+- BDDK kataloğundaki 10 banka için bağımsız ürün/kampanya scraper adaptörleri
 - İlk öncelik: Kuveyt Türk, Albaraka Türk ve Türkiye Finans
 - Sürümlü ortak JSON şeması ve atomik dosya yazımı
 - Kayıt, tarih, URL, tekrar ve çekme hatası kalite kontrolleri
 - Unicode/Türkçe uyumlu temizleme ve hafif tokenizasyon
 
-BDDK listesi Temmuz 2026 itibarıyla 10 banka içerir. Kampanya kapsamındaki altı
-banka ise Albaraka Türk, Kuveyt Türk, Türkiye Finans, Ziraat Katılım, Vakıf
-Katılım ve Emlak Katılım'dır. Yeni/dijital bankalar BDDK çıktısında korunur;
-kampanya scraper kaydına gereksinim oldukça ayrıca eklenebilir.
+BDDK listesi Ağustos 2026 itibarıyla 10 banka içerir. Veri hattı bu katalogdaki
+hiçbir bankayı sessizce atlamaz. Adil Katılım'ın kamuya açık ürün/hizmet metni,
+Dünya Katılım, Hayat Finans ve T.O.M. Katılım dahil diğer bankaların resmî
+kampanya metinleri ortak ham şemada saklanır.
 
 ## Kurulum
 
@@ -28,6 +28,21 @@ python -m pip install -r requirements.txt
 ```
 
 ## Kullanım
+
+BDDK kataloğundan başlayarak tüm veri hattını tek komutla çalıştırın:
+
+```bash
+python -m src.scraper.scraper --verbose collect \
+  --max-per-bank 20 \
+  --banks-output data/raw/participation_banks.json \
+  --raw-output data/raw/campaigns.json \
+  --processed-output data/processed/campaigns.json \
+  --quality-report outputs/quality_report.json
+```
+
+Komut BDDK kapsam raporunu, ham kayıtları, PRD alanları çıkarılmış işlenmiş
+veriyi ve banka/alan doluluk metriklerini birlikte üretir. Eksik banka, sıfır
+kayıtlı banka, ağ/ayrıştırma hatası veya doğrulama hatası varsa `2` ile çıkar.
 
 BDDK listesini çekin:
 
@@ -46,7 +61,7 @@ python -m src.scraper.scraper --verbose campaigns \
   --quality-report outputs/smoke_quality_report.json
 ```
 
-Altı bankanın tümünü çalıştırın:
+Registry'deki bankaların tümünü yalnızca ham toplama modunda çalıştırın:
 
 ```bash
 python -m src.scraper.scraper campaigns \
@@ -58,10 +73,9 @@ python -m src.scraper.scraper campaigns \
 
 `--banks priority` ile düşük `--max-per-bank` sınırı kullanan çalıştırmalar
 geçici smoke kontrolleri içindir; `outputs/smoke_*.json` dosyaları Git tarafından
-yok sayılır ve kanonik veri setinin üzerine yazmaz. Kalıcı yenilemede altı
-bankayı kapsayan `--banks all` komutu ile `data/raw/campaigns.json` ve
-`outputs/quality_report.json`, ardından preprocess komutuyla
-`data/processed/campaigns.json` güncellenir.
+yok sayılır ve kanonik veri setinin üzerine yazmaz. Kalıcı yenilemede BDDK
+güdümlü `collect` komutu kullanılmalıdır. `campaigns` ve `preprocess` alt
+komutları tanılama ve kısmi yeniden çalıştırma için korunur.
 
 Bir bankadaki hata diğer bankaların taramasını durdurmaz; başarılı kayıtlar
 yazılır ve kısmi başarı durumunda komut `2` çıkış koduyla tamamlanır. Banka,
@@ -97,8 +111,8 @@ python -m pytest
 
 - `data/raw/participation_banks.json`: BDDK kuruluş listesi
 - `data/raw/campaigns.json`: ortak şemadaki ham kampanyalar
-- `data/processed/campaigns.json`: temiz metin ve tokenlar
-- `outputs/quality_report.json`: kayıt ve çekme hata raporu
+- `data/processed/campaigns.json`: temiz metin, tokenlar ve PRD `structured` alanları
+- `outputs/quality_report.json`: kapsam, alan doluluğu, kayıt ve çekme hata raporu
 
 Alan tanımları, kalite ölçütleri, veri kökeni ve kullanım notları için
 [`data/README.md`](data/README.md), teknik kararlar için

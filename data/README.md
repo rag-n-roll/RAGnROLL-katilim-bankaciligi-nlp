@@ -2,23 +2,28 @@
 
 ## Amaç ve kapsam
 
-Veri seti, katılım bankalarının herkese açık kampanya sayfalarındaki Türkçe
+Veri seti, BDDK'nın `https://www.bddk.org.tr/Kurulus/Liste/77` kataloğunda yer
+alan tüm katılım bankalarının herkese açık ürün ve kampanya sayfalarındaki Türkçe
 metinleri RAG, sınıflandırma, NER ve karşılaştırma çalışmalarına hazırlamak için
 oluşturulur. Ham HTML saklanmaz; metin, kaynak URL ve izlenebilirlik alanları
 saklanır.
 
-Kampanya kaynakları:
+BDDK kapsamındaki kaynaklar:
 
-1. Kuveyt Türk
+1. Adil Katılım
 2. Albaraka Türk
-3. Türkiye Finans
-4. Ziraat Katılım
-5. Vakıf Katılım
-6. Türkiye Emlak Katılım
+3. Dünya Katılım
+4. Hayat Finans
+5. Kuveyt Türk
+6. T.O.M. Katılım
+7. Türkiye Emlak Katılım
+8. Türkiye Finans
+9. Vakıf Katılım
+10. Ziraat Katılım
 
-Banka evreninin resmî kaynağı BDDK kuruluş listesidir. BDDK'daki yeni bankalar
-`participation_banks.json` içinde görünür; kampanya kapsamına otomatik olarak
-dahil edilmez.
+Banka evreninin tek otoritesi BDDK kuruluş listesidir. Katalog ile scraper
+registry farkları kalite raporunda `supported`, `unsupported` ve `stale`
+durumlarıyla görünür; hiçbir katalog bankası sessizce atlanmaz.
 
 ## Dosyalar
 
@@ -26,8 +31,8 @@ dahil edilmez.
 | --- | --- | --- |
 | `raw/participation_banks.json` | Ham | BDDK banka adları, web adresleri ve dijital banka işareti |
 | `raw/campaigns.json` | Ham | Sayfadan ayıklanan ortak kampanya kayıtları |
-| `processed/campaigns.json` | İşlenmiş | `clean_text`, `tokens` ve `token_count` eklenmiş kayıtlar |
-| `../outputs/quality_report.json` | Rapor | Doğrulama uyarıları, hataları ve ağ/ayrıştırma hataları |
+| `processed/campaigns.json` | İşlenmiş | Temiz metin, tokenlar ve PRD `structured` alanları |
+| `../outputs/quality_report.json` | Rapor | BDDK kapsamı, alan doluluğu, doğrulama ve ağ/ayrıştırma hataları |
 
 ## Kampanya JSON şeması (`1.0.0`)
 
@@ -41,14 +46,18 @@ dahil edilmez.
 | `summary` | string/null | Hayır | İlk anlamlı paragraftan kısa özet |
 | `content` | string | Evet | Yapısal satır sonları korunmuş kampanya metni |
 | `category` | string/null | Hayır | Kaynakta güvenle bulunabiliyorsa kategori |
+| `record_kind` | campaign/product | Evet | Kaydın kampanya veya ürün metni olduğunu belirtir |
+| `source_item_key` | string/null | Hayır | Tek sayfadaki birden fazla kampanyayı ayıran kararlı anahtar |
 | `start_date` | ISO date/null | Hayır | Kampanya başlangıcı |
 | `end_date` | ISO date/null | Hayır | Kampanya bitişi |
 | `source_url` | HTTPS URL | Evet | Birincil kaynak sayfa |
 | `image_url` | URL/null | Hayır | Kaynaktaki ana görsel |
 | `scraped_at` | ISO datetime | Evet | UTC toplama zamanı |
 
-İşlenmiş veri bu alanlara `clean_text` (string), `tokens` (string dizisi) ve
-`token_count` (integer) ekler. Ham `content` hiçbir zaman üzerine yazılmaz.
+İşlenmiş veri bu alanlara `clean_text`, `tokens`, `token_count` ve `structured`
+ekler. `structured`; ürün/finansman türü, kâr payı, vade, taksit, avantaj,
+ödül, indirim, hedef kitle, kampanya tarihleri, masraf, kanıt metni ve çıkarım
+yöntemini içerir. Bulunamayan alanlar `null` kalır; ham `content` üzerine yazılmaz.
 
 ## Kalite kuralları
 
@@ -78,7 +87,8 @@ birbirinden ayrı tutulur ve sessizce kaybedilmez.
 çıkarılan tekrar sayısını; `duplicates` ise her çıkarılan occurrence'ın kayıt
 kimliğini, seçilen validation-geçerli temsilcinin kayıt kimliğini, banka kodunu
 ve normalize edilmiş kaynak URL'sini gösterir. Tekilleştirme anahtarı
-`bank_slug + normalize edilmiş source_url` birleşimidir.
+`bank_slug + normalize edilmiş source_url + source_item_key + record_kind`
+birleşimidir.
 `fetch_failures` kayıtları banka kodunu (`bank_slug`), işlem aşamasını, URL'yi,
 hata türü ve mesajını, varsa HTTP durumunu ve UTC zaman damgasını içerir.
 

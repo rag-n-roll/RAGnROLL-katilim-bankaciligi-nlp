@@ -2,20 +2,24 @@
 
 ## Kaynak araştırması sonucu
 
-30 Temmuz 2026 kontrolünde BDDK'nın resmî Bankalar sayfasındaki “Katılım
+8 Ağustos 2026 kontrolünde BDDK'nın resmî Türkçe Bankalar sayfasındaki “Katılım
 Bankaları” grubu 10 faal kuruluş gösteriyor. Bu nedenle banka listesi sabit bir
-Python dizisi değildir; her çalıştırmada BDDK HTML'inden çekilir. Görevdeki altı
-banka kampanya toplama kapsamı olarak ayrı tutulur.
+Python dizisi değildir; her çalıştırmada BDDK HTML'inden çekilir ve katalogdaki
+10 bankanın tamamı ürün/kampanya toplama kapsamına alınır.
 
 İncelenen birincil sayfalar:
 
-- BDDK: <https://www.bddk.gov.tr/Kurulus/Liste/90>
+- BDDK: <https://www.bddk.org.tr/Kurulus/Liste/77>
+- Adil Katılım: <https://www.adilkatilim.com.tr/katilim-bankaciligi/urun-ve-hizmetler>
 - Kuveyt Türk: <https://www.kuveytturk.com.tr/kampanyalar/kendim-icin/kart-kampanyalari>
 - Albaraka Türk: <https://www.albaraka.com.tr/tr/kampanyalar>
 - Türkiye Finans: <https://www.turkiyefinans.com.tr/tr-tr/kampanyalar/sayfalar/default.aspx>
 - Ziraat Katılım: <https://www.ziraatkatilim.com.tr/kart-kampanyalari>
 - Vakıf Katılım: <https://www.vakifkatilim.com.tr/tr/kendim-icin/kampanyalar/mevcut-kampanyalar>
 - Emlak Katılım: <https://www.emlakkatilim.com.tr/tr/bireysel/kampanyalar>
+- Dünya Katılım: <https://dunyakatilim.com.tr/kampanyalar>
+- Hayat Finans: <https://hayatfinans.com.tr/kampanyalar>
+- T.O.M. Katılım: <https://www.tombank.com.tr/kampanyalar.html>
 
 ## Mimari kararlar
 
@@ -41,7 +45,7 @@ banka kampanya toplama kapsamı olarak ayrı tutulur.
 1. BDDK listesini üret ve beklenmedik adet değişimini incele.
 2. Öncelikli üç bankayı düşük limit ile smoke-test et.
 3. Kalite skoru ve çekme hatalarını kontrol et.
-4. Altı bankalık koşuyu çalıştır.
+4. BDDK güdümlü 10 bankalık `collect` koşusunu çalıştır.
 5. İşlenmiş veri setini üret ve örnek kayıtları elle gözden geçir.
 
 Üretim zamanlaması eklenirken günlük tek koşu çoğu kampanya kullanım senaryosu
