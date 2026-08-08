@@ -13,6 +13,7 @@ __pycache__/
 .DS_Store
 
 .commandcode
+.worktrees/
 
 # Calistirma sirasinda uretilen veri ve raporlar
 data/raw/*.json
