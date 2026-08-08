@@ -122,3 +122,20 @@ def test_quality_report_exposes_removed_duplicates():
             "source_url": "https://ornek.example/kampanya/1",
         }
     ]
+
+
+def test_quality_report_preserves_structured_fetch_failure_metadata():
+    failure = {
+        "bank_slug": "ornek",
+        "stage": "fetch",
+        "url": "https://ornek.example/kampanya/1",
+        "error_type": "HTTPError",
+        "error": "Service unavailable",
+        "timestamp": "2026-08-08T12:00:00+00:00",
+        "http_status": 503,
+    }
+
+    report = build_quality_report([valid_campaign()], failures=[failure])
+
+    assert report["fetch_failure_count"] == 1
+    assert report["fetch_failures"] == [failure]

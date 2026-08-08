@@ -70,7 +70,7 @@ def deduplicate_campaigns(
 def build_quality_report(
     records: Iterable[Campaign],
     failures: list[dict[str, Any]] | None = None,
-    duplicates: list[dict[str, Any]] | None = None,
+    duplicates: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
     records = list(records)
     failures = failures or []
