@@ -1,4 +1,5 @@
 from datetime import date, datetime
+import logging
 
 import requests
 
@@ -11,6 +12,21 @@ class ExampleScraper(BaseBankScraper):
         bank_name="Örnek Katılım A.Ş.",
         base_url="https://bank.example",
         listing_urls=("https://bank.example/kampanyalar",),
+        detail_pattern=r"/kampanyalar/[^/]+$",
+        content_selectors=("article",),
+    )
+
+
+class MultiListingScraper(BaseBankScraper):
+    config = ScraperConfig(
+        slug="coklu-ornek",
+        bank_name="Çoklu Örnek Katılım A.Ş.",
+        base_url="https://bank.example",
+        listing_urls=(
+            "https://bank.example/kampanyalar/ilk",
+            "https://bank.example/kampanyalar/bozuk",
+            "https://bank.example/kampanyalar/son",
+        ),
         detail_pattern=r"/kampanyalar/[^/]+$",
         content_selectors=("article",),
     )
@@ -117,6 +133,32 @@ def test_scrape_keeps_following_record_when_one_detail_parse_fails(monkeypatch):
     assert [record.source_url for record in records] == [OTHER_DETAIL_URL]
     assert failures[0]["stage"] == "parse"
     assert failures[0]["url"] == DETAIL_URL
+
+
+def test_scrape_preserves_successful_listings_around_discovery_failure(caplog):
+    first_listing_url, failed_listing_url, last_listing_url = (
+        MultiListingScraper.config.listing_urls
+    )
+    scraper = MultiListingScraper(
+        StubClient(
+            {
+                first_listing_url: f'<a href="{DETAIL_URL}">İlk</a>',
+                failed_listing_url: requests.Timeout("slow"),
+                last_listing_url: f'<a href="{OTHER_DETAIL_URL}">Son</a>',
+                DETAIL_URL: "<article><h1>İlk</h1><p>İçerik</p></article>",
+                OTHER_DETAIL_URL: "<article><h1>Son</h1><p>İçerik</p></article>",
+            }
+        )
+    )
+    caplog.set_level(logging.INFO, logger="src.scraper.base")
+
+    records, failures = scraper.scrape()
+
+    assert [record.source_url for record in records] == [DETAIL_URL, OTHER_DETAIL_URL]
+    assert len(failures) == 1
+    assert failures[0]["stage"] == "discovery"
+    assert failures[0]["url"] == failed_listing_url
+    assert any("Campaign detail parsed" in message for message in caplog.messages)
 
 
 def test_extracts_turkish_textual_date_range_with_inferred_year():

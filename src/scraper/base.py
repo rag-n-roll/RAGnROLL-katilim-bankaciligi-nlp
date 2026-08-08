@@ -143,26 +143,31 @@ class BaseBankScraper:
         self.client = client or HttpClient()
         self._detail_regex = re.compile(self.config.detail_pattern, re.IGNORECASE)
 
+    def _discover_listing_urls(self, listing_url: str, seen: set[str]) -> list[str]:
+        urls: list[str] = []
+        allowed_host = urlparse(self.config.base_url).hostname
+        soup = BeautifulSoup(self.client.get_text(listing_url), "html.parser")
+        for selector in self.config.listing_link_selectors:
+            for anchor in soup.select(selector):
+                href = str(anchor.get("href") or "").strip()
+                if not href:
+                    continue
+                absolute = urldefrag(urljoin(self.config.base_url, href))[0]
+                parsed = urlparse(absolute)
+                if (
+                    parsed.hostname == allowed_host
+                    and self._detail_regex.search(parsed.path)
+                    and absolute not in seen
+                ):
+                    seen.add(absolute)
+                    urls.append(absolute)
+        return urls
+
     def discover_urls(self) -> list[str]:
         urls: list[str] = []
         seen: set[str] = set()
-        allowed_host = urlparse(self.config.base_url).hostname
         for listing_url in self.config.listing_urls:
-            soup = BeautifulSoup(self.client.get_text(listing_url), "html.parser")
-            for selector in self.config.listing_link_selectors:
-                for anchor in soup.select(selector):
-                    href = str(anchor.get("href") or "").strip()
-                    if not href:
-                        continue
-                    absolute = urldefrag(urljoin(self.config.base_url, href))[0]
-                    parsed = urlparse(absolute)
-                    if (
-                        parsed.hostname == allowed_host
-                        and self._detail_regex.search(parsed.path)
-                        and absolute not in seen
-                    ):
-                        seen.add(absolute)
-                        urls.append(absolute)
+            urls.extend(self._discover_listing_urls(listing_url, seen))
         return urls
 
     def _content_nodes(self, soup: BeautifulSoup) -> list[Tag]:
@@ -239,20 +244,22 @@ class BaseBankScraper:
         )
 
     def scrape(self, *, limit: int | None = None) -> tuple[list[Campaign], list[dict[str, Any]]]:
-        try:
-            urls = self.discover_urls()
-        except Exception as exc:
-            discovery_url = (
-                self.config.listing_urls[0] if self.config.listing_urls else self.config.base_url
-            )
-            LOGGER.exception("Campaign URL discovery failed for %s", self.config.slug)
-            return [], [build_failure(self.config.slug, "discovery", discovery_url, exc)]
+        urls: list[str] = []
+        seen: set[str] = set()
+        failures: list[dict[str, Any]] = []
+        for listing_url in self.config.listing_urls:
+            try:
+                urls.extend(self._discover_listing_urls(listing_url, seen))
+            except Exception as exc:
+                LOGGER.exception(
+                    "Campaign URL discovery failed for %s: %s", self.config.slug, listing_url
+                )
+                failures.append(build_failure(self.config.slug, "discovery", listing_url, exc))
 
         LOGGER.info("Discovered %d campaign URLs for %s", len(urls), self.config.slug)
         if limit is not None:
             urls = urls[: max(0, limit)]
         records: list[Campaign] = []
-        failures: list[dict[str, Any]] = []
         for url in urls:
             try:
                 html = self.client.get_text(url)
@@ -261,7 +268,9 @@ class BaseBankScraper:
                 failures.append(build_failure(self.config.slug, "fetch", url, exc))
                 continue
             try:
-                records.append(self.parse_detail(url, html))
+                record = self.parse_detail(url, html)
+                records.append(record)
+                LOGGER.info("Campaign detail parsed for %s: %s", self.config.slug, url)
             except Exception as exc:  # Bir bozuk sayfa tum toplama isini durdurmamali.
                 LOGGER.exception("Campaign detail parse failed for %s: %s", self.config.slug, url)
                 failures.append(build_failure(self.config.slug, "parse", url, exc))
