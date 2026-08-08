@@ -24,6 +24,69 @@ HTML_TAG_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+PRD_FIELDS = (
+    "product_type",
+    "financing_type",
+    "profit_share_rate",
+    "term_months",
+    "installment_count",
+    "campaign_benefit",
+    "reward_amount",
+    "discount_rate",
+    "target_audience",
+    "campaign_end_date",
+    "fee_information",
+)
+
+
+def build_processed_coverage(
+    records: Sequence[dict[str, Any]],
+    *,
+    expected_banks: Sequence[str],
+) -> dict[str, Any]:
+    """İşlenmiş veri setinin banka ve PRD alan doluluk oranlarını üretir."""
+    expected = set(expected_banks)
+    represented = {str(record.get("bank_slug") or "") for record in records}
+    represented.discard("")
+    by_bank = {
+        slug: {"record_count": 0, "campaign_count": 0, "product_count": 0}
+        for slug in sorted(expected | represented)
+    }
+    for record in records:
+        slug = str(record.get("bank_slug") or "")
+        if not slug:
+            continue
+        row = by_bank[slug]
+        row["record_count"] += 1
+        kind = str(record.get("record_kind") or "campaign")
+        if kind == "product":
+            row["product_count"] += 1
+        else:
+            row["campaign_count"] += 1
+
+    total = len(records)
+    field_fill_rates = {}
+    for field in PRD_FIELDS:
+        filled = sum(
+            1
+            for record in records
+            if isinstance(record.get("structured"), dict)
+            and record["structured"].get(field) not in (None, "", [])
+        )
+        field_fill_rates[field] = round(filled / total, 4) if total else 0.0
+
+    represented_expected = represented & expected
+    return {
+        "bank_coverage": {
+            "expected": len(expected),
+            "represented": len(represented_expected),
+            "missing": sorted(expected - represented),
+            "ratio": round(len(represented_expected) / len(expected), 4) if expected else 1.0,
+        },
+        "field_fill_rates": field_fill_rates,
+        "by_bank": by_bank,
+    }
+
 
 def validate_campaign(record: Campaign) -> list[dict[str, str]]:
     issues: list[dict[str, str]] = []
