@@ -358,6 +358,33 @@ def test_preserves_campaign_range_before_later_reward_usage_range():
     assert extract_date_range(text) == (date(2026, 7, 1), date(2026, 7, 31))
 
 
+def test_preserves_spending_range_that_earns_points():
+    text = (
+        "1 Ağustos 2026 - 31 Ağustos 2026 tarihleri arasında yapacağınız "
+        "harcamalardan 500 puan kazanabilirsiniz."
+    )
+
+    assert extract_date_range(text) == (date(2026, 8, 1), date(2026, 8, 31))
+
+
+def test_preserves_shopping_range_that_earns_a_gift():
+    text = (
+        "1 Ağustos 2026 - 31 Ağustos 2026 tarihleri arasında "
+        "alışveriş yaparak hediye kazanabilirsiniz."
+    )
+
+    assert extract_date_range(text) == (date(2026, 8, 1), date(2026, 8, 31))
+
+
+def test_preserves_campaign_spending_range_without_validity_word():
+    text = (
+        "Kampanya kapsamında 1 Ağustos 2026 - 31 Ağustos 2026 tarihleri "
+        "arasında yapacağınız harcamalardan puan kazanabilirsiniz."
+    )
+
+    assert extract_date_range(text) == (date(2026, 8, 1), date(2026, 8, 31))
+
+
 def test_splits_semicolon_before_lowercase_reward_period():
     text = (
         "Kampanya 31 Aralık 2026 tarihine kadar geçerlidir; "

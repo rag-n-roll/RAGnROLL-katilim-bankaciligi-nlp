@@ -163,21 +163,36 @@ def _normalized_context(value: str) -> str:
 
 
 def _is_reward_expiry(context: str) -> bool:
-    reward_action = any(
-        word in context
+    date_match = re.search(
+        rf"{NUMERIC_DATE_PATTERN}|{FULL_TEXTUAL_DATE_PATTERN}",
+        context,
+        re.IGNORECASE,
+    )
+    if not date_match:
+        return False
+
+    reward_positions = [
+        context.find(word)
+        for word in ("parafpara", "puan", "bonus", "ödül", "hediye")
+        if word in context
+    ]
+    lifecycle_positions = [
+        context.find(word, date_match.end())
         for word in (
-            "kazan",
             "kullanılabilir",
             "kullanilabilir",
-            "kullanılmayan",
-            "kullanilmayan",
+            "kullanılacaktır",
+            "kullanilacaktir",
             "silinecek",
+            "silinir",
         )
+        if context.find(word, date_match.end()) >= 0
+    ]
+    return bool(
+        reward_positions
+        and min(reward_positions) < date_match.start()
+        and lifecycle_positions
     )
-    reward_value = any(
-        word in context for word in ("parafpara", "puan", "bonus", "ödül", "hediye")
-    )
-    return reward_action and reward_value
 
 
 def _has_campaign_validity(context: str) -> bool:
