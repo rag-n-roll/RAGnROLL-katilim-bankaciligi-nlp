@@ -1,6 +1,8 @@
 {
   "record_count": 79,
   "valid_record_count": 79,
+  "input_record_count": 79,
+  "rejected_record_count": 0,
   "error_count": 0,
   "warning_count": 12,
   "fetch_failure_count": 0,
