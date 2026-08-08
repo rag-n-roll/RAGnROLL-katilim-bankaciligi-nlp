@@ -124,6 +124,19 @@ class InvalidOnlyScraper:
         ], []
 
 
+def scraper_returning(records):
+    class StaticScraper:
+        config = Namespace(base_url="https://static.example")
+
+        def __init__(self, *, client) -> None:
+            self.client = client
+
+        def scrape(self, *, limit):
+            return records, []
+
+    return StaticScraper
+
+
 def test_campaigns_isolates_scrape_failure_and_persists_later_bank(
     tmp_path, monkeypatch, caplog
 ):
@@ -194,6 +207,81 @@ def test_campaigns_discards_error_invalid_records_but_reports_their_issues(
     assert "discarded invalid campaign records: 1" in caplog.text.lower()
 
 
+@pytest.mark.parametrize("valid_first", [False, True], ids=["invalid-first", "valid-first"])
+def test_campaigns_validates_duplicate_candidates_before_selecting_persisted_record(
+    tmp_path, monkeypatch, valid_first
+):
+    source_url = "https://duplicate.example/kampanya/1"
+    valid = campaign(
+        bank_slug="duplicate-order",
+        bank_name="Duplicate Order Katılım",
+        source_url=source_url,
+    )
+    invalid = Campaign(
+        bank_slug="duplicate-order",
+        bank_name="Duplicate Order Katılım",
+        title="",
+        content="",
+        source_url=source_url,
+    )
+    records = [valid, invalid] if valid_first else [invalid, valid]
+    monkeypatch.setitem(
+        scraper.SCRAPERS, "duplicate-order", scraper_returning(records)
+    )
+    args = campaign_args(tmp_path, "duplicate-order")
+
+    exit_code = run_campaigns(args)
+
+    dataset = json.loads(args.output.read_text(encoding="utf-8"))
+    report = json.loads(args.quality_report.read_text(encoding="utf-8"))
+    assert exit_code == 2
+    assert dataset["record_count"] == 1
+    assert dataset["records"][0]["title"] == "Geçerli Kampanya"
+    assert report["record_count"] == 2
+    assert report["valid_record_count"] == 1
+    assert report["error_count"] == 2
+    assert report["duplicate_count"] == 1
+    assert {issue["field"] for issue in report["issues"] if issue["severity"] == "error"} == {
+        "title",
+        "content",
+    }
+
+
+def test_campaigns_filters_validation_by_record_object_not_stringified_id(
+    tmp_path, monkeypatch
+):
+    invalid = Campaign(
+        bank_slug="id-types",
+        bank_name="ID Types Katılım",
+        title="",
+        content="",
+        source_url="https://id-types.example/kampanya/invalid",
+        id=1,
+    )
+    valid = campaign(
+        bank_slug="id-types",
+        bank_name="ID Types Katılım",
+        source_url="https://id-types.example/kampanya/valid",
+    )
+    valid.id = "1"
+    monkeypatch.setitem(
+        scraper.SCRAPERS, "id-types", scraper_returning([invalid, valid])
+    )
+    args = campaign_args(tmp_path, "id-types")
+
+    exit_code = run_campaigns(args)
+
+    dataset = json.loads(args.output.read_text(encoding="utf-8"))
+    report = json.loads(args.quality_report.read_text(encoding="utf-8"))
+    assert exit_code == 2
+    assert dataset["record_count"] == 1
+    assert dataset["records"][0]["source_url"].endswith("/valid")
+    assert dataset["records"][0]["id"] == "1"
+    assert report["record_count"] == 2
+    assert report["valid_record_count"] == 1
+    assert report["error_count"] == 2
+
+
 def test_campaigns_preserves_existing_dataset_when_all_records_are_invalid(
     tmp_path, monkeypatch, caplog
 ):
@@ -211,7 +299,7 @@ def test_campaigns_preserves_existing_dataset_when_all_records_are_invalid(
     assert report["record_count"] == 1
     assert report["valid_record_count"] == 0
     assert report["error_count"] == 3
-    assert "preserv" in caplog.text.lower()
+    assert "all collected records rejected by validation" in caplog.text.lower()
 
 
 def test_campaigns_does_not_create_dataset_when_all_records_are_invalid(
@@ -266,7 +354,7 @@ def test_campaigns_preserves_last_known_good_dataset_when_all_banks_fail(
     assert report["record_count"] == 0
     assert report["fetch_failure_count"] == 1
     assert report["fetch_failures"][0]["stage"] == "scrape"
-    assert "preserv" in caplog.text.lower()
+    assert "no records collected" in caplog.text.lower()
     stdout = capsys.readouterr().out
     assert "0 kampanya" in stdout
     assert "yazılmadı" in stdout

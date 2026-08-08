@@ -83,6 +83,8 @@ def build_quality_report(
     records: Iterable[Campaign],
     failures: list[dict[str, Any]] | None = None,
     duplicates: list[dict[str, str]] | None = None,
+    *,
+    check_duplicate_records: bool = True,
 ) -> dict[str, Any]:
     records = list(records)
     failures = failures or []
@@ -93,11 +95,11 @@ def build_quality_report(
     valid_records = 0
     for record in records:
         record_issues = validate_campaign(record)
-        if id_counts[record.id] > 1:
+        if check_duplicate_records and id_counts[record.id] > 1:
             record_issues.append(
                 {"severity": "error", "field": "id", "message": "Tekrarlanan kayit kimligi"}
             )
-        if url_counts[record.source_url] > 1:
+        if check_duplicate_records and url_counts[record.source_url] > 1:
             record_issues.append(
                 {"severity": "error", "field": "source_url", "message": "Tekrarlanan kaynak URL"}
             )

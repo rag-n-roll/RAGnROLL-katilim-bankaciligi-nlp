@@ -15,7 +15,7 @@ from .base import build_failure
 from .http import HttpClient
 from .registry import SCRAPERS, resolve_banks
 from .storage import campaign_dataset, write_json
-from .validation import build_quality_report, deduplicate_campaigns
+from .validation import build_quality_report, deduplicate_campaigns, validate_campaign
 
 LOGGER = logging.getLogger(__name__)
 
@@ -67,21 +67,37 @@ def run_campaigns(args: argparse.Namespace) -> int:
             len(bank_failures),
         )
 
-    records, duplicates = deduplicate_campaigns(records)
+    validation_results = [
+        (record, validate_campaign(record))
+        for record in records
+    ]
+    valid_candidates = [
+        record
+        for record, issues in validation_results
+        if not any(issue["severity"] == "error" for issue in issues)
+    ]
+    invalid_record_count = len(records) - len(valid_candidates)
+    _, duplicates = deduplicate_campaigns(records)
+    valid_records, _ = deduplicate_campaigns(valid_candidates)
     LOGGER.info("Duplicates removed: %d", len(duplicates))
-    report = build_quality_report(records, failures, duplicates)
+    report = build_quality_report(
+        records,
+        failures,
+        duplicates,
+        check_duplicate_records=False,
+    )
     LOGGER.info("Validation completed: %d errors", report["error_count"])
-    invalid_record_ids = {
-        issue["record_id"]
-        for issue in report["issues"]
-        if issue["severity"] == "error"
-    }
-    valid_records = [record for record in records if str(record.id) not in invalid_record_ids]
-    LOGGER.info("Discarded invalid campaign records: %d", len(records) - len(valid_records))
+    LOGGER.info("Discarded invalid campaign records: %d", invalid_record_count)
     dataset = campaign_dataset(valid_records)
     if valid_records:
         write_json(args.output, dataset)
         LOGGER.info("Data persisted: campaign dataset %s", args.output)
+    elif records:
+        LOGGER.info(
+            "Campaign data preserved: all collected records rejected by validation; "
+            "skipped write to %s",
+            args.output,
+        )
     else:
         LOGGER.info(
             "Campaign data preserved: no records collected; skipped write to %s",
