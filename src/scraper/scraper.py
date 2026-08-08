@@ -88,7 +88,7 @@ def run_campaigns(args: argparse.Namespace) -> int:
         )
     else:
         print(
-            f"Kampanya veri seti yazılmadı: {args.output} "
+            f"0 kampanya için veri seti yazılmadı: {args.output} "
             f"(kalite skoru={report['quality_score']:.2%}, çekme hatası={len(failures)}, "
             f"yinelenen={len(duplicates)})"
         )

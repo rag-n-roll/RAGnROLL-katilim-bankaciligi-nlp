@@ -146,7 +146,7 @@ def test_campaigns_isolates_missing_scraper_config_and_persists_later_bank(
 
 
 def test_campaigns_preserves_last_known_good_dataset_when_all_banks_fail(
-    tmp_path, monkeypatch, caplog
+    tmp_path, monkeypatch, caplog, capsys
 ):
     monkeypatch.setitem(scraper.SCRAPERS, "broken", BrokenScraper)
     args = campaign_args(tmp_path, "broken")
@@ -163,6 +163,9 @@ def test_campaigns_preserves_last_known_good_dataset_when_all_banks_fail(
     assert report["fetch_failure_count"] == 1
     assert report["fetch_failures"][0]["stage"] == "scrape"
     assert "preserv" in caplog.text.lower()
+    stdout = capsys.readouterr().out
+    assert "0 kampanya" in stdout
+    assert "yazılmadı" in stdout
 
     args.output.unlink()
     assert run_campaigns(args) == 2
