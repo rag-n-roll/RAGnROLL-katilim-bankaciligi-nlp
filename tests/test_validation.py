@@ -2,10 +2,45 @@ import pytest
 
 from src.scraper.models import Campaign
 from src.scraper.validation import (
+    build_processed_coverage,
     build_quality_report,
     deduplicate_campaigns,
     validate_campaign,
 )
+
+
+def test_quality_report_contains_bank_and_prd_field_coverage():
+    processed = [
+        {
+            "bank_slug": "a",
+            "record_kind": "campaign",
+            "structured": {"profit_share_rate": 0.02},
+        },
+        {
+            "bank_slug": "b",
+            "record_kind": "product",
+            "structured": {"profit_share_rate": None},
+        },
+    ]
+
+    metrics = build_processed_coverage(processed, expected_banks=["a", "b", "c"])
+
+    assert metrics["bank_coverage"] == {
+        "expected": 3,
+        "represented": 2,
+        "missing": ["c"],
+        "ratio": 0.6667,
+    }
+    assert metrics["field_fill_rates"]["profit_share_rate"] == 0.5
+    assert metrics["by_bank"]["a"]["campaign_count"] == 1
+    assert metrics["by_bank"]["b"]["product_count"] == 1
+
+
+def test_processed_coverage_handles_empty_dataset():
+    metrics = build_processed_coverage([], expected_banks=["a"])
+
+    assert metrics["bank_coverage"]["missing"] == ["a"]
+    assert all(rate == 0.0 for rate in metrics["field_fill_rates"].values())
 
 
 def valid_campaign() -> Campaign:
@@ -127,6 +162,33 @@ def test_deduplicate_campaigns_removes_tracking_and_fragment_variants():
             "source_url": "https://ornek.example/kampanya/1?utm_source=newsletter#details",
         }
     ]
+
+
+def test_deduplicate_campaigns_keeps_distinct_compound_page_items():
+    base = valid_campaign()
+    first = Campaign(
+        bank_slug=base.bank_slug,
+        bank_name=base.bank_name,
+        title=base.title,
+        content=base.content,
+        summary=base.summary,
+        source_url="https://ornek.example/kampanyalar",
+        source_item_key="restoran",
+    )
+    second = Campaign(
+        bank_slug=base.bank_slug,
+        bank_name=base.bank_name,
+        title=base.title,
+        content=base.content,
+        summary=base.summary,
+        source_url="https://ornek.example/kampanyalar",
+        source_item_key="okul",
+    )
+
+    unique_records, duplicate_rows = deduplicate_campaigns([first, second])
+
+    assert unique_records == [first, second]
+    assert duplicate_rows == []
 
 
 def test_quality_report_exposes_removed_duplicates():

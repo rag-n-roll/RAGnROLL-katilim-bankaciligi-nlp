@@ -5,7 +5,7 @@ import pytest
 
 from src.scraper.models import Campaign
 from src.scraper import scraper
-from src.scraper.scraper import run_campaigns, run_validate
+from src.scraper.scraper import run_campaigns, run_collect, run_validate
 
 
 def campaign(
@@ -37,6 +37,79 @@ def campaign_args(tmp_path, banks: str) -> Namespace:
         timeout=1,
         ignore_robots=True,
     )
+
+
+def collect_args(tmp_path) -> Namespace:
+    return Namespace(
+        max_per_bank=20,
+        banks_output=tmp_path / "banks.json",
+        raw_output=tmp_path / "raw.json",
+        processed_output=tmp_path / "processed.json",
+        quality_report=tmp_path / "quality.json",
+        delay=0,
+        timeout=1,
+        ignore_robots=True,
+    )
+
+
+def read_json(path):
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def catalog(*slugs: str):
+    return {
+        "source_url": "https://www.bddk.org.tr/Kurulus/Liste/77",
+        "count": len(slugs),
+        "banks": [
+            {
+                "slug": slug,
+                "name": f"{slug} Katılım",
+                "website": f"https://{slug}.example",
+                "is_digital": False,
+            }
+            for slug in slugs
+        ],
+    }
+
+
+def test_collect_uses_bddk_catalog_and_writes_all_outputs(tmp_path, monkeypatch):
+    monkeypatch.setattr(scraper, "fetch_participation_banks", lambda client: catalog("working"))
+    monkeypatch.setattr(scraper, "SCRAPERS", {"working": WorkingScraper})
+    args = collect_args(tmp_path)
+
+    assert run_collect(args) == 0
+
+    assert read_json(args.banks_output)["count"] == 1
+    assert read_json(args.raw_output)["record_count"] == 1
+    assert read_json(args.processed_output)["record_count"] == 1
+    quality = read_json(args.quality_report)
+    assert quality["coverage"]["complete"] is True
+    assert quality["processed_coverage"]["bank_coverage"]["ratio"] == 1.0
+
+
+def test_collect_reports_unsupported_bddk_bank_and_returns_partial_status(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(
+        scraper,
+        "fetch_participation_banks",
+        lambda client: catalog("working", "missing-bank"),
+    )
+    monkeypatch.setattr(scraper, "SCRAPERS", {"working": WorkingScraper})
+    args = collect_args(tmp_path)
+
+    assert run_collect(args) == 2
+
+    report = read_json(args.quality_report)
+    assert report["coverage"]["unsupported"] == ["missing-bank"]
+
+
+def test_collect_rejects_colliding_output_paths(tmp_path):
+    args = collect_args(tmp_path)
+    args.processed_output = args.raw_output
+
+    with pytest.raises(ValueError, match="output paths must differ"):
+        run_collect(args)
 
 
 class BrokenScraper:

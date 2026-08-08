@@ -12,10 +12,15 @@ from src.preprocessing.clean_text import preprocess_dataset
 
 from .bddk import fetch_participation_banks
 from .base import build_failure
+from .coverage import build_coverage_report
 from .http import HttpClient
 from .registry import SCRAPERS, resolve_banks
 from .storage import campaign_dataset, write_json
-from .validation import build_quality_report, select_valid_campaigns
+from .validation import (
+    build_processed_coverage,
+    build_quality_report,
+    select_valid_campaigns,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -32,6 +37,95 @@ def run_banks(args: argparse.Namespace) -> int:
     payload = fetch_participation_banks(_client(args))
     write_json(args.output, payload)
     print(f"{payload['count']} katılım bankası yazıldı: {args.output}")
+    return 0
+
+
+def _require_distinct_paths(*paths: Path) -> None:
+    resolved = [path.resolve() for path in paths]
+    if len(resolved) != len(set(resolved)):
+        raise ValueError("collect output paths must differ")
+
+
+def run_collect(args: argparse.Namespace) -> int:
+    """BDDK katalogundan başlayarak ham, işlenmiş ve kalite çıktısı üretir."""
+    _require_distinct_paths(
+        args.banks_output,
+        args.raw_output,
+        args.processed_output,
+        args.quality_report,
+    )
+    client = _client(args)
+    catalog = fetch_participation_banks(client)
+    coverage = build_coverage_report(catalog["banks"], SCRAPERS)
+    selected_slugs = [
+        bank["slug"] for bank in catalog["banks"] if bank["slug"] in SCRAPERS
+    ]
+
+    records = []
+    failures: list[dict[str, Any]] = []
+    for slug in selected_slugs:
+        scraper_class = SCRAPERS[slug]
+        bank_base_url = ""
+        LOGGER.info("Scraper started for %s", slug)
+        try:
+            configured_base_url = getattr(
+                getattr(scraper_class, "config", None), "base_url", ""
+            )
+            if isinstance(configured_base_url, str):
+                bank_base_url = configured_base_url
+            bank_records, bank_failures = scraper_class(client=client).scrape(
+                limit=args.max_per_bank
+            )
+        except Exception as exc:
+            LOGGER.exception("Scraper failed for %s", slug)
+            failures.append(build_failure(slug, "scrape", bank_base_url, exc))
+            continue
+        records.extend(bank_records)
+        failures.extend(bank_failures)
+        LOGGER.info(
+            "Bank completed for %s: %d records, %d failures",
+            slug,
+            len(bank_records),
+            len(bank_failures),
+        )
+
+    valid_records, duplicates, record_issues = select_valid_campaigns(records)
+    raw = campaign_dataset(valid_records)
+    processed = preprocess_dataset(raw)
+    quality = build_quality_report(
+        records,
+        failures,
+        duplicates,
+        record_issues=record_issues,
+        persisted_records=valid_records,
+    )
+    expected_banks = [bank["slug"] for bank in catalog["banks"]]
+    quality["coverage"] = coverage
+    quality["processed_coverage"] = build_processed_coverage(
+        processed["records"], expected_banks=expected_banks
+    )
+
+    write_json(args.banks_output, catalog)
+    if valid_records:
+        write_json(args.raw_output, raw)
+        write_json(args.processed_output, processed)
+    write_json(args.quality_report, quality)
+
+    print(
+        f"{len(valid_records)} kayıt, "
+        f"{quality['processed_coverage']['bank_coverage']['represented']}/"
+        f"{quality['processed_coverage']['bank_coverage']['expected']} banka: "
+        f"{args.quality_report}"
+    )
+    bank_complete = quality["processed_coverage"]["bank_coverage"]["ratio"] == 1.0
+    if (
+        not coverage["complete"]
+        or not valid_records
+        or quality["error_count"]
+        or failures
+        or not bank_complete
+    ):
+        return 2
     return 0
 
 
@@ -206,6 +300,30 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_http_options(campaigns)
     campaigns.set_defaults(handler=run_campaigns)
+
+    collect = subparsers.add_parser(
+        "collect",
+        help="BDDK katalogundan başlayarak tüm veri hattını çalıştır",
+    )
+    collect.add_argument("--max-per-bank", type=int, default=20)
+    collect.add_argument(
+        "--banks-output",
+        type=Path,
+        default=Path("data/raw/participation_banks.json"),
+    )
+    collect.add_argument(
+        "--raw-output", type=Path, default=Path("data/raw/campaigns.json")
+    )
+    collect.add_argument(
+        "--processed-output",
+        type=Path,
+        default=Path("data/processed/campaigns.json"),
+    )
+    collect.add_argument(
+        "--quality-report", type=Path, default=Path("outputs/quality_report.json")
+    )
+    add_http_options(collect)
+    collect.set_defaults(handler=run_collect)
 
     validate = subparsers.add_parser("validate", help="Mevcut kampanya JSON'unu doğrula")
     validate.add_argument("input", type=Path)

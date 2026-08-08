@@ -343,6 +343,7 @@ class ScraperConfig:
     listing_urls: tuple[str, ...]
     detail_pattern: str
     content_selectors: tuple[str, ...]
+    record_kind: str = "campaign"
     title_selectors: tuple[str, ...] = ("h1", "article h2")
     listing_link_selectors: tuple[str, ...] = ("a[href]",)
     remove_selectors: tuple[str, ...] = (
@@ -527,6 +528,7 @@ class BaseBankScraper:
             end_date=end_date,
             source_url=url,
             image_url=image_url,
+            record_kind=self.config.record_kind,
         )
 
     def scrape(self, *, limit: int | None = None) -> tuple[list[Campaign], list[dict[str, Any]]]:
