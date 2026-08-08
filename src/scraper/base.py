@@ -38,6 +38,9 @@ MONTHS = {
     "aralik": 12,
 }
 MONTH_PATTERN = "|".join(MONTHS)
+NUMERIC_DATE_PATTERN = r"(?<!\d)\d{1,2}[./-]\d{1,2}[./-]\d{4}"
+TEXTUAL_DATE_PATTERN = rf"(?<!\d)\d{{1,2}}\s+(?:{MONTH_PATTERN})(?:\s+\d{{4}})?"
+FULL_TEXTUAL_DATE_PATTERN = rf"(?<!\d)\d{{1,2}}\s+(?:{MONTH_PATTERN})\s+\d{{4}}"
 
 
 def build_failure(bank_slug: str, stage: str, url: str, exc: Exception) -> dict[str, Any]:
@@ -89,56 +92,91 @@ def _parse_date(value: str, default_year: int | None = None) -> date | None:
 
 
 def extract_date_range(text: str) -> tuple[date | None, date | None]:
-    """Turkce ay adli veya sayisal ilk tarih araligini dondurur."""
+    """Acik kampanya donemlerini kapsayan tarih araligini dondurur."""
     compact = clean_lines(text).replace("\n", " ")
-    numeric = re.search(
-        r"(\d{1,2}[./-]\d{1,2}[./-]\d{4})\s+(?:-|–|—)\s+"
-        r"(\d{1,2}[./-]\d{1,2}[./-]\d{4})",
+    ranges: list[tuple[date, date]] = []
+
+    numeric_ranges = re.finditer(
+        rf"({NUMERIC_DATE_PATTERN})\s+(?:-|–|—)\s+({NUMERIC_DATE_PATTERN})",
         compact,
         re.IGNORECASE,
     )
-    if numeric:
-        return _parse_date(numeric.group(1)), _parse_date(numeric.group(2))
+    for match in numeric_ranges:
+        start = _parse_date(match.group(1))
+        end = _parse_date(match.group(2))
+        if start and end and start <= end:
+            ranges.append((start, end))
 
-    textual = re.search(
-        rf"(\d{{1,2}}\s+(?:{MONTH_PATTERN})(?:\s+\d{{4}})?)\s*"
+    textual_ranges = re.finditer(
+        rf"({TEXTUAL_DATE_PATTERN})\s*"
         rf"(?:saat\s+\d{{1,2}}[.:]\d{{2}}\s*)?"
-        rf"(?:-|–|—)\s*(\d{{1,2}}\s+(?:{MONTH_PATTERN})\s+\d{{4}})",
+        rf"(?:-|–|—)\s*({FULL_TEXTUAL_DATE_PATTERN})",
         compact,
         re.IGNORECASE,
     )
-    if textual:
-        end = _parse_date(textual.group(2))
-        start = _parse_date(textual.group(1), default_year=end.year if end else None)
-        return start, end
+    for match in textual_ranges:
+        end = _parse_date(match.group(2))
+        start = _parse_date(match.group(1), default_year=end.year if end else None)
+        if start and end and start <= end:
+            ranges.append((start, end))
 
-    shared_month = re.search(
-        rf"(\d{{1,2}})\s*(?:-|–|—)\s*(\d{{1,2}})\s+"
+    shared_month_ranges = re.finditer(
+        rf"(?<!\d)(\d{{1,2}})\s*(?:-|–|—)\s*(?<!\d)(\d{{1,2}})\s+"
         rf"({MONTH_PATTERN})\s+(\d{{4}})(?=\s+tarih(?:leri|lerinde)\b)",
         compact,
         re.IGNORECASE,
     )
-    if shared_month:
+    for match in shared_month_ranges:
         start = _parse_date(
-            f"{shared_month.group(1)} {shared_month.group(3)} {shared_month.group(4)}"
+            f"{match.group(1)} {match.group(3)} {match.group(4)}"
         )
         end = _parse_date(
-            f"{shared_month.group(2)} {shared_month.group(3)} {shared_month.group(4)}"
+            f"{match.group(2)} {match.group(3)} {match.group(4)}"
         )
         if start and end and start <= end:
-            return start, end
-        return None, None
+            ranges.append((start, end))
 
-    end_only = re.search(
-        rf"(\d{{1,2}}[./-]\d{{1,2}}[./-]\d{{4}}|"
-        rf"\d{{1,2}}\s+(?:{MONTH_PATTERN})\s+\d{{4}})"
+    if ranges:
+        return min(start for start, _ in ranges), max(end for _, end in ranges)
+
+    end_only_matches = re.finditer(
+        rf"({NUMERIC_DATE_PATTERN}|{FULL_TEXTUAL_DATE_PATTERN})"
         rf"(?:\s+tarihine|\s+saat\s+\d{{1,2}}[.:]\d{{2}}(?:['’]?[a-zçğıöşü]+)?)?"
         rf"\s+kadar\b",
         compact,
         re.IGNORECASE,
     )
-    if end_only:
-        return None, _parse_date(end_only.group(1))
+    for match in end_only_matches:
+        left = max(compact.rfind(mark, 0, match.start()) for mark in ".!?;") + 1
+        right_candidates = [compact.find(mark, match.end()) for mark in ".!?;"]
+        right = min(
+            (position for position in right_candidates if position >= 0),
+            default=len(compact),
+        )
+        context = compact[left:right].casefold().replace("i̇", "i")
+        reward_expiry = any(word in context for word in ("kazanılan", "kullanılmayan")) and any(
+            word in context for word in ("parafpara", "puan", "bonus", "ödül", "hediye")
+        )
+        campaign_context = any(
+            word in context
+            for word in (
+                "kampanya",
+                "fırsat",
+                "firsat",
+                "indirim kod",
+                "geçerli",
+                "gecerli",
+                "alışveriş",
+                "alisveris",
+                "harcama",
+                "mağaza",
+                "magaza",
+                "kiralama",
+                "bilet",
+            )
+        )
+        if campaign_context and not reward_expiry:
+            return None, _parse_date(match.group(1))
     return None, None
 
 
@@ -283,8 +321,12 @@ class BaseBankScraper:
             if image:
                 image_url = urljoin(url, str(image.get("src") or image.get("data-src")))
 
-        full_text = clean_lines(soup.get_text("\n", strip=True))
-        start_date, end_date = extract_date_range(full_text)
+        campaign_text = clean_lines("\n".join((title, description, content)))
+        start_date, end_date = extract_date_range(campaign_text)
+        if start_date is None and end_date is None:
+            # Bazi eski sayfalarda tarih yalnizca icerik kapsami disindaki ust bilgide bulunur.
+            full_text = clean_lines(soup.get_text("\n", strip=True))
+            start_date, end_date = extract_date_range(full_text)
         return Campaign(
             bank_slug=self.config.slug,
             bank_name=self.config.bank_name,
