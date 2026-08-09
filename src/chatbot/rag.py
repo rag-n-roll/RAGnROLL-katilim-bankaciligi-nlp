@@ -12,7 +12,9 @@ import ollama
 # ---- Ayarlar ----
 OLLAMA_MODEL = "gemma2"  # Hafta 2 karşılaştırmasında en iyi sonucu veren model
 CHROMA_COLLECTION_NAME = "katilim_bankaciligi"
-EMBEDDING_MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"  # Türkçe destekli
+EMBEDDING_MODEL_NAME = (
+    "paraphrase-multilingual-MiniLM-L12-v2"
+)  # Türkçe destekli
 
 
 class RAGPipeline:
@@ -23,8 +25,10 @@ class RAGPipeline:
         self.chroma_client = chromadb.Client()
 
         # Türkçe destekli embedding fonksiyonu
-        self.embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name=EMBEDDING_MODEL_NAME
+        self.embedding_fn = (
+            embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name=EMBEDDING_MODEL_NAME
+            )
         )
 
         # Koleksiyon oluştur (varsa mevcut olanı kullan)
@@ -39,13 +43,19 @@ class RAGPipeline:
 
     def retrieve(self, query: str, n_results: int = 3) -> list[str]:
         """Soruyla en alakalı metin parçalarını bulur."""
-        results = self.collection.query(query_texts=[query], n_results=n_results)
+        results = self.collection.query(
+            query_texts=[query], n_results=n_results
+        )
         return results["documents"][0] if results["documents"] else []
 
     def generate_answer(self, query: str) -> str:
         """RAG akışını çalıştırır: bul + Ollama ile cevap üret."""
         context_chunks = self.retrieve(query)
-        context_text = "\n".join(context_chunks) if context_chunks else "İlgili bilgi bulunamadı."
+        context_text = (
+            "\n".join(context_chunks)
+            if context_chunks
+            else "İlgili bilgi bulunamadı."
+        )
 
         prompt = f"""Aşağıdaki bilgilere dayanarak soruyu Türkçe ve kısa şekilde cevapla.
 Eğer bilgi yetersizse, "Bu konuda elimde yeterli bilgi yok" de, uydurma cevap verme.
@@ -70,8 +80,14 @@ if __name__ == "__main__":
     # Örnek/test verisi (gerçek veri scraper'dan gelecek)
     rag.add_documents(
         documents=[
-            "Kuveyt Türk, yeni müşterilere ilk 3 ay boyunca kâr payı avantajı sunan bir hesap kampanyası başlattı.",
-            "Albaraka Türk, konut finansmanında düşük başlangıç maliyeti sunan bir kampanya yürütüyor.",
+            (
+                "Kuveyt Türk, yeni müşterilere ilk 3 ay boyunca kâr payı "
+                "avantajı sunan bir hesap kampanyası başlattı."
+            ),
+            (
+                "Albaraka Türk, konut finansmanında düşük başlangıç maliyeti "
+                "sunan bir kampanya yürütüyor."
+            ),
         ],
         ids=["doc1", "doc2"],
     )
