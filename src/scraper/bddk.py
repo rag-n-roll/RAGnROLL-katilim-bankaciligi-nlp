@@ -10,7 +10,20 @@ from bs4 import BeautifulSoup
 
 from .http import HttpClient
 
-BDDK_BANKS_URL = "https://www.bddk.gov.tr/Kurulus/Liste/90"
+BDDK_BANKS_URL = "https://www.bddk.org.tr/Kurulus/Liste/77"
+
+BANK_NAME_TO_SLUG = {
+    "ADİL KATILIM BANKASI A.Ş.": "adil-katilim",
+    "ALBARAKA TÜRK KATILIM BANKASI A.Ş.": "albaraka-turk",
+    "DÜNYA KATILIM BANKASI A.Ş.": "dunya-katilim",
+    "HAYAT FİNANS KATILIM BANKASI A.Ş.": "hayat-finans",
+    "KUVEYT TÜRK KATILIM BANKASI A.Ş.": "kuveyt-turk",
+    "T.O.M. KATILIM BANKASI A.Ş.": "tom-katilim",
+    "TÜRKİYE EMLAK KATILIM BANKASI A.Ş.": "emlak-katilim",
+    "TÜRKİYE FİNANS KATILIM BANKASI A.Ş.": "turkiye-finans",
+    "VAKIF KATILIM BANKASI A.Ş.": "vakif-katilim",
+    "ZİRAAT KATILIM BANKASI A.Ş.": "ziraat-katilim",
+}
 
 
 def fetch_participation_banks(client: HttpClient | None = None) -> dict[str, Any]:
@@ -37,11 +50,18 @@ def fetch_participation_banks(client: HttpClient | None = None) -> dict[str, Any
         if not name_element:
             continue
         name = re.sub(r"^\s*\d+\.\s*", "", name_element.get_text(" ", strip=True)).strip()
+        slug = BANK_NAME_TO_SLUG.get(name)
+        if slug is None:
+            raise ValueError(f"BDDK banka adi kanonik haritada yok: {name}")
         website_element = item.select_one(".webAdresiContainer a[href]")
         detail = item.select_one("button.detayliGor")
-        digital_text = str(detail.get("data-isdijital", "")) if detail else item.get_text(" ", strip=True)
+        if detail:
+            digital_text = str(detail.get("data-isdijital", ""))
+        else:
+            digital_text = item.get_text(" ", strip=True)
         banks.append(
             {
+                "slug": slug,
                 "name": name,
                 "website": str(website_element["href"]).strip() if website_element else None,
                 "is_digital": "dijital" in digital_text.lower(),

@@ -92,7 +92,11 @@ class HttpClient:
         try:
             response = self.session.get(robots_url, timeout=self.timeout_seconds)
             if response.status_code >= 400:
-                LOGGER.warning("robots.txt okunamadi (%s): HTTP %s", robots_url, response.status_code)
+                LOGGER.warning(
+                    "robots.txt okunamadi (%s): HTTP %s",
+                    robots_url,
+                    response.status_code,
+                )
                 self._robots[origin] = None
                 return None
             parser.parse(response.text.splitlines())

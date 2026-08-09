@@ -1,5 +1,46 @@
+import pytest
+
 from src.scraper.models import Campaign
-from src.scraper.validation import build_quality_report, validate_campaign
+from src.scraper.validation import (
+    build_processed_coverage,
+    build_quality_report,
+    deduplicate_campaigns,
+    validate_campaign,
+)
+
+
+def test_quality_report_contains_bank_and_prd_field_coverage():
+    processed = [
+        {
+            "bank_slug": "a",
+            "record_kind": "campaign",
+            "structured": {"profit_share_rate": 0.02},
+        },
+        {
+            "bank_slug": "b",
+            "record_kind": "product",
+            "structured": {"profit_share_rate": None},
+        },
+    ]
+
+    metrics = build_processed_coverage(processed, expected_banks=["a", "b", "c"])
+
+    assert metrics["bank_coverage"] == {
+        "expected": 3,
+        "represented": 2,
+        "missing": ["c"],
+        "ratio": 0.6667,
+    }
+    assert metrics["field_fill_rates"]["profit_share_rate"] == 0.5
+    assert metrics["by_bank"]["a"]["campaign_count"] == 1
+    assert metrics["by_bank"]["b"]["product_count"] == 1
+
+
+def test_processed_coverage_handles_empty_dataset():
+    metrics = build_processed_coverage([], expected_banks=["a"])
+
+    assert metrics["bank_coverage"]["missing"] == ["a"]
+    assert all(rate == 0.0 for rate in metrics["field_fill_rates"].values())
 
 
 def valid_campaign() -> Campaign:
@@ -7,7 +48,10 @@ def valid_campaign() -> Campaign:
         bank_slug="ornek",
         bank_name="Örnek Katılım",
         title="Geçerli Kampanya",
-        content="Müşterilerimize özel kampanyanın bütün koşullarını anlatan yeterince uzun bir içerik metnidir. Detaylar burada.",
+        content=(
+            "Müşterilerimize özel kampanyanın bütün koşullarını anlatan yeterince "
+            "uzun bir içerik metnidir. Detaylar burada."
+        ),
         summary="Kısa özet",
         source_url="https://ornek.example/kampanya/1",
     )
@@ -25,3 +69,160 @@ def test_duplicate_url_is_reported():
     assert report["error_count"] >= 2
     assert report["valid_record_count"] == 0
     assert report["quality_score"] == 0.0
+
+
+def test_empty_bank_identity_fields_are_errors_on_their_own_fields():
+    campaign = valid_campaign()
+    campaign.bank_slug = ""
+    campaign.bank_name = ""
+
+    issues = validate_campaign(campaign)
+
+    assert {(issue["field"], issue["severity"]) for issue in issues} >= {
+        ("bank_slug", "error"),
+        ("bank_name", "error"),
+    }
+
+
+@pytest.mark.parametrize(
+    "residue",
+    [
+        "<p>metin</p>",
+        "Kampanya kosullari</p>",
+        "Ilk satir<br>ikinci satir",
+        "Gorsel <img src='x'> ile sunuluyor",
+        "<!-- residue -->",
+    ],
+)
+def test_html_tag_residue_in_content_is_an_error(residue):
+    campaign = valid_campaign()
+    campaign.content = f"{residue} {campaign.content}"
+
+    issues = validate_campaign(campaign)
+
+    assert [issue for issue in issues if issue["severity"] == "error"] == [
+        {
+            "severity": "error",
+            "field": "content",
+            "message": "Kampanya metninde HTML etiketi kalmis",
+        }
+    ]
+
+
+def test_content_comparisons_are_not_treated_as_html_tags():
+    campaign = valid_campaign()
+    campaign.content = "Kampanya kosulu 3 < 5 oldugunda da " + campaign.content
+
+    assert validate_campaign(campaign) == [
+        {
+            "severity": "warning",
+            "field": "date_range",
+            "message": "Tarih araligi eksik veya ayiklanamadi",
+        }
+    ]
+
+
+def test_angle_bracket_prose_is_not_treated_as_html_tags():
+    campaign = valid_campaign()
+    campaign.content = (
+        "Iletisim icin <info@bank.example> adresine yazin, "
+        "<https://bank.example/path> baglantisini acin ve <limit> degerini kontrol edin; "
+        "2 < 5 karsilastirmasi da gecerlidir. "
+        + campaign.content
+    )
+
+    issues = validate_campaign(campaign)
+
+    assert not any(
+        issue["field"] == "content"
+        and issue["message"] == "Kampanya metninde HTML etiketi kalmis"
+        for issue in issues
+    )
+
+
+def test_deduplicate_campaigns_removes_tracking_and_fragment_variants():
+    first = valid_campaign()
+    first.id = "first-record"
+    duplicate = valid_campaign()
+    duplicate.id = "duplicate-record"
+    duplicate.bank_slug = "ORNEK"
+    duplicate.source_url = "https://ornek.example/kampanya/1?utm_source=newsletter#details"
+    distinct = valid_campaign()
+    distinct.id = "distinct-record"
+    distinct.source_url = "https://ornek.example/kampanya/2"
+
+    unique_records, duplicate_rows = deduplicate_campaigns([first, duplicate, distinct])
+
+    assert unique_records == [first, distinct]
+    assert duplicate_rows == [
+        {
+            "record_id": "duplicate-record",
+            "duplicate_of": "first-record",
+            "bank_slug": "ORNEK",
+            "source_url": "https://ornek.example/kampanya/1?utm_source=newsletter#details",
+        }
+    ]
+
+
+def test_deduplicate_campaigns_keeps_distinct_compound_page_items():
+    base = valid_campaign()
+    first = Campaign(
+        bank_slug=base.bank_slug,
+        bank_name=base.bank_name,
+        title=base.title,
+        content=base.content,
+        summary=base.summary,
+        source_url="https://ornek.example/kampanyalar",
+        source_item_key="restoran",
+    )
+    second = Campaign(
+        bank_slug=base.bank_slug,
+        bank_name=base.bank_name,
+        title=base.title,
+        content=base.content,
+        summary=base.summary,
+        source_url="https://ornek.example/kampanyalar",
+        source_item_key="okul",
+    )
+
+    unique_records, duplicate_rows = deduplicate_campaigns([first, second])
+
+    assert unique_records == [first, second]
+    assert duplicate_rows == []
+
+
+def test_quality_report_exposes_removed_duplicates():
+    first = valid_campaign()
+    first.id = "first-record"
+    duplicate = valid_campaign()
+    duplicate.id = "duplicate-record"
+    unique_records, duplicates = deduplicate_campaigns([first, duplicate])
+
+    report = build_quality_report(unique_records, duplicates=duplicates)
+
+    assert report["duplicate_count"] == 1
+    assert report["duplicates"] == [
+        {
+            "record_id": "duplicate-record",
+            "duplicate_of": "first-record",
+            "bank_slug": "ornek",
+            "source_url": "https://ornek.example/kampanya/1",
+        }
+    ]
+
+
+def test_quality_report_preserves_structured_fetch_failure_metadata():
+    failure = {
+        "bank_slug": "ornek",
+        "stage": "fetch",
+        "url": "https://ornek.example/kampanya/1",
+        "error_type": "HTTPError",
+        "error": "Service unavailable",
+        "timestamp": "2026-08-08T12:00:00+00:00",
+        "http_status": 503,
+    }
+
+    report = build_quality_report([valid_campaign()], failures=[failure])
+
+    assert report["fetch_failure_count"] == 1
+    assert report["fetch_failures"] == [failure]

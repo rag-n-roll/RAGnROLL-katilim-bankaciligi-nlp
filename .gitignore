@@ -13,11 +13,19 @@ __pycache__/
 .DS_Store
 
 .commandcode
+.worktrees/
 
 # Calistirma sirasinda uretilen veri ve raporlar
 data/raw/*.json
 data/processed/*.json
 outputs/*.json
 
+# Calistirma sirasinda uretilen veri ve raporlar
+data/raw/*.json*
+data/processed/*.json
+outputs/*.json
+
 # ChromaDB lokal veritabanı
 chroma_db/
+
+*.sqlite3
