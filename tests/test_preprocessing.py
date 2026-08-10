@@ -1,4 +1,9 @@
-from src.preprocessing.clean_text import clean_text, preprocess_dataset, tokenize_turkish
+from src.preprocessing.clean_text import (
+    clean_text,
+    preprocess_dataset,
+    preprocess_record,
+    tokenize_turkish,
+)
 
 
 def test_clean_text_preserves_turkish_and_paragraphs():
@@ -29,3 +34,17 @@ def test_preprocess_dataset_adds_derived_fields():
     assert result["record_count"] == 1
     assert result["records"][0]["tokens"] == ["merhaba", "dünya"]
     assert result["records"][0]["token_count"] == 2
+
+
+def test_preprocess_record_adds_structured_prd_fields():
+    record = {
+        "content": "%1,89 kâr payı ile 120 ay vadeli konut finansmanı",
+        "start_date": "2026-08-01",
+        "end_date": "2026-12-31",
+    }
+
+    result = preprocess_record(record)
+
+    assert result["structured"]["profit_share_rate"] == 0.0189
+    assert result["structured"]["term_months"] == 120
+    assert result["structured"]["campaign_end_date"] == "2026-12-31"

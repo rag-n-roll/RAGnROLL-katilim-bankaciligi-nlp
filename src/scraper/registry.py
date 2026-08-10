@@ -1,21 +1,29 @@
 """Scraper kayit defteri ve haftalik oncelik gruplari."""
 
 from .banks import (
+    AdilKatilimScraper,
     AlbarakaScraper,
+    DunyaKatilimScraper,
     EmlakKatilimScraper,
+    HayatFinansScraper,
     KuveytTurkScraper,
+    TomKatilimScraper,
     TurkiyeFinansScraper,
     VakifKatilimScraper,
     ZiraatKatilimScraper,
 )
 
 SCRAPERS = {
-    "kuveyt-turk": KuveytTurkScraper,
+    "adil-katilim": AdilKatilimScraper,
     "albaraka-turk": AlbarakaScraper,
-    "turkiye-finans": TurkiyeFinansScraper,
-    "ziraat-katilim": ZiraatKatilimScraper,
-    "vakif-katilim": VakifKatilimScraper,
+    "dunya-katilim": DunyaKatilimScraper,
+    "hayat-finans": HayatFinansScraper,
+    "kuveyt-turk": KuveytTurkScraper,
+    "tom-katilim": TomKatilimScraper,
     "emlak-katilim": EmlakKatilimScraper,
+    "turkiye-finans": TurkiyeFinansScraper,
+    "vakif-katilim": VakifKatilimScraper,
+    "ziraat-katilim": ZiraatKatilimScraper,
 }
 
 PRIORITY_BANKS = ("kuveyt-turk", "albaraka-turk", "turkiye-finans")
