@@ -19,4 +19,13 @@ __pycache__/
 data/raw/*.json
 data/processed/*.json
 outputs/*.json
+
+# Calistirma sirasinda uretilen veri ve raporlar
+data/raw/*.json*
+data/processed/*.json
+outputs/*.json
+
+# ChromaDB lokal veritabanı
+chroma_db/
+
 *.sqlite3
