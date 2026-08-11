@@ -1,0 +1,70 @@
+name: Update BilisimVadisi2026 tag
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # Reconcile once a day in case a previous run was interrupted.
+    - cron: "17 4 * * *"
+
+# The fixed tag is the only repository content this workflow may change.
+permissions:
+  contents: write
+
+concurrency:
+  group: update-bilisimvadisi2026-tag
+  cancel-in-progress: false
+
+jobs:
+  update-tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Reconcile tag with current main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          TAG_NAME: BilisimVadisi2026
+        run: |
+          set -euo pipefail
+
+          main_sha="$(gh api "repos/${REPOSITORY}/git/ref/heads/main" --jq '.object.sha')"
+          test -n "${main_sha}"
+
+          tag_sha="$(gh api \
+            "repos/${REPOSITORY}/git/ref/tags/${TAG_NAME}" \
+            --jq '.object.sha' 2>/dev/null || true)"
+
+          if [ "${tag_sha}" = "${main_sha}" ]; then
+            echo "${TAG_NAME} already points to ${main_sha}"
+            exit 0
+          fi
+
+          if [ -z "${tag_sha}" ]; then
+            gh api --method POST "repos/${REPOSITORY}/git/refs" \
+              -f ref="refs/tags/${TAG_NAME}" \
+              -f sha="${main_sha}" \
+              --jq '.object.sha'
+          else
+            gh api --method PATCH \
+              "repos/${REPOSITORY}/git/refs/tags/${TAG_NAME}" \
+              -f sha="${main_sha}" \
+              -F force=true \
+              --jq '.object.sha'
+          fi
+
+          for attempt in 1 2 3 4 5; do
+            tag_sha="$(gh api \
+              "repos/${REPOSITORY}/git/ref/tags/${TAG_NAME}" \
+              --jq '.object.sha')"
+            if [ "${tag_sha}" = "${main_sha}" ]; then
+              echo "${TAG_NAME} now points to ${main_sha}"
+              exit 0
+            fi
+            echo "Verification attempt ${attempt} failed; retrying"
+            sleep 2
+          done
+
+          echo "Expected ${TAG_NAME}=${main_sha}, found ${tag_sha}" >&2
+          exit 1
