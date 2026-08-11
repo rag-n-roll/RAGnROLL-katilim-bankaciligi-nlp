@@ -11,7 +11,7 @@ __pycache__/
 .pytest_cache/
 .playwright-cli/
 .DS_Store
-
+.vscode/
 .commandcode
 .worktrees/
 

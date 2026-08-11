@@ -3,6 +3,119 @@
 TEKNOFEST 2026 Yapay Zekâ Dil Ajanları Yarışması için katılım bankacılığı
 kampanyalarını toplayan ve Türkçe NLP işlemine hazırlayan veri hattı.
 
+## PRD Görev Durumu — Hafta 1 (27 Temmuz - 2 Ağustos) ✅ Tamamlandı
+
+### Dilan Kakım — Takım Kaptanı & NLP Mühendisi
+- ✅ GitHub repository oluşturma, dizin yapısı, branch stratejisi
+- ✅ README.md, CONTRIBUTING.md, LICENSE (Apache 2.0) hazırlama
+- ✅ NLP kütüphaneleri araştırma ve karşılaştırma
+- ✅ Terminoloji sözlüğü başlatma → `data/terminology/` (10 dosya)
+- ✅ NER etiketleme şeması tasarlama → `data/terminology/entity_schema.json`
+- ✅ Haftalık toplantı takvimi oluşturma
+
+### Kutay Orallı — Veri Mühendisi & Backend Geliştirici
+- ✅ BDDK web sitesinden katılım bankası listesini çekme → `src/scraper/bddk.py`
+- ✅ 10 bankanın tamamı için web scraper modülleri → `src/scraper/banks/` (10 adaptör)
+- ✅ Kampanya metinlerini toplama ve JSON formatında saklama → `src/scraper/models.py`
+- ✅ Veri doğrulama ve kalite kontrol mekanizması → `src/scraper/validation.py`
+- ✅ Metin ön işleme pipeline'ı (temizleme, tokenizasyon) → `src/preprocessing/`
+- ✅ Veri seti README dokümantasyonu → `data/README.md`
+
+### Elif Naz Topçu — Frontend & Arayüz Geliştirici
+- ✅ Dashboard teknoloji seçimi (Next.js) → `docs/week-1-frontend-dashboard-research.md`
+- ✅ Dashboard iskelet yapısı → `src/dashboard/` (Next.js + TypeScript)
+- ✅ Renk paleti, font, UI component kararları → `docs/dashboard-design-system.md`
+- ✅ Veri scraping'de destek (kalan 3 banka)
+- ✅ Mockup tasarımları → `docs/mockups/`
+- ✅ Sunum şablonu hazırlama
+
+### Gizem Nur Yıldırım — MLOps & Chatbot Mühendisi
+- ✅ Docker altyapısı → `Dockerfile`, `docker-compose.yml` (Ollama + Chatbot servisleri)
+- ✅ CI/CD pipeline → `.github/workflows/` (lint, test)
+- ✅ Virtual environment, requirements.txt hazırlama
+- ✅ Ollama kurulumu ve lokal LLM model araştırması → Gemma2 seçildi
+- ✅ Chatbot mimari tasarımı → `docs/RAG_MIMARI_PLANI.md`
+- ✅ Pytest altyapısı ve birim testleri → `tests/` (17 test dosyası)
+
+## PRD Görev Durumu — Hafta 2 (3-9 Ağustos) 🔄 Devam Ediyor
+
+### Dilan Kakım — Takım Kaptanı & NLP Mühendisi
+- ✅ Kural tabanlı bilgi çıkarımı (regex patterns) → `src/extraction/campaign_fields.py`
+- ✅ NER eğitim verisi hazırlama (etiketleme) → `data/annotations/`
+- ⏳ NER modeli eğitimi (spaCy/HuggingFace BERT) → `src/ner/train.py` (TODO)
+- ⏳ Kampanya sınıflandırma modeli → `src/classifier/main.py` (TODO)
+- ⏳ Model değerlendirme (F1-Score, Precision, Recall)
+- ✅ Terminoloji sözlüğü tamamlama → `data/terminology/` (genişletilmiş şema + regex)
+
+### Kutay Orallı — Veri Mühendisi & Backend Geliştirici
+- ✅ Kalan banka scraper'ları tamamlama → 10/10 banka aktif
+- ✅ Sayısal değer ve para birimi normalizasyon modülü → `src/normalization/values.py`
+- ✅ Veritabanı şeması (SQLite) → `src/persistence/store.py`
+- ✅ Yapılandırılmış formata dönüştürme → `src/extraction/campaign_fields.py`
+- ✅ Ürün karşılaştırma algoritması → `src/comparison/engine.py`
+- ✅ NER etiketleme sürecine destek
+
+### Elif Naz Topçu — Frontend & Arayüz Geliştirici
+- ✅ Dashboard ana sayfa → `src/dashboard/app/page.tsx` (özet kartlar, grafikler)
+- ✅ Karşılaştırma sayfası iskeleti → `src/dashboard/app/compare/`
+- ✅ Plotly grafik prototipleri (bar chart, pie chart)
+- ✅ NER etiketleme sürecine destek
+- ✅ Dashboard-backend API bağlantısı tasarımı
+
+### Gizem Nur Yıldırım — MLOps & Chatbot Mühendisi
+- ✅ Ollama ile lokal LLM kurulumu ve model seçimi (Gemma2)
+- ✅ LangChain RAG pipeline → `src/chatbot/rag_langchain.py`
+- ✅ ChromaDB vektör veritabanı → `src/chatbot/rag.py` + `rag_langchain.py`
+- ✅ Intent detection modülü → `src/intent/intent_detector.py`
+- ✅ Docker image güncelleme (NLP bağımlılıkları)
+- ✅ NER etiketleme sürecine destek
+
+### Hafta 2 Eksikler
+- ⏳ NER model eğitimi (`src/ner/train.py` henüz başlanmadı)
+- ⏳ Kampanya sınıflandırma modeli (`src/classifier/main.py` henüz başlanmadı)
+- ⏳ Model değerlendirme metrikleri (F1-Score, Precision, Recall)
+
+## PRD Görev Durumu — Hafta 3 (10-16 Ağustos) ⬜ Başlanmadı
+
+### Dilan Kakım — Takım Kaptanı & NLP Mühendisi
+- ⬜ NLP model iyileştirme (edge case'ler, farklı ifade biçimleri)
+- ⬜ Bilgi çıkarımı doğruluğunu artırma
+- ⬜ NLP pipeline'ını dashboard API'sine entegre etme
+- ⬜ Chatbot yanıtları için doğruluk testleri
+- ⬜ Model performans raporu hazırlama
+- ⬜ Proje ilerleme takibi ve koordinasyon
+
+### Kutay Orallı — Veri Mühendisi & Backend Geliştirici
+- ⬜ REST API endpointleri geliştirme (FastAPI) → `src/api/`
+- ⬜ Dashboard için veri servisi oluşturma
+- ⬜ Karşılaştırma motoru optimizasyonu
+- ⬜ Veritabanı sorgu optimizasyonu
+- ⬜ Backend birim testleri yazma
+- ⬜ Veri güncelleme mekanizması (scraper yeniden çalıştırma)
+
+### Elif Naz Topçu — Frontend & Arayüz Geliştirici
+- ⬜ Dashboard karşılaştırma sayfası (filtreler, tablo, grafikler)
+- ⬜ Dashboard detay sayfası (banka bazlı kampanya listeleme)
+- ⬜ Chatbot UI tasarımı ve entegrasyonu
+- ⬜ Dashboard - Backend API entegrasyonu
+- ⬜ Responsive tasarım ayarları
+- ⬜ UX iyileştirmeleri ve kullanıcı akış testleri
+
+### Gizem Nur Yıldırım — MLOps & Chatbot Mühendisi
+- ⬜ Chatbot RAG pipeline tamamlama → `src/chatbot/`
+- ⬜ Intent detection modülü tamamlama → `src/intent/`
+- ⬜ Chatbot yanıt formatlama ve doğruluk iyileştirme
+- ⬜ Chatbot - Dashboard entegrasyonu
+- ⬜ Docker Compose ile tüm servisleri birleştirme
+- ⬜ Uçtan uca entegrasyon testleri
+
+### Hafta 3 Ortak Teslim Hedefleri
+- ⬜ Çalışan 3 sayfalık dashboard
+- ⬜ Çalışan chatbot (soru-cevap)
+- ⬜ Dashboard + Chatbot entegre çözüm
+- ⬜ REST API
+- ⬜ Docker Compose ile tek komutla çalışma
+
 ## 1. hafta veri mühendisliği kapsamı
 
 - BDDK'nın resmî Türkçe `/Kurulus/Liste/77` sayfasından güncel katılım bankası listesi
@@ -182,3 +295,79 @@ Kaynak URL'lerdeki `utm_*`, `gclid`, `fbclid` gibi izleme parametreleri kararlı
 kayıt kimliği üretilmeden önce kaldırılır. Kayıtlar kalıcı depolamadan önce
 `bank_slug + normalize edilmiş source_url` anahtarıyla tekilleştirilir;
 çıkarılan kayıtların ayrıntıları kalite raporunun `duplicates` alanına yazılır.
+
+## Proje yapısı
+
+```
+src/
+├── scraper/           # Veri toplama hattı (Kutay)
+│   ├── bddk.py        # BDDK katalog çekimi
+│   ├── banks/         # 10 banka için bağımsız adaptörler
+│   │   ├── adil_katilim.py
+│   │   ├── albaraka.py
+│   │   ├── dunya_katilim.py
+│   │   ├── emlak_katilim.py
+│   │   ├── hayat_finans.py
+│   │   ├── kuveyt_turk.py
+│   │   ├── tom_katilim.py
+│   │   ├── turkiye_finans.py
+│   │   ├── vakif_katilim.py
+│   │   └── ziraat_katilim.py
+│   ├── models.py       # Ortak Campaign/Product şeması (v1.0.0)
+│   ├── validation.py   # Veri doğrulama ve quality report
+│   ├── storage.py      # Atomik dosya yazımı
+│   ├── http.py         # Kibar HTTP (robots.txt, retry, delay)
+│   └── coverage.py     # BDDK kapsam ve doluluk metrikleri
+├── preprocessing/      # Metin temizleme ve tokenizasyon (Kutay)
+│   └── clean_text.py
+├── normalization/      # Sayı, para birimi, oran, süre normalizasyonu (Kutay)
+│   └── values.py
+├── extraction/         # PRD alan çıkarımı — regex tabanlı (Dilan)
+│   └── campaign_fields.py
+├── comparison/         # Açıklanabilir ürün karşılaştırma (Kutay)
+│   └── engine.py
+├── persistence/        # SQLite şema ve import/export (Kutay)
+│   └── store.py
+├── chatbot/            # RAG pipeline (Gizem)
+│   ├── rag.py           # ChromaDB + Ollama
+│   └── rag_langchain.py # LangChain 1.x + Ollama + Chroma
+├── intent/             # Intent detection (Gizem)
+│   └── intent_detector.py
+├── ner/                # NER model eğitimi (Dilan) — TODO
+│   └── train.py
+├── classifier/         # Kampanya sınıflandırma (Dilan) — TODO
+│   └── main.py
+├── dashboard/          # Next.js dashboard (Elif Naz)
+│   ├── app/
+│   │   ├── page.tsx     # Ana sayfa (özet kartlar, grafikler)
+│   │   ├── campaigns/   # Kampanya listesi
+│   │   ├── chatbot/     # Chatbot arayüzü
+│   │   └── compare/     # Karşılaştırma sayfası
+│   └── components/
+└── api/                # Backend API (Elif Naz) — TODO
+    └── main.py
+
+data/
+├── raw/                    # Ham JSON çıktıları
+├── processed/              # İşlenmiş JSON + structured alanlar
+├── terminology/            # Katılım bankacılığı terminoloji sözlüğü (Dilan)
+│   ├── terminology_master_phase1_phase2.json
+│   ├── entity_schema.json
+│   ├── entity_schema_extended.json
+│   ├── regex_patterns.json
+│   ├── regex_patterns_extended.json
+│   ├── relation_schema.json
+│   ├── alias_dictionary.json
+│   └── source_registry.json
+├── annotations/            # NER etiketleme verisi
+├── model_training_data/    # Model eğitim verisi
+└── ontology/               # Domain ontolojisi
+
+docs/
+├── week-1-data-engineering.md      # Hafta 1 veri tasarımı
+├── week-1-frontend-dashboard-research.md
+├── dashboard-design-system.md
+├── RAG_MIMARI_PLANI.md
+├── 2026-08-08-campaign-pipeline-hardening.md
+└── mockups/                        # Dashboard tasarım mockupları
+```
