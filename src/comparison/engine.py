@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from difflib import SequenceMatcher
+from functools import lru_cache
 from typing import Any, Iterable
 
 from src.preprocessing.clean_text import tokenize_turkish
@@ -203,9 +204,14 @@ def _matching_score(
     )
 
 
+@lru_cache(maxsize=2048)
+def _normalized_title(value: str) -> str:
+    return " ".join(tokenize_turkish(value))
+
+
 def _title_similarity(left: str, right: str) -> float:
-    left_tokens = " ".join(tokenize_turkish(left))
-    right_tokens = " ".join(tokenize_turkish(right))
+    left_tokens = _normalized_title(left)
+    right_tokens = _normalized_title(right)
     return SequenceMatcher(a=left_tokens, b=right_tokens).ratio()
 
 
