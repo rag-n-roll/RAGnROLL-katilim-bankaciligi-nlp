@@ -262,6 +262,14 @@ Testler:
 python -m pytest
 ```
 
+## NLP model eğitimi ve değerlendirme
+
+Kural tabanlı + spaCy NER hibrit çıkarımı, kampanya sınıflandırması, insan
+doğrulamalı etiketleme akışı ve PRD KPI raporu için
+[`docs/week-2-nlp-models.md`](docs/week-2-nlp-models.md) dokümanını izleyin.
+Sentetik model verilerinden alınan skorlar yarışma performansı olarak
+raporlanmaz; araçlar bu raporları otomatik olarak uyarı ile işaretler.
+
 ## Çıktılar
 
 - `data/raw/participation_banks.json`: BDDK kuruluş listesi
@@ -363,4 +371,3 @@ docs/
 ├── 2026-08-08-campaign-pipeline-hardening.md
 └── mockups/                        # Dashboard tasarım mockupları
 ```
-

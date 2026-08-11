@@ -1,0 +1,120 @@
+# Hafta 2 - NLP modelleri ve değerlendirme
+
+Bu çalışma kural tabanlı bilgi çıkarımı, NER, metin sınıflandırma ve ortak KPI
+raporunu tamamen lokal çalışacak şekilde tamamlar.
+
+## Veri güvenilirliği
+
+`data/model_training_data/ner_dataset.jsonl` ve
+`classifier_dataset.jsonl` sentetik şablonlarla oluşturulmuştur. Bu veriler smoke
+test ve baseline geliştirmek için kullanılabilir; bu verilerden alınan skorlar
+yarışma performansı olarak raporlanmamalıdır. Nihai metrikler, resmi banka
+sayfalarından gelen ve ekip tarafından doğrulanmış, eğitim verisinden kaynak ve
+kampanya bazında ayrılmış test kümesinde hesaplanmalıdır.
+
+## 1. NER verisini doğrulama
+
+```bash
+python -m src.ner.train validate data/model_training_data/ner_dataset.jsonl
+```
+
+Komut; bozuk JSON, hatalı span, örtüşen entity ve `entity.text`/ofset
+uyuşmazlıklarında başarısız olur. Mevcut etiketler: `BANK`, `PRODUCT`, `MATURITY`,
+`PROFIT_RATE`, `FINANCING_AMOUNT`, `APPLICATION_CHANNEL`, `CAMPAIGN`, `END_DATE`,
+`CONDITION`, `CAMPAIGN_BENEFIT`, `TRADE_FINANCE_TERM`, `DOCUMENT`.
+
+## 2. spaCy NER eğitimi
+
+```bash
+python -m src.ner.train train \
+  data/model_training_data/ner_dataset.jsonl \
+  models/trained/ner-spacy \
+  --epochs 20 --batch-size 32 --seed 42
+```
+
+Model ile birlikte `models/trained/ner-spacy/evaluation.json` üretilir. Raporda
+entity-level strict Precision, Recall, F1 ve entity türü bazlı skorlar bulunur.
+
+Bağımsız test kümesi eklendiğinde:
+
+```bash
+python -m src.ner.train evaluate models/trained/ner-spacy \
+  data/annotations/ner_gold.jsonl --split test
+```
+
+## 3. Kampanya türü etiketleme
+
+Gerçek kampanyaları ön etiketleme kuyruğuna dönüştürmek için:
+
+```bash
+python -m src.classifier.prepare_campaign_data \
+  data/processed/campaigns.json \
+  data/annotations/campaign_type_review.jsonl
+```
+
+Kurallar yalnızca `label` önerir. Her kayıt başlangıçta
+`human_verified: false` durumundadır. Ekip etiketi kontrol etmeli ve ardından
+kampanya/banka sızıntısını önleyecek biçimde `train`, `validation`, `test`
+değerlerinden birini `split` alanına yazmalıdır. Final eğitiminde
+`--require-verified` kullanılmalıdır.
+
+PRD kampanya sınıfları:
+
+- `housing_finance`
+- `vehicle_finance`
+- `consumer_finance`
+- `general_finance`
+- `card_campaign`
+- `shopping_points`
+- `new_customer`
+- `investment_product`
+
+`needs_review` nihai bir sınıf değildir; belirsiz kaydı ekip üyesine yönlendirir.
+
+## 4. Sınıflandırıcı eğitimi
+
+İnsan doğrulamalı kampanya verisiyle:
+
+```bash
+python -m src.classifier.main train \
+  data/annotations/campaign_type_review.jsonl \
+  models/trained/campaign-classifier.joblib \
+  --train-split train --evaluation-dataset data/annotations/campaign_type_review.jsonl \
+  --evaluation-split validation --require-verified
+```
+
+Çıktıdaki `.metrics.json` raporu Accuracy, macro/weighted F1, sınıf bazlı
+Precision/Recall/F1 ve confusion matrix içerir.
+
+Mevcut sentetik intent verisiyle yalnızca smoke baseline çalıştırmak için:
+
+```bash
+python -m src.classifier.main train \
+  data/model_training_data/classifier_dataset.jsonl \
+  models/trained/intent-baseline.joblib --label-field intent
+```
+
+## 5. Hibrit çıkarım
+
+`HybridExtractor` deterministik ve normalize edilmiş kural çıktılarını korur;
+spaCy modeli verilirse modelin bağlamsal entity span'larını ekler:
+
+```python
+from src.extraction.hybrid import HybridExtractor
+
+extractor = HybridExtractor("models/trained/ner-spacy")
+result = extractor.extract(campaign_text)
+```
+
+## 6. PRD KPI raporu
+
+```bash
+python -m src.evaluation.report \
+  models/trained/ner-spacy/evaluation.json \
+  models/trained/campaign-classifier.metrics.json \
+  --output outputs/model_kpi_report.json
+```
+
+Hedefler: NER Precision `>=0.85`, Recall `>=0.80`, F1 `>=0.82` ve
+sınıflandırma Accuracy `>=0.85`. Sentetik veri içeren raporlar otomatik olarak
+`competition_metric_eligible: false` işaretlenir.
