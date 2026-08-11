@@ -1,0 +1,324 @@
+.main {
+  width: 100%;
+  min-height: calc(100vh - 72px);
+  padding: 32px 0 48px;
+}
+
+.pageHeader {
+  width: min(1440px, calc(100% - 96px));
+  margin: 0 auto 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  color: var(--petrol);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 42px;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.description {
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+.decorativeLines {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lineTurquoise,
+.lineYellow {
+  height: 2px;
+  display: block;
+  border-radius: 10px;
+}
+
+.lineTurquoise {
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--turquoise),
+    transparent
+  );
+}
+
+.lineYellow {
+  width: 70%;
+  margin-left: auto;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--yellow),
+    transparent
+  );
+}
+
+.filterCard {
+  width: min(1440px, calc(100% - 96px));
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 300px;
+  gap: 28px;
+  align-items: end;
+
+  padding: 22px 28px;
+
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  box-shadow: 0 4px 14px rgba(15, 54, 68, 0.07);
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filterGroup label {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.selectWrapper {
+  height: 54px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 14px;
+
+  background: white;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.selectIcon {
+  margin-right: 12px;
+  font-size: 22px;
+}
+
+.select {
+  width: 100%;
+  height: 100%;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+.compareButton {
+  height: 54px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: linear-gradient(
+    90deg,
+    var(--petrol),
+    var(--petrol-secondary)
+  );
+
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.compareIcon {
+  color: var(--turquoise);
+  font-size: 22px;
+}
+.comparisonCard {
+  width: min(1440px, calc(100% - 96px));
+  margin: 14px auto 0;
+  padding: 18px 26px;
+
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  box-shadow: 0 4px 14px rgba(15, 54, 68, 0.07);
+}
+
+.sectionTitle {
+  margin-bottom: 10px;
+
+  color: var(--text-primary);
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.comparisonTable {
+  width: 100%;
+  border-collapse: collapse;
+
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.comparisonTable th,
+.comparisonTable td {
+  padding: 13px 12px;
+  text-align: left;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.comparisonTable th {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.comparisonTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.bestRate {
+  margin-right: 8px;
+
+  color: var(--turquoise);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 5px 10px;
+
+  border-radius: 6px;
+
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.turquoiseBadge {
+  background: var(--turquoise-light);
+  color: var(--turquoise);
+}
+
+.yellowBadge {
+  background: var(--yellow-light);
+  color: var(--yellow);
+}
+.chartsGrid {
+  width: min(1440px, calc(100% - 96px));
+  margin: 14px auto 0;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.chartCard {
+  min-height: 340px;
+  padding: 20px 24px;
+
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  box-shadow: 0 4px 14px rgba(15, 54, 68, 0.07);
+}
+
+.chartContainer {
+  width: 100%;
+  height: 270px;
+}
+
+.placeholderChart {
+  height: 270px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: var(--text-secondary);
+
+  background: var(--surface);
+  border-radius: 12px;
+}
+.dualCharts {
+  height: 270px;
+
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.smallChart {
+  width: 100%;
+  height: 270px;
+}
+
+.chartDivider {
+  width: 1px;
+  height: 80%;
+
+  align-self: center;
+
+  background: var(--border);
+}
+@media (max-width: 1000px) {
+  .filterCard {
+    grid-template-columns: 1fr;
+  }
+
+  .decorativeLines {
+    display: none;
+  }
+  .chartsGrid {
+  grid-template-columns: 1fr;
+}
+}
+
+@media (max-width: 700px) {
+  .pageHeader,
+  .filterCard {
+    width: calc(100% - 32px);
+  }
+
+  .title {
+    font-size: 34px;
+  }
+
+  .comparisonCard {
+  width: calc(100% - 32px);
+}
+.chartsGrid {
+  width: calc(100% - 32px);
+}
+}
