@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any
 
 from src.annotation.store import (
-    CAMPAIGN_LABELS,
     SPLITS,
     ConcurrentUpdateError,
     approve_annotation,
@@ -16,6 +15,15 @@ from src.annotation.store import (
     reject_annotation,
     save_records,
     submit_annotation,
+)
+from src.annotation.taxonomy import (
+    BENEFITS,
+    CAMPAIGN_MECHANICS,
+    CHANNELS,
+    PRODUCT_CATEGORIES,
+    REQUIREMENTS,
+    TARGET_SEGMENTS,
+    display_name,
 )
 
 
@@ -64,13 +72,18 @@ def main() -> None:
         role = st.radio("Rol", ("Etiketleyici", "Reviewer"))
         status_options = ("all", "pending", "awaiting_review", "changes_requested", "approved")
         status_filter = st.selectbox("Durum", status_options)
-        label_filter = st.selectbox("Etiket", ("all",) + CAMPAIGN_LABELS)
+        product_filter = st.selectbox(
+            "Ürün kategorisi",
+            ("all",) + PRODUCT_CATEGORIES,
+            format_func=lambda value: "Tümü" if value == "all" else display_name(value),
+        )
         st.caption(f"Dosya: {dataset}")
 
     def visible(record: dict[str, Any]) -> bool:
         status = record.get("review_status", "pending")
         return (status_filter == "all" or status == status_filter) and (
-            label_filter == "all" or record.get("label") == label_filter
+            product_filter == "all"
+            or record.get("annotations", {}).get("product_category") == product_filter
         )
 
     filtered = [record for record in records if visible(record)]
@@ -86,20 +99,72 @@ def main() -> None:
         f"Kaynak: {record.get('source_url') or '-'}"
     )
     st.text_area("Kampanya metni", record.get("text", ""), height=320, disabled=True)
-    current_label = record.get("label", "needs_review")
+    current = record.get("annotations", {})
+    current_product = current.get("product_category", "needs_review")
     current_split = record.get("split") or "train"
-    label = st.selectbox(
-        "Kampanya türü", CAMPAIGN_LABELS, index=CAMPAIGN_LABELS.index(current_label)
+    product_category = st.selectbox(
+        "Ana ürün kategorisi",
+        PRODUCT_CATEGORIES,
+        index=PRODUCT_CATEGORIES.index(current_product),
+        format_func=display_name,
+        help="Her kayıt için tek ana ürün kategorisi seçilir.",
     )
+    left, right = st.columns(2)
+    with left:
+        campaign_mechanics = st.multiselect(
+            "Kampanya mekanikleri",
+            CAMPAIGN_MECHANICS,
+            default=current.get("campaign_mechanics", []),
+            format_func=display_name,
+        )
+        target_segments = st.multiselect(
+            "Hedef segmentler",
+            TARGET_SEGMENTS,
+            default=current.get("target_segments", []),
+            format_func=display_name,
+        )
+        channels = st.multiselect(
+            "Kanallar",
+            CHANNELS,
+            default=current.get("channels", ["unspecified"]),
+            format_func=display_name,
+        )
+    with right:
+        benefits = st.multiselect(
+            "Avantajlar",
+            BENEFITS,
+            default=current.get("benefits", []),
+            format_func=display_name,
+        )
+        requirements = st.multiselect(
+            "Koşullar",
+            REQUIREMENTS,
+            default=current.get("requirements", []),
+            format_func=display_name,
+        )
     split = st.selectbox("Veri bölümü", SPLITS, index=SPLITS.index(current_split))
     evidence = record.get("weak_label_evidence") or []
     if evidence:
-        st.caption("Ön etiket kanıtı: " + ", ".join(evidence))
+        st.caption("Ön etiket kanıtı")
+        st.json(evidence)
+
+    annotations = {
+        "product_category": product_category,
+        "campaign_mechanics": campaign_mechanics,
+        "target_segments": target_segments,
+        "channels": channels,
+        "benefits": benefits,
+        "requirements": requirements,
+    }
 
     if role == "Etiketleyici":
         if st.button("Etiketi kaydet", type="primary", disabled=not user):
             submit_annotation(
-                records, record["id"], annotator=user, label=label, split=split
+                records,
+                record["id"],
+                annotator=user,
+                annotations=annotations,
+                split=split,
             )
             _save(dataset, records, digest)
             st.success("Etiket kaydedildi ve reviewer kuyruğuna gönderildi.")

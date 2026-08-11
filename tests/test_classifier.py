@@ -3,20 +3,31 @@ import json
 import pytest
 
 from src.classifier.main import load_examples
-from src.classifier.prepare_campaign_data import prepare, suggest_label
+from src.classifier.prepare_campaign_data import prepare, suggest_annotations
 
 
 @pytest.mark.parametrize(
     ("text", "expected"),
     [
         ("Konut finansmanında 120 ay vade", "housing_finance"),
-        ("Yeni müşterilere hoş geldin kampanyası", "new_customer"),
-        ("Kart alışverişlerinize 4 taksit", "card_campaign"),
-        ("Altın katılma hesabı", "investment_product"),
+        ("Yeni müşterilere hoş geldin kampanyası", "needs_review"),
+        ("Kart alışverişlerinize 4 taksit", "card"),
+        ("Altın katılma hesabı", "participation_account"),
     ],
 )
-def test_suggests_prd_campaign_label(text, expected):
-    assert suggest_label(text)[0] == expected
+def test_suggests_prd_campaign_product(text, expected):
+    assert suggest_annotations(text)[0]["product_category"] == expected
+
+
+def test_suggests_multiple_campaign_dimensions():
+    annotations, _ = suggest_annotations(
+        "Yeni müşteriler mobil uygulamada kartla alışverişe 500 TL nakit iade kazanır"
+    )
+
+    assert annotations["product_category"] == "card"
+    assert annotations["campaign_mechanics"] == ["cashback"]
+    assert annotations["target_segments"] == ["new_customer"]
+    assert annotations["channels"] == ["mobile"]
 
 
 def test_prepare_requires_human_verification(tmp_path):
@@ -30,7 +41,7 @@ def test_prepare_requires_human_verification(tmp_path):
     row = json.loads(output.read_text(encoding="utf-8"))
 
     assert report["human_verification_required"] is True
-    assert row["label"] == "housing_finance"
+    assert row["annotations"]["product_category"] == "housing_finance"
     assert row["human_verified"] is False
     with pytest.raises(ValueError, match="No usable examples"):
         load_examples(output, require_verified=True, split=None)

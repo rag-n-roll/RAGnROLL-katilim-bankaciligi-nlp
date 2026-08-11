@@ -1,8 +1,4 @@
-"""Create a human-review queue for PRD campaign-type classification.
-
-Rules only suggest labels. Records remain ``human_verified=false`` and must not
-be used for final metrics until a team member confirms or corrects each label.
-"""
+"""Create an ontology-aligned, multi-dimensional human-review queue."""
 
 from __future__ import annotations
 
@@ -13,38 +9,135 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-
-CAMPAIGN_LABELS = (
-    "housing_finance",
-    "vehicle_finance",
-    "consumer_finance",
-    "general_finance",
-    "card_campaign",
-    "shopping_points",
-    "new_customer",
-    "investment_product",
-    "needs_review",
+from src.annotation.taxonomy import (
+    BENEFITS,
+    CAMPAIGN_MECHANICS,
+    CHANNELS,
+    REQUIREMENTS,
+    TARGET_SEGMENTS,
 )
 
-LABEL_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
+
+PRODUCT_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("housing_finance", (r"\bkonut\b", r"gayrimenkul", r"\bev\s+finansman")),
     ("vehicle_finance", (r"\btaşıt\b", r"\baraç\b", r"otomobil", r"motosiklet")),
+    ("education_finance", (r"eğitim\s+finansman", r"okul\s+finansman")),
+    ("land_finance", (r"arsa\s+finansman",)),
+    ("workplace_finance", (r"iş\s*yeri\s+finansman",)),
+    ("urban_transformation_finance", (r"kentsel\s+dönüşüm",)),
+    ("shopping_finance", (r"alışveriş\s+finansman",)),
     ("consumer_finance", (r"\bihtiyaç\s+finansman",)),
-    ("shopping_points", (r"alışveriş\s+puan", r"worldpuan", r"sağlam\s+puan", r"hediye\s+puan")),
-    ("new_customer", (r"yeni\s+müşteri", r"ilk\s+kez\s+müşteri", r"hoş\s+geldin")),
-    ("investment_product", (r"katılma\s+hesab", r"yatırım", r"kira\s+sertifika", r"altın\s+hesab")),
-    ("card_campaign", (r"\bkart", r"taksit", r"nakit\s+iade", r"indirim")),
-    ("general_finance", (r"finansman",)),
+    ("agriculture_finance", (r"tarım", r"çiftçi", r"gübre", r"tohum", r"hayvancılık")),
+    (
+        "sustainable_finance",
+        (r"sürdürülebilir", r"yeşil\s+finansman", r"\bges\b", r"enerji\s+verim"),
+    ),
+    ("commercial_finance", (r"\bkobi\b", r"ticari\s+finansman", r"işletme\s+finansman")),
+    ("participation_account", (r"katılma\s+hesab", r"katılım\s+fonu")),
+    ("investment_product", (r"yatırım", r"kira\s+sertifika", r"altın\s+hesab", r"fon")),
+    ("insurance_takaful", (r"tekafül", r"sigorta\s+ürün")),
+    ("digital_finance", (r"dijital\s+finansman", r"taksitlio", r"cebimpos")),
+    ("card", (r"\bkart", r"worldpuan", r"sağlam\s+puan", r"taksit")),
+    ("other_finance", (r"finansman",)),
 )
 
+MULTI_RULES: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
+    "campaign_mechanics": (
+        ("cashback", (r"nakit\s+iade", r"cashback", r"para\s+iade")),
+        ("reward_points", (r"puan", r"worldpuan", r"bonus")),
+        ("discount", (r"indirim",)),
+        ("installment", (r"taksit",)),
+        ("referral", (r"davet\s+et", r"arkadaşını\s+getir")),
+        ("loyalty_membership", (r"üyelik", r"gold", r"sadakat")),
+        ("promo_code", (r"promosyon\s+kodu", r"kupon\s+kodu")),
+        ("gift_voucher", (r"hediye\s+çek", r"alışveriş\s+çek")),
+        ("draw_lottery", (r"çekiliş",)),
+    ),
+    "target_segments": (
+        ("new_customer", (r"yeni\s+müşteri", r"ilk\s+kez\s+müşteri", r"hoş\s+geldin")),
+        ("existing_customer", (r"mevcut\s+müşteri",)),
+        ("salary_customer", (r"maaş\s+müşteri",)),
+        ("youth_student", (r"öğrenci", r"genç", r"kampüs")),
+        ("commercial_sme", (r"\bkobi\b", r"ticari\s+müşteri", r"işletme")),
+        ("farmer", (r"çiftçi", r"tarım", r"üretici")),
+        ("cardholder", (r"kart\s+sahib", r"kartınızla", r"kartları\s+ile")),
+        ("digital_customer", (r"dijital\s+müşteri",)),
+    ),
+    "channels": (
+        ("mobile", (r"mobil\s+uygulama", r"mobilden", r"mobil\s+şube")),
+        ("internet_branch", (r"internet\s+şube",)),
+        ("physical_branch", (r"\bşube",)),
+        ("card_pos", (r"\bpos\b", r"kartınızla")),
+        ("ecommerce", (r"web\s+sites", r"e-ticaret", r"online\s+alışveriş")),
+        ("atm", (r"\batm\b",)),
+        ("call_center", (r"çağrı\s+merkezi", r"müşteri\s+iletişim\s+merkezi")),
+    ),
+    "benefits": (
+        ("zero_profit_rate", (r"%\s*0", r"sıfır\s+kâr\s+pay")),
+        ("special_profit_rate", (r"avantajlı\s+(?:kâr\s+payı|oran)", r"özel\s+oran")),
+        (
+            "fee_exemption",
+            (r"masraf\w*\s+(?:yok|alınm)", r"ücret\s+muaf", r"tahsis\s+ücreti\s+yok"),
+        ),
+        ("free_insurance", (r"ücretsiz\s+sigorta",)),
+        ("payment_deferral", (r"taksit\s+ertele", r"ödem\w+\s+ertele")),
+        ("extra_installment", (r"vade\s+farksız", r"ek\s+taksit", r"aya\s+varan\s+taksit")),
+        ("gift_voucher", (r"hediye\s+çek", r"alışveriş\s+çek")),
+        ("free_service", (r"ücretsiz",)),
+    ),
+    "requirements": (
+        ("minimum_spend", (r"en\s+az\s+[\d.]", r"minimum\s+harcama")),
+        ("application_required", (r"kampanyaya\s+katıl", r"başvuru")),
+        ("promo_code_required", (r"(?:promosyon|kupon)\s+kodu",)),
+        ("automatic_payment_instruction", (r"otomatik\s+ödeme\s+talimat",)),
+        ("first_transaction", (r"ilk\s+işlem", r"ilk\s+alışveriş")),
+        ("limited_stock", (r"stoklarla\s+sınırlı",)),
+        (
+            "date_limited",
+            (
+                r"\d{1,2}\s+(?:ocak|şubat|mart|nisan|mayıs|haziran|temmuz|"
+                r"ağustos|eylül|ekim|kasım|aralık)\s+20\d{2}",
+            ),
+        ),
+        ("specific_merchant", (r"üye\s+işyer", r"mağazalarında", r"resmi\s+web\s+sitesinde")),
+        ("specific_card", (r"belirli\s+kart", r"kartları\s+ile", r"kartınızla")),
+    ),
+}
 
-def suggest_label(text: str) -> tuple[str, list[str]]:
+ALLOWED = {
+    "campaign_mechanics": set(CAMPAIGN_MECHANICS),
+    "target_segments": set(TARGET_SEGMENTS),
+    "channels": set(CHANNELS),
+    "benefits": set(BENEFITS),
+    "requirements": set(REQUIREMENTS),
+}
+
+
+def suggest_annotations(text: str) -> tuple[dict[str, Any], dict[str, list[str]]]:
     normalized = str(text or "").casefold()
-    for label, patterns in LABEL_RULES:
-        evidence = [pattern for pattern in patterns if re.search(pattern, normalized)]
-        if evidence:
-            return label, evidence
-    return "needs_review", []
+    evidence: dict[str, list[str]] = {}
+    product_category = "needs_review"
+    for label, patterns in PRODUCT_RULES:
+        matches = [pattern for pattern in patterns if re.search(pattern, normalized)]
+        if matches:
+            product_category = label
+            evidence["product_category"] = matches
+            break
+    annotations: dict[str, Any] = {"product_category": product_category}
+    for field, rules in MULTI_RULES.items():
+        values = []
+        field_evidence = []
+        for label, patterns in rules:
+            matches = [pattern for pattern in patterns if re.search(pattern, normalized)]
+            if matches and label in ALLOWED[field]:
+                values.append(label)
+                field_evidence.extend(matches)
+        annotations[field] = values
+        if field_evidence:
+            evidence[field] = field_evidence
+    if not annotations["channels"]:
+        annotations["channels"] = ["unspecified"]
+    return annotations, evidence
 
 
 def _records(payload: Any) -> list[dict[str, Any]]:
@@ -65,15 +158,14 @@ def prepare(input_path: str | Path, output_path: str | Path) -> dict[str, Any]:
             campaign.get("content"),
         )
         text = "\n".join(
-            part for part in text_sources
-            if isinstance(part, str) and part.strip()
+            part for part in text_sources if isinstance(part, str) and part.strip()
         )
-        label, evidence = suggest_label(text)
+        annotations, evidence = suggest_annotations(text)
         prepared.append(
             {
                 "id": campaign.get("id", f"campaign-{index:04d}"),
                 "text": text,
-                "label": label,
+                "annotations": annotations,
                 "human_verified": False,
                 "split": None,
                 "source_url": campaign.get("source_url"),
@@ -89,7 +181,9 @@ def prepare(input_path: str | Path, output_path: str | Path) -> dict[str, Any]:
     )
     return {
         "records": len(prepared),
-        "label_distribution": dict(Counter(record["label"] for record in prepared)),
+        "product_distribution": dict(
+            Counter(record["annotations"]["product_category"] for record in prepared)
+        ),
         "human_verification_required": True,
         "output": str(output),
     }

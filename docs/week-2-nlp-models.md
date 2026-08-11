@@ -52,22 +52,30 @@ python -m src.classifier.prepare_campaign_data \
   data/annotations/campaign_type_review.jsonl
 ```
 
-Kurallar yalnızca `label` önerir. Her kayıt başlangıçta
-`human_verified: false` durumundadır. Ekip etiketi kontrol etmeli ve ardından
+Kurallar çok boyutlu bir `annotations` nesnesi önerir. Her kayıt başlangıçta
+`human_verified: false` durumundadır. Ekip tüm alanları kontrol etmeli ve ardından
 kampanya/banka sızıntısını önleyecek biçimde `train`, `validation`, `test`
 değerlerinden birini `split` alanına yazmalıdır. Final eğitiminde
 `--require-verified` kullanılmalıdır.
 
-PRD kampanya sınıfları:
+Etiket yapısı repodaki ontology ile uyumludur:
 
-- `housing_finance`
-- `vehicle_finance`
-- `consumer_finance`
-- `general_finance`
-- `card_campaign`
-- `shopping_points`
-- `new_customer`
-- `investment_product`
+- `product_category`: Tek ana ürün; kart, konut/taşıt/ihtiyaç/alışveriş/eğitim,
+  tarım, ticari, dijital veya sürdürülebilir finansman, yatırım, katılma hesabı vb.
+- `campaign_mechanics`: Taksit, indirim, nakit iade, puan, referans, promosyon
+  kodu, hediye çeki veya çekiliş.
+- `target_segments`: Yeni/mevcut/maaş müşterisi, genç/öğrenci, KOBİ, çiftçi,
+  kart sahibi veya dijital müşteri.
+- `channels`: Mobil, internet şubesi, fiziksel şube, kart/POS, e-ticaret, ATM
+  veya çağrı merkezi.
+- `benefits`: `%0`/avantajlı kâr payı, ücret muafiyeti, ücretsiz sigorta,
+  erteleme, ek taksit veya ücretsiz hizmet.
+- `requirements`: Minimum harcama, başvuru, promosyon kodu, otomatik ödeme,
+  ilk işlem, tarih/stok, belirli işyeri veya kart koşulu.
+
+Ana ürün tek seçimlidir; diğer boyutlar çoklu seçimdir. Örneğin bir kayıt aynı
+anda kart ürünü, nakit iade mekaniği, yeni müşteri segmenti ve mobil kanal
+etiketlerini taşıyabilir.
 
 `needs_review` nihai bir sınıf değildir; belirsiz kaydı ekip üyesine yönlendirir.
 
@@ -88,8 +96,8 @@ http://localhost:8501/?dataset=data/annotations/campaign_type_review.jsonl
 
 İş akışı:
 
-1. İlk ekip üyesi adını girer, `Etiketleyici` rolünü seçer, etiketi ve split'i
-   belirleyerek kaydeder.
+1. İlk ekip üyesi adını girer, `Etiketleyici` rolünü seçer, ürün kategorisini,
+   çoklu özellikleri ve split'i belirleyerek kaydeder.
 2. Farklı bir ekip üyesi `Reviewer` rolünü seçer ve `awaiting_review`
    kayıtlarını filtreler.
 3. Reviewer doğru kaydı onaylar veya gerekçeli değişiklik isteği gönderir.
@@ -105,15 +113,20 @@ yükleme ister.
 İnsan doğrulamalı kampanya verisiyle:
 
 ```bash
-python -m src.classifier.main train \
+python -m src.classifier.multilabel train \
   data/annotations/campaign_type_review.jsonl \
   models/trained/campaign-classifier.joblib \
-  --train-split train --evaluation-dataset data/annotations/campaign_type_review.jsonl \
-  --evaluation-split validation --require-verified
+  --train-split train --evaluation-split validation
 ```
 
-Çıktıdaki `.metrics.json` raporu Accuracy, macro/weighted F1, sınıf bazlı
-Precision/Recall/F1 ve confusion matrix içerir.
+Çıktıdaki `.metrics.json` ana ürün kategorisi Accuracy değerini; her çok etiketli
+boyut için micro/macro F1 ve subset accuracy değerlerini içerir. Bağımsız test:
+
+```bash
+python -m src.classifier.multilabel evaluate \
+  models/trained/campaign-classifier.joblib \
+  data/annotations/campaign_type_review.jsonl --split test
+```
 
 Mevcut sentetik intent verisiyle yalnızca smoke baseline çalıştırmak için:
 

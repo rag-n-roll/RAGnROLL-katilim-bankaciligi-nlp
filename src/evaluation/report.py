@@ -33,7 +33,9 @@ def build_report(
         "ner_precision": ner_metrics.get("precision"),
         "ner_recall": ner_metrics.get("recall"),
         "ner_f1": ner_metrics.get("f1"),
-        "classification_accuracy": classifier_metrics.get("accuracy"),
+        "classification_accuracy": classifier_metrics.get(
+            "accuracy", classifier_metrics.get("product_accuracy")
+        ),
     }
     kpis = {}
     for name, target in KPI_TARGETS.items():

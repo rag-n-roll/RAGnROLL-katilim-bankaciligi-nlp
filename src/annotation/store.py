@@ -11,19 +11,23 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-
-CAMPAIGN_LABELS = (
-    "housing_finance",
-    "vehicle_finance",
-    "consumer_finance",
-    "general_finance",
-    "card_campaign",
-    "shopping_points",
-    "new_customer",
-    "investment_product",
-    "needs_review",
+from src.annotation.taxonomy import (
+    BENEFITS,
+    CAMPAIGN_MECHANICS,
+    CHANNELS,
+    PRODUCT_CATEGORIES,
+    REQUIREMENTS,
+    TARGET_SEGMENTS,
 )
+
 SPLITS = ("train", "validation", "test")
+ANNOTATION_FIELDS = {
+    "campaign_mechanics": set(CAMPAIGN_MECHANICS),
+    "target_segments": set(TARGET_SEGMENTS),
+    "channels": set(CHANNELS),
+    "benefits": set(BENEFITS),
+    "requirements": set(REQUIREMENTS),
+}
 
 
 class ConcurrentUpdateError(RuntimeError):
@@ -109,21 +113,23 @@ def submit_annotation(
     record_id: str,
     *,
     annotator: str,
-    label: str,
+    annotations: dict[str, Any],
     split: str,
 ) -> dict[str, Any]:
     annotator = annotator.strip()
     if not annotator:
         raise ValueError("Annotator name is required")
-    if label not in CAMPAIGN_LABELS:
-        raise ValueError(f"Unknown label: {label}")
+    validate_annotations(annotations)
     if split not in SPLITS:
         raise ValueError(f"Unknown split: {split}")
     record = _find(records, record_id)
-    previous = {"label": record.get("label"), "split": record.get("split")}
+    previous = {
+        "annotations": record.get("annotations"),
+        "split": record.get("split"),
+    }
     record.update(
         {
-            "label": label,
+            "annotations": annotations,
             "split": split,
             "annotator": annotator,
             "reviewer": None,
@@ -132,7 +138,13 @@ def submit_annotation(
         }
     )
     record.setdefault("annotation_history", []).append(
-        _event("annotated", annotator, previous=previous, label=label, split=split)
+        _event(
+            "annotated",
+            annotator,
+            previous=previous,
+            annotations=annotations,
+            split=split,
+        )
     )
     return record
 
@@ -148,7 +160,9 @@ def approve_annotation(
         raise ValueError("Record must be annotated before review")
     if reviewer.casefold() == str(record["annotator"]).casefold():
         raise ValueError("Reviewer must be different from annotator")
-    if record.get("label") == "needs_review":
+    annotations = record.get("annotations")
+    validate_annotations(annotations)
+    if annotations.get("product_category") == "needs_review":
         raise ValueError("needs_review must be resolved before approval")
     if record.get("split") not in SPLITS:
         raise ValueError("A valid split is required before approval")
@@ -188,7 +202,10 @@ def reject_annotation(
 
 def dataset_progress(records: list[dict[str, Any]]) -> dict[str, Any]:
     statuses = Counter(record.get("review_status", "pending") for record in records)
-    labels = Counter(record.get("label", "missing") for record in records)
+    products = Counter(
+        record.get("annotations", {}).get("product_category", "missing")
+        for record in records
+    )
     splits = Counter(
         record.get("split") or "unassigned"
         for record in records
@@ -200,6 +217,23 @@ def dataset_progress(records: list[dict[str, Any]]) -> dict[str, Any]:
         "verified": verified,
         "verified_percent": verified / len(records) if records else 0.0,
         "statuses": dict(statuses),
-        "labels": dict(labels),
+        "product_categories": dict(products),
         "verified_splits": dict(splits),
     }
+
+
+def validate_annotations(annotations: Any) -> None:
+    if not isinstance(annotations, dict):
+        raise ValueError("annotations must be an object")
+    product = annotations.get("product_category")
+    if product not in PRODUCT_CATEGORIES:
+        raise ValueError(f"Unknown product category: {product}")
+    for field, allowed in ANNOTATION_FIELDS.items():
+        values = annotations.get(field)
+        if not isinstance(values, list):
+            raise ValueError(f"{field} must be a list")
+        if len(values) != len(set(values)):
+            raise ValueError(f"{field} contains duplicate values")
+        unknown = set(values) - allowed
+        if unknown:
+            raise ValueError(f"Unknown {field}: {sorted(unknown)}")
