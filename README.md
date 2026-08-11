@@ -270,6 +270,12 @@ doğrulamalı etiketleme akışı ve PRD KPI raporu için
 Sentetik model verilerinden alınan skorlar yarışma performansı olarak
 raporlanmaz; araçlar bu raporları otomatik olarak uyarı ile işaretler.
 
+Kampanya türlerini iki aşamalı ekip onayıyla etiketlemek için:
+
+```bash
+python -m streamlit run src/annotation/app.py
+```
+
 ## Çıktılar
 
 - `data/raw/participation_banks.json`: BDDK kuruluş listesi

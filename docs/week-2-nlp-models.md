@@ -71,6 +71,35 @@ PRD kampanya sınıfları:
 
 `needs_review` nihai bir sınıf değildir; belirsiz kaydı ekip üyesine yönlendirir.
 
+### Streamlit etiketleme ekranı
+
+JSONL dosyasını elle değiştirmek yerine ekip arayüzü kullanılmalıdır:
+
+```bash
+python -m streamlit run src/annotation/app.py
+```
+
+Farklı bir annotation dosyasını açmak için tarayıcı adresine query parametresi
+eklenebilir:
+
+```text
+http://localhost:8501/?dataset=data/annotations/campaign_type_review.jsonl
+```
+
+İş akışı:
+
+1. İlk ekip üyesi adını girer, `Etiketleyici` rolünü seçer, etiketi ve split'i
+   belirleyerek kaydeder.
+2. Farklı bir ekip üyesi `Reviewer` rolünü seçer ve `awaiting_review`
+   kayıtlarını filtreler.
+3. Reviewer doğru kaydı onaylar veya gerekçeli değişiklik isteği gönderir.
+4. Yalnızca reviewer onayından sonra `human_verified: true` yazılır.
+
+Aynı kişi kendi kaydını onaylayamaz ve `needs_review` etiketi çözülmeden kayıt
+onaylanamaz. Her işlem UTC zamanıyla `annotation_history` alanında tutulur. Dosya
+başka biri tarafından değiştirildiyse arayüz kaydetmeyi reddeder ve yeniden
+yükleme ister.
+
 ## 4. Sınıflandırıcı eğitimi
 
 İnsan doğrulamalı kampanya verisiyle:
