@@ -9,6 +9,7 @@ class ZiraatKatilimScraper(BaseBankScraper):
         listing_urls=("https://www.ziraatkatilim.com.tr/kart-kampanyalari",),
         detail_pattern=r"/kart-kampanyalari/[^/?#]+$",
         listing_link_selectors=(".campaign-item a[href]",),
+        discover_from_base_url=True,
         content_selectors=(".node-bankkart-kampanyalar",),
         title_selectors=("h1.node-title", ".main-content > h1"),
     )

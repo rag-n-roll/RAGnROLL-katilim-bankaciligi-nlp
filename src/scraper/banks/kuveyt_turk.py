@@ -12,6 +12,7 @@ class KuveytTurkScraper(BaseBankScraper):
         ),
         detail_pattern=r"/kampanyalar/kendim-icin/[^/?#]+/[^/?#]+$",
         listing_link_selectors=(".campaign-item a[href]",),
+        discover_from_base_url=True,
         content_selectors=(".subpage-content .search-content",),
         title_selectors=("h1#pageTitle", "h1"),
     )

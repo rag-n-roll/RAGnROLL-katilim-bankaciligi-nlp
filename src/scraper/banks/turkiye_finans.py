@@ -26,6 +26,7 @@ class TurkiyeFinansScraper(BaseBankScraper):
         ),
         detail_pattern=r"/tr-tr/kampanyalar/sayfalar/[^/?#]+\.aspx$",
         listing_link_selectors=(".campaign-list .campaign a[href]",),
+        discover_from_base_url=True,
         content_selectors=(".subpage-content.page .ms-rtestate-field",),
         title_selectors=(".subpage-content.page .header h1", "h1"),
     )

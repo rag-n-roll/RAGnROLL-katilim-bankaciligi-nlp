@@ -125,7 +125,12 @@ class HttpClient:
         return response
 
     def get_text(self, url: str) -> str:
+        text, _ = self.get_text_with_url(url)
+        return text
+
+    def get_text_with_url(self, url: str) -> tuple[str, str]:
+        """Metni ve yonlendirmelerden sonraki kanonik yanit URL'sini dondurur."""
         response = self.get(url)
         if not response.encoding or response.encoding.lower() == "iso-8859-1":
             response.encoding = response.apparent_encoding or "utf-8"
-        return response.text
+        return response.text, response.url

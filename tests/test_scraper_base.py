@@ -64,6 +64,31 @@ class FailingOverrideDiscoveryScraper(ExampleScraper):
         raise requests.Timeout("slow")
 
 
+class CrossDomainCampaignScraper(BaseBankScraper):
+    config = ScraperConfig(
+        slug="capraz-ornek",
+        bank_name="Çapraz Örnek Katılım A.Ş.",
+        base_url="https://bank.example",
+        listing_urls=("https://bank.example/kampanyalar.html",),
+        detail_pattern=r"/kampanyalar/[^/]+$",
+        listing_link_selectors=("a[href]",),
+        allowed_campaign_hosts=("campaigns.example",),
+        content_selectors=("article",),
+    )
+
+
+class HomepageFallbackScraper(BaseBankScraper):
+    config = ScraperConfig(
+        slug="yedek-ornek",
+        bank_name="Yedek Örnek Katılım A.Ş.",
+        base_url="https://bank.example",
+        listing_urls=("https://bank.example/eski-kampanyalar",),
+        detail_pattern=r"/kampanyalar/[^/]+$",
+        content_selectors=("article",),
+        discover_from_base_url=True,
+    )
+
+
 def test_scrape_reports_timeout_during_discovery_as_structured_failure():
     scraper = ExampleScraper(
         StubClient({"https://bank.example/kampanyalar": requests.Timeout("slow")})
@@ -83,6 +108,67 @@ def test_scrape_reports_timeout_during_discovery_as_structured_failure():
     timestamp = datetime.fromisoformat(str(failure["timestamp"]))
     assert timestamp.tzinfo is not None
     assert timestamp.utcoffset().total_seconds() == 0
+
+
+def test_discovers_campaigns_through_allowlisted_cross_domain_cta():
+    landing = "https://campaigns.example/firsatlar"
+    detail = "https://campaigns.example/kampanyalar/market-firsati"
+    scraper = CrossDomainCampaignScraper(
+        StubClient(
+            {
+                CrossDomainCampaignScraper.config.listing_urls[0]: (
+                    f'<a href="{landing}">Güncel kampanyaları gör</a>'
+                ),
+                landing: '<a href="/kampanyalar/market-firsati">Kampanya Detayı</a>',
+                detail: "<article><h1>Market Fırsatı</h1><p>Yeterli içerik</p></article>",
+            }
+        )
+    )
+
+    records, failures = scraper.scrape()
+
+    assert failures == []
+    assert [record.source_url for record in records] == [detail]
+
+
+def test_rejects_unallowlisted_cross_domain_campaign_cta():
+    malicious = "https://malicious.example/kampanyalar"
+    scraper = CrossDomainCampaignScraper(
+        StubClient(
+            {
+                CrossDomainCampaignScraper.config.listing_urls[0]: (
+                    f'<a href="{malicious}">Tüm kampanyaları gör</a>'
+                )
+            }
+        )
+    )
+
+    records, failures = scraper.scrape()
+
+    assert records == []
+    assert failures == []
+
+
+def test_recovers_stale_listing_from_homepage_campaign_navigation():
+    new_listing = "https://bank.example/guncel-kampanyalar"
+    detail = "https://bank.example/kampanyalar/yeni-firsat"
+    scraper = HomepageFallbackScraper(
+        StubClient(
+            {
+                HomepageFallbackScraper.config.listing_urls[0]: requests.HTTPError("404"),
+                HomepageFallbackScraper.config.base_url: (
+                    f'<nav><a href="{new_listing}">Kampanyalar</a></nav>'
+                ),
+                new_listing: f'<a href="{detail}">Kampanya Detayı</a>',
+                detail: "<article><h1>Yeni Fırsat</h1><p>Yeterli içerik</p></article>",
+            }
+        )
+    )
+
+    records, failures = scraper.scrape()
+
+    assert failures == []
+    assert [record.source_url for record in records] == [detail]
 
 
 def test_scrape_honors_discover_urls_override_once():

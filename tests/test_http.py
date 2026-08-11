@@ -1,6 +1,8 @@
 import subprocess
 import sys
 
+import requests
+
 from src.scraper.http import HttpClient, TruststoreHTTPAdapter
 
 
@@ -22,3 +24,18 @@ def test_import_does_not_replace_global_ssl_context():
         text=True,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_get_text_with_url_returns_redirect_target(monkeypatch):
+    client = HttpClient(respect_robots=False)
+    response = requests.Response()
+    response.status_code = 200
+    response.url = "https://campaigns.example/kampanyalar"
+    response._content = "Kampanyalar".encode()
+    response.encoding = "utf-8"
+    monkeypatch.setattr(client, "get", lambda _url: response)
+
+    assert client.get_text_with_url("https://bank.example/kampanyalar") == (
+        "Kampanyalar",
+        "https://campaigns.example/kampanyalar",
+    )
