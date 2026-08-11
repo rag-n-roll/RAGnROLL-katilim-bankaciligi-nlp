@@ -1,7 +1,6 @@
 """Human annotation workflow for campaign classification data."""
 
 from .store import (
-    CAMPAIGN_LABELS,
     SPLITS,
     approve_annotation,
     dataset_progress,
@@ -12,7 +11,6 @@ from .store import (
 )
 
 __all__ = [
-    "CAMPAIGN_LABELS",
     "SPLITS",
     "approve_annotation",
     "dataset_progress",

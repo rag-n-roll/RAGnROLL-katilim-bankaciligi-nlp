@@ -18,11 +18,22 @@ def sample_records():
         {
             "id": "campaign-1",
             "text": "Yeni müşterilere özel kampanya",
-            "label": "new_customer",
+            "annotations": sample_annotations(),
             "split": None,
             "human_verified": False,
         }
     ]
+
+
+def sample_annotations():
+    return {
+        "product_category": "card",
+        "campaign_mechanics": ["cashback"],
+        "target_segments": ["new_customer"],
+        "channels": ["mobile"],
+        "benefits": [],
+        "requirements": [],
+    }
 
 
 def test_two_person_annotation_and_approval():
@@ -31,7 +42,7 @@ def test_two_person_annotation_and_approval():
         records,
         "campaign-1",
         annotator="Dilan",
-        label="new_customer",
+        annotations=sample_annotations(),
         split="test",
     )
     approved = approve_annotation(records, "campaign-1", reviewer="Kutay")
@@ -50,7 +61,7 @@ def test_annotator_cannot_review_own_record():
         records,
         "campaign-1",
         annotator="Dilan",
-        label="new_customer",
+        annotations=sample_annotations(),
         split="train",
     )
 
@@ -64,7 +75,7 @@ def test_needs_review_cannot_be_approved():
         records,
         "campaign-1",
         annotator="Dilan",
-        label="needs_review",
+        annotations={**sample_annotations(), "product_category": "needs_review"},
         split="validation",
     )
 
@@ -78,7 +89,7 @@ def test_rejection_requires_note_and_marks_changes_requested():
         records,
         "campaign-1",
         annotator="Dilan",
-        label="new_customer",
+        annotations=sample_annotations(),
         split="train",
     )
     rejected = reject_annotation(
@@ -105,7 +116,7 @@ def test_dataset_progress():
         records,
         "campaign-1",
         annotator="Dilan",
-        label="new_customer",
+        annotations=sample_annotations(),
         split="train",
     )
     approve_annotation(records, "campaign-1", reviewer="Kutay")
