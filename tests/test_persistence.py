@@ -111,3 +111,35 @@ def test_import_legacy_dataset_reextracts_fields_and_exports_raw_and_processed(
         "currency": "TRY",
     }
     json.dumps(processed, ensure_ascii=False)
+
+
+def test_query_campaigns_filters_and_pages_in_sql(tmp_path):
+    store = CampaignStore(tmp_path / "campaigns.sqlite3")
+    first = record()
+    second = record()
+    second["id"] = "second"
+    second["title"] = "Taşıt finansmanı"
+    store.upsert_rows([first, second], run_status="success")
+
+    rows, total = store.query_campaigns(
+        bank_slug="ornek", search="Taşıt", limit=1, offset=0
+    )
+
+    assert total == 1
+    assert rows[0]["id"] == "second"
+    assert store.get_campaign("second")["title"] == "Taşıt finansmanı"
+    assert store.get_campaign("missing") is None
+
+
+def test_dashboard_summary_uses_database_aggregates(tmp_path):
+    store = CampaignStore(tmp_path / "campaigns.sqlite3")
+    store.upsert_rows([record()], run_status="success")
+
+    summary = store.dashboard_summary()
+    banks = store.bank_summary()
+
+    assert summary["record_count"] == 1
+    assert summary["campaign_count"] == 1
+    assert summary["bank_count"] == 1
+    assert banks[0]["campaign_count"] == 1
+    assert store.latest_scrape_run()["record_count"] == 1

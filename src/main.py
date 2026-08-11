@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from src.api.main import router as data_api_router
+
 app = FastAPI(title="Katılım Bankacılığı Chatbot", version="0.1.0")
+app.include_router(data_api_router)
 
 
 class ChatRequest(BaseModel):

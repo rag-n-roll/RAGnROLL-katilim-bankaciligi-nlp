@@ -123,6 +123,14 @@ class CampaignStore:
                 "CREATE INDEX IF NOT EXISTS campaigns_filter_idx "
                 "ON campaigns(product_type, reward_currency, max_amount_currency)"
             )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS campaigns_bank_updated_idx "
+                "ON campaigns(bank_id, updated_at DESC)"
+            )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS campaigns_title_idx "
+                "ON campaigns(title COLLATE NOCASE)"
+            )
 
     @staticmethod
     def _ensure_column(
@@ -357,3 +365,130 @@ class CampaignStore:
             {**preprocess_record(raw), "structured": structured}
             for raw, structured in products
         ]
+
+    def query_campaigns(
+        self,
+        *,
+        bank_slug: str | None = None,
+        product_type: str | None = None,
+        currency: str | None = None,
+        search: str | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> tuple[list[dict[str, Any]], int]:
+        """Kampanyaları SQL tarafında filtreler ve sayfalar."""
+        self.initialize()
+        clauses: list[str] = []
+        parameters: list[Any] = []
+        if bank_slug:
+            clauses.append("b.slug = ?")
+            parameters.append(bank_slug)
+        if product_type:
+            clauses.append("c.product_type = ?")
+            parameters.append(product_type)
+        if currency:
+            clauses.append(
+                "(c.reward_currency = ? OR c.max_amount_currency = ?)"
+            )
+            parameters.extend((currency, currency))
+        if search:
+            clauses.append("c.title LIKE ? COLLATE NOCASE")
+            parameters.append(f"%{search}%")
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        base = " FROM campaigns c JOIN banks b ON b.id = c.bank_id" + where
+        with self._connect() as connection:
+            total = connection.execute(
+                "SELECT COUNT(*)" + base, parameters
+            ).fetchone()[0]
+            rows = connection.execute(
+                "SELECT c.processed_json" + base
+                + " ORDER BY c.updated_at DESC, c.id LIMIT ? OFFSET ?",
+                [*parameters, limit, offset],
+            ).fetchall()
+        return [json.loads(row[0]) for row in rows], int(total)
+
+    def get_campaign(self, campaign_id: str) -> dict[str, Any] | None:
+        self.initialize()
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT processed_json FROM campaigns WHERE id = ?",
+                (campaign_id,),
+            ).fetchone()
+        return json.loads(row[0]) if row else None
+
+    def dashboard_summary(self) -> dict[str, Any]:
+        """Dashboard kartları için tek bağlantıda toplu istatistik üretir."""
+        self.initialize()
+        with self._connect() as connection:
+            campaign_count = connection.execute(
+                "SELECT COUNT(*) FROM campaigns"
+            ).fetchone()[0]
+            product_count = connection.execute(
+                "SELECT COUNT(*) FROM products"
+            ).fetchone()[0]
+            bank_count = connection.execute(
+                "SELECT COUNT(DISTINCT bank_id) FROM ("
+                "SELECT bank_id FROM campaigns UNION SELECT bank_id FROM products)"
+            ).fetchone()[0]
+            updated_at = connection.execute(
+                "SELECT MAX(updated_at) FROM ("
+                "SELECT updated_at FROM campaigns UNION ALL "
+                "SELECT updated_at FROM products)"
+            ).fetchone()[0]
+            product_types = {
+                (row[0] or "unspecified"): row[1]
+                for row in connection.execute(
+                    "SELECT product_type, COUNT(*) FROM campaigns "
+                    "GROUP BY product_type ORDER BY COUNT(*) DESC"
+                )
+            }
+        return {
+            "campaign_count": int(campaign_count),
+            "product_count": int(product_count),
+            "bank_count": int(bank_count),
+            "record_count": int(campaign_count + product_count),
+            "last_updated_at": updated_at,
+            "campaigns_by_product_type": product_types,
+        }
+
+    def bank_summary(self) -> list[dict[str, Any]]:
+        self.initialize()
+        with self._connect() as connection:
+            rows = connection.execute(
+                """SELECT b.slug, b.name, b.website,
+                          COUNT(DISTINCT c.id), COUNT(DISTINCT p.id),
+                          MAX(COALESCE(c.updated_at, p.updated_at))
+                   FROM banks b
+                   LEFT JOIN campaigns c ON c.bank_id = b.id
+                   LEFT JOIN products p ON p.bank_id = b.id
+                   GROUP BY b.id
+                   ORDER BY b.name COLLATE NOCASE"""
+            ).fetchall()
+        return [
+            {
+                "slug": row[0],
+                "name": row[1],
+                "website": row[2],
+                "campaign_count": int(row[3]),
+                "product_count": int(row[4]),
+                "last_updated_at": row[5],
+            }
+            for row in rows
+        ]
+
+    def latest_scrape_run(self) -> dict[str, Any] | None:
+        self.initialize()
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT id, started_at, completed_at, status, record_count "
+                "FROM scrape_runs ORDER BY id DESC LIMIT 1"
+            ).fetchone()
+        if not row:
+            return None
+        return {
+            "id": row[0],
+            "started_at": row[1],
+            "completed_at": row[2],
+            "status": row[3],
+            "record_count": row[4],
+        }
