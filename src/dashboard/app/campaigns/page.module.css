@@ -1,0 +1,530 @@
+.main {
+  width: 100%;
+  min-height: calc(100vh - 72px);
+  padding: 28px 0 44px;
+}
+
+.pageHeader {
+  position: relative;
+
+  width: min(1440px, calc(100% - 96px));
+  margin: 0 auto 18px;
+
+  min-height: 95px;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  overflow: hidden;
+}
+
+.title {
+  margin: 0;
+
+  color: var(--petrol);
+
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 42px;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.description {
+  max-width: 620px;
+
+  margin-top: 8px;
+
+  color: var(--text-secondary);
+
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.headerDecoration {
+  position: relative;
+
+  width: 470px;
+  height: 90px;
+}
+
+.waveOne,
+.waveTwo,
+.waveThree {
+  position: absolute;
+
+  right: 0;
+
+  display: block;
+
+  width: 430px;
+  height: 45px;
+
+  border-top: 1px solid rgba(18, 184, 176, 0.28);
+  border-radius: 50%;
+}
+
+.waveOne {
+  top: 10px;
+
+  transform: rotate(-3deg);
+}
+
+.waveTwo {
+  top: 30px;
+
+  width: 380px;
+
+  border-color: rgba(18, 184, 176, 0.18);
+
+  transform: rotate(4deg);
+}
+
+.waveThree {
+  top: 50px;
+
+  width: 320px;
+
+  border-color: rgba(231, 170, 45, 0.35);
+
+  transform: rotate(-4deg);
+}
+
+/* ANA 3 SÜTUN */
+
+.campaignWorkspace {
+  width: min(1440px, calc(100% - 96px));
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: 1.15fr 0.82fr 1fr;
+  gap: 14px;
+
+  align-items: stretch;
+}
+
+.panel {
+  min-width: 0;
+
+  padding: 16px;
+
+  background: var(--card);
+
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  box-shadow: 0 5px 16px rgba(15, 54, 68, 0.07);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 10px;
+
+  padding: 0 4px;
+}
+
+.panelHeader h2,
+.contentTitle h2,
+.tableCard h2 {
+  margin: 0;
+
+  color: var(--text-primary);
+
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.campaignCount {
+  color: var(--text-secondary);
+
+  font-size: 12px;
+}
+
+/* SOL KAMPANYA LİSTESİ */
+
+.campaignList {
+  overflow: hidden;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.campaignRow {
+  position: relative;
+
+  min-height: 61px;
+
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: 10px;
+
+  align-items: center;
+
+  padding: 8px 12px;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.campaignRow:last-child {
+  border-bottom: none;
+}
+
+.selectedCampaign {
+  background: var(--yellow-light);
+}
+
+.selectedCampaign::before {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  top: 0;
+  bottom: 0;
+
+  width: 3px;
+
+  background: var(--yellow);
+}
+
+.bankIcon,
+.smallBankIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: var(--petrol);
+
+  color: white;
+
+  font-weight: 700;
+}
+
+.bankIcon {
+  width: 34px;
+  height: 34px;
+
+  font-size: 10px;
+}
+
+.campaignInfo {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.campaignInfo strong {
+  color: var(--text-primary);
+
+  font-size: 13px;
+}
+
+.campaignInfo span {
+  overflow: hidden;
+
+  color: var(--text-secondary);
+
+  font-size: 12px;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.typeBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 66px;
+
+  padding: 5px 9px;
+
+  border-radius: 6px;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.financeBadge {
+  color: var(--turquoise);
+
+  background: var(--turquoise-light);
+}
+
+.cardBadge {
+  color: var(--yellow);
+
+  background: var(--yellow-light);
+}
+
+.investmentBadge {
+  color: var(--turquoise);
+
+  background: var(--turquoise-light);
+}
+
+.viewAllButton {
+  margin-top: 10px;
+  padding: 7px 8px;
+
+  border: none;
+
+  background: transparent;
+
+  color: var(--petrol);
+
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.viewAllButton span {
+  margin-left: 8px;
+
+  font-size: 18px;
+}
+
+/* ORTA KAMPANYA METNİ */
+
+.contentTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  margin-bottom: 14px;
+}
+
+.titleIcon {
+  width: 30px;
+  height: 30px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: var(--turquoise-light);
+
+  color: var(--turquoise);
+
+  font-size: 16px;
+}
+
+.campaignText {
+  color: var(--text-secondary);
+
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.campaignText p {
+  margin: 0 0 10px;
+}
+
+.aiNotice {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  margin-top: 12px;
+
+  padding: 9px 10px;
+
+  border: 1px solid var(--border);
+  border-radius: 8px;
+
+  color: var(--text-secondary);
+
+  font-size: 11px;
+}
+
+.aiNotice span {
+  color: var(--turquoise);
+
+  font-size: 18px;
+}
+
+/* SAĞ ÇIKARILAN BİLGİLER */
+
+.extractedList {
+  overflow: hidden;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.extractedRow {
+  min-height: 48px;
+
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  gap: 12px;
+
+  align-items: center;
+
+  padding: 8px 12px;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.extractedRow:last-child {
+  border-bottom: none;
+}
+
+.extractedLabel {
+  color: var(--text-secondary);
+
+  font-size: 12px;
+}
+
+.extractedRow strong {
+  color: var(--text-primary);
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ALT TABLO */
+
+.tableCard {
+  width: min(1440px, calc(100% - 96px));
+  margin: 14px auto 0;
+
+  padding: 14px 16px 16px;
+
+  background: var(--card);
+
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  box-shadow: 0 5px 16px rgba(15, 54, 68, 0.07);
+}
+
+.tableCard h2 {
+  margin: 0 0 8px 4px;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+
+.dataTable {
+  width: 100%;
+  min-width: 1100px;
+
+  border-collapse: collapse;
+
+  color: var(--text-primary);
+
+  font-size: 12px;
+}
+
+.dataTable th,
+.dataTable td {
+  padding: 9px 10px;
+
+  text-align: left;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.dataTable th {
+  color: var(--text-secondary);
+
+  background: var(--surface);
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.dataTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tableBank {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.smallBankIcon {
+  width: 27px;
+  height: 27px;
+
+  font-size: 8px;
+}
+
+.campaignCell {
+  color: var(--petrol);
+
+  font-weight: 500;
+}
+
+.bestBadge {
+  display: inline-flex;
+
+  margin-left: 7px;
+  padding: 4px 7px;
+
+  border-radius: 5px;
+
+  background: var(--turquoise-light);
+
+  color: var(--turquoise);
+
+  font-size: 10px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1100px) {
+  .campaignWorkspace {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .campaignWorkspace .panel:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .headerDecoration {
+    display: none;
+  }
+}
+
+@media (max-width: 800px) {
+  .campaignWorkspace {
+    grid-template-columns: 1fr;
+  }
+
+  .campaignWorkspace .panel:last-child {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 700px) {
+  .pageHeader,
+  .campaignWorkspace,
+  .tableCard {
+    width: calc(100% - 32px);
+  }
+
+   .title {
+  font-size: 34px;
+}
+}
