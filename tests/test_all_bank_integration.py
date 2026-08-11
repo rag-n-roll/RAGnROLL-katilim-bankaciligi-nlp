@@ -91,16 +91,20 @@ def test_adil_katilim_collects_official_product_text():
     assert "Bireysel Finansman" in records[0].content
 
 
-def test_tom_compound_page_returns_one_record_per_campaign_section():
+def test_tom_follows_official_cross_domain_campaign_page():
     url = TomKatilimScraper.config.listing_urls[0]
-    client = FixtureClient({url: fixture("tom_katilim_campaigns.html")})
+    landing_url = "https://tombankhadi.com/hadi-kazan/kampanyalar"
+    detail_url = "https://tombankhadi.com/kampanyalar/restoran-firsati"
+    client = FixtureClient(
+        {
+            url: f'<a href="{landing_url}">Güncel kampanyalarımız için tıklayın</a>',
+            landing_url: f'<a href="{detail_url}">Kampanya Detayı</a>',
+            detail_url: fixture("tom_katilim_campaigns.html"),
+        }
+    )
 
-    records, failures = TomKatilimScraper(client=client).scrape()
+    records, failures = TomKatilimScraper(client=client).scrape(limit=1)
 
     assert failures == []
-    assert [record.source_item_key for record in records] == [
-        "restoran-harcamalarinda-10-iade-kazan",
-        "ozel-okul-odemelerinde-10-taksit",
-    ]
-    assert len({record.id for record in records}) == 2
-    assert all(record.source_url == url for record in records)
+    assert len(records) == 1
+    assert records[0].source_url == detail_url

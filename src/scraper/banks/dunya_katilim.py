@@ -9,6 +9,7 @@ class DunyaKatilimScraper(BaseBankScraper):
         listing_urls=("https://dunyakatilim.com.tr/kampanyalar",),
         detail_pattern=r"/kampanyalar/[^/?#]+$",
         listing_link_selectors=(".notification-popup a[href]",),
+        discover_from_base_url=True,
         content_selectors=(".campaign-detail-content-text",),
         title_selectors=("h1.campaign-detail-header-left-title", "h1"),
     )

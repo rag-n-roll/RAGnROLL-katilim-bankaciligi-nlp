@@ -11,6 +11,8 @@ from urllib.parse import urldefrag, urljoin, urlparse
 
 from bs4 import BeautifulSoup, Tag
 
+from src.preprocessing.clean_text import normalize_link_text
+
 from .http import HttpClient
 from .models import Campaign
 
@@ -53,6 +55,16 @@ INLINE_REWARD_CLAUSE_RE = re.compile(
 )
 MAX_CAMPAIGN_DURATION_DAYS = 5 * 366
 MAX_CAMPAIGN_FUTURE_YEARS = 10
+CAMPAIGN_HUB_TEXT_RE = re.compile(
+    r"^(?:g[üu]ncel\s+)?kampanyalar(?:[ıi]m[ıi]z)?(?:[ıi])?"
+    r"(?:\s+i[çc]in)?(?:\s+l[üu]tfen)?(?:\s+t[ıi]klay[ıi]n)?$|"
+    r"^(?:t[üu]m|g[üu]ncel)\s+kampanyalar(?:[ıi])?"
+    r"(?:\s+g[öo]r|\s+g[öo]ster)?$|"
+    r"^kampanyalar[ıi]\s+(?:g[öo]r|incele|ke[şs]fet)$|"
+    r"^.+\s+kampanyalar[ıi]$",
+    re.IGNORECASE,
+)
+MAX_CAMPAIGN_HUB_DEPTH = 2
 
 
 def build_failure(bank_slug: str, stage: str, url: str, exc: Exception) -> dict[str, Any]:
@@ -346,6 +358,10 @@ class ScraperConfig:
     record_kind: str = "campaign"
     title_selectors: tuple[str, ...] = ("h1", "article h2")
     listing_link_selectors: tuple[str, ...] = ("a[href]",)
+    # Ana banka sitesi disindaki resmi kampanya markalari acikca izinli olmalidir.
+    allowed_campaign_hosts: tuple[str, ...] = ()
+    campaign_hub_link_selectors: tuple[str, ...] = ("a[href]",)
+    discover_from_base_url: bool = False
     remove_selectors: tuple[str, ...] = (
         "script",
         "style",
@@ -366,24 +382,94 @@ class BaseBankScraper:
         self.client = client or HttpClient()
         self._detail_regex = re.compile(self.config.detail_pattern, re.IGNORECASE)
 
-    def _discover_listing_urls(self, listing_url: str, seen: set[str]) -> list[str]:
+    def _allowed_campaign_hosts(self) -> set[str]:
+        hosts = {
+            host.casefold().rstrip(".")
+            for host in self.config.allowed_campaign_hosts
+            if host.strip()
+        }
+        for url in (self.config.base_url, *self.config.listing_urls):
+            host = urlparse(url).hostname
+            if host:
+                hosts.add(host.casefold().rstrip("."))
+        return hosts
+
+    def _is_allowed_campaign_url(self, url: str) -> bool:
+        parsed = urlparse(url)
+        host = (parsed.hostname or "").casefold().rstrip(".")
+        return parsed.scheme == "https" and host in self._allowed_campaign_hosts()
+
+    def _is_campaign_hub_link(self, anchor: Tag, url: str) -> bool:
+        text = normalize_link_text(anchor.get_text(" ", strip=True))
+        if CAMPAIGN_HUB_TEXT_RE.fullmatch(text):
+            return True
+        path = urlparse(url).path.casefold().rstrip("/")
+        return path.endswith("/kampanyalar") or path.endswith("/kampanyalar.html")
+
+    def _get_listing_document(self, url: str) -> tuple[str, str]:
+        get_text_with_url = getattr(self.client, "get_text_with_url", None)
+        if callable(get_text_with_url):
+            html, final_url = get_text_with_url(url)
+            if self._is_allowed_campaign_url(final_url):
+                return html, final_url
+            raise ValueError("Campaign redirect target is not allowlisted")
+        return self.client.get_text(url), url
+
+    def _discover_listing_urls(
+        self,
+        listing_url: str,
+        seen: set[str],
+        *,
+        depth: int = 0,
+        visited_hubs: set[str] | None = None,
+    ) -> list[str]:
         urls: list[str] = []
-        allowed_host = urlparse(self.config.base_url).hostname
-        soup = BeautifulSoup(self.client.get_text(listing_url), "html.parser")
+        visited_hubs = visited_hubs if visited_hubs is not None else set()
+        if listing_url in visited_hubs:
+            return urls
+        visited_hubs.add(listing_url)
+        html, document_url = self._get_listing_document(listing_url)
+        visited_hubs.add(document_url)
+        soup = BeautifulSoup(html, "html.parser")
         for selector in self.config.listing_link_selectors:
             for anchor in soup.select(selector):
                 href = str(anchor.get("href") or "").strip()
                 if not href:
                     continue
-                absolute = urldefrag(urljoin(self.config.base_url, href))[0]
+                absolute = urldefrag(urljoin(document_url, href))[0]
                 parsed = urlparse(absolute)
                 if (
-                    parsed.hostname == allowed_host
+                    self._is_allowed_campaign_url(absolute)
                     and self._detail_regex.search(parsed.path)
+                    and not self._is_campaign_hub_link(anchor, absolute)
                     and absolute not in seen
                 ):
                     seen.add(absolute)
                     urls.append(absolute)
+        if depth >= MAX_CAMPAIGN_HUB_DEPTH:
+            return urls
+        hub_urls: list[str] = []
+        for selector in self.config.campaign_hub_link_selectors:
+            for anchor in soup.select(selector):
+                href = str(anchor.get("href") or "").strip()
+                if not href:
+                    continue
+                absolute = urldefrag(urljoin(document_url, href))[0]
+                if (
+                    absolute not in visited_hubs
+                    and self._is_allowed_campaign_url(absolute)
+                    and self._is_campaign_hub_link(anchor, absolute)
+                ):
+                    hub_urls.append(absolute)
+        for hub_url in dict.fromkeys(hub_urls):
+            urls.extend(
+                self._discover_listing_urls(
+                    hub_url,
+                    seen,
+                    depth=depth + 1,
+                    visited_hubs=visited_hubs,
+                )
+            )
         return urls
 
     def discover_urls(self) -> list[str]:
@@ -416,6 +502,29 @@ class BaseBankScraper:
                     "Campaign URL discovery failed for %s: %s", self.config.slug, listing_url
                 )
                 failures.append(build_failure(self.config.slug, "discovery", listing_url, exc))
+        if not urls and self.config.discover_from_base_url:
+            try:
+                urls.extend(self._discover_listing_urls(self.config.base_url, seen))
+                if urls and failures:
+                    LOGGER.warning(
+                        "Campaign discovery recovered from bank homepage for %s",
+                        self.config.slug,
+                    )
+                    failures.clear()
+            except Exception as exc:
+                LOGGER.exception(
+                    "Campaign fallback discovery failed for %s: %s",
+                    self.config.slug,
+                    self.config.base_url,
+                )
+                failures.append(
+                    build_failure(
+                        self.config.slug,
+                        "discovery",
+                        self.config.base_url,
+                        exc,
+                    )
+                )
         return urls, failures
 
     def _content_nodes(self, soup: BeautifulSoup) -> list[Tag]:

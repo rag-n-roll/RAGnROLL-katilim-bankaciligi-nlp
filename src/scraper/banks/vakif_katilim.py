@@ -12,6 +12,7 @@ class VakifKatilimScraper(BaseBankScraper):
         detail_pattern=r"/tr/kendim-icin/kampanyalar/detay/[^/?#]+$",
         # Liste govdesi JS ile geliyor; bildirim linkleri sunucu tarafli guvenli geri donustur.
         listing_link_selectors=("a.notification-unread[href]", "a[href*='/kampanyalar/detay/']"),
+        discover_from_base_url=True,
         content_selectors=(".hero-content", ".anchor-menu-section"),
         title_selectors=(".hero-content h1", "h1"),
     )

@@ -9,6 +9,7 @@ class AlbarakaScraper(BaseBankScraper):
         listing_urls=("https://www.albaraka.com.tr/tr/kampanyalar",),
         detail_pattern=r"/tr/kampanyalar/detay/[^/?#]+$",
         listing_link_selectors=(".kampanyalar-card a[href]",),
+        discover_from_base_url=True,
         content_selectors=(".searchContent.custom-table",),
         title_selectors=("h1.searchTitle", "h1"),
     )

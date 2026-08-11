@@ -1,5 +1,6 @@
 from src.preprocessing.clean_text import (
     clean_text,
+    normalize_link_text,
     preprocess_dataset,
     preprocess_record,
     tokenize_turkish,
@@ -9,6 +10,12 @@ from src.preprocessing.clean_text import (
 def test_clean_text_preserves_turkish_and_paragraphs():
     raw = "<p>Kuveyt&nbsp;Türk’te fırsat!</p><p>  1.000 TL  </p>"
     assert clean_text(raw) == "Kuveyt Türk’te fırsat!\n1.000 TL"
+
+
+def test_normalize_link_text_removes_invisible_chars_and_cta_punctuation():
+    assert normalize_link_text("Güncel\u00ad kampanyaları gör →") == (
+        "güncel kampanyaları gör"
+    )
 
 
 def test_turkish_tokenizer_keeps_apostrophe_and_numbers():

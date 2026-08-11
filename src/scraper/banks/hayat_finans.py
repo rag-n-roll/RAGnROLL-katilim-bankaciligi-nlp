@@ -9,6 +9,7 @@ class HayatFinansScraper(BaseBankScraper):
         listing_urls=("https://hayatfinans.com.tr/kampanyalar",),
         detail_pattern=r"/kampanyalar/[^/?#]+$",
         listing_link_selectors=("section#contentCardContainer a[href]",),
+        discover_from_base_url=True,
         content_selectors=("div[id^='contentModuleSection']",),
         title_selectors=("main h1", "h1"),
     )

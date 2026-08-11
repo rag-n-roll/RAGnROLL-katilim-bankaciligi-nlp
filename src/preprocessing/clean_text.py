@@ -17,6 +17,7 @@ from src.extraction.campaign_fields import extract_prd_fields
 
 TOKEN_RE = re.compile(r"\d+(?:[.,]\d+)*|[^\W\d_]+(?:['’][^\W\d_]+)?", re.UNICODE)
 TURKISH_LOWER_TRANSLATION = str.maketrans({"I": "ı", "İ": "i"})
+INVISIBLE_TEXT_RE = re.compile(r"[\u00ad\u200b-\u200f\u202a-\u202e\u2060\ufeff]")
 
 
 def turkish_lower(value: str) -> str:
@@ -33,11 +34,18 @@ def clean_text(value: str, *, lowercase: bool = False) -> str:
     value = unicodedata.normalize("NFC", html.unescape(value or ""))
     if re.search(r"<[^>]+>", value):
         value = BeautifulSoup(value, "html.parser").get_text("\n", strip=True)
-    value = value.replace("\u00a0", " ").replace("\u200b", "").replace("\ufeff", "")
+    value = value.replace("\u00a0", " ")
+    value = INVISIBLE_TEXT_RE.sub("", value)
     value = re.sub(r"[ \t\r\f\v]+", " ", value)
     value = re.sub(r" *\n *", "\n", value)
     value = re.sub(r"\n{3,}", "\n\n", value).strip()
     return turkish_lower(value) if lowercase else value
+
+
+def normalize_link_text(value: str) -> str:
+    """CTA ve navigasyon metnini Turkce karakterleri koruyarak eslestirilebilir yapar."""
+    normalized = clean_text(value, lowercase=True)
+    return re.sub(r"[^\w]+", " ", normalized, flags=re.UNICODE).strip()
 
 
 def tokenize_turkish(value: str, *, lowercase: bool = True) -> list[str]:
