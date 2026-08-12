@@ -353,7 +353,12 @@ def build_parser() -> argparse.ArgumentParser:
         default="priority",
         help="priority, all veya virgülle ayrılmış banka slug'ları",
     )
-    campaigns.add_argument("--max-per-bank", type=int, default=20)
+    campaigns.add_argument(
+        "--max-per-bank",
+        type=int,
+        default=None,
+        help="Banka basina kayit siniri; verilmezse tum kampanyalar cekilir",
+    )
     campaigns.add_argument(
         "--output", type=Path, default=Path("data/raw/campaigns.json")
     )
@@ -367,7 +372,12 @@ def build_parser() -> argparse.ArgumentParser:
         "collect",
         help="BDDK katalogundan başlayarak tüm veri hattını çalıştır",
     )
-    collect.add_argument("--max-per-bank", type=int, default=20)
+    collect.add_argument(
+        "--max-per-bank",
+        type=int,
+        default=None,
+        help="Banka basina kayit siniri; verilmezse tum kampanyalar cekilir",
+    )
     collect.add_argument(
         "--banks-output",
         type=Path,

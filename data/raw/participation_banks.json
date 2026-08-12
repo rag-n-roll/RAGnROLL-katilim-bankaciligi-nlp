@@ -1,54 +1,64 @@
 {
-  "source_url": "https://www.bddk.gov.tr/Kurulus/Liste/90",
-  "retrieved_at": "2026-08-08T18:51:40.906424+00:00",
+  "source_url": "https://www.bddk.org.tr/Kurulus/Liste/77",
+  "retrieved_at": "2026-08-11T14:27:29.232599+00:00",
   "count": 10,
   "banks": [
     {
+      "slug": "adil-katilim",
       "name": "ADİL KATILIM BANKASI A.Ş.",
       "website": "https://www.adilkatilim.com.tr/",
       "is_digital": true
     },
     {
+      "slug": "albaraka-turk",
       "name": "ALBARAKA TÜRK KATILIM BANKASI A.Ş.",
       "website": "http://www.albarakaturk.com.tr/",
       "is_digital": false
     },
     {
+      "slug": "dunya-katilim",
       "name": "DÜNYA KATILIM BANKASI A.Ş.",
       "website": "https://www.dunyakatilim.com.tr/",
       "is_digital": false
     },
     {
+      "slug": "hayat-finans",
       "name": "HAYAT FİNANS KATILIM BANKASI A.Ş.",
       "website": "https://www.hayatfinans.com.tr/",
       "is_digital": true
     },
     {
+      "slug": "kuveyt-turk",
       "name": "KUVEYT TÜRK KATILIM BANKASI A.Ş.",
       "website": "http://www.kuveytturk.com.tr",
       "is_digital": false
     },
     {
+      "slug": "tom-katilim",
       "name": "T.O.M. KATILIM BANKASI A.Ş.",
       "website": "https://www.tombank.com.tr/",
       "is_digital": true
     },
     {
+      "slug": "emlak-katilim",
       "name": "TÜRKİYE EMLAK KATILIM BANKASI A.Ş.",
       "website": "http://www.emlakbank.com.tr/",
       "is_digital": false
     },
     {
+      "slug": "turkiye-finans",
       "name": "TÜRKİYE FİNANS KATILIM BANKASI A.Ş.",
       "website": "http://www.turkiyefinans.com.tr",
       "is_digital": false
     },
     {
+      "slug": "vakif-katilim",
       "name": "VAKIF KATILIM BANKASI A.Ş.",
       "website": "http://www.vakifkatilim.com.tr/",
       "is_digital": false
     },
     {
+      "slug": "ziraat-katilim",
       "name": "ZİRAAT KATILIM BANKASI A.Ş.",
       "website": "http://www.ziraatkatilim.com.tr/",
       "is_digital": false
