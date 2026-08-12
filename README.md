@@ -149,7 +149,6 @@ BDDK kataloğundan başlayarak tüm veri hattını tek komutla çalıştırın:
 
 ```bash
 python -m src.scraper.scraper --verbose collect \
-  --max-per-bank 20 \
   --banks-output data/raw/participation_banks.json \
   --raw-output data/raw/campaigns.json \
   --processed-output data/processed/campaigns.json \
@@ -179,17 +178,18 @@ python -m src.scraper.scraper --verbose campaigns \
   --quality-report outputs/smoke_quality_report.json
 ```
 
-Registry'deki bankaların tümünü yalnızca ham toplama modunda çalıştırın:
+Registry'deki bankaların tümünü, “Daha Fazla” ile yüklenen devam sayfaları dahil,
+yalnızca ham toplama modunda çalıştırın:
 
 ```bash
 python -m src.scraper.scraper campaigns \
   --banks all \
-  --max-per-bank 20 \
   --output data/raw/campaigns.json \
   --quality-report outputs/quality_report.json
 ```
 
-`--banks priority` ile düşük `--max-per-bank` sınırı kullanan çalıştırmalar
+`--max-per-bank` verilmediğinde mevcut tüm kampanyalar çekilir. `--banks priority`
+ile düşük `--max-per-bank` sınırı kullanan çalıştırmalar
 geçici smoke kontrolleri içindir; `outputs/smoke_*.json` dosyaları Git tarafından
 yok sayılır ve kanonik veri setinin üzerine yazmaz. Kalıcı yenilemede BDDK
 güdümlü `collect` komutu kullanılmalıdır. `campaigns` ve `preprocess` alt

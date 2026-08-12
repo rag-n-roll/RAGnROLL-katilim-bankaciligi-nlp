@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 import ssl
 import time
+from collections.abc import Mapping
+from typing import Any
 from urllib.parse import urlparse
 from urllib.robotparser import RobotFileParser
 
@@ -113,14 +115,28 @@ class HttpClient:
         if elapsed < self.delay_seconds:
             time.sleep(self.delay_seconds - elapsed)
 
-    def get(self, url: str) -> requests.Response:
+    def get(
+        self,
+        url: str,
+        *,
+        params: Mapping[str, Any] | None = None,
+        headers: Mapping[str, str] | None = None,
+    ) -> requests.Response:
+        prepared_url = requests.Request("GET", url, params=params).prepare().url or url
         if self.respect_robots:
-            parser = self._robot_parser(url)
-            if parser is not None and not parser.can_fetch(self.user_agent, url):
-                raise RobotsDeniedError(f"robots.txt taramaya izin vermiyor: {url}")
-        self._throttle(url)
-        response = self.session.get(url, timeout=self.timeout_seconds)
-        self._last_request_at[urlparse(url).netloc] = time.monotonic()
+            parser = self._robot_parser(prepared_url)
+            if parser is not None and not parser.can_fetch(self.user_agent, prepared_url):
+                raise RobotsDeniedError(
+                    f"robots.txt taramaya izin vermiyor: {prepared_url}"
+                )
+        self._throttle(prepared_url)
+        response = self.session.get(
+            url,
+            params=params,
+            headers=headers,
+            timeout=self.timeout_seconds,
+        )
+        self._last_request_at[urlparse(prepared_url).netloc] = time.monotonic()
         response.raise_for_status()
         return response
 

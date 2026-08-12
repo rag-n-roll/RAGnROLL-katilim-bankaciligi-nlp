@@ -381,6 +381,7 @@ class BaseBankScraper:
     def __init__(self, client: HttpClient | None = None) -> None:
         self.client = client or HttpClient()
         self._detail_regex = re.compile(self.config.detail_pattern, re.IGNORECASE)
+        self._listing_documents: dict[str, str] = {}
 
     def _allowed_campaign_hosts(self) -> set[str]:
         hosts = {
@@ -411,9 +412,50 @@ class BaseBankScraper:
         if callable(get_text_with_url):
             html, final_url = get_text_with_url(url)
             if self._is_allowed_campaign_url(final_url):
+                self._listing_documents[url] = html
+                self._listing_documents[final_url] = html
                 return html, final_url
             raise ValueError("Campaign redirect target is not allowlisted")
-        return self.client.get_text(url), url
+        html = self.client.get_text(url)
+        self._listing_documents[url] = html
+        return html, url
+
+    def _extract_detail_urls(
+        self,
+        html: str,
+        document_url: str,
+        seen: set[str],
+        *,
+        selectors: tuple[str, ...] | None = None,
+    ) -> list[str]:
+        """HTML parcasindaki izinli ve benzersiz kampanya detay URL'lerini bulur."""
+        urls: list[str] = []
+        soup = BeautifulSoup(html, "html.parser")
+        for selector in selectors or self.config.listing_link_selectors:
+            for anchor in soup.select(selector):
+                href = str(anchor.get("href") or "").strip()
+                if not href:
+                    continue
+                absolute = urldefrag(urljoin(document_url, href))[0]
+                parsed = urlparse(absolute)
+                if (
+                    self._is_allowed_campaign_url(absolute)
+                    and self._detail_regex.search(parsed.path)
+                    and not self._is_campaign_hub_link(anchor, absolute)
+                    and absolute not in seen
+                ):
+                    seen.add(absolute)
+                    urls.append(absolute)
+        return urls
+
+    def _discover_paginated_urls(self, seen: set[str]) -> list[str]:
+        """JS ile devam eden listeler icin banka adaptoru genisletme noktasi."""
+        return []
+
+    def _pagination_source_url(self) -> str:
+        if self.config.listing_urls:
+            return self.config.listing_urls[0]
+        return self.config.base_url
 
     def _discover_listing_urls(
         self,
@@ -431,21 +473,7 @@ class BaseBankScraper:
         html, document_url = self._get_listing_document(listing_url)
         visited_hubs.add(document_url)
         soup = BeautifulSoup(html, "html.parser")
-        for selector in self.config.listing_link_selectors:
-            for anchor in soup.select(selector):
-                href = str(anchor.get("href") or "").strip()
-                if not href:
-                    continue
-                absolute = urldefrag(urljoin(document_url, href))[0]
-                parsed = urlparse(absolute)
-                if (
-                    self._is_allowed_campaign_url(absolute)
-                    and self._detail_regex.search(parsed.path)
-                    and not self._is_campaign_hub_link(anchor, absolute)
-                    and absolute not in seen
-                ):
-                    seen.add(absolute)
-                    urls.append(absolute)
+        urls.extend(self._extract_detail_urls(html, document_url, seen))
         if depth >= MAX_CAMPAIGN_HUB_DEPTH:
             return urls
         hub_urls: list[str] = []
@@ -524,6 +552,22 @@ class BaseBankScraper:
                         self.config.base_url,
                         exc,
                     )
+                )
+        if (
+            type(self)._discover_paginated_urls
+            is not BaseBankScraper._discover_paginated_urls
+        ):
+            try:
+                urls.extend(self._discover_paginated_urls(seen))
+            except Exception as exc:
+                pagination_url = self._pagination_source_url()
+                LOGGER.exception(
+                    "Campaign pagination failed for %s: %s",
+                    self.config.slug,
+                    pagination_url,
+                )
+                failures.append(
+                    build_failure(self.config.slug, "pagination", pagination_url, exc)
                 )
         return urls, failures
 
