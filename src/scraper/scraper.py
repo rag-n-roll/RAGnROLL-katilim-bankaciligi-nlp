@@ -29,6 +29,13 @@ LOGGER = logging.getLogger(__name__)
 DEFAULT_DATABASE_PATH = Path(os.getenv("RAGNROLL_DB_PATH", "data/ragnroll.sqlite3"))
 
 
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("değer pozitif bir tam sayı olmalıdır")
+    return parsed
+
+
 def _client(args: argparse.Namespace) -> HttpClient:
     return HttpClient(
         delay_seconds=args.delay,
@@ -355,7 +362,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     campaigns.add_argument(
         "--max-per-bank",
-        type=int,
+        type=positive_int,
         default=None,
         help="Banka basina kayit siniri; verilmezse tum kampanyalar cekilir",
     )
@@ -374,7 +381,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     collect.add_argument(
         "--max-per-bank",
-        type=int,
+        type=positive_int,
         default=None,
         help="Banka basina kayit siniri; verilmezse tum kampanyalar cekilir",
     )

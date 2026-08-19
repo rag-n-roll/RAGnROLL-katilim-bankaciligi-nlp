@@ -131,6 +131,38 @@ class CampaignStore:
                 "CREATE INDEX IF NOT EXISTS campaigns_title_idx "
                 "ON campaigns(title COLLATE NOCASE)"
             )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS campaigns_freshness_idx "
+                "ON campaigns(updated_at DESC, scraped_at DESC)"
+            )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS products_bank_type_idx "
+                "ON products(bank_id, product_type)"
+            )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS campaigns_updated_page_idx "
+                "ON campaigns(updated_at DESC, id)"
+            )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS campaigns_bank_updated_page_idx "
+                "ON campaigns(bank_id, updated_at DESC, id)"
+            )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS campaigns_product_type_updated_page_idx "
+                "ON campaigns(product_type, updated_at DESC, id)"
+            )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS campaigns_reward_currency_updated_page_idx "
+                "ON campaigns(reward_currency, updated_at DESC, id)"
+            )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS campaigns_max_currency_updated_page_idx "
+                "ON campaigns(max_amount_currency, updated_at DESC, id)"
+            )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS campaigns_effective_freshness_idx "
+                "ON campaigns(COALESCE(scraped_at, updated_at) DESC, id)"
+            )
 
     @staticmethod
     def _ensure_column(
@@ -395,7 +427,8 @@ class CampaignStore:
             clauses.append("c.title LIKE ? COLLATE NOCASE")
             parameters.append(f"%{search}%")
         where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
-        base = " FROM campaigns c JOIN banks b ON b.id = c.bank_id" + where
+        bank_join = " JOIN banks b ON b.id = c.bank_id" if bank_slug else ""
+        base = " FROM campaigns c" + bank_join + where
         with self._connect() as connection:
             total = connection.execute(
                 "SELECT COUNT(*)" + base, parameters
@@ -420,33 +453,42 @@ class CampaignStore:
         """Dashboard kartları için tek bağlantıda toplu istatistik üretir."""
         self.initialize()
         with self._connect() as connection:
-            campaign_count = connection.execute(
-                "SELECT COUNT(*) FROM campaigns"
-            ).fetchone()[0]
-            product_count = connection.execute(
-                "SELECT COUNT(*) FROM products"
-            ).fetchone()[0]
-            bank_count = connection.execute(
-                "SELECT COUNT(DISTINCT bank_id) FROM ("
-                "SELECT bank_id FROM campaigns UNION SELECT bank_id FROM products)"
-            ).fetchone()[0]
-            updated_at = connection.execute(
-                "SELECT MAX(updated_at) FROM ("
-                "SELECT updated_at FROM campaigns UNION ALL "
-                "SELECT updated_at FROM products)"
-            ).fetchone()[0]
+            row = connection.execute(
+                """WITH records AS (
+                       SELECT bank_id, product_type, updated_at, 1 AS is_campaign,
+                              profit_share_rate
+                       FROM campaigns
+                       UNION ALL
+                       SELECT bank_id, product_type, updated_at, 0, NULL
+                       FROM products
+                   )
+                   SELECT COUNT(DISTINCT bank_id),
+                          SUM(is_campaign),
+                          COUNT(*) - SUM(is_campaign),
+                          COUNT(*),
+                          MAX(updated_at),
+                          AVG(profit_share_rate)
+                   FROM records"""
+            ).fetchone()
             product_types = {
-                (row[0] or "unspecified"): row[1]
-                for row in connection.execute(
-                    "SELECT product_type, COUNT(*) FROM campaigns "
-                    "GROUP BY product_type ORDER BY COUNT(*) DESC"
+                item[0]: int(item[1])
+                for item in connection.execute(
+                    """SELECT COALESCE(NULLIF(TRIM(product_type), ''), 'unspecified'),
+                              COUNT(*)
+                       FROM campaigns
+                       GROUP BY COALESCE(NULLIF(TRIM(product_type), ''), 'unspecified')
+                       ORDER BY COUNT(*) DESC, 1 COLLATE NOCASE"""
                 )
             }
+        bank_count, campaign_count, product_count, record_count, updated_at, average = row
         return {
-            "campaign_count": int(campaign_count),
-            "product_count": int(product_count),
-            "bank_count": int(bank_count),
-            "record_count": int(campaign_count + product_count),
+            "campaign_count": int(campaign_count or 0),
+            "product_count": int(product_count or 0),
+            "bank_count": int(bank_count or 0),
+            "record_count": int(record_count or 0),
+            "average_profit_share_rate": (
+                round(float(average), 4) if average is not None else None
+            ),
             "last_updated_at": updated_at,
             "campaigns_by_product_type": product_types,
         }
@@ -455,13 +497,25 @@ class CampaignStore:
         self.initialize()
         with self._connect() as connection:
             rows = connection.execute(
-                """SELECT b.slug, b.name, b.website,
-                          COUNT(DISTINCT c.id), COUNT(DISTINCT p.id),
-                          MAX(COALESCE(c.updated_at, p.updated_at))
+                """WITH totals AS (
+                       SELECT bank_id, SUM(campaign_count) AS campaign_count,
+                              SUM(product_count) AS product_count,
+                              MAX(last_updated_at) AS last_updated_at
+                       FROM (
+                           SELECT bank_id, COUNT(*) AS campaign_count,
+                                  0 AS product_count, MAX(updated_at) AS last_updated_at
+                           FROM campaigns GROUP BY bank_id
+                           UNION ALL
+                           SELECT bank_id, 0, COUNT(*), MAX(updated_at)
+                           FROM products GROUP BY bank_id
+                       )
+                       GROUP BY bank_id
+                   )
+                   SELECT b.slug, b.name, b.website,
+                          COALESCE(t.campaign_count, 0),
+                          COALESCE(t.product_count, 0), t.last_updated_at
                    FROM banks b
-                   LEFT JOIN campaigns c ON c.bank_id = b.id
-                   LEFT JOIN products p ON p.bank_id = b.id
-                   GROUP BY b.id
+                   LEFT JOIN totals t ON t.bank_id = b.id
                    ORDER BY b.name COLLATE NOCASE"""
             ).fetchall()
         return [
@@ -475,6 +529,163 @@ class CampaignStore:
             }
             for row in rows
         ]
+
+    def bank_distribution(self) -> list[dict[str, Any]]:
+        """Banka dağılımını çarpımsız SQL agregasyonuyla üretir."""
+        banks = self.bank_summary()
+        campaign_total = sum(item["campaign_count"] for item in banks)
+        record_total = sum(
+            item["campaign_count"] + item["product_count"] for item in banks
+        )
+        return [
+            {
+                **item,
+                "record_count": item["campaign_count"] + item["product_count"],
+                "campaign_share": (
+                    round(item["campaign_count"] / campaign_total, 4)
+                    if campaign_total
+                    else 0.0
+                ),
+                "record_share": (
+                    round(
+                        (item["campaign_count"] + item["product_count"])
+                        / record_total,
+                        4,
+                    )
+                    if record_total
+                    else 0.0
+                ),
+            }
+            for item in banks
+        ]
+
+    def product_type_distribution(self) -> list[dict[str, Any]]:
+        """Kampanya ve ürün türü dağılımını yalnızca SQL agregasyonuyla döndürür."""
+        self.initialize()
+        with self._connect() as connection:
+            rows = connection.execute(
+                """WITH typed AS (
+                       SELECT COALESCE(NULLIF(TRIM(product_type), ''), 'unspecified')
+                                  AS product_type,
+                              1 AS campaign_count, 0 AS product_count
+                       FROM campaigns
+                       UNION ALL
+                       SELECT COALESCE(NULLIF(TRIM(product_type), ''), 'unspecified'),
+                              0, 1
+                       FROM products
+                   ), totals AS (
+                       SELECT product_type, SUM(campaign_count) AS campaign_count,
+                              SUM(product_count) AS product_count
+                       FROM typed GROUP BY product_type
+                   )
+                   SELECT product_type, campaign_count, product_count,
+                          campaign_count + product_count AS record_count,
+                          CAST(campaign_count + product_count AS REAL)
+                              / SUM(campaign_count + product_count) OVER () AS share
+                   FROM totals
+                   ORDER BY record_count DESC, product_type COLLATE NOCASE"""
+            ).fetchall()
+        return [
+            {
+                "product_type": row[0],
+                "campaign_count": int(row[1]),
+                "product_count": int(row[2]),
+                "record_count": int(row[3]),
+                "share": round(float(row[4]), 4),
+            }
+            for row in rows
+        ]
+
+    def freshness_summary(self) -> dict[str, Any]:
+        """Kayıtların ve kaynağın son güncellik zamanlarını özetler."""
+        self.initialize()
+        with self._connect() as connection:
+            row = connection.execute(
+                """SELECT
+                       (SELECT MAX(updated_at) FROM (
+                           SELECT updated_at FROM campaigns
+                           UNION ALL SELECT updated_at FROM products
+                       )),
+                       (SELECT MAX(scraped_at) FROM campaigns),
+                       (SELECT COUNT(*) FROM campaigns WHERE scraped_at IS NULL)"""
+            ).fetchone()
+        return {
+            "last_record_updated_at": row[0],
+            "last_scraped_at": row[1],
+            "campaigns_without_scraped_at": int(row[2]),
+            "latest_scrape_run": self.latest_scrape_run(),
+        }
+
+    def recent_campaigns(self, *, limit: int = 5) -> list[dict[str, Any]]:
+        """Dashboard tablosu için küçük, sınırlı bir projeksiyon döndürür."""
+        if not 1 <= limit <= 50:
+            raise ValueError("limit 1 ile 50 arasında olmalıdır")
+        self.initialize()
+        with self._connect() as connection:
+            rows = connection.execute(
+                """SELECT c.id, b.slug, b.name, c.title, c.source_url,
+                          c.product_type, c.updated_at, c.scraped_at
+                   FROM campaigns c
+                   JOIN banks b ON b.id = c.bank_id
+                   ORDER BY COALESCE(c.scraped_at, c.updated_at) DESC, c.id
+                   LIMIT ?""",
+                (limit,),
+            ).fetchall()
+        return [
+            {
+                "id": row[0],
+                "bank_slug": row[1],
+                "bank_name": row[2],
+                "title": row[3],
+                "source_url": row[4],
+                "product_type": row[5],
+                "updated_at": row[6],
+                "scraped_at": row[7],
+            }
+            for row in rows
+        ]
+
+    def filter_options(self) -> dict[str, Any]:
+        """API filtre seçeneklerini tüm kayıtları yüklemeden SQL'de üretir."""
+        self.initialize()
+        with self._connect() as connection:
+            banks = [
+                {"value": row[0], "label": row[1], "count": int(row[2])}
+                for row in connection.execute(
+                    """SELECT b.slug, b.name, COUNT(c.id)
+                       FROM banks b JOIN campaigns c ON c.bank_id = b.id
+                       GROUP BY b.id
+                       ORDER BY b.name COLLATE NOCASE"""
+                )
+            ]
+            product_types = [
+                {"value": row[0], "label": row[0], "count": int(row[1])}
+                for row in connection.execute(
+                    """SELECT product_type, COUNT(*) FROM campaigns
+                       WHERE product_type IS NOT NULL AND TRIM(product_type) <> ''
+                       GROUP BY product_type
+                       ORDER BY product_type COLLATE NOCASE"""
+                )
+            ]
+            currencies = [
+                {"value": row[0], "label": row[0], "count": int(row[1])}
+                for row in connection.execute(
+                    """SELECT currency, COUNT(DISTINCT campaign_id) FROM (
+                           SELECT id AS campaign_id, reward_currency AS currency
+                           FROM campaigns
+                           UNION ALL
+                           SELECT id, max_amount_currency FROM campaigns
+                       )
+                       WHERE currency IS NOT NULL AND TRIM(currency) <> ''
+                       GROUP BY currency
+                       ORDER BY currency COLLATE NOCASE"""
+                )
+            ]
+        return {
+            "banks": banks,
+            "product_types": product_types,
+            "currencies": currencies,
+        }
 
     def latest_scrape_run(self) -> dict[str, Any] | None:
         self.initialize()

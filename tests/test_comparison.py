@@ -1,4 +1,9 @@
-from src.comparison import ComparisonQuery, ComparisonResult, compare_records
+from src.comparison import (
+    ComparisonConfig,
+    ComparisonQuery,
+    ComparisonResult,
+    compare_records,
+)
 
 
 def offer(
@@ -107,3 +112,54 @@ def test_comparison_returns_serializable_result_contract():
 
     assert isinstance(result, ComparisonResult)
     assert result.to_dict()["included"][0]["id"] == "one"
+
+
+def test_comparison_tie_order_is_deterministic_across_input_order():
+    records = [offer("b", rate=0.35), offer("a", rate=0.35)]
+    query = ComparisonQuery(product_type="financing", currency="TRY")
+
+    forward = compare_records(records, query)
+    reversed_result = compare_records(reversed(records), query)
+
+    assert [row["id"] for row in forward["included"]] == ["a", "b"]
+    assert forward.to_dict() == reversed_result.to_dict()
+
+
+def test_comparison_scores_duplicate_ids_without_overwriting_rows():
+    results = compare_records(
+        [offer("same", rate=0.20), offer("same", rate=0.40)],
+        ComparisonQuery(product_type="financing", currency="TRY"),
+    )
+
+    rate_scores = [row["criteria"]["rate"]["score"] for row in results["included"]]
+    assert rate_scores == [1.0, 0.0]
+
+
+def test_comparison_treats_non_finite_and_malformed_numbers_as_missing():
+    record = offer("invalid", rate=float("nan"), amount={"amount": "-", "currency": "TRY"})
+    record["structured"]["duration"] = {"approx_days": "unknown"}
+
+    results = compare_records(
+        [record],
+        ComparisonQuery(
+            product_type="financing", currency="TRY", duration_days=90
+        ),
+    )
+
+    row = results["included"][0]
+    assert "rate" in row["missing_fields"]
+    assert "amount" in row["missing_fields"]
+    assert row["match_score"] == 1.0
+
+
+def test_comparison_supports_explicitly_empty_weight_configuration():
+    results = compare_records(
+        [offer("one", rate=0.35)],
+        ComparisonQuery(product_type="financing", currency="TRY"),
+        ComparisonConfig(matching_weights={}, financing_weights={}),
+    )
+
+    row = results["included"][0]
+    assert row["match_score"] == 0.0
+    assert row["advantage_score"] is None
+    assert row["criteria"] == {}
