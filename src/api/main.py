@@ -14,6 +14,7 @@ from fastapi import APIRouter, BackgroundTasks, FastAPI, HTTPException, Query, R
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from src.chatbot.rag_langchain import LangChainRAG
 from src.comparison import ComparisonQuery, compare_records
 from src.persistence import CampaignStore
 
@@ -38,6 +39,14 @@ class ComparisonRequest(BaseModel):
 
 class RefreshRequest(BaseModel):
     max_per_bank: int = Field(default=20, ge=1, le=100)
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=1000)
+
+
+class ChatResponse(BaseModel):
+    answer: str
 
 
 class RefreshManager:
@@ -126,6 +135,20 @@ def _refresh_manager(request: Request) -> RefreshManager:
     return manager
 
 
+def _chatbot(request: Request) -> LangChainRAG:
+    chatbot = getattr(request.app.state, "chatbot", None)
+
+    if chatbot is None:
+        with request.app.state.chatbot_lock:
+            chatbot = getattr(request.app.state, "chatbot", None)
+
+            if chatbot is None:
+                chatbot = LangChainRAG()
+                request.app.state.chatbot = chatbot
+
+    return chatbot
+
+
 @router.get("/health")
 def health(request: Request) -> dict[str, Any]:
     store = _store(request)
@@ -205,6 +228,16 @@ def comparisons(payload: ComparisonRequest, request: Request) -> dict[str, Any]:
     return result.to_dict()
 
 
+@router.post("/chat")
+def chat(payload: ChatRequest, request: Request) -> ChatResponse:
+    chatbot = _chatbot(request)
+
+    with request.app.state.chatbot_answer_lock:
+        answer = chatbot.ask_question(payload.message)
+
+    return ChatResponse(answer=answer)
+
+
 @router.post("/data-refresh", status_code=202)
 def start_data_refresh(
     payload: RefreshRequest,
@@ -235,7 +268,10 @@ def create_app(*, database_path: str | Path | None = None) -> FastAPI:
     )
     origins = [
         value.strip()
-        for value in os.getenv("RAGNROLL_CORS_ORIGINS", "http://localhost:3000").split(",")
+        for value in os.getenv(
+            "RAGNROLL_CORS_ORIGINS",
+            "http://localhost:3000,http://127.0.0.1:3000",
+        ).split(",")
         if value.strip()
     ]
     api.add_middleware(
@@ -247,6 +283,9 @@ def create_app(*, database_path: str | Path | None = None) -> FastAPI:
     )
     api.state.database_path = Path(database_path) if database_path else DEFAULT_DATABASE
     api.state.refresh_manager = RefreshManager()
+    api.state.chatbot = None
+    api.state.chatbot_lock = Lock()
+    api.state.chatbot_answer_lock = Lock()
     api.include_router(router)
     return api
 

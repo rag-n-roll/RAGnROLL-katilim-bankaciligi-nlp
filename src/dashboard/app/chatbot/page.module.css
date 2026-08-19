@@ -119,6 +119,7 @@
 
 .messages {
   flex: 1;
+  max-height: 560px;
 
   padding: 24px 30px;
 
@@ -127,6 +128,7 @@
   gap: 18px;
 
   background: #fcfdfd;
+  overflow-y: auto;
 }
 
 .userRow {
@@ -309,6 +311,20 @@
   font-size: 24px;
 
   cursor: pointer;
+}
+
+.sendButton:disabled,
+.questionButton:disabled,
+.inputWrapper input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.errorMessage {
+  padding: 8px 30px 0;
+
+  color: #b42318;
+  font-size: 12px;
 }
 
 .disclaimer {

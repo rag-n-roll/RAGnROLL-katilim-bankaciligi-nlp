@@ -1,4 +1,14 @@
+"use client";
+
+import { FormEvent, useRef, useState } from "react";
 import styles from "./page.module.css";
+
+type Message = {
+  id: string;
+  role: "user" | "bot";
+  text: string;
+  time: string;
+};
 
 const suggestions = [
   "En yüksek kâr payı hangi bankada?",
@@ -7,7 +17,85 @@ const suggestions = [
   "Yatırım kampanyalarını karşılaştır",
 ];
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8001";
+
+function currentTime() {
+  return new Intl.DateTimeFormat("tr-TR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date());
+}
+
+function createMessage(role: Message["role"], text: string): Message {
+  return {
+    id: `${role}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    role,
+    text,
+    time: currentTime(),
+  };
+}
+
 export default function ChatbotPage() {
+  const [messages, setMessages] = useState<Message[]>([
+    createMessage(
+      "bot",
+      "Merhaba! Katılım bankacılığı, kampanyalar ve ürün karşılaştırmaları hakkında soru sorabilirsin.",
+    ),
+  ]);
+  const [question, setQuestion] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function sendQuestion(value: string) {
+    const text = value.trim();
+
+    if (!text || isLoading) {
+      return;
+    }
+
+    setError("");
+    setQuestion("");
+    setIsLoading(true);
+    setMessages((current) => [...current, createMessage("user", text)]);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: text }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Chat API ${response.status}`);
+      }
+
+      const data = (await response.json()) as { answer?: string };
+      setMessages((current) => [
+        ...current,
+        createMessage(
+          "bot",
+          data.answer || "Yanıt alınamadı. Lütfen tekrar deneyin.",
+        ),
+      ]);
+    } catch {
+      setError(
+        `Chatbot API'sine ulaşılamadı. Backend'in ${API_BASE_URL} adresinde açık olduğundan emin olun.`,
+      );
+    } finally {
+      setIsLoading(false);
+      inputRef.current?.focus();
+    }
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void sendQuestion(question);
+  }
+
   return (
     <main className={styles.main}>
       <section className={styles.assistantLayout}>
@@ -25,95 +113,67 @@ export default function ChatbotPage() {
           </div>
 
           <div className={styles.messages}>
-            <div className={styles.userRow}>
-              <div className={styles.userBubble}>
-                <p>Taşıt finansmanında en uygun seçenek hangisi?</p>
+            {messages.map((message) =>
+              message.role === "user" ? (
+                <div key={message.id} className={styles.userRow}>
+                  <div className={styles.userBubble}>
+                    <p>{message.text}</p>
 
-                <div className={styles.messageMeta}>
-                  10:28 <span>✓✓</span>
+                    <div className={styles.messageMeta}>
+                      {message.time} <span>✓✓</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div key={message.id} className={styles.botRow}>
+                  <div className={styles.botAvatar}>✦</div>
+
+                  <div className={styles.botBubble}>
+                    <p>{message.text}</p>
+
+                    <div className={styles.botTime}>{message.time}</div>
+                  </div>
+                </div>
+              ),
+            )}
+
+            {isLoading && (
+              <div className={styles.botRow}>
+                <div className={styles.botAvatar}>✦</div>
+
+                <div className={styles.botBubble}>
+                  <p>Yanıt hazırlanıyor...</p>
                 </div>
               </div>
-            </div>
-
-            <div className={styles.botRow}>
-              <div className={styles.botAvatar}>✦</div>
-
-              <div className={styles.botBubble}>
-                <p>
-                  Taşıt finansmanı için güncel en uygun seçenekler şunlardır:
-                </p>
-
-                <ul>
-                  <li>
-                    Vade 24 aya kadar: <strong>%2,49 kâr payı oranı</strong>
-                  </li>
-                  <li>
-                    Vade 36 aya kadar: <strong>%2,69 kâr payı oranı</strong>
-                  </li>
-                  <li>
-                    Vade 48 aya kadar: <strong>%2,79 kâr payı oranı</strong>
-                  </li>
-                </ul>
-
-                <p>
-                  Detaylı karşılaştırma için Karşılaştırma sayfasını
-                  inceleyebilirsiniz.
-                </p>
-
-                <div className={styles.botTime}>10:28</div>
-              </div>
-            </div>
-
-            <div className={styles.userRow}>
-              <div className={styles.userBubble}>
-                <p>Masrafsız kart kampanyaları neler?</p>
-
-                <div className={styles.messageMeta}>
-                  10:31 <span>✓✓</span>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.botRow}>
-              <div className={styles.botAvatar}>✦</div>
-
-              <div className={styles.botBubble}>
-                <p>Masrafsız kart kampanyalarımız:</p>
-
-                <ul>
-                  <li>
-                    <strong>Aidatsız Klasik Kart</strong> – Yıllık aidat yok
-                  </li>
-
-                  <li>
-                    <strong>Genç Kart</strong> – Tüm harcamalarda masraf yok
-                  </li>
-
-                  <li>
-                    <strong>Sanal Kart</strong> – Online alışverişlerde masrafsız
-                    kullanım
-                  </li>
-                </ul>
-
-                <p>
-                  Tüm kart kampanyaları için Kampanyalar sayfasında
-                  inceleyebilirsiniz.
-                </p>
-
-                <div className={styles.botTime}>10:31</div>
-              </div>
-            </div>
+            )}
           </div>
 
-          <div className={styles.inputArea}>
-            <button className={styles.plusButton}>＋</button>
+          <form className={styles.inputArea} onSubmit={handleSubmit}>
+            <button className={styles.plusButton} type="button">
+              ＋
+            </button>
 
             <div className={styles.inputWrapper}>
-              <input type="text" placeholder="Sorunuzu yazın..." />
+              <input
+                ref={inputRef}
+                type="text"
+                value={question}
+                onChange={(event) => setQuestion(event.target.value)}
+                placeholder="Sorunuzu yazın..."
+                disabled={isLoading}
+              />
 
-              <button className={styles.sendButton}>➤</button>
+              <button
+                className={styles.sendButton}
+                type="submit"
+                disabled={isLoading || !question.trim()}
+              >
+                ➤
+              </button>
             </div>
-          </div>
+          </form>
+
+          {error && <div className={styles.errorMessage}>{error}</div>}
 
           <div className={styles.disclaimer}>
             🔒 Yanıtlar bilgilendirme amaçlıdır. Detaylı bilgi için lütfen
@@ -168,7 +228,13 @@ export default function ChatbotPage() {
 
             <div className={styles.questionList}>
               {suggestions.map((question) => (
-                <button key={question} className={styles.questionButton}>
+                <button
+                  key={question}
+                  className={styles.questionButton}
+                  type="button"
+                  onClick={() => void sendQuestion(question)}
+                  disabled={isLoading}
+                >
                   <span className={styles.questionIcon}>▢</span>
 
                   <span>{question}</span>
