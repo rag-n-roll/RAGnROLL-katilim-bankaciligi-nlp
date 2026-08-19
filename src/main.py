@@ -1,10 +1,21 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from src.api.main import router as data_api_router
+from src.chatbot.rag_langchain import LangChainRAG
 
 app = FastAPI(title="Katılım Bankacılığı Chatbot", version="0.1.0")
 app.include_router(data_api_router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+rag = LangChainRAG()
 
 
 class ChatRequest(BaseModel):
@@ -22,4 +33,5 @@ def health_check():
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
-    return ChatResponse(reply=f"(placeholder) Mesajınızı aldım: {request.message}")
+    answer = rag.ask_question(request.message)
+    return ChatResponse(reply=answer)

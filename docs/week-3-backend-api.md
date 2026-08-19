@@ -22,7 +22,9 @@ OpenAPI arayüzü servis çalışırken `http://localhost:8000/docs` adresindedi
 | --- | --- | --- |
 | GET | `/api/v1/health` | API ve SQLite hazır olma kontrolü |
 | GET | `/api/v1/dashboard/summary` | Dashboard sayaçları ve son scraper koşusu |
+| GET | `/api/v1/dashboard/snapshot` | Özet, grafik, güncellik ve son kayıtlar |
 | GET | `/api/v1/banks` | Banka bazlı kampanya/ürün sayıları |
+| GET | `/api/v1/filters` | Dashboard filtre seçenekleri ve kayıt sayıları |
 | GET | `/api/v1/campaigns` | Filtreli ve sayfalı kampanya listesi |
 | GET | `/api/v1/campaigns/{id}` | Kampanya detayı |
 | POST | `/api/v1/comparisons` | Ağırlıkları ve gerekçeleriyle karşılaştırma |
@@ -32,11 +34,25 @@ OpenAPI arayüzü servis çalışırken `http://localhost:8000/docs` adresindedi
 Kampanya listesi `bank_slug`, `product_type`, `currency`, `search`, `limit` ve
 `offset` parametrelerini destekler. Filtreleme, sayfalama ve dashboard
 agregasyonları SQLite içinde yapılır; tüm veri seti API belleğine taşınmaz.
+`/filters` yanıtındaki banka, ürün tipi ve para birimi seçenekleri de doğrudan
+veritabanından ve seçenek başına kayıt sayısıyla üretilir. Dashboard bu sayede
+filtre değerlerini kaynak kodunda sabitlemek zorunda kalmaz.
+`/dashboard/snapshot`, dashboard'un ilk açılışında gereken özet, banka/ürün tipi
+dağılımları, veri güncelliği ve son kampanyaları tek çağrıda döndürür.
+
+Liste, dashboard ve veri yenileme yanıtları sürümlü OpenAPI şemalarıyla
+belgelenir; istemci tipleri OpenAPI'den üretilebilir.
 
 Karşılaştırma isteği en fazla 500 aday kabul eder. Daha geniş sonuç kümelerinde
 API, istemciden banka veya ürün filtresini daraltmasını ister. Veri yenileme
 servisi de eş zamanlı yalnızca tek scraper işi çalıştırır; ikinci istek `409`
-döner.
+döner. İş yaşam döngüsü `queued`, `running`, `completed`, `partial` veya
+`failed` durumlarıyla sorgulanır. Scraper'ın `0` çıkış kodu tam başarı,
+kalite/kapsam eksikliği bildiren `2` çıkış kodu kısmi başarıdır; zaman aşımı ve
+diğer çıkış kodları başarısızlık sayılır. Yanıt, başlangıç/bitiş zamanlarını,
+çıkış kodunu ve güvenli biçimde sınırlandırılmış birleşik stdout/stderr özetini
+içerir. Yenileme sunucu tarafında 30 dakika ile sınırlıdır; istemci komut veya
+dosya yolu sağlayamaz.
 
 ## Örnek karşılaştırma
 

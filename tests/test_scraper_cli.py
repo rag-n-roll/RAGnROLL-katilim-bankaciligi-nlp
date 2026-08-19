@@ -6,6 +6,7 @@ import pytest
 from src.scraper.models import Campaign
 from src.scraper import scraper
 from src.scraper.scraper import (
+    build_parser,
     run_campaigns,
     run_collect,
     run_compare,
@@ -14,6 +15,16 @@ from src.scraper.scraper import (
     run_db_init,
     run_validate,
 )
+
+
+@pytest.mark.parametrize("command", ["campaigns", "collect"])
+def test_scraper_cli_rejects_non_positive_max_per_bank(command):
+    parser = build_parser()
+
+    with pytest.raises(SystemExit) as exc_info:
+        parser.parse_args([command, "--max-per-bank", "0"])
+
+    assert exc_info.value.code == 2
 
 
 def campaign(
