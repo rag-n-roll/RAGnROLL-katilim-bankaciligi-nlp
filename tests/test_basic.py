@@ -10,11 +10,16 @@ def test_health_check():
     assert response.json() == {"status": "ok"}
 
 
-def test_chat_placeholder_response():
+def test_chat_returns_rag_response(monkeypatch):
+    monkeypatch.setattr(
+        "src.main.rag.ask_question",
+        lambda message: f"RAG yanıtı: {message}",
+    )
+
     response = client.post("/chat", json={"message": "merhaba"})
+
     assert response.status_code == 200
-    body = response.json()
-    assert "merhaba" in body["reply"]
+    assert response.json() == {"reply": "RAG yanıtı: merhaba"}
 
 
 def test_chat_requires_message_field():
