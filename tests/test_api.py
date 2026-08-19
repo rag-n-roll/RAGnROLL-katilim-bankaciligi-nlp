@@ -32,7 +32,19 @@ def test_main_application_mounts_versioned_data_api():
     paths = {route.path for route in integrated_app.routes}
 
     assert "/api/v1/dashboard/summary" in paths
+    assert "/api/v1/dashboard/snapshot" in paths
+    assert "/api/v1/filters" in paths
     assert "/api/v1/data-refresh" in paths
+
+
+def test_openapi_exposes_versioned_response_contracts(tmp_path):
+    with client_with_data(tmp_path) as client:
+        schema = client.get("/openapi.json").json()
+
+    responses = schema["paths"]["/api/v1/campaigns"]["get"]["responses"]
+    response_schema = responses["200"]["content"]["application/json"]["schema"]
+    assert response_schema["$ref"].endswith("/CampaignListResponse")
+    assert "FilterOptionsResponse" in schema["components"]["schemas"]
 
 
 def test_health_dashboard_and_bank_services(tmp_path):
@@ -51,6 +63,20 @@ def test_health_dashboard_and_bank_services(tmp_path):
     assert banks["items"][0]["campaign_count"] == 2
 
 
+def test_dashboard_snapshot_combines_chart_freshness_and_recent_data(tmp_path):
+    with client_with_data(tmp_path) as client:
+        response = client.get(
+            "/api/v1/dashboard/snapshot", params={"recent_limit": 1}
+        )
+
+    assert response.status_code == 200
+    snapshot = response.json()
+    assert snapshot["summary"]["record_count"] == 2
+    assert snapshot["distributions"]["banks"][0]["record_count"] == 2
+    assert snapshot["freshness"]["latest_scrape_run"]["status"] == "success"
+    assert len(snapshot["recent_campaigns"]) == 1
+
+
 def test_campaign_list_filters_pages_and_returns_detail(tmp_path):
     with client_with_data(tmp_path) as client:
         response = client.get(
@@ -65,6 +91,19 @@ def test_campaign_list_filters_pages_and_returns_detail(tmp_path):
     assert response.json()["items"][0]["id"] == "two"
     assert detail.json()["title"] == "Taşıt finansmanı"
     assert missing.status_code == 404
+
+
+def test_filter_options_are_counted_and_data_driven(tmp_path):
+    with client_with_data(tmp_path) as client:
+        response = client.get("/api/v1/filters")
+
+    assert response.status_code == 200
+    filters = response.json()
+    assert filters["banks"] == [
+        {"value": "ornek", "label": "Örnek Katılım", "count": 2}
+    ]
+    assert {item["value"] for item in filters["product_types"]} == {"financing"}
+    assert {item["value"] for item in filters["currencies"]} == {"TRY"}
 
 
 def test_comparison_endpoint_returns_explainable_ranking(tmp_path):
