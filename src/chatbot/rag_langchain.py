@@ -522,13 +522,6 @@ Cevap:
                 k=k,
             )
         )
-        print("\n--- RETRIEVED DOCUMENTS ---")
-
-        for i, doc in enumerate(docs, 1):
-            print(f"\n[{i}]")
-            print(doc.page_content[:1000])
-
-        print("\n--- END RETRIEVED DOCUMENTS ---")
         if not docs:
             return (
                 "Bu bilgi sağlanan dokümanlarda "
