@@ -85,4 +85,3 @@ def gepa_metric(gold: Any, pred: Any, trace: Any = None, pred_name: str | None =
     import dspy
 
     return dspy.Prediction(score=score, feedback=feedback)
-

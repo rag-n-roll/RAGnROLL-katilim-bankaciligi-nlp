@@ -22,6 +22,8 @@ from langchain_core.embeddings import Embeddings
 from langchain_ollama import OllamaLLM
 from sentence_transformers import SentenceTransformer
 
+from src.chatbot.prompt_config import load_prompt_config, render_prompt
+
 
 # ============================================================
 # AYARLAR
@@ -42,6 +44,10 @@ RAG_CHUNKS_PATH = (
 )
 
 CHROMA_PATH = PROJECT_ROOT / "chroma_db"
+
+PROMPT_CONFIG_PATH = (
+    PROJECT_ROOT / "models" / "dspy_gepa" / "selected_prompt.json"
+)
 
 # Lokal bilgisayarda kaynak kullanımını kontrollü tutmak için.
 BATCH_SIZE = 8
@@ -152,6 +158,7 @@ class LangChainRAG:
             embedding_function=self.embeddings,
             persist_directory=str(CHROMA_PATH),
         )
+        self.prompt_config = load_prompt_config(PROMPT_CONFIG_PATH)
 
     # ========================================================
     # VERİLERİ OKUMA
@@ -477,30 +484,11 @@ class LangChainRAG:
     # ========================================================
 
     def _build_prompt(self, question: str, context: str) -> str:
-        return f"""
-Sen Türkçe konuşan bir katılım bankacılığı
-asistanısın.
-
-Sadece aşağıdaki bağlamdaki bilgileri kullan.
-
-Bağlamda bulunmayan bilgileri kesinlikle uydurma.
-
-Sorunun cevabı bağlamda bulunmuyorsa aynen:
-
-"Bu bilgi sağlanan dokümanlarda bulunmamaktadır."
-
-cevabını ver.
-
-Cevabı Türkçe, kısa ve anlaşılır şekilde ver.
-
-Bağlam:
-{context}
-
-Kullanıcı sorusu:
-{question}
-
-Cevap:
-"""
+        return render_prompt(
+            question=question,
+            context=context,
+            config=self.prompt_config,
+        )
 
     # ========================================================
     # SORU-CEVAP

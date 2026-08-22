@@ -33,4 +33,3 @@ class CampaignAnswerProgram(dspy.Module):
             classification_json=classification_json,
             entities_json=entities_json,
         )
-

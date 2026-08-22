@@ -53,4 +53,3 @@ def render_prompt(
         sections.append("Örnekler:\n\n" + "\n\n---\n\n".join(rendered))
     sections.append(f"Bağlam:\n{context}\n\nKullanıcı sorusu:\n{question}\n\nCevap:")
     return "\n\n".join(sections)
-
