@@ -15,14 +15,21 @@ MULTI_FIELDS = tuple(ANNOTATION_FIELDS)
 
 
 def load_multidimensional_examples(
-    path: str | Path, *, split: str | None, require_verified: bool = True
+    path: str | Path, *, split: str | None, require_verified: bool = True,
+    allow_auto_high_confidence: bool = False,
 ) -> tuple[list[str], list[dict[str, Any]]]:
     texts: list[str] = []
     annotations: list[dict[str, Any]] = []
     for record in read_records(path):
         if split is not None and record.get("split") != split:
             continue
-        if require_verified and record.get("human_verified") is not True:
+        approved = record.get("human_verified") is True
+        auto_eligible = (
+            allow_auto_high_confidence
+            and record.get("label_status") == "auto_high_confidence"
+            and record.get("training_eligible") is True
+        )
+        if require_verified and not (approved or auto_eligible):
             continue
         text = record.get("text")
         annotation = record.get("annotations")
@@ -73,15 +80,18 @@ def train_bundle(
     train_split: str = "train",
     evaluation_split: str = "validation",
     seed: int = 42,
+    allow_auto_high_confidence: bool = False,
 ) -> dict[str, Any]:
     import joblib
     from sklearn.preprocessing import MultiLabelBinarizer
 
     train_texts, train_annotations = load_multidimensional_examples(
-        dataset, split=train_split
+        dataset, split=train_split,
+        allow_auto_high_confidence=allow_auto_high_confidence,
     )
     eval_texts, eval_annotations = load_multidimensional_examples(
-        dataset, split=evaluation_split
+        dataset, split=evaluation_split,
+        allow_auto_high_confidence=allow_auto_high_confidence,
     )
     product_labels = [item["product_category"] for item in train_annotations]
     if len(set(product_labels)) < 2:
@@ -148,11 +158,19 @@ def evaluate_bundle_object(
 
 
 def evaluate_bundle(
-    model_path: str | Path, dataset: str | Path, *, split: str = "test"
+    model_path: str | Path,
+    dataset: str | Path,
+    *,
+    split: str = "test",
+    allow_auto_high_confidence: bool = False,
 ) -> dict[str, Any]:
     import joblib
 
-    texts, annotations = load_multidimensional_examples(dataset, split=split)
+    texts, annotations = load_multidimensional_examples(
+        dataset,
+        split=split,
+        allow_auto_high_confidence=allow_auto_high_confidence,
+    )
     report = evaluate_bundle_object(joblib.load(model_path), texts, annotations)
     report["evaluation_examples"] = len(texts)
     report["split"] = split
@@ -168,10 +186,13 @@ def main() -> None:
     train.add_argument("--train-split", default="train")
     train.add_argument("--evaluation-split", default="validation")
     train.add_argument("--seed", type=int, default=42)
+    train.add_argument("--allow-auto-high-confidence", action="store_true")
     evaluate = commands.add_parser("evaluate")
     evaluate.add_argument("model")
     evaluate.add_argument("dataset")
     evaluate.add_argument("--split", default="test")
+    evaluate.add_argument("--allow-auto-high-confidence", action="store_true")
+    evaluate.add_argument("--output", type=Path)
     args = parser.parse_args()
     if args.command == "train":
         result = train_bundle(
@@ -180,10 +201,19 @@ def main() -> None:
             train_split=args.train_split,
             evaluation_split=args.evaluation_split,
             seed=args.seed,
+            allow_auto_high_confidence=args.allow_auto_high_confidence,
         )
     else:
-        result = evaluate_bundle(args.model, args.dataset, split=args.split)
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+        result = evaluate_bundle(
+            args.model,
+            args.dataset,
+            split=args.split,
+            allow_auto_high_confidence=args.allow_auto_high_confidence,
+        )
+    rendered = json.dumps(result, ensure_ascii=False, indent=2)
+    if args.command == "evaluate" and args.output:
+        args.output.write_text(rendered + "\n", encoding="utf-8")
+    print(rendered)
 
 
 if __name__ == "__main__":

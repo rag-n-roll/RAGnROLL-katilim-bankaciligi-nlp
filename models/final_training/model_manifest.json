@@ -1,0 +1,38 @@
+{
+  "status": "selected",
+  "selection_policy": "Validation ile seçim; test yalnız kazanan pipeline üzerinde bir kez kullanıldı.",
+  "datasets": {
+    "classifier": "data/model_training_data/classifier_dataset_final.jsonl",
+    "ner": "data/model_training_data/ner_dataset_final.jsonl",
+    "split_manifest": "data/model_training_data/unified_split_manifest.json"
+  },
+  "classifier": {
+    "architecture": "character TF-IDF (3-5 gram) + Linear SVM, multidimensional one-vs-rest",
+    "path": "models/final_training/campaign_classifier.joblib",
+    "test_documents": 89,
+    "product_accuracy": 0.9325842696629213,
+    "dimensions_micro_f1": {
+      "campaign_mechanics": 0.8866995073891626,
+      "target_segments": 0.7047619047619048,
+      "channels": 0.8927335640138409,
+      "benefits": 0.9116022099447514,
+      "requirements": 0.8379888268156425
+    }
+  },
+  "ner": {
+    "architecture": "spaCy Turkish NER + deterministic financial regex rules",
+    "path": "models/final_training/augmented_weighted_30e",
+    "validation_hybrid_f1": 0.9371069182389937,
+    "test_documents": 90,
+    "test_precision": 0.9033898305084745,
+    "test_recall": 0.915807560137457,
+    "test_f1": 0.9095563139931739
+  },
+  "combined_test": {
+    "shared_documents": 89,
+    "classification_dimensions_micro_f1": 0.8671222475322703,
+    "strict_document_accuracy": 0.3595505617977528,
+    "competition_proxy_score": 0.9030876103961218
+  },
+  "rag_export": "data/processed/campaigns_nlp_enriched.json"
+}

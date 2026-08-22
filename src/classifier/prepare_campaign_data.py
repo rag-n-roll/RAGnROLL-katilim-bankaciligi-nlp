@@ -19,6 +19,19 @@ from src.annotation.taxonomy import (
 
 
 PRODUCT_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "takaful",
+        (r"\btekafül\b", r"katılım\s+sigortacılı", r"katılımcı\s+risk\s+fonu"),
+    ),
+    (
+        "insurance",
+        (
+            r"\bdask\b", r"\bkasko\b", r"zorunlu\s+trafik\s+sigorta",
+            r"sağlık\s+sigorta", r"hayat\s+sigorta", r"konut\s+sigorta",
+            r"seyahat\s+sağlık\s+sigorta", r"sigorta\s+işlemleri",
+            r"sigorta\s+alımı", r"sigortanızı\s+(?:kolayca\s+)?yaptır",
+        ),
+    ),
     ("housing_finance", (r"\bkonut\b", r"gayrimenkul", r"\bev\s+finansman")),
     ("vehicle_finance", (r"\btaşıt\b", r"\baraç\b", r"otomobil", r"motosiklet")),
     ("education_finance", (r"eğitim\s+finansman", r"okul\s+finansman")),
@@ -32,25 +45,51 @@ PRODUCT_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
         "sustainable_finance",
         (r"sürdürülebilir", r"yeşil\s+finansman", r"\bges\b", r"enerji\s+verim"),
     ),
-    ("commercial_finance", (r"\bkobi\b", r"ticari\s+finansman", r"işletme\s+finansman")),
-    ("participation_account", (r"katılma\s+hesab", r"katılım\s+fonu")),
-    ("investment_product", (r"yatırım", r"kira\s+sertifika", r"altın\s+hesab", r"fon")),
-    ("insurance_takaful", (r"tekafül", r"sigorta\s+ürün")),
+    (
+        "commercial_finance",
+        (r"\bkobi\b", r"ticari\s+finansman", r"işletme\s+finansman", r"tahsile\s+çek"),
+    ),
+    (
+        "participation_account",
+        (r"katılma\s+hesab", r"katılım\s+fonu", r"günlük\s+(?:kazandıran\s+)?hesap"),
+    ),
+    (
+        "investment_product",
+        (
+            r"yatırım", r"kira\s+sertifika", r"altın\s+hesab", r"\bfon\b",
+            r"döviz\s+işlem", r"kur\s+fırsat",
+        ),
+    ),
     ("digital_finance", (r"dijital\s+finansman", r"taksitlio", r"cebimpos")),
-    ("card", (r"\bkart", r"worldpuan", r"sağlam\s+puan", r"taksit")),
+    (
+        "card",
+        (
+            r"\bkart", r"worldpuan", r"sağlam\s+puan", r"taksit",
+            r"hediye\s+bakiye", r"fatura\s+talimat", r"kahve\s+keyfi",
+            r"seçkin\s+fırsat", r"premium\s+üyelik", r"hızlı\s+çiçek",
+        ),
+    ),
     ("other_finance", (r"finansman",)),
 )
 
 MULTI_RULES: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
     "campaign_mechanics": (
-        ("cashback", (r"nakit\s+iade", r"cashback", r"para\s+iade")),
-        ("reward_points", (r"puan", r"worldpuan", r"bonus")),
+        ("cashback", (r"nakit\s+iade", r"cashback", r"para\s+iade", r"%\s*[\d,.]+\s*iade")),
+        ("reward_points", (r"puan", r"worldpuan", r"bonus", r"hediye\s+bakiye")),
         ("discount", (r"indirim",)),
         ("installment", (r"taksit",)),
         ("referral", (r"davet\s+et", r"arkadaşını\s+getir")),
         ("loyalty_membership", (r"üyelik", r"gold", r"sadakat")),
-        ("promo_code", (r"promosyon\s+kodu", r"kupon\s+kodu")),
+        ("promo_code", (r"promosyon\s+kodu", r"kupon\s+kodu", r"kampanya\s+kodu")),
         ("gift_voucher", (r"hediye\s+çek", r"alışveriş\s+çek")),
+        (
+            "bonus_service",
+            (
+                r"\d+\s*(?:ay|gün|hafta|ders|gb)\s+hediye",
+                r"hediye\s+(?:ders|internet|hizmet|bakım|kullanım)",
+                r"ek\s+ücretsiz\s+(?:ders|hizmet|bakım|kullanım)",
+            ),
+        ),
         ("draw_lottery", (r"çekiliş",)),
     ),
     "target_segments": (
@@ -73,6 +112,34 @@ MULTI_RULES: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
         ("call_center", (r"çağrı\s+merkezi", r"müşteri\s+iletişim\s+merkezi")),
     ),
     "benefits": (
+        (
+            "reward_points",
+            (
+                r"worldpuan", r"sağlam\s+puan", r"bankkart\s+lira",
+                r"\bbonus\b", r"\bpuan\s+kazan", r"ödül\s+puan",
+            ),
+        ),
+        (
+            "cashback",
+            (
+                r"nakit\s+iade",
+                r"(?:%\s*)?[\d,.]+\s*(?:oranında\s+)?iade",
+            ),
+        ),
+        ("discount", (r"\bindirim\b", r"indirimli")),
+        (
+            "percentage_discount",
+            (
+                r"%\s*\d+(?:[.,]\d+)?\s*(?:'?[a-zçğıöşü]+\s+)?indirim",
+                r"yüzde\s+\d+(?:[.,]\d+)?\s+indirim",
+            ),
+        ),
+        ("installment", (r"\btaksit\b", r"taksitlendirme")),
+        (
+            "no_extra_cost_installment",
+            (r"vade\s+farksız", r"peşin\s+fiyatına\s+\d+\s*taksit"),
+        ),
+        ("additional_installment", (r"(?:ek|ilave)\s+(?:\d+\s+)?taksit",)),
         ("zero_profit_rate", (r"%\s*0", r"sıfır\s+kâr\s+pay")),
         ("special_profit_rate", (r"avantajlı\s+(?:kâr\s+payı|oran)", r"özel\s+oran")),
         (
@@ -81,13 +148,29 @@ MULTI_RULES: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
         ),
         ("free_insurance", (r"ücretsiz\s+sigorta",)),
         ("payment_deferral", (r"taksit\s+ertele", r"ödem\w+\s+ertele")),
-        ("extra_installment", (r"vade\s+farksız", r"ek\s+taksit", r"aya\s+varan\s+taksit")),
         ("gift_voucher", (r"hediye\s+çek", r"alışveriş\s+çek")),
         ("free_service", (r"ücretsiz",)),
     ),
     "requirements": (
         ("minimum_spend", (r"en\s+az\s+[\d.]", r"minimum\s+harcama")),
-        ("application_required", (r"kampanyaya\s+katıl", r"başvuru")),
+        (
+            "maximum_spend",
+            (
+                r"en\s+fazla\s+[\d.]",
+                r"maksimum\s+harcama",
+                r"[\d.]+\s*(?:tl|₺)\s*(?:veya\s+)?alt(?:ı|i)",
+                r"[\d.]+\s*(?:tl|₺)\s*(?:üzerinde|üstünde)\s+(?:olan\s+)?"
+                r"(?:işlem|harcama)\w*\s+geçerli\s+değil",
+            ),
+        ),
+        (
+            "minimum_balance",
+            (
+                r"minimum\s+[\d.]+\s*(?:tl|₺).{0,40}(?:bakiye|bulundur)",
+                r"hesap(?:ta|\s+bakiyesi).{0,40}en\s+az\s+[\d.]+\s*(?:tl|₺)",
+            ),
+        ),
+        ("application_required", (r"kampanyaya\s+katıl", r"kampanya\s+katılım", r"başvuru")),
         ("promo_code_required", (r"(?:promosyon|kupon)\s+kodu",)),
         ("automatic_payment_instruction", (r"otomatik\s+ödeme\s+talimat",)),
         ("first_transaction", (r"ilk\s+işlem", r"ilk\s+alışveriş")),

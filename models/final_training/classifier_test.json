@@ -1,0 +1,97 @@
+{
+  "product_accuracy": 0.9325842696629213,
+  "dimensions": {
+    "campaign_mechanics": {
+      "micro_f1": 0.8866995073891626,
+      "macro_f1": 0.5241461688889326,
+      "subset_accuracy": 0.8426966292134831,
+      "labels": [
+        "bonus_service",
+        "cashback",
+        "discount",
+        "draw_lottery",
+        "gift_voucher",
+        "installment",
+        "loyalty_membership",
+        "other",
+        "promo_code",
+        "referral",
+        "reward_points"
+      ]
+    },
+    "target_segments": {
+      "micro_f1": 0.7047619047619048,
+      "macro_f1": 0.28518518518518515,
+      "subset_accuracy": 0.7303370786516854,
+      "labels": [
+        "cardholder",
+        "commercial_sme",
+        "digital_customer",
+        "existing_customer",
+        "farmer",
+        "new_customer",
+        "other",
+        "salary_customer",
+        "youth_student"
+      ]
+    },
+    "channels": {
+      "micro_f1": 0.8927335640138409,
+      "macro_f1": 0.634125564524759,
+      "subset_accuracy": 0.7303370786516854,
+      "labels": [
+        "atm",
+        "call_center",
+        "card_pos",
+        "ecommerce",
+        "internet_branch",
+        "mobile",
+        "physical_branch",
+        "unspecified"
+      ]
+    },
+    "benefits": {
+      "micro_f1": 0.9116022099447514,
+      "macro_f1": 0.5235622116206309,
+      "subset_accuracy": 0.7640449438202247,
+      "labels": [
+        "additional_installment",
+        "cashback",
+        "discount",
+        "extra_installment",
+        "fee_exemption",
+        "free_service",
+        "gift_voucher",
+        "installment",
+        "no_extra_cost_installment",
+        "other",
+        "payment_deferral",
+        "percentage_discount",
+        "reward_points",
+        "special_profit_rate",
+        "zero_profit_rate"
+      ]
+    },
+    "requirements": {
+      "micro_f1": 0.8379888268156425,
+      "macro_f1": 0.5655848283037689,
+      "subset_accuracy": 0.6292134831460674,
+      "labels": [
+        "application_required",
+        "automatic_payment_instruction",
+        "date_limited",
+        "first_transaction",
+        "limited_stock",
+        "maximum_spend",
+        "minimum_balance",
+        "minimum_spend",
+        "other",
+        "promo_code_required",
+        "specific_card",
+        "specific_merchant"
+      ]
+    }
+  },
+  "evaluation_examples": 89,
+  "split": "test"
+}

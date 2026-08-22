@@ -119,11 +119,13 @@ def train_model(
     batch_size: int = 32,
     dropout: float = 0.2,
     seed: int = 42,
+    rare_label_document_threshold: int = 0,
+    rare_example_multiplier: int = 1,
 ) -> dict[str, Any]:
     import spacy
     from spacy.util import fix_random_seed, minibatch
 
-    if epochs < 1 or batch_size < 1:
+    if epochs < 1 or batch_size < 1 or rare_example_multiplier < 1:
         raise ValueError("epochs and batch_size must be positive")
     records = read_jsonl(dataset)
     train_records = select_split(records, train_split)
@@ -137,7 +139,24 @@ def train_model(
     )
     for label in labels:
         ner.add_label(label)
-    examples = _examples(nlp, train_records)
+    label_document_counts = Counter(
+        label
+        for record in train_records
+        for label in {entity["label"] for entity in record["entities"]}
+    )
+    examples = []
+    oversampled_documents = 0
+    for record in train_records:
+        record_examples = _examples(nlp, [record])
+        labels_in_record = {entity["label"] for entity in record["entities"]}
+        is_rare = rare_label_document_threshold > 0 and any(
+            label_document_counts[label] <= rare_label_document_threshold
+            for label in labels_in_record
+        )
+        multiplier = rare_example_multiplier if is_rare else 1
+        if multiplier > 1:
+            oversampled_documents += 1
+        examples.extend(record_examples * multiplier)
     optimizer = nlp.initialize(lambda: examples)
     losses: list[float] = []
     for _ in range(epochs):
@@ -159,6 +178,10 @@ def train_model(
         "labels": labels,
         "epochs": epochs,
         "seed": seed,
+        "dropout": dropout,
+        "rare_label_document_threshold": rare_label_document_threshold,
+        "rare_example_multiplier": rare_example_multiplier,
+        "oversampled_documents": oversampled_documents,
         "synthetic_documents": synthetic,
         "synthetic_data_warning": synthetic > 0,
         "metrics": metrics,
@@ -214,6 +237,9 @@ def main() -> None:
     train.add_argument("--epochs", type=int, default=20)
     train.add_argument("--batch-size", type=int, default=32)
     train.add_argument("--seed", type=int, default=42)
+    train.add_argument("--dropout", type=float, default=0.2)
+    train.add_argument("--rare-label-document-threshold", type=int, default=0)
+    train.add_argument("--rare-example-multiplier", type=int, default=1)
     train.add_argument("--train-split", default="train")
     train.add_argument("--evaluation-split", default="validation")
     evaluate = commands.add_parser("evaluate", help="Evaluate an existing model")
@@ -232,6 +258,9 @@ def main() -> None:
             epochs=args.epochs,
             batch_size=args.batch_size,
             seed=args.seed,
+            dropout=args.dropout,
+            rare_label_document_threshold=args.rare_label_document_threshold,
+            rare_example_multiplier=args.rare_example_multiplier,
         )
     else:
         result = evaluate_model(args.model, args.dataset, split=args.split)

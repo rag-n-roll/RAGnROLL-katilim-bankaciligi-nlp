@@ -27,6 +27,13 @@ class RefreshRequest(ApiModel):
     max_per_bank: int = Field(default=20, ge=1, le=100)
 
 
+class NLPAnalyzeRequest(ApiModel):
+    text: str = Field(min_length=1, max_length=200_000)
+    record_id: str | None = Field(default=None, max_length=200)
+    title: str | None = Field(default=None, max_length=500)
+    source_url: str | None = Field(default=None, max_length=2_000)
+
+
 class HealthResponse(ApiModel):
     status: Literal["ok"]
     database: Literal["ready"]

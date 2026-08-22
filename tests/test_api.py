@@ -145,3 +145,27 @@ def test_api_validation_rejects_unbounded_requests(tmp_path):
 
     assert too_many.status_code == 422
     assert invalid_refresh.status_code == 422
+
+
+class FakeNLPPipeline:
+    def analyze(self, text, **metadata):
+        return {
+            "schema_version": "campaign-nlp-v1",
+            "record": {"id": metadata["record_id"], "title": metadata["title"]},
+            "classification": {"product_category": {"value": "card"}},
+            "entities": [],
+        }
+
+
+def test_nlp_analyze_endpoint_uses_unified_pipeline(tmp_path):
+    app = create_app(database_path=tmp_path / "nlp.sqlite3")
+    app.state.nlp_pipeline = FakeNLPPipeline()
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/nlp/analyze",
+            json={"text": "Kart ile %10 indirim.", "record_id": "sample", "title": "Örnek"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["schema_version"] == "campaign-nlp-v1"
+    assert response.json()["record"]["id"] == "sample"

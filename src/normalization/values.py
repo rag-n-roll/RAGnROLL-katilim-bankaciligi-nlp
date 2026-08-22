@@ -32,6 +32,25 @@ _RATE_RE = re.compile(r"(?:%\s*(\d[\d.,]*)|(\d[\d.,]*)\s*%)")
 _DURATION_RE = re.compile(r"(?<!\d)(\d{1,4})\s*(gün|gun|ay|yıl|yil)(?!\w)", re.IGNORECASE)
 
 
+# ASCII escapes keep these patterns stable across Windows code pages.
+_CURRENCIES = {
+    "\u20ba": "TRY", "tl": "TRY", "try": "TRY", "$": "USD", "usd": "USD",
+    "\u20ac": "EUR", "eur": "EUR", "\u00a3": "GBP", "gbp": "GBP",
+}
+_MONEY_RE = re.compile(
+    r"(?:"
+    r"(?P<leading_currency>\u20ba|\$|\u20ac|\u00a3|\b(?:TL|TRY|USD|EUR|GBP)\b)\s*"
+    r"(?P<leading_number>\d[\d.,]*(?:\s+milyon)?)"
+    r"|(?P<trailing_number>\d[\d.,]*(?:\s+milyon)?)\s*"
+    r"(?P<trailing_currency>\u20ba|\$|\u20ac|\u00a3|\b(?:TL|TRY|USD|EUR|GBP)\b)"
+    r")",
+    re.IGNORECASE,
+)
+_DURATION_RE = re.compile(
+    r"(?<!\d)(\d{1,4})\s*(g\u00fcn|gun|ay|y\u0131l|yil)(?!\w)", re.IGNORECASE
+)
+
+
 @dataclass(frozen=True, slots=True)
 class Money:
     amount: Decimal
@@ -124,6 +143,11 @@ def normalize_duration(value: str) -> Duration | None:
         return None
     amount = int(match.group(1))
     raw_unit = match.group(2).casefold()
-    unit = {"gün": "day", "gun": "day", "ay": "month", "yıl": "year", "yil": "year"}[raw_unit]
+    if raw_unit in {"g\u00fcn", "gun"}:
+        unit = "day"
+    elif raw_unit in {"y\u0131l", "yil"}:
+        unit = "year"
+    else:
+        unit = "month"
     days_per_unit = {"day": 1, "month": 30, "year": 365}
     return Duration(value=amount, unit=unit, approx_days=amount * days_per_unit[unit])

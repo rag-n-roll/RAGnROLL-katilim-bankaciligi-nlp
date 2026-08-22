@@ -23,6 +23,7 @@ from src.api.schemas import (
     DashboardSummary,
     FilterOptionsResponse,
     HealthResponse,
+    NLPAnalyzeRequest,
     RefreshJobResponse,
     RefreshRequest,
 )
@@ -204,6 +205,43 @@ def _refresh_manager(request: Request) -> RefreshManager:
     return manager
 
 
+def _nlp_pipeline(request: Request) -> Any:
+    pipeline = getattr(request.app.state, "nlp_pipeline", None)
+    if pipeline is not None:
+        return pipeline
+    lock = getattr(request.app.state, "nlp_pipeline_lock", None)
+    if lock is None:
+        lock = Lock()
+        request.app.state.nlp_pipeline_lock = lock
+    with lock:
+        pipeline = getattr(request.app.state, "nlp_pipeline", None)
+        if pipeline is None:
+            from src.extraction.campaign_nlp_pipeline import CampaignNLPPipeline
+
+            classifier = os.getenv(
+                "RAGNROLL_CLASSIFIER_MODEL",
+                "models/final_training/campaign_classifier.joblib",
+            )
+            ner = os.getenv(
+                "RAGNROLL_NER_MODEL",
+                "models/final_training/augmented_weighted_30e",
+            )
+            classifier_path = Path(classifier)
+            ner_path = Path(ner)
+            if not classifier_path.is_absolute():
+                classifier_path = PROJECT_ROOT / classifier_path
+            if not ner_path.is_absolute():
+                ner_path = PROJECT_ROOT / ner_path
+            try:
+                pipeline = CampaignNLPPipeline.load(classifier_path, ner_path)
+            except (OSError, ImportError, ValueError) as exc:
+                raise HTTPException(
+                    status_code=503, detail=f"NLP modelleri yüklenemedi: {exc}"
+                ) from exc
+            request.app.state.nlp_pipeline = pipeline
+    return pipeline
+
+
 @router.get("/health", response_model=HealthResponse, tags=["system"])
 def health(request: Request) -> dict[str, Any]:
     store = _store(request)
@@ -310,6 +348,17 @@ def comparisons(payload: ComparisonRequest, request: Request) -> dict[str, Any]:
     return result.to_dict()
 
 
+@router.post("/nlp/analyze")
+def analyze_campaign(payload: NLPAnalyzeRequest, request: Request) -> dict[str, Any]:
+    """Classify a campaign and extract normalized entities in one request."""
+    return _nlp_pipeline(request).analyze(
+        payload.text,
+        record_id=payload.record_id,
+        title=payload.title,
+        source_url=payload.source_url,
+    )
+
+
 @router.post(
     "/data-refresh",
     status_code=202,
@@ -361,6 +410,8 @@ def create_app(*, database_path: str | Path | None = None) -> FastAPI:
     )
     api.state.database_path = Path(database_path) if database_path else DEFAULT_DATABASE
     api.state.refresh_manager = RefreshManager()
+    api.state.nlp_pipeline = None
+    api.state.nlp_pipeline_lock = Lock()
     api.include_router(router)
     return api
 

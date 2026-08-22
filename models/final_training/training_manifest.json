@@ -1,0 +1,414 @@
+{
+  "selection_policy": "architecture fixed by prior validation; NER candidate selected on unified validation; test used once",
+  "classifier_dataset": "data/model_training_data/classifier_dataset_final.jsonl",
+  "ner_dataset": "data/model_training_data/ner_dataset_final.jsonl",
+  "classifier_model": "models\\final_training\\campaign_classifier.joblib",
+  "classifier_validation": {
+    "product_accuracy": 0.9285714285714286,
+    "dimensions": {
+      "campaign_mechanics": {
+        "micro_f1": 0.9193548387096774,
+        "macro_f1": 0.605325987144169,
+        "subset_accuracy": 0.875,
+        "labels": [
+          "bonus_service",
+          "cashback",
+          "discount",
+          "draw_lottery",
+          "gift_voucher",
+          "installment",
+          "loyalty_membership",
+          "other",
+          "promo_code",
+          "referral",
+          "reward_points"
+        ]
+      },
+      "target_segments": {
+        "micro_f1": 0.7878787878787878,
+        "macro_f1": 0.19624819624819623,
+        "subset_accuracy": 0.7857142857142857,
+        "labels": [
+          "cardholder",
+          "commercial_sme",
+          "digital_customer",
+          "existing_customer",
+          "farmer",
+          "new_customer",
+          "other",
+          "salary_customer",
+          "youth_student"
+        ]
+      },
+      "channels": {
+        "micro_f1": 0.8938547486033519,
+        "macro_f1": 0.6681781376518219,
+        "subset_accuracy": 0.7321428571428571,
+        "labels": [
+          "atm",
+          "call_center",
+          "card_pos",
+          "ecommerce",
+          "internet_branch",
+          "mobile",
+          "physical_branch",
+          "unspecified"
+        ]
+      },
+      "benefits": {
+        "micro_f1": 0.935064935064935,
+        "macro_f1": 0.5453986691850257,
+        "subset_accuracy": 0.8214285714285714,
+        "labels": [
+          "additional_installment",
+          "cashback",
+          "discount",
+          "extra_installment",
+          "fee_exemption",
+          "free_service",
+          "gift_voucher",
+          "installment",
+          "no_extra_cost_installment",
+          "other",
+          "payment_deferral",
+          "percentage_discount",
+          "reward_points",
+          "special_profit_rate",
+          "zero_profit_rate"
+        ]
+      },
+      "requirements": {
+        "micro_f1": 0.8917748917748918,
+        "macro_f1": 0.45996392496392496,
+        "subset_accuracy": 0.6964285714285714,
+        "labels": [
+          "application_required",
+          "automatic_payment_instruction",
+          "date_limited",
+          "first_transaction",
+          "limited_stock",
+          "maximum_spend",
+          "minimum_balance",
+          "minimum_spend",
+          "other",
+          "promo_code_required",
+          "specific_card",
+          "specific_merchant"
+        ]
+      }
+    },
+    "train_examples": 490,
+    "evaluation_examples": 56,
+    "skipped_fields": {},
+    "competition_metric_eligible": true
+  },
+  "classifier_test": {
+    "product_accuracy": 0.9325842696629213,
+    "dimensions": {
+      "campaign_mechanics": {
+        "micro_f1": 0.8866995073891626,
+        "macro_f1": 0.5241461688889326,
+        "subset_accuracy": 0.8426966292134831,
+        "labels": [
+          "bonus_service",
+          "cashback",
+          "discount",
+          "draw_lottery",
+          "gift_voucher",
+          "installment",
+          "loyalty_membership",
+          "other",
+          "promo_code",
+          "referral",
+          "reward_points"
+        ]
+      },
+      "target_segments": {
+        "micro_f1": 0.7047619047619048,
+        "macro_f1": 0.28518518518518515,
+        "subset_accuracy": 0.7303370786516854,
+        "labels": [
+          "cardholder",
+          "commercial_sme",
+          "digital_customer",
+          "existing_customer",
+          "farmer",
+          "new_customer",
+          "other",
+          "salary_customer",
+          "youth_student"
+        ]
+      },
+      "channels": {
+        "micro_f1": 0.8927335640138409,
+        "macro_f1": 0.634125564524759,
+        "subset_accuracy": 0.7303370786516854,
+        "labels": [
+          "atm",
+          "call_center",
+          "card_pos",
+          "ecommerce",
+          "internet_branch",
+          "mobile",
+          "physical_branch",
+          "unspecified"
+        ]
+      },
+      "benefits": {
+        "micro_f1": 0.9116022099447514,
+        "macro_f1": 0.5235622116206309,
+        "subset_accuracy": 0.7640449438202247,
+        "labels": [
+          "additional_installment",
+          "cashback",
+          "discount",
+          "extra_installment",
+          "fee_exemption",
+          "free_service",
+          "gift_voucher",
+          "installment",
+          "no_extra_cost_installment",
+          "other",
+          "payment_deferral",
+          "percentage_discount",
+          "reward_points",
+          "special_profit_rate",
+          "zero_profit_rate"
+        ]
+      },
+      "requirements": {
+        "micro_f1": 0.8379888268156425,
+        "macro_f1": 0.5655848283037689,
+        "subset_accuracy": 0.6292134831460674,
+        "labels": [
+          "application_required",
+          "automatic_payment_instruction",
+          "date_limited",
+          "first_transaction",
+          "limited_stock",
+          "maximum_spend",
+          "minimum_balance",
+          "minimum_spend",
+          "other",
+          "promo_code_required",
+          "specific_card",
+          "specific_merchant"
+        ]
+      }
+    },
+    "evaluation_examples": 89,
+    "split": "test"
+  },
+  "ner_candidates": [
+    {
+      "name": "augmented_25e",
+      "model_path": "models\\final_training\\augmented_25e",
+      "config": {
+        "name": "augmented_25e",
+        "epochs": 25,
+        "dropout": 0.2,
+        "rare_label_document_threshold": 0,
+        "rare_example_multiplier": 1
+      },
+      "neural_validation_f1": 0.8517049960348929,
+      "hybrid_validation_f1": 0.9338582677165355
+    },
+    {
+      "name": "augmented_weighted_30e",
+      "model_path": "models\\final_training\\augmented_weighted_30e",
+      "config": {
+        "name": "augmented_weighted_30e",
+        "epochs": 30,
+        "dropout": 0.2,
+        "rare_label_document_threshold": 40,
+        "rare_example_multiplier": 2
+      },
+      "neural_validation_f1": 0.8960629921259843,
+      "hybrid_validation_f1": 0.9371069182389937
+    }
+  ],
+  "selected_ner": {
+    "name": "augmented_weighted_30e",
+    "model_path": "models\\final_training\\augmented_weighted_30e",
+    "config": {
+      "name": "augmented_weighted_30e",
+      "epochs": 30,
+      "dropout": 0.2,
+      "rare_label_document_threshold": 40,
+      "rare_example_multiplier": 2
+    },
+    "neural_validation_f1": 0.8960629921259843,
+    "hybrid_validation_f1": 0.9371069182389937
+  },
+  "ner_test": {
+    "model_path": "models\\final_training\\augmented_weighted_30e",
+    "split": "test",
+    "documents": 90,
+    "rule_labels": [
+      "ALISVERIS_PUANI",
+      "FINANSMAN_TUTARI",
+      "INDIRIM_ORANI",
+      "KAMPANYA_KOSULU",
+      "KAR_PAYI_ORANI",
+      "MASRAF_BILGISI",
+      "ODUL_MIKTARI",
+      "PROMOSYON_KODU",
+      "TAHSIS_UCRETI"
+    ],
+    "metrics": {
+      "precision": 0.9033898305084745,
+      "recall": 0.915807560137457,
+      "f1": 0.9095563139931739,
+      "tp": 1066,
+      "fp": 114,
+      "fn": 98
+    },
+    "per_entity": {
+      "ALISVERIS_PUANI": {
+        "tp": 3
+      },
+      "BANKA": {
+        "tp": 90,
+        "fp": 1
+      },
+      "FINANSMAN_TUTARI": {
+        "tp": 27,
+        "fp": 7,
+        "fn": 5
+      },
+      "HEDEF_KITLE": {
+        "tp": 27,
+        "fn": 3,
+        "fp": 6
+      },
+      "INDIRIM_ORANI": {
+        "tp": 27,
+        "fp": 4,
+        "fn": 4
+      },
+      "KAMPANYA_AVANTAJI": {
+        "tp": 37,
+        "fn": 1
+      },
+      "KAMPANYA_KOSULU": {
+        "tp": 172,
+        "fp": 46,
+        "fn": 47
+      },
+      "KAMPANYA_TARIHI": {
+        "tp": 88,
+        "fp": 3,
+        "fn": 1
+      },
+      "MASRAF_BILGISI": {
+        "tp": 17,
+        "fn": 1
+      },
+      "ODUL_MIKTARI": {
+        "tp": 101,
+        "fp": 28,
+        "fn": 28
+      },
+      "PROMOSYON_KODU": {
+        "tp": 18
+      },
+      "TAHSIS_UCRETI": {
+        "tp": 4
+      },
+      "TAKSIT_SAYISI": {
+        "tp": 143,
+        "fp": 2
+      },
+      "URUN_TURU": {
+        "tp": 223,
+        "fp": 14,
+        "fn": 5
+      },
+      "VADE": {
+        "tp": 89,
+        "fp": 3,
+        "fn": 3
+      }
+    }
+  },
+  "system_test": {
+    "evaluation_policy": "untouched_test_splits; no test-driven model selection",
+    "split": "test",
+    "classifier": {
+      "documents": 89,
+      "product_accuracy": 0.9325842696629213,
+      "strict_document_accuracy": 0.43820224719101125,
+      "dimensions_micro": {
+        "precision": 0.8798151001540832,
+        "recall": 0.8547904191616766,
+        "f1": 0.8671222475322703,
+        "tp": 571,
+        "fp": 78,
+        "fn": 97
+      },
+      "per_dimension": {
+        "campaign_mechanics": {
+          "precision": 0.9473684210526315,
+          "recall": 0.8333333333333334,
+          "f1": 0.8866995073891626,
+          "tp": 90,
+          "fp": 5,
+          "fn": 18
+        },
+        "target_segments": {
+          "precision": 0.6727272727272727,
+          "recall": 0.74,
+          "f1": 0.7047619047619048,
+          "tp": 37,
+          "fp": 18,
+          "fn": 13
+        },
+        "channels": {
+          "precision": 0.8775510204081632,
+          "recall": 0.9084507042253521,
+          "f1": 0.8927335640138407,
+          "tp": 129,
+          "fp": 18,
+          "fn": 13
+        },
+        "benefits": {
+          "precision": 0.9482758620689655,
+          "recall": 0.8776595744680851,
+          "f1": 0.9116022099447514,
+          "tp": 165,
+          "fp": 9,
+          "fn": 23
+        },
+        "requirements": {
+          "precision": 0.8426966292134831,
+          "recall": 0.8333333333333334,
+          "f1": 0.8379888268156424,
+          "tp": 150,
+          "fp": 28,
+          "fn": 30
+        }
+      }
+    },
+    "ner": {
+      "documents": 90,
+      "exact_span_micro": {
+        "precision": 0.9033898305084745,
+        "recall": 0.915807560137457,
+        "f1": 0.9095563139931739,
+        "tp": 1066,
+        "fp": 114,
+        "fn": 98
+      }
+    },
+    "joint": {
+      "shared_documents": 89,
+      "strict_document_accuracy": 0.3595505617977528,
+      "note": "Strict means every classification label and every NER span is exact in the same document."
+    },
+    "competition_proxy_score": 0.9030876103961218,
+    "models": {
+      "classifier": "models\\final_training\\campaign_classifier.joblib",
+      "ner": "models\\final_training\\augmented_weighted_30e"
+    }
+  }
+}

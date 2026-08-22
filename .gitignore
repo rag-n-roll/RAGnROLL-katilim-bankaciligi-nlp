@@ -6,6 +6,8 @@ __pycache__/
 .coverage
 htmlcov/
 .venv/
+.venv-training/
+.hf-cache/
 __pycache__/
 *.py[cod]
 .pytest_cache/

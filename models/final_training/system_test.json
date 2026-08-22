@@ -1,0 +1,80 @@
+{
+  "evaluation_policy": "untouched_test_splits; no test-driven model selection",
+  "split": "test",
+  "classifier": {
+    "documents": 89,
+    "product_accuracy": 0.9325842696629213,
+    "strict_document_accuracy": 0.43820224719101125,
+    "dimensions_micro": {
+      "precision": 0.8798151001540832,
+      "recall": 0.8547904191616766,
+      "f1": 0.8671222475322703,
+      "tp": 571,
+      "fp": 78,
+      "fn": 97
+    },
+    "per_dimension": {
+      "campaign_mechanics": {
+        "precision": 0.9473684210526315,
+        "recall": 0.8333333333333334,
+        "f1": 0.8866995073891626,
+        "tp": 90,
+        "fp": 5,
+        "fn": 18
+      },
+      "target_segments": {
+        "precision": 0.6727272727272727,
+        "recall": 0.74,
+        "f1": 0.7047619047619048,
+        "tp": 37,
+        "fp": 18,
+        "fn": 13
+      },
+      "channels": {
+        "precision": 0.8775510204081632,
+        "recall": 0.9084507042253521,
+        "f1": 0.8927335640138407,
+        "tp": 129,
+        "fp": 18,
+        "fn": 13
+      },
+      "benefits": {
+        "precision": 0.9482758620689655,
+        "recall": 0.8776595744680851,
+        "f1": 0.9116022099447514,
+        "tp": 165,
+        "fp": 9,
+        "fn": 23
+      },
+      "requirements": {
+        "precision": 0.8426966292134831,
+        "recall": 0.8333333333333334,
+        "f1": 0.8379888268156424,
+        "tp": 150,
+        "fp": 28,
+        "fn": 30
+      }
+    }
+  },
+  "ner": {
+    "documents": 90,
+    "exact_span_micro": {
+      "precision": 0.9033898305084745,
+      "recall": 0.915807560137457,
+      "f1": 0.9095563139931739,
+      "tp": 1066,
+      "fp": 114,
+      "fn": 98
+    }
+  },
+  "joint": {
+    "shared_documents": 89,
+    "strict_document_accuracy": 0.3595505617977528,
+    "note": "Strict means every classification label and every NER span is exact in the same document."
+  },
+  "competition_proxy_score": 0.9030876103961218,
+  "models": {
+    "classifier": "models\\final_training\\campaign_classifier.joblib",
+    "ner": "models\\final_training\\augmented_weighted_30e"
+  }
+}

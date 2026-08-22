@@ -1,0 +1,23 @@
+{
+  "policy": "classifier_multilabel_split_is_canonical; synthetic_train_only",
+  "classifier_input": "data/model_training_data/classifier_dataset_tuning_augmented.jsonl",
+  "ner_input": "data/model_training_data/ner_dataset_tuning_augmented.jsonl",
+  "classifier_output": "data/model_training_data/classifier_dataset_final.jsonl",
+  "ner_output": "data/model_training_data/ner_dataset_final.jsonl",
+  "classifier_splits": {
+    "train": 496,
+    "validation": 56,
+    "test": 90
+  },
+  "ner_splits": {
+    "train": 431,
+    "validation": 56,
+    "test": 90
+  },
+  "classifier_synthetic": 170,
+  "ner_synthetic": 108,
+  "shared_real_campaigns": 468,
+  "cross_task_split_mismatches": 0,
+  "realigned_ner_records": 216,
+  "ner_records_missing_from_classifier": 1
+}
