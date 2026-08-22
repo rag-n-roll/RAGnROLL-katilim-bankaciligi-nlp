@@ -1,11 +1,18 @@
 .navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
   width: 100%;
-  height: 72px;
+  height: 78px;
   background: linear-gradient(
     90deg,
     var(--petrol) 0%,
     var(--petrol-secondary) 100%
   );
+
+  border-bottom: 1px solid rgba(232, 184, 74, 0.22);
+  box-shadow: 0 7px 18px rgba(0, 24, 33, 0.13);
 
   display: flex;
   align-items: center;
@@ -19,49 +26,396 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-left: 28px;
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+
   color: white;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 25px;
-  font-weight: 700;
   white-space: nowrap;
+}
+
+.brandMark {
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
+  overflow: visible;
+  filter:
+    drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))
+    drop-shadow(0 0 7px rgba(232, 184, 74, 0.24));
+
+  transition: filter 0.25s ease;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 0.95;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+}
+
+.brandText > span {
+  color: var(--yellow);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+.brandText strong {
+  color: white;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+.compassHalo {
+  fill: rgba(232, 184, 74, 0.08);
+  stroke: rgba(232, 184, 74, 0.54);
+  stroke-width: 1.25;
+}
+
+.compassRing {
+  fill: var(--petrol-secondary);
+  stroke: var(--yellow);
+  stroke-width: 2.2;
+}
+
+.compassOrbit {
+  fill: none;
+  stroke: rgba(232, 184, 74, 0.38);
+  stroke-width: 0.8;
+  stroke-dasharray: 1.5 3;
+}
+
+.compassNeedle {
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.22));
+
+  transform: rotate(18deg);
+  transform-origin: 24px 24px;
+
+  transition: transform 0.7s cubic-bezier(0.22, 0.75, 0.25, 1);
+}
+
+.brand:hover .brandMark {
+  filter:
+    drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))
+    drop-shadow(0 0 9px rgba(232, 184, 74, 0.42));
+}
+
+.brand:hover .compassNeedle {
+  transform: rotate(378deg);
+}
+
+.compassNorth {
+  fill: url("#compassGold");
+}
+
+.compassSouth {
+  fill: url("#compassTeal");
+}
+
+.compassWest,
+.compassEast {
+  fill: rgba(255, 255, 255, 0.72);
+}
+
+.compassEast {
+  fill: rgba(110, 135, 155, 0.76);
+}
+
+.compassShine {
+  fill: rgba(255, 255, 255, 0.32);
+}
+
+.compassCenter {
+  fill: white;
+  stroke: var(--petrol);
+  stroke-width: 1.4;
+}
+
+.compassNode {
+  fill: var(--turquoise);
+}
+
+.compassAccent {
+  fill: var(--yellow);
+  filter: drop-shadow(0 0 3px rgba(232, 184, 74, 0.84));
+}
+
+.navbarGlint {
+  position: relative;
+
+  height: 1px;
+  max-width: 500px;
+  flex: 1;
+
+  margin: 0 20px;
+
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 18%,
+    rgba(255, 225, 168, 0.92) 50%,
+    rgba(255, 255, 255, 0.3) 82%,
+    transparent 100%
+  );
+
+  box-shadow:
+    0 0 5px rgba(255, 255, 255, 0.16),
+    0 0 9px rgba(255, 225, 168, 0.24);
+}
+
+.navbarGlint::after {
+  content: "";
+  position: absolute;
+  inset: -1px 0;
+
+  pointer-events: none;
+
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.18) 25%,
+    rgba(255, 255, 255, 1) 50%,
+    rgba(255, 225, 168, 0.28) 75%,
+    transparent 100%
+  );
+  background-repeat: no-repeat;
+  background-position: -100px 0;
+  background-size: 86px 100%;
+
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.52));
+
+  animation: navbarLineTravel 3.2s linear infinite;
+}
+
+@keyframes navbarLineTravel {
+  to {
+    background-position: calc(100% + 100px) 0;
+  }
+}
+
+.glintCompass {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+
+  width: 24px;
+  height: 24px;
+  overflow: visible;
+
+  filter:
+    drop-shadow(0 0 5px rgba(232, 184, 74, 0.64))
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+
+  transform: translate(-50%, -50%);
 }
 
 .navigation {
   height: 100%;
   display: flex;
   align-items: center;
-  gap: 44px;
+  gap: 22px;
+}
+
+.navGroup {
+  position: relative;
+
+  height: 48px;
+
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  padding: 4px 6px;
+
+  background: rgba(0, 29, 39, 0.24);
+  border: 0.75px solid rgba(238, 244, 241, 0.58);
+  border-radius: 999px;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 0 8px rgba(255, 255, 255, 0.035),
+    0 0 7px rgba(238, 244, 241, 0.1),
+    0 5px 14px rgba(0, 0, 0, 0.08);
+}
+
+.navGroup::after,
+.aiButton::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  inset: -0.75px;
+
+  padding: 0.75px;
+
+  pointer-events: none;
+
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.88) 0%,
+    rgba(255, 225, 168, 0.64) 48%,
+    rgba(255, 255, 255, 0.9) 100%
+  );
+  border-radius: inherit;
+
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+
+  filter:
+    drop-shadow(0 0 3px rgba(255, 255, 255, 0.24))
+    drop-shadow(0 0 6px rgba(255, 225, 168, 0.2));
 }
 
 .navLink {
   position: relative;
-  height: 100%;
+  height: 38px;
 
   display: flex;
   align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 0 15px;
+
+  border-radius: 999px;
 
   color: white;
-  font-size: 16px;
-  font-weight: 500;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-size: 18px;
+  font-weight: 560;
+  letter-spacing: 0.1px;
+
+  transition:
+    color 0.22s ease,
+    background 0.22s ease,
+    transform 0.22s ease,
+    text-shadow 0.22s ease;
 }
 
-.navLink.active::after {
+.navLink + .navLink::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -3px;
+
+  width: 1px;
+  height: 18px;
+
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(232, 184, 74, 0.64),
+    transparent
+  );
+
+  transform: translateY(-50%);
+}
+
+.navIcon {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+
+  fill: none;
+  stroke: var(--yellow);
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  filter: drop-shadow(0 0 5px rgba(232, 184, 74, 0.64));
+  transform: translateY(-0.5px) scale(1.16);
+
+  transition:
+    stroke 0.22s ease,
+    filter 0.22s ease,
+    transform 0.22s ease;
+}
+
+.navLabel {
+  display: inline-flex;
+  align-items: center;
+}
+
+.navLink::after {
   content: "";
   position: absolute;
 
-  left: 0;
-  right: 0;
-  bottom: 12px;
+  left: 18px;
+  right: 18px;
+  bottom: 3px;
 
-  height: 3px;
+  height: 2px;
   background: var(--yellow);
-  border-radius: 10px;
+  border-radius: 999px;
+
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: center;
+
+  box-shadow: 0 0 7px rgba(232, 184, 74, 0.42);
+
+  transition:
+    transform 0.22s ease,
+    opacity 0.22s ease;
+}
+
+.navIcon,
+.navLabel {
+  position: relative;
+  z-index: 1;
+}
+
+.navLink:hover {
+  color: white;
+
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.14),
+    0 2px 1px rgba(0, 0, 0, 0.42),
+    0 6px 10px rgba(0, 20, 28, 0.46);
+
+  transform: translateY(-2px);
+}
+
+.navLink:hover::after {
+  box-shadow:
+    0 0 9px rgba(232, 184, 74, 0.74),
+    0 3px 8px rgba(0, 20, 28, 0.38);
+}
+
+.navLink:hover::after,
+.navLink.active::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.navLink.active {
+  color: white;
+
+  text-shadow: 0 2px 0 rgba(0, 20, 28, 0.48);
 }
 
 .aiButton {
+  position: relative;
+
   min-width: 155px;
   height: 46px;
 
@@ -72,21 +426,188 @@
 
   padding: 0 20px;
 
-  border: 1.5px solid var(--turquoise);
-  border-radius: 10px;
+  border: 0.75px solid rgba(238, 244, 241, 0.58);
+  border-radius: 999px;
 
-  color: var(--turquoise);
+  color: var(--yellow);
   font-size: 16px;
   font-weight: 500;
+
+  transition:
+    transform 0.22s ease,
+    background 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 0 7px rgba(238, 244, 241, 0.1);
 }
 
 .aiIcon {
+  display: inline-block;
+
+  color: #c99b3f;
   font-size: 24px;
+
+  transition:
+    transform 0.25s ease,
+    filter 0.25s ease;
+}
+
+.aiButton:hover {
+  border-color: rgba(255, 220, 145, 0.7);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 8px rgba(238, 244, 241, 0.13),
+    0 6px 14px rgba(0, 24, 33, 0.16);
+
+  transform: translateY(-1px);
+}
+
+.aiButton:hover .aiIcon {
+  filter: drop-shadow(0 0 5px rgba(232, 184, 74, 0.68));
+  transform: rotate(10deg) scale(1.04);
+}
+
+.aiActive {
+  border-color: rgba(255, 220, 145, 0.72);
+  border-width: 2px;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 7px rgba(238, 244, 241, 0.12),
+    0 0 9px rgba(232, 184, 74, 0.4),
+    0 0 18px rgba(232, 184, 74, 0.18);
+
+  transform: scale(1.025);
+}
+
+.aiActive:hover {
+  transform: translateY(-1px) scale(1.025);
+}
+
+.brand:focus-visible,
+.navLink:focus-visible,
+.aiButton:focus-visible {
+  outline: 2px solid rgba(255, 220, 145, 0.92);
+  outline-offset: 3px;
+}
+
+/* Clean white navbar with petrol details. */
+.navbar {
+  --yellow: #dca62e;
+  --yellow-light: #faf3e3;
+  background: rgba(255, 255, 255, 0.99);
+  border-bottom-color: #e1e8e9;
+  box-shadow: 0 4px 18px rgba(0, 39, 51, 0.1);
+  backdrop-filter: blur(14px);
+}
+
+.brand { color: #06473e; }
+.brandText > span {
+  color: #06473e;
+  font-size: 29px;
+  letter-spacing: 1.3px;
+  text-shadow: 0 1px 1px rgba(0, 39, 57, 0.14);
+}
+.brandText strong {
+  width: 100%;
+  color: #c99b3f;
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: 3.4px;
+  padding-left: 3.4px;
+  text-align: center;
+}
+.brandMark {
+  filter: drop-shadow(0 3px 7px rgba(0, 43, 58, 0.13));
+}
+
+.compassRing { fill: #06473e; }
+.compassHalo { fill: rgba(6,71,62,.08); stroke: rgba(6,71,62,.28); }
+
+.navbarGlint {
+  background: linear-gradient(90deg, transparent, rgba(16, 42, 67, 0.08) 20%, rgba(201, 155, 63, 0.76) 50%, rgba(16, 42, 67, 0.08) 80%, transparent);
+  box-shadow: none;
+}
+
+.navbarGlint::after {
+  opacity: 0.88;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(16, 42, 67, 0.12) 16%,
+    rgba(201, 155, 63, 0.96) 46%,
+    rgba(255, 255, 255, 0.96) 54%,
+    rgba(201, 155, 63, 0.76) 72%,
+    transparent 100%
+  );
+  background-repeat: no-repeat;
+  background-position: -100px 0;
+  background-size: 92px 100%;
+  filter: drop-shadow(0 0 4px rgba(201, 155, 63, 0.52));
+}
+.glintCompass { filter: drop-shadow(0 2px 4px rgba(0, 43, 58, 0.15)); }
+
+.navGroup {
+  background: rgba(255, 255, 255, 0.48);
+  border-color: #d4dfe2;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.navGroup::after,
+.aiButton::after { display: none; }
+
+.navLink,
+.navLink:hover,
+.navLink.active {
+  color: var(--petrol);
+  text-shadow: none;
+}
+
+.navLink:hover { background: rgba(255, 255, 255, 0.5); }
+.navLink.active { background: rgba(255, 255, 255, 0.86); box-shadow: 0 2px 8px rgba(16, 42, 67, 0.1); }
+.navLink + .navLink::before { background: linear-gradient(180deg, transparent, #d6e0e8, transparent); }
+.navIcon {
+  stroke: #f0b91f;
+  filter: drop-shadow(0 0 4px rgba(240, 185, 31, 0.68));
+}
+
+.aiButton {
+  color: var(--petrol);
+  background: #ffffff;
+  border-color: #cbd8dc;
+  box-shadow: none;
 }
 
 .aiButton:hover,
 .aiActive {
-  background: rgba(18, 184, 176, 0.08);
+  color: var(--petrol);
+  background: var(--yellow-light);
+  border-color: rgba(201, 155, 63, 0.5);
+  box-shadow: 0 5px 14px rgba(0, 43, 58, 0.08);
+}
+
+.brand:focus-visible,
+.navLink:focus-visible,
+.aiButton:focus-visible {
+  outline-color: rgba(201, 155, 63, 0.92);
+}
+
+.brand:hover .brandMark {
+  filter: drop-shadow(0 4px 9px rgba(201, 155, 63, 0.3));
+}
+
+.compassAccent {
+  fill: #f0b91f;
+  filter: drop-shadow(0 0 5px rgba(240, 185, 31, 0.9));
+}
+
+.aiIcon {
+  color: #f0b91f;
+  filter: drop-shadow(0 0 4px rgba(240, 185, 31, 0.62));
 }
 
 @media (max-width: 900px) {
@@ -97,4 +618,32 @@
   .navigation {
     gap: 20px;
   }
+
+  .navbarGlint {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brandMark,
+  .compassNeedle,
+  .navLink,
+  .navLink::after,
+  .navIcon,
+  .aiButton,
+  .aiIcon {
+    transition: none;
+  }
+
+  .navLink:hover,
+  .aiButton:hover,
+  .aiActive,
+  .aiActive:hover {
+    transform: none;
+  }
+
+  .navbarGlint::after {
+    animation: none;
+  }
+
 }

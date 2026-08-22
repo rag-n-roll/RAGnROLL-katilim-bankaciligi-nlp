@@ -1,0 +1,42 @@
+.floatingAi {
+  position: fixed;
+  z-index: 50;
+  right: 28px;
+  bottom: 26px;
+  width: 76px;
+  height: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 2px solid #e7b23f;
+  border-radius: 50%;
+  color: #fff;
+  background: radial-gradient(circle at 35% 30%, #0c6b5b, #06473e 68%);
+  box-shadow: 0 10px 28px rgba(4, 71, 62, .28), 0 0 0 5px rgba(250, 233, 181, .55);
+  text-decoration: none;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+  animation: floatAi 3.4s ease-in-out infinite;
+}
+
+.floatingAi:active { cursor: grabbing; }
+
+.floatingAi:hover {
+  transform: translateY(-5px) scale(1.05);
+  box-shadow: 0 15px 34px rgba(4, 71, 62, .34), 0 0 0 7px rgba(250, 233, 181, .65);
+}
+
+.sparkle { color: #f3c958; font-size: 24px; line-height: 1; }
+.floatingAi strong { font-size: 10px; letter-spacing: .02em; }
+.orbit { position:absolute; inset:7px; border:1px solid rgba(243,201,88,.55); border-radius:50%; }
+
+@keyframes floatAi {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -7px; }
+}
+
+@media (prefers-reduced-motion: reduce) { .floatingAi { animation:none; } }
+@media (max-width:700px) { .floatingAi { right:16px; bottom:16px; width:66px; height:66px; } }

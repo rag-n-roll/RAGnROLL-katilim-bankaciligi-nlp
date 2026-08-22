@@ -1,28 +1,35 @@
 .main {
   width: 100%;
   min-height: calc(100vh - 72px);
-  padding: 28px 0 44px;
+  padding: 0 0 44px;
 }
 
 .pageHeader {
   position: relative;
 
-  width: min(1440px, calc(100% - 96px));
-  margin: 0 auto 18px;
+  width: 100%;
+  margin: 0 0 24px;
 
-  min-height: 95px;
+  min-height: 126px;
 
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
 
   overflow: hidden;
+  padding: 22px max(48px, calc((100% - 1440px) / 2));
+  color: #fff;
+  background: linear-gradient(100deg, #075244 0%, #06473e 52%, #043b34 100%);
+  box-shadow: 0 8px 24px rgba(4, 71, 62, 0.13);
 }
 
 .title {
+  position: relative;
+  width: fit-content;
   margin: 0;
+  padding-bottom: 11px;
 
-  color: var(--petrol);
+  color: #fff;
 
   font-family: Georgia, "Times New Roman", serif;
   font-size: 42px;
@@ -35,7 +42,7 @@
 
   margin-top: 8px;
 
-  color: var(--text-secondary);
+  color: #cfe2da;
 
   font-size: 15px;
   line-height: 1.5;
@@ -60,7 +67,7 @@
   width: 430px;
   height: 45px;
 
-  border-top: 1px solid rgba(18, 184, 176, 0.28);
+  border-top: 1px solid rgba(255, 255, 255, 0.32);
   border-radius: 50%;
 }
 
@@ -75,7 +82,7 @@
 
   width: 380px;
 
-  border-color: rgba(18, 184, 176, 0.18);
+  border-color: rgba(255, 255, 255, 0.2);
 
   transform: rotate(4deg);
 }
@@ -85,7 +92,7 @@
 
   width: 320px;
 
-  border-color: rgba(231, 170, 45, 0.35);
+  border-color: rgba(242, 207, 105, 0.68);
 
   transform: rotate(-4deg);
 }
@@ -166,6 +173,13 @@
   padding: 8px 12px;
 
   border-bottom: 1px solid var(--border);
+  width: 100%;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
 }
 
 .campaignRow:last-child {
@@ -275,6 +289,8 @@
 }
 
 .viewAllButton {
+  display: inline-flex;
+  align-items: center;
   margin-top: 10px;
   padding: 7px 8px;
 
@@ -400,6 +416,7 @@
 /* ALT TABLO */
 
 .tableCard {
+  scroll-margin-top: 88px;
   width: min(1440px, calc(100% - 96px));
   margin: 14px auto 0;
 
@@ -418,7 +435,8 @@
 }
 
 .tableWrapper {
-  overflow-x: auto;
+  max-height: 720px;
+  overflow: auto;
 
   border: 1px solid var(--border);
   border-radius: 9px;
@@ -445,6 +463,9 @@
 }
 
 .dataTable th {
+  position: sticky;
+  z-index: 2;
+  top: 0;
   color: var(--text-secondary);
 
   background: var(--surface);
@@ -456,6 +477,16 @@
 .dataTable tbody tr:last-child td {
   border-bottom: none;
 }
+
+.selectedCampaignHeading { display:flex; align-items:center; gap:10px; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+.selectedCampaignHeading div { display:flex; min-width:0; flex-direction:column; gap:2px; }
+.selectedCampaignHeading strong { color:var(--petrol); font-size:13px; }
+.selectedCampaignHeading span { overflow:hidden; color:var(--text-secondary); font-size:11px; white-space:nowrap; text-overflow:ellipsis; }
+.campaignText { max-height:270px; overflow:auto; white-space:pre-line; }
+.campaignSelect { display:flex; width:100%; align-items:center; justify-content:space-between; gap:18px; border:0; background:transparent; color:var(--petrol); font:inherit; font-weight:700; text-align:left; cursor:pointer; }
+.campaignSelect span { flex:0 0 auto; color:#a87316; font-size:10px; font-weight:800; }
+.dataTable tbody tr { cursor:pointer; transition:background .16s ease; }
+.dataTable tbody tr:hover, .selectedTableRow { background:#edf6f0; }
 
 .tableBank {
   display: flex;
@@ -518,13 +549,358 @@
 }
 
 @media (max-width: 700px) {
-  .pageHeader,
   .campaignWorkspace,
   .tableCard {
     width: calc(100% - 32px);
   }
 
+  .pageHeader { padding: 20px 16px; }
+
    .title {
   font-size: 34px;
 }
+}
+
+.title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #d39a25, #f2cf69);
+  box-shadow: 0 0 9px rgba(242, 207, 105, 0.4);
+}
+
+/* Kampanya seçim çalışma alanı */
+.campaignWorkspace {
+  grid-template-columns: minmax(430px, 1.08fr) minmax(460px, .92fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.detailColumn {
+  display: grid;
+  min-width: 0;
+  gap: 18px;
+}
+
+.campaignWorkspace > .panel .campaignList {
+  max-height: 720px;
+  overflow-y: auto;
+}
+
+.selectedCampaign {
+  background: #edf6f0;
+}
+
+.selectedCampaign::before {
+  background: #086253;
+}
+
+.cardBadge,
+.financeBadge,
+.investmentBadge {
+  color: #075244;
+  background: #e8f3ee;
+}
+
+.tableCard {
+  background: #e6f2ec;
+  border-color: #bfd8ce;
+}
+
+.dataTable th {
+  background: #d8ebe2;
+}
+
+.dataTable tbody td {
+  background: rgba(255, 255, 255, .76);
+}
+
+.dataTable tbody tr:hover td,
+.dataTable tbody tr.selectedTableRow td {
+  background: #dceee5;
+}
+
+@media (max-width: 900px) {
+  .campaignWorkspace { grid-template-columns: 1fr; }
+}
+
+/* Veri satırları beyaz, çevresindeki yapılandırılmış alan su yeşili */
+.dataTable tbody td { background: #fff; }
+.dataTable tbody tr + tr td { border-top: 2px solid #075244; }
+.dataTable tbody tr:hover td,
+.dataTable tbody tr.selectedTableRow td { background: #dceee5; }
+
+.dataTable thead th {
+  color: #5b4616;
+  background: #fae9b5;
+  border-bottom: 2px solid #d6a839;
+  font-weight: 800;
+}
+
+.campaignSelect {
+  justify-content: flex-start;
+}
+
+.dataTable th,
+.dataTable td {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.dataTable th:nth-child(1),
+.dataTable td:nth-child(1) { width: 18%; }
+.dataTable th:nth-child(2),
+.dataTable td:nth-child(2) { width: 30%; }
+.dataTable th:nth-child(3),
+.dataTable td:nth-child(3) { width: 10%; }
+.dataTable th:nth-child(4),
+.dataTable td:nth-child(4) { width: 9%; }
+.dataTable th:nth-child(5),
+.dataTable td:nth-child(5) { width: 8%; }
+.dataTable th:nth-child(6),
+.dataTable td:nth-child(6) { width: 9%; }
+.dataTable th:nth-child(7),
+.dataTable td:nth-child(7) {
+  width: 16%;
+  white-space: nowrap;
+}
+
+/* Üst çalışma alanında tablo başlığıyla aynı açık sarı palet */
+.campaignWorkspace > .panel,
+.detailColumn > .panel {
+  background: #fffaf0;
+  border-color: #ead9a8;
+}
+
+.panelHeader,
+.contentTitle {
+  background: #fae9b5;
+  border-bottom-color: #d6a839;
+  box-shadow: none;
+}
+
+.panelHeader h2,
+.contentTitle h2,
+.panelHeader .campaignCount {
+  color: #5b4616;
+}
+
+.campaignList,
+.extractedList,
+.aiNotice {
+  border-color: #eadfbd;
+}
+
+/* Bölüm başlıkları ve dengeli iki sütun */
+.campaignWorkspace {
+  --workspace-height: 834px;
+}
+
+.campaignWorkspace > .panel {
+  height: var(--workspace-height);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.campaignWorkspace > .panel .campaignList {
+  flex: 1;
+  max-height: none;
+}
+
+.detailColumn {
+  height: var(--workspace-height);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 28px;
+}
+
+.detailColumn > .panel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.panelHeader,
+.contentTitle {
+  min-height: 46px;
+  margin: -16px -16px 16px;
+  padding: 10px 16px;
+  border-radius: 15px 15px 0 0;
+  background: linear-gradient(90deg, #e0ab35 0%, #f0c65f 100%);
+  border-bottom: 2px solid #bd861b;
+}
+
+.panelHeader h2,
+.contentTitle h2,
+.panelHeader .campaignCount {
+  color: #063d36;
+}
+
+.contentTitle .titleIcon {
+  background: rgba(255, 255, 255, .58);
+  color: #075244;
+}
+
+.campaignText {
+  flex: 1;
+  max-height: none;
+}
+
+.extractedList {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.tableCard {
+  margin-top: 28px;
+  padding: 22px 24px 24px;
+  background: #dceee5;
+  border-color: #a9cfc0;
+  box-shadow: none;
+}
+
+.tableCard h2 {
+  color: #06473e;
+  font-size: 19px;
+  margin-bottom: 14px;
+}
+
+.tableWrapper {
+  border-color: #9fc6b6;
+  background: #dceee5;
+}
+
+@media (max-width: 900px) {
+  .campaignWorkspace { --workspace-height: auto; }
+  .campaignWorkspace > .panel,
+  .detailColumn { height: auto; }
+  .campaignWorkspace > .panel .campaignList { max-height: 650px; }
+  .detailColumn { grid-template-rows: auto; }
+}
+
+/* Nihai kampanya kartı renkleri */
+.campaignWorkspace > .panel,
+.campaignWorkspace .detailColumn > .panel {
+  background: #fffdf6;
+  border-color: #eee3c7;
+}
+
+.campaignWorkspace .panelHeader,
+.campaignWorkspace .contentTitle {
+  background: #fae9b5;
+  border-bottom-color: #d6a839;
+  box-shadow: none;
+}
+
+.campaignWorkspace .panelHeader h2,
+.campaignWorkspace .contentTitle h2,
+.campaignWorkspace .panelHeader .campaignCount {
+  color: #5b4616;
+}
+
+.campaignWorkspace .campaignList,
+.campaignWorkspace .extractedList,
+.campaignWorkspace .aiNotice {
+  border-color: #eee3c7;
+  background-color: #fffdf8;
+}
+
+.campaignWorkspace .extractedRow {
+  min-height: 54px;
+  padding: 10px 14px;
+}
+
+.campaignWorkspace .campaignText {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-color: #d6a839 #f8f1dd;
+  scrollbar-width: thin;
+}
+
+.summaryBlock,
+.fullTextBlock {
+  padding: 12px 14px;
+  border-radius: 9px;
+}
+
+.summaryBlock {
+  margin-bottom: 12px;
+  background: #fae9b5;
+  border-left: 3px solid #d6a839;
+}
+
+.fullTextBlock {
+  background: #fffdf8;
+  border: 1px solid #eee3c7;
+}
+
+.summaryBlock h3,
+.fullTextBlock h3 {
+  margin: 0 0 7px;
+  color: #5b4616;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.summaryBlock p,
+.fullTextBlock p {
+  margin: 0;
+  color: #284741;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.campaignWorkspace .extractedLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #183e3a;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.campaignWorkspace .extractedRow strong {
+  color: #062f35;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.infoIcon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  border-radius: 50%;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.infoIcon0 { color: #076252; background: #dceee5; }
+.infoIcon1 { color: #003f5c; background: #dcebf1; }
+.infoIcon2 { color: #9a6810; background: #fae9b5; }
+
+/* Çıkarılan bilgilerin tamamı kaydırmasız görünür */
+.campaignWorkspace .detailColumn {
+  grid-template-rows: minmax(0, .96fr) minmax(0, 1.04fr);
+}
+
+.campaignWorkspace .extractedList {
+  overflow: visible;
+}
+
+.campaignWorkspace .extractedRow {
+  min-height: 49px;
+  padding-top: 7px;
+  padding-bottom: 7px;
 }

@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import styles from "./page.module.css";
 
 const suggestions = [
@@ -5,25 +8,31 @@ const suggestions = [
   "Taşıt finansmanında en uygun seçenek hangisi?",
   "Masrafsız kart kampanyaları neler?",
   "Yatırım kampanyalarını karşılaştır",
+  "Konut finansmanında en uzun vade hangi bankada?",
+  "Süresi yakında dolacak kampanyaları göster",
+  "Bana uygun katılma hesabını nasıl seçebilirim?",
 ];
 
 export default function ChatbotPage() {
+  const [input, setInput] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(true);
+  const [sentMessages, setSentMessages] = useState<string[]>([]);
+  const sendMessage = () => {
+    const value = input.trim();
+    if (!value) return;
+    setSentMessages((messages) => [...messages, value]);
+    setInput("");
+  };
+
   return (
     <main className={styles.main}>
       <section className={styles.assistantLayout}>
+        <section className={styles.pageHeader}>
+          <span className={styles.headerAiIcon}>✦</span>
+          <div className={styles.headerCopy}><h1>Pusula AI</h1><p>Katılım bankacılığında akıllı karar asistanınız</p></div>
+        </section>
         {/* SOL: CHAT */}
         <section className={styles.chatPanel}>
-          <div className={styles.chatTitle}>
-            <div className={styles.robotMini}>✦</div>
-            <h1>AI Asistanı</h1>
-
-            <div className={styles.headerDecoration}>
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-          </div>
-
           <div className={styles.messages}>
             <div className={styles.userRow}>
               <div className={styles.userBubble}>
@@ -103,15 +112,21 @@ export default function ChatbotPage() {
                 <div className={styles.botTime}>10:31</div>
               </div>
             </div>
+            {sentMessages.map((message, index) => (
+              <div className={styles.liveMessageGroup} key={`${message}-${index}`}>
+                <div className={styles.userRow}><div className={styles.userBubble}><p>{message}</p><div className={styles.messageMeta}>Şimdi <span>✓✓</span></div></div></div>
+                <div className={styles.botRow}><div className={styles.botAvatar}>✦</div><div className={styles.botBubble}><p>Sorunuzu aldım. Pusula AI mevcut katılım bankacılığı verileri üzerinden seçenekleri değerlendiriyor.</p><p>Daha ayrıntılı sonuç için banka veya ürün türünü de belirtebilirsiniz.</p><div className={styles.botTime}>Şimdi</div></div></div>
+              </div>
+            ))}
           </div>
 
           <div className={styles.inputArea}>
-            <button className={styles.plusButton}>＋</button>
+            <button type="button" aria-label="Hazır soruları aç veya kapat" className={styles.plusButton} onClick={() => setShowSuggestions((shown) => !shown)}>＋</button>
 
             <div className={styles.inputWrapper}>
-              <input type="text" placeholder="Sorunuzu yazın..." />
+              <input value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") sendMessage(); }} type="text" placeholder="Sorunuzu yazın..." />
 
-              <button className={styles.sendButton}>➤</button>
+              <button type="button" aria-label="Mesajı gönder" onClick={sendMessage} className={styles.sendButton}>➤</button>
             </div>
           </div>
 
@@ -119,10 +134,28 @@ export default function ChatbotPage() {
             🔒 Yanıtlar bilgilendirme amaçlıdır. Detaylı bilgi için lütfen
             bankanızla iletişime geçiniz.
           </div>
+          <div className={styles.assistantBenefits}>
+            <div><span>✦</span><strong>7/24 Akıllı Destek</strong><small>İhtiyacınız olduğunda yanınızda</small></div>
+            <div><span>✓</span><strong>Güvenilir ve Güncel Bilgi</strong><small>Veriye dayalı anlaşılır yanıtlar</small></div>
+            <div><span>⌁</span><strong>Size Özel Öneriler</strong><small>Tercihlerinize uygun seçenekler</small></div>
+          </div>
         </section>
 
-        {/* SAĞ TARAF */}
-        <aside className={styles.rightColumn}>
+        <aside className={styles.aiSideRail}>
+          <section className={styles.aiMarkCard}>
+            <div className={styles.aiMarkOrbit}><span>✦</span><i>AI</i></div>
+            <h2>Pusula AI</h2>
+            <p>Finansal kararlarınız için akıllı yol arkadaşınız.</p>
+          </section>
+        {showSuggestions && <section className={styles.quickQuestions}>
+          <div className={styles.quickQuestionsTitle}><span>✦</span><strong>Hazır Sorular</strong></div>
+          <div className={styles.quickQuestionList}>{suggestions.map((question) => (
+            <button key={question} type="button" onClick={() => setInput(question)}>{question}<span>›</span></button>
+          ))}</div>
+        </section>}
+        </aside>
+
+        {false && <aside className={styles.rightColumn}>
           <section className={styles.infoCard}>
             <div className={styles.infoHeading}>
               <div className={styles.bigSparkle}>✦</div>
@@ -178,7 +211,7 @@ export default function ChatbotPage() {
               ))}
             </div>
           </section>
-        </aside>
+        </aside>}
       </section>
     </main>
   );

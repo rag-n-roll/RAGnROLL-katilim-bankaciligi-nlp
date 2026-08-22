@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { getBankBrandColor } from "./bankBrand";
 
 const Plot = dynamic(() => import("react-plotly.js"), {
   ssr: false,
@@ -12,9 +13,14 @@ const banks = [
   "Türkiye Finans",
   "Vakıf Katılım",
   "Ziraat Katılım",
+  "Emlak Katılım",
+  "Hayat Finans",
+  "TOM Katılım",
+  "Dünya Katılım",
+  "Adil Katılım",
 ];
 
-const values = [52, 34, 24, 11, 7];
+const values = [69, 48, 13, 3, 208, 64, 10, 10, 45, 1];
 
 export default function CampaignDistributionChart() {
   return (
@@ -24,17 +30,11 @@ export default function CampaignDistributionChart() {
           type: "pie",
           labels: banks,
           values,
-          hole: 0.55,
+          hole: 0.66,
           textinfo: "none",
           hovertemplate: "%{label}: %{value} kampanya<extra></extra>",
           marker: {
-            colors: [
-              "#002B3A",
-              "#12B8B0",
-              "#E7AA2D",
-              "#00AFA8",
-              "#9CE5E1",
-            ],
+            colors: banks.map(getBankBrandColor),
           },
         },
       ]}
@@ -49,6 +49,15 @@ export default function CampaignDistributionChart() {
         paper_bgcolor: "rgba(0,0,0,0)",
         plot_bgcolor: "rgba(0,0,0,0)",
         showlegend: false,
+        annotations: [{
+          text: "<b>471</b><br><span style='font-size:11px;color:#62737B'>kampanya</span>",
+          x: 0.5,
+          y: 0.5,
+          xref: "paper",
+          yref: "paper",
+          showarrow: false,
+          font: { color: "#102F3D", size: 23 },
+        }],
       }}
       config={{
         displayModeBar: false,

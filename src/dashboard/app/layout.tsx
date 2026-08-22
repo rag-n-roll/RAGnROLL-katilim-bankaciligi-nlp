@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "../components/Navbar";
+import FloatingAiLink from "../components/FloatingAiLink";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Katılım Bankacılığı",
-  description: "Katılım bankacılığı dashboard uygulaması",
+  title: "Pusula Katılım",
+  description: "AI destekli katılım bankacılığı analiz platformu",
 };
 
 export default function RootLayout({
@@ -31,6 +32,7 @@ export default function RootLayout({
       <body>
         <Navbar />
         {children}
+        <FloatingAiLink />
       </body>
     </html>
   );

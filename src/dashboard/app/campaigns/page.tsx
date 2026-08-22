@@ -1,4 +1,8 @@
+import fs from "node:fs";
+import path from "node:path";
 import styles from "./page.module.css";
+import BankLogo from "../../components/BankLogo";
+import CampaignExplorer from "./CampaignExplorer";
 
 const campaigns = [
   {
@@ -34,59 +38,64 @@ const campaigns = [
   },
 ];
 
-const tableRows = [
-  {
-    bank: "Kuveyt Türk",
-    initials: "KT",
-    campaign: "Taşıt Finansmanı Özel Oran Kampanyası",
-    type: "Finansman",
-    rate: "%2,49",
-    term: "24 Ay",
-    cost: "0 TL",
-    validity: "20 Mayıs 2024 – 30 Haziran 2024",
-    best: true,
-  },
-  {
-    bank: "Albaraka Türk",
-    initials: "AT",
-    campaign: "Davet Et Kazan Kampanyası",
-    type: "Kart",
-    rate: "%2,69",
-    term: "36 Ay",
-    cost: "0 TL",
-    validity: "19 Mayıs 2024 – 30 Haziran 2024",
-  },
-  {
-    bank: "Türkiye Finans",
-    initials: "TF",
-    campaign: "Katılma Hesabı Hoş Geldin Kampanyası",
-    type: "Yatırım",
-    rate: "%2,79",
-    term: "48 Ay",
-    cost: "250 TL",
-    validity: "18 Mayıs 2024 – 30 Haziran 2024",
-  },
-  {
-    bank: "Vakıf Katılım",
-    initials: "VK",
-    campaign: "Otomobil Finansmanı Avantajlı Paket",
-    type: "Finansman",
-    rate: "%2,89",
-    term: "36 Ay",
-    cost: "250 TL",
-    validity: "17 Mayıs 2024 – 30 Haziran 2024",
-  },
-  {
-    bank: "Ziraat Katılım",
-    initials: "ZK",
-    campaign: "Esnek Hesap Açılış Kampanyası",
-    type: "Yatırım",
-    rate: "%2,59",
-    term: "24 Ay",
-    cost: "0 TL",
-    validity: "16 Mayıs 2024 – 30 Haziran 2024",
-  },
-];
+type ProcessedCampaign = {
+  id: string;
+  bank_name?: string;
+  title?: string;
+  summary?: string | null;
+  clean_text?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  structured?: {
+    product_type?: string | null;
+    profit_share_rate?: string | number | null;
+    term_months?: string | number | null;
+    fee_information?: string | null;
+  };
+};
+
+const canonicalBankName = (name = "") => {
+  const value = name.toLocaleLowerCase("tr-TR");
+  if (value.includes("kuveyt")) return "Kuveyt Türk";
+  if (value.includes("albaraka")) return "Albaraka Türk";
+  if (value.includes("türkiye finans")) return "Türkiye Finans";
+  if (value.includes("vakıf")) return "Vakıf Katılım";
+  if (value.includes("ziraat")) return "Ziraat Katılım";
+  if (value.includes("emlak")) return "Emlak Katılım";
+  if (value.includes("hayat")) return "Hayat Finans";
+  if (value.includes("tom")) return "TOM Katılım";
+  if (value.includes("dünya")) return "Dünya Katılım";
+  if (value.includes("adil")) return "Adil Katılım";
+  return name || "Katılım Bankası";
+};
+
+const campaignType = (value?: string | null) => {
+  if (value === "card") return "Kart";
+  if (value === "investment") return "Yatırım";
+  return "Finansman";
+};
+
+const processedPath = path.join(process.cwd(), "..", "..", "data", "processed", "campaigns.json");
+const processedData = JSON.parse(fs.readFileSync(processedPath, "utf8")) as { records: ProcessedCampaign[] };
+const allCampaignRows = processedData.records.map((record) => {
+  const structured = record.structured ?? {};
+  const rate = structured.profit_share_rate;
+  const term = structured.term_months;
+  return {
+    id: record.id,
+    bank: canonicalBankName(record.bank_name),
+    campaign: record.title || "Güncel Kampanya",
+    text: record.summary || record.clean_text || "Bu kampanya için ayrıntılı metin bulunmuyor.",
+    summary: record.summary || "Bu kampanya için kısa özet bulunmuyor.",
+    cleanText: record.clean_text || "Bu kampanya için temizlenmiş tam metin bulunmuyor.",
+    type: campaignType(structured.product_type),
+    rate: rate ? `%${String(rate).replace(".", ",")}` : "—",
+    term: term ? `${term} Ay` : "—",
+    cost: structured.fee_information || "—",
+    validity: [record.start_date, record.end_date].filter(Boolean).join(" – ") || "Güncel",
+  };
+});
+const totalCampaignCount = allCampaignRows.length;
 
 function getTypeClass(type: string) {
   if (type === "Kart") return styles.cardBadge;
@@ -115,13 +124,15 @@ export default function CampaignsPage() {
         </div>
       </section>
 
-      <section className={styles.campaignWorkspace}>
+      <CampaignExplorer rows={allCampaignRows} />
+      {/* Legacy static workspace removed; CampaignExplorer owns selection state. */}
+      {false && <section className={styles.campaignWorkspace}>
         {/* SOL KART */}
         <article className={styles.panel}>
           <div className={styles.panelHeader}>
             <h2>Banka Bazlı Tüm Kampanyalar</h2>
 
-            <span className={styles.campaignCount}>25 kampanya</span>
+            <span className={styles.campaignCount}>{totalCampaignCount} kampanya</span>
           </div>
 
           <div className={styles.campaignList}>
@@ -132,7 +143,7 @@ export default function CampaignsPage() {
                   campaign.selected ? styles.selectedCampaign : ""
                 }`}
               >
-                <div className={styles.bankIcon}>{campaign.initials}</div>
+                <BankLogo bank={campaign.bank} size={34} />
 
                 <div className={styles.campaignInfo}>
                   <strong>{campaign.bank}</strong>
@@ -150,9 +161,9 @@ export default function CampaignsPage() {
             ))}
           </div>
 
-          <button className={styles.viewAllButton}>
+          <a className={styles.viewAllButton} href="#all-campaigns">
             Tümünü Görüntüle <span>›</span>
-          </button>
+          </a>
         </article>
 
         {/* ORTA KART */}
@@ -246,11 +257,10 @@ export default function CampaignsPage() {
             </div>
           </div>
         </article>
-      </section>
+      </section>}
 
-      {/* ALT TABLO */}
-      <section className={styles.tableCard}>
-        <h2>Yapılandırılmış Veri Tablosu</h2>
+      {false && <section className={styles.tableCard} id="all-campaigns">
+        <h2>Tüm Kampanyalar <span className={styles.campaignCount}>{totalCampaignCount} kayıt</span></h2>
 
         <div className={styles.tableWrapper}>
           <table className={styles.dataTable}>
@@ -267,19 +277,22 @@ export default function CampaignsPage() {
             </thead>
 
             <tbody>
-              {tableRows.map((row) => (
-                <tr key={row.bank}>
+              {allCampaignRows.map((row) => (
+                <tr key={row.id}>
                   <td>
                     <div className={styles.tableBank}>
-                      <span className={styles.smallBankIcon}>
-                        {row.initials}
-                      </span>
+                      <BankLogo bank={row.bank} size={30} />
 
                       <strong>{row.bank}</strong>
                     </div>
                   </td>
 
-                  <td className={styles.campaignCell}>{row.campaign}</td>
+                  <td className={styles.campaignCell}>
+                    <details className={styles.campaignDisclosure}>
+                      <summary>{row.campaign}<span>Metni aç</span></summary>
+                      <div>{row.text}</div>
+                    </details>
+                  </td>
 
                   <td>
                     <span
@@ -292,9 +305,6 @@ export default function CampaignsPage() {
                   <td>
                     <strong>{row.rate}</strong>
 
-                    {row.best && (
-                      <span className={styles.bestBadge}>En Düşük</span>
-                    )}
                   </td>
 
                   <td>{row.term}</td>
@@ -305,7 +315,7 @@ export default function CampaignsPage() {
             </tbody>
           </table>
         </div>
-      </section>
+      </section>}
     </main>
   );
 }
