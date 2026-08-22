@@ -1,183 +1,91 @@
-import styles from "./page.module.css";
+"use client";
+
+import { FormEvent, useState } from "react";
+import { sendChat } from "../../services/api";
+import styles from "../live.module.css";
 
 const suggestions = [
-  "En yüksek kâr payı hangi bankada?",
-  "Taşıt finansmanında en uygun seçenek hangisi?",
-  "Masrafsız kart kampanyaları neler?",
-  "Yatırım kampanyalarını karşılaştır",
+  "Faizsiz ev finansmanında en düşük oran hangisi?",
+  "Kuveyt Türk ile Albaraka Türk taşıt finansmanını karşılaştır",
+  "Murabaha nedir?",
 ];
 
+type Answer = Awaited<ReturnType<typeof sendChat>>;
+type Exchange = { question: string; response?: Answer; error?: string };
+
 export default function ChatbotPage() {
+  const [message, setMessage] = useState("");
+  const [exchanges, setExchanges] = useState<Exchange[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  async function ask(question: string) {
+    const trimmed = question.trim();
+    if (!trimmed || loading) return;
+    setLoading(true);
+    setExchanges((items) => [...items, { question: trimmed }]);
+    try {
+      const response = await sendChat(trimmed);
+      setExchanges((items) => [
+        ...items.slice(0, -1),
+        { question: trimmed, response },
+      ]);
+    } catch (reason) {
+      const error = reason instanceof Error ? reason.message : "Yanıt üretilemedi.";
+      setExchanges((items) => [...items.slice(0, -1), { question: trimmed, error }]);
+    } finally {
+      setLoading(false);
+      setMessage("");
+    }
+  }
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    void ask(message);
+  }
+
   return (
     <main className={styles.main}>
-      <section className={styles.assistantLayout}>
-        {/* SOL: CHAT */}
-        <section className={styles.chatPanel}>
-          <div className={styles.chatTitle}>
-            <div className={styles.robotMini}>✦</div>
-            <h1>AI Asistanı</h1>
-
-            <div className={styles.headerDecoration}>
-              <span></span>
-              <span></span>
-              <span></span>
+      <header className={styles.header}>
+        <div>
+          <h1>Kanıta dayalı asistan</h1>
+          <p>Kesin ve karşılaştırmalı sorular yapılandırılmış veriye; tanım soruları kaynak metinlere yönlendirilir.</p>
+        </div>
+      </header>
+      <section className={styles.grid}>
+        <article className={`${styles.card} ${styles.chat}`} aria-live="polite">
+          {exchanges.length === 0 && <p className={styles.status}>Bir soru yazın veya hazır sorulardan birini seçin.</p>}
+          {exchanges.map((exchange, index) => (
+            <div key={`${exchange.question}-${index}`}>
+              <div className={`${styles.message} ${styles.userMessage}`}>{exchange.question}</div>
+              <div className={styles.message}>
+                {!exchange.response && !exchange.error && "Kaynaklar taranıyor…"}
+                {exchange.error && <span role="alert">{exchange.error}</span>}
+                {exchange.response && (
+                  <>
+                    <strong>{exchange.response.plan.route} · güven %{Math.round(exchange.response.confidence * 100)}</strong>
+                    <p>{exchange.response.answer}</p>
+                    {exchange.response.warnings.map((warning) => <span className={`${styles.badge} ${styles.warningBadge}`} key={warning}>{warning}</span>)}
+                    {exchange.response.sources.map((source, sourceIndex) => source.source_url ? (
+                      <a className={styles.source} href={source.source_url} key={`${source.source_url}-${sourceIndex}`} rel="noreferrer" target="_blank">Kaynak {sourceIndex + 1}: {source.bank_name || source.title || source.campaign_id}</a>
+                    ) : (
+                      <span className={styles.source} key={`${source.term_id}-${sourceIndex}`}>Terminoloji kaynağı: {source.title || source.term_id}</span>
+                    ))}
+                  </>
+                )}
+              </div>
             </div>
+          ))}
+          <form className={styles.controls} onSubmit={submit}>
+            <input className={styles.input} aria-label="Sorunuz" maxLength={4000} minLength={1} onChange={(event) => setMessage(event.target.value)} placeholder="Sorunuzu yazın…" value={message} />
+            <button className={styles.button} disabled={loading || !message.trim()} type="submit">Gönder</button>
+          </form>
+        </article>
+        <aside className={styles.card}>
+          <h2>Hazır sorular</h2>
+          <div className={styles.list}>
+            {suggestions.map((question) => <button className={styles.listButton} disabled={loading} key={question} onClick={() => void ask(question)} type="button">{question}</button>)}
           </div>
-
-          <div className={styles.messages}>
-            <div className={styles.userRow}>
-              <div className={styles.userBubble}>
-                <p>Taşıt finansmanında en uygun seçenek hangisi?</p>
-
-                <div className={styles.messageMeta}>
-                  10:28 <span>✓✓</span>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.botRow}>
-              <div className={styles.botAvatar}>✦</div>
-
-              <div className={styles.botBubble}>
-                <p>
-                  Taşıt finansmanı için güncel en uygun seçenekler şunlardır:
-                </p>
-
-                <ul>
-                  <li>
-                    Vade 24 aya kadar: <strong>%2,49 kâr payı oranı</strong>
-                  </li>
-                  <li>
-                    Vade 36 aya kadar: <strong>%2,69 kâr payı oranı</strong>
-                  </li>
-                  <li>
-                    Vade 48 aya kadar: <strong>%2,79 kâr payı oranı</strong>
-                  </li>
-                </ul>
-
-                <p>
-                  Detaylı karşılaştırma için Karşılaştırma sayfasını
-                  inceleyebilirsiniz.
-                </p>
-
-                <div className={styles.botTime}>10:28</div>
-              </div>
-            </div>
-
-            <div className={styles.userRow}>
-              <div className={styles.userBubble}>
-                <p>Masrafsız kart kampanyaları neler?</p>
-
-                <div className={styles.messageMeta}>
-                  10:31 <span>✓✓</span>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.botRow}>
-              <div className={styles.botAvatar}>✦</div>
-
-              <div className={styles.botBubble}>
-                <p>Masrafsız kart kampanyalarımız:</p>
-
-                <ul>
-                  <li>
-                    <strong>Aidatsız Klasik Kart</strong> – Yıllık aidat yok
-                  </li>
-
-                  <li>
-                    <strong>Genç Kart</strong> – Tüm harcamalarda masraf yok
-                  </li>
-
-                  <li>
-                    <strong>Sanal Kart</strong> – Online alışverişlerde masrafsız
-                    kullanım
-                  </li>
-                </ul>
-
-                <p>
-                  Tüm kart kampanyaları için Kampanyalar sayfasında
-                  inceleyebilirsiniz.
-                </p>
-
-                <div className={styles.botTime}>10:31</div>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.inputArea}>
-            <button className={styles.plusButton}>＋</button>
-
-            <div className={styles.inputWrapper}>
-              <input type="text" placeholder="Sorunuzu yazın..." />
-
-              <button className={styles.sendButton}>➤</button>
-            </div>
-          </div>
-
-          <div className={styles.disclaimer}>
-            🔒 Yanıtlar bilgilendirme amaçlıdır. Detaylı bilgi için lütfen
-            bankanızla iletişime geçiniz.
-          </div>
-        </section>
-
-        {/* SAĞ TARAF */}
-        <aside className={styles.rightColumn}>
-          <section className={styles.infoCard}>
-            <div className={styles.infoHeading}>
-              <div className={styles.bigSparkle}>✦</div>
-
-              <div>
-                <h2>AI Asistan</h2>
-                <span>Yapay Zekâ Destekli</span>
-              </div>
-            </div>
-
-            <div className={styles.infoContent}>
-              <div>
-                <p>
-                  Katılım Bankacılığı ürünleri hakkında sorularınızı yanıtlar,
-                  en uygun seçenekleri bulmanıza yardımcı olur.
-                </p>
-
-                <ul className={styles.features}>
-                  <li>💬 7/24 Akıllı Destek</li>
-                  <li>🛡 Güvenilir ve Güncel Bilgi</li>
-                  <li>⚙ Size Özel Öneriler</li>
-                </ul>
-              </div>
-
-              <div className={styles.robotVisual}>
-                <div className={styles.robotHead}>
-                  <div className={styles.robotFace}>
-                    <span></span>
-                    <span></span>
-                  </div>
-                </div>
-
-                <div className={styles.robotBody}></div>
-              </div>
-            </div>
-          </section>
-
-          <section className={styles.questionsCard}>
-            <div className={styles.questionsTitle}>
-              <span>✦</span>
-              <h2>Hazır Sorular</h2>
-            </div>
-
-            <div className={styles.questionList}>
-              {suggestions.map((question) => (
-                <button key={question} className={styles.questionButton}>
-                  <span className={styles.questionIcon}>▢</span>
-
-                  <span>{question}</span>
-
-                  <strong>›</strong>
-                </button>
-              ))}
-            </div>
-          </section>
+          <p className={styles.muted} style={{ marginTop: 16 }}>Yanıtlar bilgilendirme amaçlıdır. Sistem müşteri işlemi yapmaz ve kaynakta olmayan sayısal değeri tamamlamaz.</p>
         </aside>
       </section>
     </main>

@@ -1,0 +1,28 @@
+{
+  "aliases": {
+    "faiz": "kâr payı",
+    "faizsiz": "katılım finansmanı",
+    "faiz oranı": "kâr payı oranı",
+    "kredi": "finansman",
+    "ev kredisi": "konut finansmanı",
+    "araç kredisi": "taşıt finansmanı"
+  },
+  "product_terms": {
+    "ev": {"product_type": "financing", "financing_type": "housing"},
+    "konut": {"product_type": "financing", "financing_type": "housing"},
+    "ev finansmanı": {"product_type": "financing", "financing_type": "housing"},
+    "taşıt": {"product_type": "financing", "financing_type": "vehicle"},
+    "araç finansmanı": {"product_type": "financing", "financing_type": "vehicle"},
+    "ihtiyaç": {"product_type": "financing", "financing_type": "consumer"},
+    "kart": {"product_type": "card"},
+    "yatırım": {"product_type": "investment"},
+    "katılma hesabı": {"product_type": "investment"}
+  },
+  "structured_intents": [
+    "product_search",
+    "product_comparison",
+    "rate_query",
+    "maturity_query"
+  ],
+  "blocked_transaction_intents": ["complaint_support"]
+}

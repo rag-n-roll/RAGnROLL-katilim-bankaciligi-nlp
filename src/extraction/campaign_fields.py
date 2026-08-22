@@ -5,12 +5,18 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from src.extraction.contracts import build_field_contracts
 from src.normalization import normalize_duration, normalize_money, normalize_rate
 
 NUMBER = r"\d[\d.,]*"
 PROFIT_PATTERNS = (
     re.compile(rf"%\s*({NUMBER})\s*k[aâ]r\s+pay[ıi](?:\s+oran[ıi])?", re.IGNORECASE),
     re.compile(rf"k[aâ]r\s+pay[ıi](?:\s+oran[ıi])?\s*%\s*({NUMBER})", re.IGNORECASE),
+    re.compile(rf"({NUMBER})\s*%\s*k[aâ]r\s+pay[ıi](?:\s+oran[ıi])?", re.IGNORECASE),
+    re.compile(
+        rf"%\s*({NUMBER})\s*(?:k[aâ]r\s+pay[ıi]\s+)?oran(?:[ıi]|ından|li|lı)?",
+        re.IGNORECASE,
+    ),
 )
 DISCOUNT_PATTERN = re.compile(
     rf"(?:%\s*({NUMBER})|({NUMBER})\s*%)\s*(?:indirim|iade)",
@@ -33,10 +39,20 @@ MONEY_REWARD_PATTERN = re.compile(
     re.IGNORECASE,
 )
 MAX_AMOUNT_PATTERN = re.compile(
-    rf"({MONEY_PATTERN.pattern})(?:['’]?ye)?\s+kadar", re.IGNORECASE
+    rf"({MONEY_PATTERN.pattern})(?:['’]?ye|\s+tutar[aı])?\s+kadar", re.IGNORECASE
 )
 MIN_AMOUNT_PATTERN = re.compile(
     rf"en\s+az\s+({MONEY_PATTERN.pattern})(?:\s+ile)?", re.IGNORECASE
+)
+APPLICATION_CHANNEL_PATTERN = re.compile(
+    r"\b(mobil uygulama|internet şubesi|internet subesi|görüntülü görüşme|"
+    r"goruntulu gorusme|şube|sube|çağrı merkezi|cagri merkezi)\b",
+    re.IGNORECASE,
+)
+CONDITION_PATTERN = re.compile(
+    r"((?:en\s+az\s+[^!?]{1,80}?|[^.!?]{1,80}?))\s+"
+    r"(?:şart(?:ı|ını)?|koşul(?:u|uyla)?)",
+    re.IGNORECASE,
 )
 
 
@@ -105,6 +121,11 @@ def _first_match(
     return None
 
 
+def _all_profit_matches(text: str) -> list[re.Match[str]]:
+    matches = [match for pattern in PROFIT_PATTERNS for match in pattern.finditer(text)]
+    return sorted(matches, key=lambda match: (match.start(), match.end()))
+
+
 def _benefit(text: str) -> str | None:
     for sentence in re.split(r"(?<=[.!?])\s+", text.strip()):
         normalized = _normalized(sentence)
@@ -116,6 +137,10 @@ def _benefit(text: str) -> str | None:
             "iade",
             "masrafsız",
             "masrafsiz",
+            "ücretsiz",
+            "ucretsiz",
+            "muafiyet",
+            "hediye",
         )
         if any(word in normalized for word in benefit_words):
             return sentence[:500]
@@ -133,19 +158,34 @@ def extract_prd_fields(
     normalized = _normalized(source)
     evidence: dict[str, str] = {}
 
-    profit_match = _first_match(PROFIT_PATTERNS, source)
+    profit_matches = _all_profit_matches(source)
+    profit_match = profit_matches[0] if profit_matches else None
     profit_share_rate = None
+    conflicts: dict[str, list[Any]] = {}
     if profit_match:
         profit_share_rate = _percentage(profit_match.group(1))
         evidence["profit_share_rate"] = profit_match.group(0)
+        distinct_rates = sorted(
+            {_percentage(match.group(1)) for match in profit_matches}
+        )
+        if len(distinct_rates) > 1:
+            conflicts["profit_share_rate"] = distinct_rates
+            profit_share_rate = None
 
     term_match = TERM_PATTERN.search(source)
     duration_match = term_match or DURATION_PATTERN.search(source)
     installment_match = INSTALLMENT_PATTERN.search(source)
     discount_match = DISCOUNT_PATTERN.search(source)
-    reward_match = MONEY_REWARD_PATTERN.search(source)
+    reward_matches = list(MONEY_REWARD_PATTERN.finditer(source))
+    # Aynı cümlede finansman tutarı da varsa ödül ifadesine en yakın tutarı seç.
+    reward_match = reward_matches[-1] if reward_matches else None
     max_amount_match = MAX_AMOUNT_PATTERN.search(source)
     min_amount_match = MIN_AMOUNT_PATTERN.search(source)
+    application_channel_match = APPLICATION_CHANNEL_PATTERN.search(source)
+    condition_match = CONDITION_PATTERN.search(source)
+    condition = (
+        condition_match.group(1).strip(" ,;:-") if condition_match else None
+    )
     duration = normalize_duration(duration_match.group(0)) if duration_match else None
     discount_value = None
     if discount_match:
@@ -160,8 +200,13 @@ def extract_prd_fields(
         evidence["reward_amount"] = reward_match.group(0)
     if max_amount_match:
         evidence["max_amount"] = max_amount_match.group(0)
+        evidence["financing_amount"] = max_amount_match.group(0)
     if min_amount_match:
         evidence["min_amount"] = min_amount_match.group(0)
+    if application_channel_match:
+        evidence["application_channel"] = application_channel_match.group(0)
+    if condition_match:
+        evidence["condition"] = condition
 
     reward_amount = None
     if reward_match:
@@ -197,7 +242,7 @@ def extract_prd_fields(
     product_type = _product_type(normalized)
     if product_type:
         product_evidence_patterns = {
-            "financing": r"[^\s.]+\s+finansman[ıi]",
+            "financing": r"(?:[^\s.]+\s+)?finansman(?:[ıi])?\b",
             "card": r"kart|bonus",
             "investment": (
                 r"yatırım|yatirim|katılma hesabı|katilma hesabı|altın|altin"
@@ -224,17 +269,21 @@ def extract_prd_fields(
     if "masrafsız" in normalized or "masrafsiz" in normalized:
         fee_information = "masrafsız"
         evidence["fee_information"] = "masrafsız"
+    campaign_benefit = _benefit(source)
+    if campaign_benefit:
+        evidence["campaign_benefit"] = campaign_benefit
 
-    return {
+    values = {
         "product_type": product_type,
         "financing_type": financing_type,
         "profit_share_rate": profit_share_rate,
+        "financing_amount": max_amount,
         "term_months": int(term_match.group(1)) if term_match else None,
         "duration": duration.to_dict() if duration else None,
         "installment_count": (
             int(installment_match.group(1)) if installment_match else None
         ),
-        "campaign_benefit": _benefit(source),
+        "campaign_benefit": campaign_benefit,
         "reward_amount": reward_amount,
         "min_amount": min_amount,
         "max_amount": max_amount,
@@ -243,6 +292,18 @@ def extract_prd_fields(
         "campaign_start_date": start_date,
         "campaign_end_date": end_date,
         "fee_information": fee_information,
+        "application_channel": (
+            application_channel_match.group(0) if application_channel_match else None
+        ),
+        "condition": condition,
         "evidence": evidence,
         "extraction_method": "rules-v1",
     }
+    values["fields"] = build_field_contracts(
+        source,
+        values,
+        evidence,
+        method="rules-v1",
+        conflicts=conflicts,
+    )
+    return values

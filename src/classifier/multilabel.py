@@ -102,7 +102,7 @@ def train_bundle(
     bundle = {
         "product_model": product_model,
         "field_models": field_models,
-        "taxonomy_version": "campaign-v2",
+        "taxonomy_version": "campaign-2026-08",
         "seed": seed,
     }
     output = Path(output_path)

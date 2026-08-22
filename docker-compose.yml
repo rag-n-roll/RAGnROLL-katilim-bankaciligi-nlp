@@ -1,26 +1,41 @@
-version: "3.9"
-
 services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      RAGNROLL_CORS_ORIGINS: http://localhost:3000
+      RAGNROLL_DB_PATH: /app/runtime/ragnroll.sqlite3
+    volumes:
+      - runtime_data:/app/runtime
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: ./src/dashboard
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
   ollama:
-    image: ollama/ollama:latest
-    container_name: teknofest_ollama
+    image: ollama/ollama:0.11.4
+    profiles: ["generation"]
     ports:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
 
-  chatbot:
-    build: .
-    container_name: teknofest_chatbot
-    ports:
-      - "8000:8000"
-    environment:
-      - OLLAMA_HOST=http://ollama:11434
-      - OLLAMA_MODEL=gemma2
-    depends_on:
-      - ollama
-    restart: unless-stopped
-
 volumes:
+  runtime_data:
   ollama_data:

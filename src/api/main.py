@@ -8,21 +8,35 @@ from pathlib import Path
 import subprocess
 import sys
 from threading import Lock
+from time import perf_counter
 from typing import Annotated, Any, Callable
 from uuid import uuid4
 
 from fastapi import APIRouter, BackgroundTasks, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from src.comparison import ComparisonQuery, compare_records
+from src.extraction.hybrid import HybridExtractor
+from src.observability import EventRecorder
 from src.persistence import CampaignStore, DashboardDataService
+from src.query import DomainQueryCompiler
+from src.services import GroundedAssistant
 from src.api.schemas import (
     BankSummaryResponse,
     CampaignListResponse,
     ComparisonRequest,
+    ComparisonContractResponse,
     DashboardSnapshot,
     DashboardSummary,
+    ExtractionRequest,
+    ExtractionResponse,
     FilterOptionsResponse,
+    GroundedChatRequest,
+    GroundedChatResponse,
     HealthResponse,
+    MetricsSummaryResponse,
+    QueryCompileRequest,
+    QueryCompileResponse,
+    RecordVersionsResponse,
     RefreshJobResponse,
     RefreshRequest,
 )
@@ -204,6 +218,22 @@ def _refresh_manager(request: Request) -> RefreshManager:
     return manager
 
 
+def _recorder(request: Request) -> EventRecorder:
+    recorder = getattr(request.app.state, "event_recorder", None)
+    if recorder is None:
+        recorder = EventRecorder()
+        request.app.state.event_recorder = recorder
+    return recorder
+
+
+def _assistant(request: Request) -> GroundedAssistant:
+    assistant = getattr(request.app.state, "grounded_assistant", None)
+    if assistant is None:
+        assistant = GroundedAssistant(_store(request), recorder=_recorder(request))
+        request.app.state.grounded_assistant = assistant
+    return assistant
+
+
 @router.get("/health", response_model=HealthResponse, tags=["system"])
 def health(request: Request) -> dict[str, Any]:
     store = _store(request)
@@ -282,6 +312,20 @@ def campaign_detail(campaign_id: str, request: Request) -> dict[str, Any]:
     return campaign
 
 
+@router.get(
+    "/campaigns/{campaign_id}/versions",
+    response_model=RecordVersionsResponse,
+    tags=["campaigns"],
+)
+def campaign_versions(campaign_id: str, request: Request) -> dict[str, Any]:
+    if _store(request).get_campaign(campaign_id) is None:
+        raise HTTPException(status_code=404, detail="Kampanya bulunamadı")
+    return {
+        "record_id": campaign_id,
+        "versions": _store(request).record_versions(campaign_id),
+    }
+
+
 @router.post("/comparisons", tags=["comparisons"])
 def comparisons(payload: ComparisonRequest, request: Request) -> dict[str, Any]:
     records, total = _store(request).query_campaigns(
@@ -308,6 +352,103 @@ def comparisons(payload: ComparisonRequest, request: Request) -> dict[str, Any]:
         ),
     )
     return result.to_dict()
+
+
+@router.post(
+    "/compare",
+    response_model=ComparisonContractResponse,
+    tags=["comparisons"],
+)
+def compare_contract(payload: ComparisonRequest, request: Request) -> dict[str, Any]:
+    return comparisons(payload, request)
+
+
+@router.post(
+    "/extract",
+    response_model=ExtractionResponse,
+    tags=["nlp"],
+)
+def extract(payload: ExtractionRequest, request: Request) -> dict[str, Any]:
+    started = perf_counter()
+    success = True
+    try:
+        extraction = HybridExtractor().extract(
+            payload.text,
+            start_date=payload.start_date,
+            end_date=payload.end_date,
+        )
+        warnings = [
+            f"{name}: {field['status']}"
+            for name, field in extraction.get("fields", {}).items()
+            if field.get("status") in {"EXTRACTION_FAILED", "CONFLICT"}
+        ]
+        return {"extraction": extraction, "warnings": warnings}
+    except Exception:
+        success = False
+        raise
+    finally:
+        _recorder(request).record(
+            "extraction_completed",
+            latency_ms=(perf_counter() - started) * 1000,
+            success=success,
+            field_count=(
+                len(extraction.get("fields", {}))
+                if success and "extraction" in locals()
+                else 0
+            ),
+        )
+
+
+@router.post(
+    "/query/compile",
+    response_model=QueryCompileResponse,
+    tags=["query"],
+)
+def compile_query(payload: QueryCompileRequest, request: Request) -> dict[str, Any]:
+    started = perf_counter()
+    success = True
+    route = "UNKNOWN"
+    try:
+        plan = DomainQueryCompiler().compile(
+            payload.query,
+            known_banks=_store(request).bank_summary(),
+        )
+        route = plan.route
+        return {"plan": plan.to_dict()}
+    except ValueError as exc:
+        success = False
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    finally:
+        _recorder(request).record(
+            "query_compiled",
+            latency_ms=(perf_counter() - started) * 1000,
+            success=success,
+            route=route,
+        )
+
+
+@router.post(
+    "/chat",
+    response_model=GroundedChatResponse,
+    tags=["chatbot"],
+)
+def grounded_chat(payload: GroundedChatRequest, request: Request) -> dict[str, Any]:
+    try:
+        return _assistant(request).answer(payload.message, limit=payload.source_limit)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get(
+    "/metrics/summary",
+    response_model=MetricsSummaryResponse,
+    tags=["system"],
+)
+def metrics_summary(request: Request) -> dict[str, Any]:
+    return {
+        "observability": _recorder(request).summary(),
+        "data_quality": _store(request).data_quality_summary(),
+    }
 
 
 @router.post(
@@ -349,7 +490,10 @@ def create_app(*, database_path: str | Path | None = None) -> FastAPI:
     )
     origins = [
         value.strip()
-        for value in os.getenv("RAGNROLL_CORS_ORIGINS", "http://localhost:3000").split(",")
+        for value in os.getenv(
+            "RAGNROLL_CORS_ORIGINS",
+            "http://localhost:3000,http://127.0.0.1:3000",
+        ).split(",")
         if value.strip()
     ]
     api.add_middleware(
@@ -361,6 +505,7 @@ def create_app(*, database_path: str | Path | None = None) -> FastAPI:
     )
     api.state.database_path = Path(database_path) if database_path else DEFAULT_DATABASE
     api.state.refresh_manager = RefreshManager()
+    api.state.event_recorder = EventRecorder()
     api.include_router(router)
     return api
 

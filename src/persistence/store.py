@@ -9,6 +9,7 @@ from pathlib import Path
 import sqlite3
 from typing import Any, Iterable
 
+from src.data_quality import cluster_near_duplicates, content_hash, hamming_distance, simhash
 from src.preprocessing.clean_text import preprocess_record
 from src.scraper.models import SCHEMA_VERSION
 
@@ -26,6 +27,13 @@ class CampaignStore:
         connection = sqlite3.connect(self.path)
         connection.execute("PRAGMA foreign_keys = ON")
         return connection
+
+    @staticmethod
+    def _enrich_processed(payload: dict[str, Any]) -> dict[str, Any]:
+        structured = payload.get("structured")
+        if isinstance(structured, dict) and isinstance(structured.get("fields"), dict):
+            return payload
+        return preprocess_record(payload)
 
     def initialize(self) -> None:
         with self._connect() as connection:
@@ -88,16 +96,35 @@ class CampaignStore:
                     updated_at TEXT NOT NULL,
                     scraped_at TEXT
                 );
+                CREATE TABLE IF NOT EXISTS record_versions (
+                    record_id TEXT NOT NULL,
+                    source_version INTEGER NOT NULL,
+                    content_hash TEXT NOT NULL,
+                    raw_json TEXT NOT NULL,
+                    processed_json TEXT NOT NULL,
+                    valid_from TEXT NOT NULL,
+                    valid_to TEXT,
+                    superseded_by TEXT,
+                    is_current INTEGER NOT NULL DEFAULT 1,
+                    occurrence_count INTEGER NOT NULL DEFAULT 1,
+                    last_seen_at TEXT NOT NULL,
+                    PRIMARY KEY(record_id, source_version)
+                );
                 """)
             connection.execute(
                 "INSERT OR REPLACE INTO schema_meta(key, value) VALUES (?, ?)",
-                ("schema_version", "1"),
+                ("schema_version", "2026.08"),
             )
             for column, definition in (
                 ("product_type", "TEXT"),
                 ("reward_currency", "TEXT"),
                 ("max_amount_currency", "TEXT"),
                 ("scraped_at", "TEXT"),
+                ("content_hash", "TEXT"),
+                ("duplicate_fingerprint", "TEXT"),
+                ("duplicate_cluster_id", "TEXT"),
+                ("source_version", "INTEGER NOT NULL DEFAULT 1"),
+                ("valid_from", "TEXT"),
             ):
                 self._ensure_column(connection, "campaigns", column, definition)
             required_columns = {
@@ -163,6 +190,18 @@ class CampaignStore:
                 "CREATE INDEX IF NOT EXISTS campaigns_effective_freshness_idx "
                 "ON campaigns(COALESCE(scraped_at, updated_at) DESC, id)"
             )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS campaigns_content_hash_idx "
+                "ON campaigns(content_hash)"
+            )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS campaigns_duplicate_cluster_idx "
+                "ON campaigns(duplicate_cluster_id)"
+            )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS record_versions_current_idx "
+                "ON record_versions(record_id, is_current)"
+            )
 
     @staticmethod
     def _ensure_column(
@@ -176,12 +215,12 @@ class CampaignStore:
         rows = dataset.get("records")
         if not isinstance(rows, list):
             raise ValueError("Veri setinde 'records' listesi bulunmuyor")
-        prepared = [self._prepare_row(row) for row in rows if isinstance(row, dict)]
-        self.upsert_rows(prepared, run_status="imported")
-        return len(prepared)
+        accepted = [row for row in rows if isinstance(row, dict)]
+        self.upsert_rows(accepted, run_status="imported")
+        return len(accepted)
 
     def upsert_rows(self, rows: Iterable[dict[str, Any]], *, run_status: str) -> None:
-        prepared = [self._prepare_row(row) for row in rows]
+        prepared = cluster_near_duplicates(self._prepare_row(row) for row in rows)
         self.initialize()
         now = datetime.now(timezone.utc).isoformat()
         with self._connect() as connection:
@@ -201,6 +240,10 @@ class CampaignStore:
         raw.setdefault("record_kind", "campaign")
         if raw["record_kind"] not in {"campaign", "product"}:
             raw["record_kind"] = "campaign"
+        raw["content_hash"] = content_hash(
+            str(raw.get("title") or ""), str(raw.get("content") or "")
+        )
+        raw["duplicate_fingerprint"] = simhash(str(raw.get("content") or ""))
         return preprocess_record(raw)
 
     @staticmethod
@@ -213,6 +256,81 @@ class CampaignStore:
             return minor, str(money["currency"])
         except (ArithmeticError, KeyError, TypeError, ValueError):
             return None, None
+
+    @staticmethod
+    def _duplicate_cluster(
+        connection: sqlite3.Connection,
+        *,
+        bank_id: int,
+        record_id: str,
+        fingerprint: str,
+        suggested: str,
+    ) -> str:
+        candidates = connection.execute(
+            "SELECT duplicate_fingerprint, duplicate_cluster_id "
+            "FROM campaigns WHERE bank_id = ? AND id <> ? "
+            "AND duplicate_fingerprint IS NOT NULL",
+            (bank_id, record_id),
+        ).fetchall()
+        nearby = [
+            str(cluster_id)
+            for existing_fingerprint, cluster_id in candidates
+            if cluster_id
+            and hamming_distance(fingerprint, str(existing_fingerprint)) <= 6
+        ]
+        return min([suggested, *nearby]) if nearby else suggested
+
+    @staticmethod
+    def _persist_version(
+        connection: sqlite3.Connection,
+        *,
+        record_id: str,
+        hash_value: str,
+        raw_json: str,
+        processed_json: str,
+        now: str,
+    ) -> tuple[int, str]:
+        current = connection.execute(
+            "SELECT source_version, content_hash, valid_from FROM record_versions "
+            "WHERE record_id = ? AND is_current = 1",
+            (record_id,),
+        ).fetchone()
+        if current and current[1] == hash_value:
+            connection.execute(
+                "UPDATE record_versions SET occurrence_count = occurrence_count + 1, "
+                "last_seen_at = ?, raw_json = ?, processed_json = ? "
+                "WHERE record_id = ? AND source_version = ?",
+                (now, raw_json, processed_json, record_id, current[0]),
+            )
+            return int(current[0]), str(current[2])
+        next_version = int(
+            connection.execute(
+                "SELECT COALESCE(MAX(source_version), 0) + 1 "
+                "FROM record_versions WHERE record_id = ?",
+                (record_id,),
+            ).fetchone()[0]
+        )
+        if current:
+            connection.execute(
+                "UPDATE record_versions SET valid_to = ?, superseded_by = ?, "
+                "is_current = 0, last_seen_at = ? "
+                "WHERE record_id = ? AND source_version = ?",
+                (
+                    now,
+                    f"{record_id}:{next_version}",
+                    now,
+                    record_id,
+                    current[0],
+                ),
+            )
+        connection.execute(
+            "INSERT INTO record_versions(record_id, source_version, content_hash, "
+            "raw_json, processed_json, valid_from, valid_to, superseded_by, "
+            "is_current, occurrence_count, last_seen_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, 1, 1, ?)",
+            (record_id, next_version, hash_value, raw_json, processed_json, now, now),
+        )
+        return next_version, now
 
     def _upsert_row(
         self, connection: sqlite3.Connection, row: dict[str, Any], now: str
@@ -236,9 +354,61 @@ class CampaignStore:
         bank_id = connection.execute(
             "SELECT id FROM banks WHERE slug = ?", (slug,)
         ).fetchone()[0]
-        raw_json = json.dumps(raw, ensure_ascii=False, sort_keys=True)
-        structured_json = json.dumps(structured, ensure_ascii=False, sort_keys=True)
         record_id = str(raw["id"])
+        hash_value = str(
+            raw.get("content_hash")
+            or content_hash(str(raw.get("title") or ""), str(raw.get("content") or ""))
+        )
+        fingerprint = str(
+            raw.get("duplicate_fingerprint") or simhash(str(raw.get("content") or ""))
+        )
+        suggested_cluster = str(
+            raw.get("duplicate_cluster_id") or f"dup-{hash_value[:16]}"
+        )
+        duplicate_cluster = self._duplicate_cluster(
+            connection,
+            bank_id=bank_id,
+            record_id=record_id,
+            fingerprint=fingerprint,
+            suggested=suggested_cluster,
+        )
+        raw.update(
+            content_hash=hash_value,
+            duplicate_fingerprint=fingerprint,
+            duplicate_cluster_id=duplicate_cluster,
+            canonical_url=raw.get("canonical_url") or raw.get("source_url"),
+        )
+        processed_payload = {
+            **row,
+            "content_hash": hash_value,
+            "duplicate_fingerprint": fingerprint,
+            "duplicate_cluster_id": duplicate_cluster,
+            "canonical_url": raw["canonical_url"],
+        }
+        provisional_raw_json = json.dumps(raw, ensure_ascii=False, sort_keys=True)
+        provisional_processed_json = json.dumps(
+            processed_payload, ensure_ascii=False, sort_keys=True
+        )
+        source_version, valid_from = self._persist_version(
+            connection,
+            record_id=record_id,
+            hash_value=hash_value,
+            raw_json=provisional_raw_json,
+            processed_json=provisional_processed_json,
+            now=now,
+        )
+        raw.update(source_version=source_version, valid_from=valid_from)
+        processed_payload.update(source_version=source_version, valid_from=valid_from)
+        raw_json = json.dumps(raw, ensure_ascii=False, sort_keys=True)
+        processed_json = json.dumps(
+            processed_payload, ensure_ascii=False, sort_keys=True
+        )
+        connection.execute(
+            "UPDATE record_versions SET raw_json = ?, processed_json = ? "
+            "WHERE record_id = ? AND source_version = ?",
+            (raw_json, processed_json, record_id, source_version),
+        )
+        structured_json = json.dumps(structured, ensure_ascii=False, sort_keys=True)
         if raw.get("record_kind") == "product":
             connection.execute(
                 """INSERT INTO products(
@@ -289,9 +459,12 @@ class CampaignStore:
                   reward_amount_minor, reward_currency, max_amount_minor,
                   max_amount_currency, duration_value, duration_unit,
                   duration_days, eligibility, fee_information, raw_json,
-                  processed_json, created_at, updated_at, scraped_at
+                  processed_json, created_at, updated_at, scraped_at,
+                  content_hash, duplicate_fingerprint, duplicate_cluster_id,
+                  source_version, valid_from
                )
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                       ?, ?, ?, ?, ?)
                ON CONFLICT(id) DO UPDATE SET
                   bank_id=excluded.bank_id,
                   product_id=excluded.product_id,
@@ -313,7 +486,12 @@ class CampaignStore:
                   raw_json=excluded.raw_json,
                   processed_json=excluded.processed_json,
                   updated_at=excluded.updated_at,
-                  scraped_at=excluded.scraped_at""",
+                  scraped_at=excluded.scraped_at,
+                  content_hash=excluded.content_hash,
+                  duplicate_fingerprint=excluded.duplicate_fingerprint,
+                  duplicate_cluster_id=excluded.duplicate_cluster_id,
+                  source_version=excluded.source_version,
+                  valid_from=excluded.valid_from""",
             (
                 record_id,
                 bank_id,
@@ -334,10 +512,15 @@ class CampaignStore:
                 structured.get("target_audience"),
                 structured.get("fee_information"),
                 raw_json,
-                json.dumps(row, ensure_ascii=False, sort_keys=True),
+                processed_json,
                 now,
                 now,
                 raw.get("scraped_at"),
+                hash_value,
+                fingerprint,
+                duplicate_cluster,
+                source_version,
+                valid_from,
             ),
         )
 
@@ -393,8 +576,8 @@ class CampaignStore:
                     "SELECT raw_json, structured_json FROM products ORDER BY id"
                 )
             ]
-        return campaigns + [
-            {**preprocess_record(raw), "structured": structured}
+        return [self._enrich_processed(row) for row in campaigns] + [
+            self._enrich_processed({**preprocess_record(raw), "structured": structured})
             for raw, structured in products
         ]
 
@@ -402,7 +585,9 @@ class CampaignStore:
         self,
         *,
         bank_slug: str | None = None,
+        bank_slugs: Iterable[str] | None = None,
         product_type: str | None = None,
+        financing_type: str | None = None,
         currency: str | None = None,
         search: str | None = None,
         limit: int = 20,
@@ -412,12 +597,22 @@ class CampaignStore:
         self.initialize()
         clauses: list[str] = []
         parameters: list[Any] = []
+        selected_banks = list(dict.fromkeys(bank_slugs or ()))
+        if bank_slug and selected_banks:
+            raise ValueError("bank_slug ile bank_slugs birlikte kullanılamaz")
         if bank_slug:
             clauses.append("b.slug = ?")
             parameters.append(bank_slug)
+        elif selected_banks:
+            placeholders = ",".join("?" for _ in selected_banks)
+            clauses.append(f"b.slug IN ({placeholders})")
+            parameters.extend(selected_banks)
         if product_type:
             clauses.append("c.product_type = ?")
             parameters.append(product_type)
+        if financing_type:
+            clauses.append("c.financing_type = ?")
+            parameters.append(financing_type)
         if currency:
             clauses.append(
                 "(c.reward_currency = ? OR c.max_amount_currency = ?)"
@@ -427,7 +622,11 @@ class CampaignStore:
             clauses.append("c.title LIKE ? COLLATE NOCASE")
             parameters.append(f"%{search}%")
         where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
-        bank_join = " JOIN banks b ON b.id = c.bank_id" if bank_slug else ""
+        bank_join = (
+            " JOIN banks b ON b.id = c.bank_id"
+            if bank_slug or selected_banks
+            else ""
+        )
         base = " FROM campaigns c" + bank_join + where
         with self._connect() as connection:
             total = connection.execute(
@@ -438,7 +637,7 @@ class CampaignStore:
                 + " ORDER BY c.updated_at DESC, c.id LIMIT ? OFFSET ?",
                 [*parameters, limit, offset],
             ).fetchall()
-        return [json.loads(row[0]) for row in rows], int(total)
+        return [self._enrich_processed(json.loads(row[0])) for row in rows], int(total)
 
     def get_campaign(self, campaign_id: str) -> dict[str, Any] | None:
         self.initialize()
@@ -447,7 +646,68 @@ class CampaignStore:
                 "SELECT processed_json FROM campaigns WHERE id = ?",
                 (campaign_id,),
             ).fetchone()
-        return json.loads(row[0]) if row else None
+        return self._enrich_processed(json.loads(row[0])) if row else None
+
+    def record_versions(self, record_id: str) -> list[dict[str, Any]]:
+        """Bir kaydın kapanmış ve güncel kaynak sürümlerini kronolojik döndürür."""
+        self.initialize()
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT source_version, content_hash, valid_from, valid_to, "
+                "superseded_by, is_current, occurrence_count, last_seen_at "
+                "FROM record_versions WHERE record_id = ? ORDER BY source_version",
+                (record_id,),
+            ).fetchall()
+            if not rows:
+                current = connection.execute(
+                    "SELECT content_hash, created_at, updated_at FROM campaigns "
+                    "WHERE id = ?",
+                    (record_id,),
+                ).fetchone()
+                if current:
+                    rows = [(1, current[0] or "", current[1], None, None, 1, 1, current[2])]
+        return [
+            {
+                "source_version": int(row[0]),
+                "content_hash": row[1],
+                "valid_from": row[2],
+                "valid_to": row[3],
+                "superseded_by": row[4],
+                "is_current": bool(row[5]),
+                "occurrence_count": int(row[6]),
+                "last_seen_at": row[7],
+            }
+            for row in rows
+        ]
+
+    def data_quality_summary(self) -> dict[str, Any]:
+        """Teknik dashboard için kanıt, eksiklik ve tekrar kapsamını özetler."""
+        records = self.list_campaigns()
+        statuses: dict[str, int] = {}
+        evidenced_fields = 0
+        field_count = 0
+        clusters: set[str] = set()
+        for record in records:
+            cluster_id = record.get("duplicate_cluster_id")
+            if cluster_id:
+                clusters.add(str(cluster_id))
+            structured = record.get("structured")
+            fields = structured.get("fields", {}) if isinstance(structured, dict) else {}
+            for field in fields.values():
+                if not isinstance(field, dict):
+                    continue
+                status = str(field.get("status") or "UNKNOWN")
+                statuses[status] = statuses.get(status, 0) + 1
+                field_count += 1
+                evidenced_fields += field.get("evidence") is not None
+        return {
+            "record_count": len(records),
+            "duplicate_cluster_count": len(clusters),
+            "field_statuses": statuses,
+            "evidence_coverage": (
+                round(evidenced_fields / field_count, 4) if field_count else 0.0
+            ),
+        }
 
     def dashboard_summary(self) -> dict[str, Any]:
         """Dashboard kartları için tek bağlantıda toplu istatistik üretir."""

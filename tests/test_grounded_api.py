@@ -1,0 +1,148 @@
+from fastapi.testclient import TestClient
+
+from src.api.main import create_app
+from src.main import app as integrated_app
+from src.persistence import CampaignStore
+from src.preprocessing.clean_text import preprocess_record
+from src.scraper.models import Campaign
+
+
+def _campaign(identifier, bank_slug, bank_name, rate):
+    return preprocess_record(
+        Campaign(
+            id=identifier,
+            bank_slug=bank_slug,
+            bank_name=bank_name,
+            title="Konut finansmanı",
+            content=(
+                f"500.000 TL'ye kadar 24 ay vadeli %{rate} kâr payı ile "
+                "masrafsız konut finansmanı."
+            ),
+            source_url=f"https://{bank_slug}.example/{identifier}",
+        ).to_dict()
+    )
+
+
+def _client(tmp_path):
+    database = tmp_path / "grounded.sqlite3"
+    CampaignStore(database).upsert_rows(
+        [
+            _campaign("low", "albaraka-turk", "Albaraka Türk", "1,89"),
+            _campaign("high", "kuveyt-turk", "Kuveyt Türk", "2,09"),
+        ],
+        run_status="success",
+    )
+    return TestClient(create_app(database_path=database))
+
+
+def test_extraction_endpoint_returns_traceable_field_contracts(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/extract",
+            json={"text": "%1,89 kâr payı ile 24 ay vadeli konut finansmanı."},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["api_version"] == "2026.08"
+    assert len(payload["request_id"]) == 32
+    field = payload["extraction"]["fields"]["profit_share_rate"]
+    assert field["status"] == "EXPLICIT"
+    assert field["evidence"]["text"] == "%1,89 kâr payı"
+
+
+def test_compile_and_chat_use_structured_first_route_with_sources(tmp_path):
+    with _client(tmp_path) as client:
+        compiled = client.post(
+            "/api/v1/query/compile",
+            json={"query": "Konut finansmanında en düşük kâr payı hangisi?"},
+        )
+        chat = client.post(
+            "/api/v1/chat",
+            json={"message": "Konut finansmanında en düşük kâr payı hangisi?"},
+        )
+
+    assert compiled.status_code == chat.status_code == 200
+    assert compiled.json()["plan"]["route"] == "STRUCTURED_SQL"
+    answer = chat.json()
+    assert answer["plan"]["route"] == "STRUCTURED_SQL"
+    assert answer["facts"][0]["campaign_id"] == "low"
+    assert answer["sources"][0]["source_url"].startswith("https://")
+    assert "%1.89" in answer["answer"]
+
+
+def test_definition_chat_uses_local_terminology_corpus(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post("/api/v1/chat", json={"message": "Murabaha nedir?"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["plan"]["route"] == "HYBRID_RAG"
+    assert payload["sources"]
+    assert payload["sources"][0]["term_id"] == "TRM0462"
+    assert all(source.get("campaign_id") is None for source in payload["sources"])
+
+
+def test_transactional_request_is_redirected_without_fake_sources(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat", json={"message": "Şikâyet kaydı açmak istiyorum"}
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["plan"]["route"] == "SAFE_REDIRECT"
+    assert payload["facts"] == []
+    assert payload["sources"] == []
+
+
+def test_metrics_and_record_versions_are_exposed(tmp_path):
+    with _client(tmp_path) as client:
+        client.post("/api/v1/query/compile", json={"query": "Murabaha nedir?"})
+        versions = client.get("/api/v1/campaigns/low/versions")
+        metrics = client.get("/api/v1/metrics/summary")
+
+    assert versions.status_code == metrics.status_code == 200
+    assert versions.json()["versions"][0]["is_current"] is True
+    assert metrics.json()["observability"]["event_count"] == 1
+    assert metrics.json()["data_quality"]["record_count"] == 2
+
+
+def test_new_api_contracts_reject_blank_and_unbounded_payloads(tmp_path):
+    with _client(tmp_path) as client:
+        blank = client.post("/api/v1/chat", json={"message": ""})
+        too_many_sources = client.post(
+            "/api/v1/chat", json={"message": "Murabaha nedir?", "source_limit": 11}
+        )
+        long_query = client.post(
+            "/api/v1/query/compile", json={"query": "a" * 2001}
+        )
+
+    assert blank.status_code == 422
+    assert too_many_sources.status_code == 422
+    assert long_query.status_code == 422
+
+
+def test_local_dashboard_origins_pass_cors_preflight(tmp_path):
+    with _client(tmp_path) as client:
+        for origin in ("http://localhost:3000", "http://127.0.0.1:3000"):
+            response = client.options(
+                "/api/v1/health",
+                headers={
+                    "Origin": origin,
+                    "Access-Control-Request-Method": "GET",
+                },
+            )
+            assert response.status_code == 200
+            assert response.headers["access-control-allow-origin"] == origin
+
+    with TestClient(integrated_app) as client:
+        response = client.options(
+            "/api/v1/health",
+            headers={
+                "Origin": "http://127.0.0.1:3000",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:3000"

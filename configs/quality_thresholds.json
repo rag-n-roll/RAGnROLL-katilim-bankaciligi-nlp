@@ -1,0 +1,8 @@
+{
+  "intent_exact_match": 0.85,
+  "supported_extraction_exact_match": 0.82,
+  "minimum_backend_line_coverage": 0.7,
+  "minimum_evidence_coverage": 0.7,
+  "maximum_query_error_rate": 0.01,
+  "maximum_p95_latency_ms": 2000
+}

@@ -1,217 +1,114 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import styles from "./page.module.css";
-import CampaignDistributionChart from "../components/CampaignDistributionChart";
+import { getDashboardSnapshot } from "../services/api";
+import styles from "./live.module.css";
+
+type Snapshot = Awaited<ReturnType<typeof getDashboardSnapshot>>;
 
 export default function HomePage() {
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    getDashboardSnapshot()
+      .then(setSnapshot)
+      .catch((reason: Error) => setError(reason.message));
+  }, []);
+
   return (
     <main className={styles.main}>
-      <section className={styles.hero}>
-        <div className={styles.heroContent}>
-          <h1 className={styles.heroTitle}>
-            Katılım bankacılığı
-            <br />
-            kampanyalarını tek ekranda
-            <br />
-            analiz edin.
-          </h1>
-
-          <p className={styles.heroDescription}>
-            Finansman, kart ve yatırım kampanyalarını yapay zekâ desteğiyle
-            karşılaştırın, en uygun fırsatları kolayca keşfedin.
+      <header className={styles.header}>
+        <div>
+          <h1>Katılım bankacılığı bilgi platformu</h1>
+          <p>
+            Güncel kampanyaları yapılandırılmış alanlar ve kaynak kanıtlarıyla
+            inceleyin.
           </p>
-
-          <div className={styles.heroActions}>
-            <Link href="/campaigns" className={styles.primaryButton}>
-              <span className={styles.buttonIcon}>⌕</span>
-              Kampanyaları Keşfet
-            </Link>
-
-            <Link href="/chatbot" className={styles.secondaryButton}>
-              <span className={styles.aiIcon}>✦</span>
-              AI Asistana Sor
-            </Link>
-          </div>
         </div>
+        <Link className={styles.button} href="/chatbot">
+          Kanıta dayalı asistana sor
+        </Link>
+      </header>
 
-        <div className={styles.heroVisual}>
-          <div className={styles.visualCard}>
-            <div className={styles.chartBars}>
-              <span className={styles.barSmall}></span>
-              <span className={styles.barMedium}></span>
-              <span className={styles.barLarge}></span>
-              <span className={styles.barMedium}></span>
-              <span className={styles.barTall}></span>
-            </div>
-
-            <div className={styles.visualText}>
-              <span className={styles.visualIcon}>✦</span>
-              <strong>AI Analiz</strong>
-              <small>Finansal veriler analiz ediliyor</small>
-            </div>
-          </div>
-        </div>
-      </section>
-            <section className={styles.overviewGrid}>
-        <div className={styles.summaryCards}>
-          <article className={styles.summaryCard}>
-            <div className={`${styles.summaryIcon} ${styles.bankIcon}`}>
-              🏛
-            </div>
-
-            <div className={styles.summaryContent}>
-              <span className={styles.summaryLabel}>Toplam Banka</span>
-              <strong className={styles.bankValue}>6</strong>
-            </div>
-          </article>
-
-          <article className={styles.summaryCard}>
-            <div className={`${styles.summaryIcon} ${styles.campaignIcon}`}>
-              🎁
-            </div>
-
-            <div className={styles.summaryContent}>
-              <span className={styles.summaryLabel}>Toplam Kampanya</span>
-              <strong className={styles.campaignValue}>128</strong>
-            </div>
-          </article>
-
-          <article className={styles.summaryCard}>
-            <div className={`${styles.summaryIcon} ${styles.profitIcon}`}>
-              %
-            </div>
-
-            <div className={styles.summaryContent}>
-              <span className={styles.summaryLabel}>Ortalama Kâr Payı</span>
-              <strong className={styles.profitValue}>%18,4</strong>
-            </div>
-          </article>
-        </div>
-              <div className={styles.distributionCard}>
-        <h2 className={styles.distributionTitle}>
-          Bankalara Göre Kampanya Dağılımı
-        </h2>
-
-        <div className={styles.distributionContent}>
-          <div className={styles.chartArea}>
-            <CampaignDistributionChart />
-          </div>
-
-          <div className={styles.bankLegend}>
-            <div className={styles.legendRow}>
-              <span className={`${styles.legendDot} ${styles.dotPetrol}`}></span>
-              <span className={styles.bankName}>Kuveyt Türk</span>
-              <strong>52</strong>
-              <span>%40</span>
-            </div>
-
-            <div className={styles.legendRow}>
-              <span className={`${styles.legendDot} ${styles.dotTurquoise}`}></span>
-              <span className={styles.bankName}>Albaraka Türk</span>
-              <strong>34</strong>
-              <span>%27</span>
-            </div>
-
-            <div className={styles.legendRow}>
-              <span className={`${styles.legendDot} ${styles.dotYellow}`}></span>
-              <span className={styles.bankName}>Türkiye Finans</span>
-              <strong>24</strong>
-              <span>%19</span>
-            </div>
-
-            <div className={styles.legendRow}>
-              <span className={`${styles.legendDot} ${styles.dotTeal}`}></span>
-              <span className={styles.bankName}>Vakıf Katılım</span>
-              <strong>11</strong>
-              <span>%9</span>
-            </div>
-
-            <div className={styles.legendRow}>
-              <span className={`${styles.legendDot} ${styles.dotLight}`}></span>
-              <span className={styles.bankName}>Ziraat Katılım</span>
-              <strong>7</strong>
-              <span>%5</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      </section>
-   <section className={styles.campaignsSection}>
-  <div className={styles.campaignsCard}>
-    <h2 className={styles.campaignsTitle}>Güncel Kampanyalar</h2>
-
-    <div className={styles.tableWrapper}>
-      <table className={styles.campaignsTable}>
-        <thead>
-          <tr>
-            <th>Banka</th>
-            <th>Kampanya Adı</th>
-            <th>Tür</th>
-            <th>Tarih</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr>
-            <td>
-              <div className={styles.bankCell}>
-                <span className={styles.bankLogo}>KT</span>
-                <strong>Kuveyt Türk</strong>
+      {error && (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      )}
+      {!snapshot && !error && (
+        <p className={styles.status}>Canlı veriler yükleniyor…</p>
+      )}
+      {snapshot && (
+        <>
+          <section className={styles.cards} aria-label="Özet metrikler">
+            <article className={styles.card}>
+              <span className={styles.muted}>Banka</span>
+              <strong className={styles.metric}>{snapshot.summary.bank_count}</strong>
+            </article>
+            <article className={styles.card}>
+              <span className={styles.muted}>Kampanya</span>
+              <strong className={styles.metric}>
+                {snapshot.summary.campaign_count}
+              </strong>
+            </article>
+            <article className={styles.card}>
+              <span className={styles.muted}>Toplam kayıt</span>
+              <strong className={styles.metric}>
+                {snapshot.summary.record_count}
+              </strong>
+            </article>
+            <article className={styles.card}>
+              <span className={styles.muted}>Ortalama kâr payı</span>
+              <strong className={styles.metric}>
+                {snapshot.summary.average_profit_share_rate === null
+                  ? "Belirtilmemiş"
+                  : `%${(
+                      snapshot.summary.average_profit_share_rate * 100
+                    ).toFixed(2)}`}
+              </strong>
+            </article>
+          </section>
+          <section className={styles.grid}>
+            <article className={styles.card}>
+              <h2>Bankalara göre kampanya dağılımı</h2>
+              {snapshot.distributions.banks.map((bank) => (
+                <div className={styles.barRow} key={bank.slug}>
+                  <span>{bank.name}</span>
+                  <div className={styles.bar}>
+                    <span
+                      style={{
+                        width: `${Math.max(bank.campaign_share * 100, 2)}%`,
+                      }}
+                    />
+                  </div>
+                  <strong>{bank.campaign_count}</strong>
+                </div>
+              ))}
+            </article>
+            <article className={styles.card}>
+              <h2>Son güncellenen kampanyalar</h2>
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr><th>Banka</th><th>Kampanya</th><th>Tür</th></tr>
+                  </thead>
+                  <tbody>
+                    {snapshot.recent_campaigns.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.bank_name}</td>
+                        <td>{item.title}</td>
+                        <td>{item.product_type ?? "Belirtilmemiş"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </td>
-
-            <td>Taşıt Finansmanı Özel Oran Kampanyası</td>
-
-            <td>
-              <span className={`${styles.typeBadge} ${styles.financeBadge}`}>
-                Finansman
-              </span>
-            </td>
-
-            <td>20 Mayıs 2024</td>
-          </tr>
-
-          <tr>
-            <td>
-              <div className={styles.bankCell}>
-                <span className={styles.bankLogo}>AT</span>
-                <strong>Albaraka Türk</strong>
-              </div>
-            </td>
-
-            <td>Davet Et Kazan Kampanyası</td>
-
-            <td>
-              <span className={`${styles.typeBadge} ${styles.cardBadge}`}>
-                Kart
-              </span>
-            </td>
-
-            <td>19 Mayıs 2024</td>
-          </tr>
-
-          <tr>
-            <td>
-              <div className={styles.bankCell}>
-                <span className={styles.bankLogo}>TF</span>
-                <strong>Türkiye Finans</strong>
-              </div>
-            </td>
-
-            <td>Katılma Hesabı Hoş Geldin Kampanyası</td>
-
-            <td>
-              <span className={`${styles.typeBadge} ${styles.investmentBadge}`}>
-                Yatırım
-              </span>
-            </td>
-
-            <td>18 Mayıs 2024</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
+            </article>
+          </section>
+        </>
+      )}
     </main>
   );
 }
