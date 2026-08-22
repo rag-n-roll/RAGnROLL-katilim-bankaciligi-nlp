@@ -1,3 +1,5 @@
+import asyncio
+from contextlib import asynccontextmanager
 import os
 
 from fastapi import FastAPI
@@ -9,7 +11,44 @@ from src.api.main import DEFAULT_DATABASE
 from src.persistence import CampaignStore
 from src.services import GroundedAssistant
 
-app = FastAPI(title="Katılım Bankacılığı Chatbot", version="0.1.0")
+
+def _enabled(name: str, default: str = "true") -> bool:
+    return os.getenv(name, default).casefold() not in {
+        "0",
+        "false",
+        "off",
+        "hayır",
+        "hayir",
+    }
+
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    """Hazır Chroma varsa ilk kullanıcı isteğinden önce query modelini ısıtır."""
+
+    if _enabled("RAGNROLL_EMBEDDING_WARMUP"):
+        assistant = GroundedAssistant(
+            CampaignStore(DEFAULT_DATABASE), chroma_enabled=True
+        )
+        vector = assistant.retriever.vector_retriever
+        if vector is not None and vector.ready():
+            try:
+                await asyncio.to_thread(
+                    vector.provider.embed_query, "katılım bankacılığı bilgi sorgusu"
+                )
+            except Exception:
+                pass
+            else:
+                application.state.grounded_assistant = assistant
+                rag._assistant = assistant
+    yield
+
+
+app = FastAPI(
+    title="Katılım Bankacılığı Chatbot",
+    version="0.1.0",
+    lifespan=lifespan,
+)
 app.include_router(data_api_router)
 app.state.chroma_enabled = True
 

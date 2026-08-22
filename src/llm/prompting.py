@@ -51,6 +51,7 @@ class GroundedPromptBuilder:
                 "title": source.get("title"),
                 "source_url": source.get("source_url"),
                 "scraped_at": source.get("scraped_at"),
+                "relations": source.get("relations") or [],
                 "evidence": self._bounded_text(
                     (source.get("evidence") or {}).get("text")
                     if isinstance(source.get("evidence"), dict)

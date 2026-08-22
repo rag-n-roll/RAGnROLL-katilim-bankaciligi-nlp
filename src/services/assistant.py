@@ -52,6 +52,35 @@ class GroundedAssistant:
         return self.compiler.compile(message, known_banks=self.store.bank_summary())
 
     @staticmethod
+    def _relation_sentence(relation: dict[str, Any]) -> str | None:
+        subject = str(relation.get("source_term") or "").strip()
+        target = str(relation.get("target_term") or "").strip()
+        if not subject or not target:
+            return None
+        predicate = str(relation.get("relation") or "")
+        type_sentences = {
+            "IS_A_DOCUMENT": f"{subject} bir belgedir.",
+            "IS_A_PRODUCT": f"{subject} bir üründür.",
+            "IS_AN_ORGANIZATION": f"{subject} bir kuruluştur.",
+        }
+        if predicate in type_sentences:
+            return type_sentences[predicate]
+        predicates = {
+            "RELATED_TO": "ile ilişkilidir",
+            "USES": "kullanır",
+            "DISTRIBUTES": "dağıtır",
+            "MAY_REQUIRE": "gerektirebilir",
+            "GOVERNED_BY": "tarafından düzenlenir",
+            "FINANCES": "finanse eder",
+            "PAYS": "ödeme yapar",
+            "COLLECTS_FROM": "tahsilat yapar",
+            "TARGETS": "hedefler",
+            "USES_PLATFORM": "platformunu kullanır",
+        }
+        label = predicates.get(predicate)
+        return f"{subject}, {target} {label}." if label else None
+
+    @staticmethod
     def _structured(record: dict[str, Any]) -> dict[str, Any]:
         value = record.get("structured")
         return value if isinstance(value, dict) else {}
@@ -204,6 +233,7 @@ class GroundedAssistant:
 
     def _hybrid_answer(self, plan: QueryPlan, *, limit: int) -> dict[str, Any]:
         filters = dict(plan.filters)
+        filters["intent"] = plan.intent
         if plan.intent == "definition" and plan.terminology_rewrites:
             filters["source_types"] = ["terminology"]
         documents = self.retriever.retrieve(
@@ -233,10 +263,33 @@ class GroundedAssistant:
             }
         excerpts = []
         sources = []
+        relation_sentences: list[str] = []
         for document in documents:
             excerpt = " ".join(document["text"].split())[:360]
             metadata = document["metadata"]
+            evidence_text = excerpt
+            char_start = metadata.get("char_start")
+            char_end = metadata.get("char_end")
+            section = str(metadata.get("section") or "")
+            if section == "content" and "İçerik: " in document["text"]:
+                evidence_text = document["text"].split("İçerik: ", 1)[1][:360]
+                char_end = min(int(char_end), int(char_start) + len(evidence_text))
+            elif section == "overview":
+                lines = document["text"].splitlines()
+                while lines and lines[0].startswith(("Başlık: ", "Banka: ")):
+                    lines.pop(0)
+                evidence_text = "\n".join(lines).split(
+                    "\nYapılandırılmış alanlar:", 1
+                )[0][:360]
+                char_end = min(int(char_end), len(evidence_text))
+            elif section == "structured_fields":
+                char_start = None
+                char_end = None
             excerpts.append(excerpt)
+            for relation in metadata.get("graph_relations") or []:
+                sentence = self._relation_sentence(relation)
+                if sentence and sentence not in relation_sentences:
+                    relation_sentences.append(sentence)
             sources.append(
                 {
                     "campaign_id": metadata.get("campaign_id") or None,
@@ -244,12 +297,19 @@ class GroundedAssistant:
                     "bank_name": metadata.get("bank_name") or None,
                     "title": metadata.get("title") or None,
                     "source_url": metadata.get("source_url") or None,
-                    "evidence": {"text": excerpt, "char_start": None, "char_end": None},
+                    "relations": metadata.get("graph_relations") or [],
+                    "evidence": {
+                        "text": evidence_text,
+                        "char_start": char_start,
+                        "char_end": char_end,
+                    },
                     "retrieval_score": document["score"],
                     "retrieval_method": document["retrieval_method"],
                 }
             )
         answer = "\n\n".join(excerpts[:3])
+        if relation_sentences:
+            answer = "\n".join(relation_sentences[:5]) + "\n\n" + answer
         if plan.intent == "definition" and excerpts:
             answer = excerpts[0].split(" Ana kategori:", 1)[0].strip()
         return {

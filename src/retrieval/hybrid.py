@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections import Counter
-import json
 from math import log
 import os
 from pathlib import Path
@@ -13,9 +12,13 @@ from src.knowledge import TerminologyService
 from src.persistence import CampaignStore
 from src.preprocessing.clean_text import tokenize_turkish
 from src.retrieval.chroma import ChromaVectorRetriever
+from src.retrieval.documents import campaign_documents, terminology_documents
+from src.retrieval.graph import KnowledgeGraphRetriever
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+ONTOLOGY_CHUNKS_PATH = (
+    Path(__file__).resolve().parents[2] / "data" / "ontology" / "rag_chunks.jsonl"
+)
 
 
 class HybridRetriever:
@@ -28,6 +31,7 @@ class HybridRetriever:
         *,
         chroma_enabled: bool | None = None,
         vector_retriever: ChromaVectorRetriever | None = None,
+        graph_retriever: KnowledgeGraphRetriever | None = None,
     ) -> None:
         self.store = store
         self.terminology = terminology or TerminologyService()
@@ -37,71 +41,112 @@ class HybridRetriever:
         self.vector_retriever = (
             vector_retriever or ChromaVectorRetriever() if chroma_enabled else None
         )
+        self.graph_retriever = graph_retriever or KnowledgeGraphRetriever(
+            self.terminology
+        )
         self.last_backend = "bm25"
+        self._corpus_key: tuple[int, int] | None = None
+        self._campaign_cache: list[dict[str, Any]] = []
+        self._terminology_cache: list[dict[str, Any]] = []
+        self._token_cache: dict[tuple[str, str], list[str]] = {}
 
     @staticmethod
-    def _campaign_document(record: dict[str, Any]) -> dict[str, Any]:
-        content = str(record.get("clean_text") or record.get("content") or "")
-        return {
-            "id": f"campaign:{record.get('id') or ''}",
-            "text": "\n".join(
-                part
-                for part in (
-                    str(record.get("title") or ""),
-                    str(record.get("bank_name") or ""),
-                    content,
+    def _document(item: tuple[str, str, dict[str, Any]]) -> dict[str, Any]:
+        identifier, text, metadata = item
+        return {"id": identifier, "text": text, "metadata": metadata}
+
+    @staticmethod
+    def _rank_key(item: dict[str, Any]) -> str:
+        metadata = item.get("metadata", {})
+        campaign_id = str(metadata.get("campaign_id") or "")
+        return f"campaign:{campaign_id}" if campaign_id else str(item["id"])
+
+    def _load_corpus(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        database_mtime = self.store.path.stat().st_mtime_ns if self.store.path.exists() else 0
+        ontology_mtime = ONTOLOGY_CHUNKS_PATH.stat().st_mtime_ns
+        corpus_key = (database_mtime, ontology_mtime)
+        if corpus_key != self._corpus_key:
+            self._campaign_cache = [
+                self._document(document)
+                for row in self.store.list_campaigns()
+                for document in campaign_documents(row)
+            ]
+            self._terminology_cache = [
+                self._document(document) for document in terminology_documents()
+            ]
+            active_tokens = {
+                (
+                    str(document["id"]),
+                    str(document["metadata"].get("index_hash") or ""),
                 )
-                if part
-            ),
-            "metadata": {
-                "source_type": "campaign",
-                "campaign_id": str(record.get("id") or ""),
-                "bank_slug": str(record.get("bank_slug") or ""),
-                "bank_name": str(record.get("bank_name") or ""),
-                "product_type": str(
-                    (record.get("structured") or {}).get("product_type") or ""
-                ),
-                "source_url": str(record.get("source_url") or ""),
-                "title": str(record.get("title") or ""),
-            },
-        }
-
-    @staticmethod
-    def _terminology_documents() -> list[dict[str, Any]]:
-        path = PROJECT_ROOT / "data" / "ontology" / "rag_chunks.jsonl"
-        documents = []
-        for line in path.read_text(encoding="utf-8").splitlines():
-            if not line.strip():
-                continue
-            item = json.loads(line)
-            item_metadata = (
-                item.get("metadata") if isinstance(item.get("metadata"), dict) else {}
+                for document in self._campaign_cache + self._terminology_cache
+            }
+            self._token_cache = {
+                key: value
+                for key, value in self._token_cache.items()
+                if key in active_tokens
+            }
+            self._corpus_key = (
+                self.store.path.stat().st_mtime_ns,
+                ONTOLOGY_CHUNKS_PATH.stat().st_mtime_ns,
             )
-            documents.append(
-                {
-                    "id": "term:"
-                    + str(
-                        item.get("chunk_id")
-                        or item.get("term_id")
-                        or item_metadata.get("term_id")
-                        or ""
-                    ),
-                    "text": str(item.get("text") or ""),
-                    "metadata": {
-                        "source_type": "terminology",
-                        "term_id": str(
-                            item.get("term_id") or item_metadata.get("term_id") or ""
-                        ),
-                        "title": str(item.get("title") or item.get("term") or ""),
-                        "source_url": str(item_metadata.get("source_url") or ""),
-                    },
-                }
-            )
-        return documents
+        return self._campaign_cache, self._terminology_cache
 
-    @staticmethod
-    def _bm25(query_tokens: list[str], documents: list[dict[str, Any]]) -> list[float]:
-        tokenized = [tokenize_turkish(document["text"]) for document in documents]
+    def _document_tokens(self, document: dict[str, Any]) -> list[str]:
+        key = (
+            str(document["id"]),
+            str(document["metadata"].get("index_hash") or ""),
+        )
+        if key not in self._token_cache:
+            self._token_cache[key] = tokenize_turkish(document["text"])
+        return self._token_cache[key]
+
+    @classmethod
+    def _fuse(
+        cls,
+        rankings: list[list[dict[str, Any]]],
+        *,
+        limit: int,
+        method: str,
+        rrf_constants: list[int] | None = None,
+    ) -> list[dict[str, Any]]:
+        constants = rrf_constants or [60] * len(rankings)
+        if len(constants) != len(rankings):
+            raise ValueError("Her sıralama için bir RRF sabiti verilmelidir")
+        representatives: dict[str, dict[str, Any]] = {}
+        fused: dict[str, float] = {}
+        for ranking, rrf_constant in zip(rankings, constants):
+            seen: set[str] = set()
+            for rank, item in enumerate(ranking, start=1):
+                key = cls._rank_key(item)
+                if key in seen:
+                    continue
+                seen.add(key)
+                if key not in representatives:
+                    representatives[key] = item
+                elif item.get("metadata", {}).get("graph_relations"):
+                    representatives[key] = {
+                        **representatives[key],
+                        "metadata": {
+                            **representatives[key].get("metadata", {}),
+                            "graph_relations": item["metadata"]["graph_relations"],
+                        },
+                    }
+                fused[key] = fused.get(key, 0.0) + 1 / (rrf_constant + rank)
+        ranked_keys = sorted(fused, key=lambda key: (-fused[key], key))
+        return [
+            {
+                **representatives[key],
+                "score": round(fused[key], 6),
+                "retrieval_method": method,
+            }
+            for key in ranked_keys[:limit]
+        ]
+
+    def _bm25(
+        self, query_tokens: list[str], documents: list[dict[str, Any]]
+    ) -> list[float]:
+        tokenized = [self._document_tokens(document) for document in documents]
         if not tokenized:
             return []
         average_length = sum(map(len, tokenized)) / len(tokenized) or 1.0
@@ -140,7 +185,9 @@ class HybridRetriever:
         bank_slugs = set(filters.get("bank_slugs") or [])
         product_type = filters.get("product_type")
         source_types = set(filters.get("source_types") or [])
-        campaigns = [self._campaign_document(row) for row in self.store.list_campaigns()]
+        financing_type = filters.get("financing_type")
+        cached_campaigns, cached_terminology = self._load_corpus()
+        campaigns = cached_campaigns
         campaigns = [
             document
             for document in campaigns
@@ -150,19 +197,27 @@ class HybridRetriever:
                 not product_type
                 or document["metadata"]["product_type"] in {"", product_type}
             )
+            and (
+                not financing_type
+                or document["metadata"]["financing_type"] in {"", financing_type}
+            )
         ]
         terminology = (
-            self._terminology_documents()
+            cached_terminology
             if not source_types or "terminology" in source_types
             else []
         )
         documents = campaigns + terminology
+        graph_expansion = self.graph_retriever.expand(
+            query, intent=str(filters.get("intent") or "") or None
+        )
         expanded = [query]
         expanded.extend(
             str(item["canonical"])
             for item in self.terminology.find_terms(query, limit=8)
             if item.get("canonical")
         )
+        expanded.extend(graph_expansion.terms)
         query_tokens = list(dict.fromkeys(tokenize_turkish(" ".join(expanded))))
         scores = self._bm25(query_tokens, documents)
         lexical = sorted(
@@ -177,7 +232,16 @@ class HybridRetriever:
             ),
             key=lambda item: (-item["score"], item["id"]),
         )
+        graph = self.graph_retriever.rank_documents(documents, graph_expansion)
         if self.vector_retriever is None:
+            if graph:
+                self.last_backend = "bm25+knowledge-graph"
+                return self._fuse(
+                    [lexical, graph],
+                    limit=limit,
+                    method="metadata+bm25+ontology+knowledge-graph",
+                    rrf_constants=[60, 10],
+                )
             self.last_backend = "bm25"
             return lexical[:limit]
         try:
@@ -187,25 +251,28 @@ class HybridRetriever:
         except Exception:
             vector = []
         if not vector:
+            if graph:
+                self.last_backend = "bm25+knowledge-graph-fallback"
+                return self._fuse(
+                    [lexical, graph],
+                    limit=limit,
+                    method="metadata+bm25+ontology+knowledge-graph",
+                    rrf_constants=[60, 10],
+                )
             self.last_backend = "bm25-fallback"
             return lexical[:limit]
 
-        by_id = {item["id"]: item for item in vector}
-        by_id.update({item["id"]: item for item in lexical if item["id"] not in by_id})
-        fused: dict[str, float] = {}
-        for ranking in (vector, lexical):
-            for rank, item in enumerate(ranking, start=1):
-                fused[item["id"]] = fused.get(item["id"], 0.0) + 1 / (60 + rank)
-        ranked = sorted(
-            by_id.values(),
-            key=lambda item: (-fused.get(item["id"], 0.0), item["id"]),
-        )
+        rankings = [vector, lexical]
+        method = "chroma+semantic+bm25+ontology"
         self.last_backend = "chroma+bm25"
-        return [
-            {
-                **item,
-                "score": round(fused[item["id"]], 6),
-                "retrieval_method": "chroma+semantic+bm25+ontology",
-            }
-            for item in ranked[:limit]
-        ]
+        if graph:
+            rankings.append(graph)
+            method += "+knowledge-graph"
+            self.last_backend += "+knowledge-graph"
+        constants = [60, 60, 10] if graph else None
+        return self._fuse(
+            rankings,
+            limit=limit,
+            method=method,
+            rrf_constants=constants,
+        )

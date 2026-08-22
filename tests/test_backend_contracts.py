@@ -166,6 +166,51 @@ def test_refresh_manager_maps_cli_partial_status_and_keeps_both_output_streams(
     assert status["output_truncated"] is False
 
 
+def test_refresh_manager_runs_incremental_index_after_successful_update(tmp_path):
+    calls = []
+
+    def successful_run(command, **kwargs):
+        calls.append(command)
+        if "scripts.ingest_chroma" in command:
+            return SimpleNamespace(
+                returncode=0,
+                stdout='{"embedded": 1, "unchanged": 1711}\n',
+                stderr="",
+            )
+        return SimpleNamespace(returncode=0, stdout="1 kayıt güncellendi\n", stderr="")
+
+    manager = RefreshManager(runner=successful_run, auto_index=True)
+    job = manager.create(1)
+    database = tmp_path / "refresh.sqlite3"
+    manager.run(job["id"], database)
+
+    status = manager.get(job["id"])
+    assert len(calls) == 2
+    assert "scripts.ingest_chroma" in calls[1]
+    assert status["status"] == "completed"
+    assert status["index_status"] == "completed"
+    assert status["index_return_code"] == 0
+    assert '"embedded": 1' in status["index_message"]
+
+
+def test_refresh_manager_skips_index_when_scrape_fails(tmp_path):
+    calls = []
+
+    def failed_run(command, **kwargs):
+        calls.append(command)
+        return SimpleNamespace(returncode=1, stdout="", stderr="kaynak hatası")
+
+    manager = RefreshManager(runner=failed_run, auto_index=True)
+    job = manager.create(1)
+    manager.run(job["id"], tmp_path / "refresh.sqlite3")
+
+    status = manager.get(job["id"])
+    assert len(calls) == 1
+    assert status["status"] == "failed"
+    assert status["index_status"] == "skipped"
+    assert "çalıştırılmadı" in status["index_message"]
+
+
 def test_refresh_manager_timeout_is_failed_and_releases_the_active_slot(tmp_path):
     def timed_out(command, **kwargs):
         raise subprocess.TimeoutExpired(
@@ -187,6 +232,22 @@ def test_refresh_manager_timeout_is_failed_and_releases_the_active_slot(tmp_path
     assert status["message"].endswith("12 saniye sonra zaman aşımına uğradı")
     assert status["completed_at"] is not None
     assert manager.create(1) is not None
+
+
+def test_refresh_manager_marks_index_failure_as_partial(tmp_path):
+    def run_with_index_failure(command, **kwargs):
+        if "scripts.ingest_chroma" in command:
+            raise RuntimeError("model belleği kullanılamadı")
+        return SimpleNamespace(returncode=0, stdout="1 kayıt güncellendi", stderr="")
+
+    manager = RefreshManager(runner=run_with_index_failure, auto_index=True)
+    job = manager.create(1)
+    manager.run(job["id"], tmp_path / "refresh.sqlite3")
+
+    status = manager.get(job["id"])
+    assert status["status"] == "partial"
+    assert status["index_status"] == "failed"
+    assert "model belleği kullanılamadı" in status["index_message"]
 
 
 def test_refresh_manager_bounds_reported_subprocess_output(tmp_path):

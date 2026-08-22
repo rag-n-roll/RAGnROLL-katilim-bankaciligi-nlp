@@ -9,7 +9,7 @@ derleyici ve alan çıkarım sözleşmesini aynı veri üzerinde tekrar üretir.
 | --- | ---: | ---: | --- |
 | Intent exact match | %91,11 (164/180) | %85 | Geçti |
 | Desteklenen çıkarım alanı exact match | %97,32 (436/448) | %82 | Geçti |
-| Backend satır kapsamı | %80 | %70 | Geçti |
+| Backend satır kapsamı | %82,05 | %70 | Geçti |
 
 Komut:
 
@@ -27,4 +27,6 @@ kapsamı iddiası yapılmamalıdır.
 
 Edge testleri oran yazım varyantı, indirim-oran ayrımı, ödül-finansman tutarı
 ayrımı, çelişkili oran, typed missingness, kanıt offseti, farklı banka tekrar
-izolasyonu, zamansal sürümleme, sorgu yönlendirme ve API sınırlarını kapsar.
+izolasyonu, zamansal sürümleme, sorgu yönlendirme, anlamsal parçalama, yalnız
+değişen parçaların indekslenmesi, stale parça temizliği, graph genişletme ve API
+sınırlarını kapsar.

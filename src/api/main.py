@@ -57,19 +57,28 @@ class RefreshManager:
         self,
         *,
         timeout_seconds: float = 30 * 60,
+        index_timeout_seconds: float = 60 * 60,
         output_limit: int = 4000,
         runner: Callable[..., subprocess.CompletedProcess[str]] | None = None,
+        auto_index: bool | None = None,
     ) -> None:
         if timeout_seconds <= 0:
             raise ValueError("timeout_seconds pozitif olmalıdır")
         if output_limit <= 0:
             raise ValueError("output_limit pozitif olmalıdır")
+        if index_timeout_seconds <= 0:
+            raise ValueError("index_timeout_seconds pozitif olmalıdır")
         self._lock = Lock()
         self._jobs: dict[str, dict[str, Any]] = {}
         self._active_job_id: str | None = None
         self.timeout_seconds = timeout_seconds
+        self.index_timeout_seconds = index_timeout_seconds
         self.output_limit = output_limit
         self._runner = runner
+        if auto_index is None:
+            configured = os.getenv("RAGNROLL_CHROMA_AUTO_INDEX", "false").casefold()
+            auto_index = configured not in {"0", "false", "off", "hayır", "hayir"}
+        self.auto_index = auto_index
 
     @staticmethod
     def _now() -> str:
@@ -97,6 +106,9 @@ class RefreshManager:
                 "completed_at": None,
                 "timeout_seconds": self.timeout_seconds,
                 "output_truncated": False,
+                "index_status": "pending" if self.auto_index else "disabled",
+                "index_return_code": None,
+                "index_message": None,
             }
             self._jobs[job_id] = job
             self._active_job_id = job_id
@@ -145,12 +157,27 @@ class RefreshManager:
             )
             if not message:
                 message = f"Scraper çıkış kodu: {result.returncode}"
+            index_values: dict[str, Any] = {}
+            if status in {"completed", "partial"} and self.auto_index:
+                index_values = self._run_index(database)
+                index_message = str(index_values.get("index_message") or "")
+                if index_values.get("index_status") == "failed":
+                    status = "partial"
+                    message = f"{message}\nİndeks güncellenemedi: {index_message}"
+            elif self.auto_index:
+                index_values = {
+                    "index_status": "skipped",
+                    "index_message": (
+                        "Veri yenilemesi başarısız olduğu için indeks çalıştırılmadı"
+                    ),
+                }
             self._update(
                 job_id,
                 status=status,
                 return_code=result.returncode,
                 message=message,
                 output_truncated=truncated,
+                **index_values,
             )
         except subprocess.TimeoutExpired as exc:
             output, truncated = self._bounded_output(exc.stdout, exc.stderr)
@@ -164,14 +191,21 @@ class RefreshManager:
                 status="failed",
                 message=timeout_message,
                 output_truncated=truncated,
+                **self._skipped_index(),
             )
         except OSError as exc:
-            self._update(job_id, status="failed", message=str(exc))
+            self._update(
+                job_id,
+                status="failed",
+                message=str(exc),
+                **self._skipped_index(),
+            )
         except Exception as exc:
             self._update(
                 job_id,
                 status="failed",
                 message=f"Scraper beklenmeyen bir hatayla durdu: {exc}",
+                **self._skipped_index(),
             )
         finally:
             with self._lock:
@@ -198,6 +232,61 @@ class RefreshManager:
         if self.output_limit <= len(marker):
             return output[-self.output_limit :], True
         return marker + output[-(self.output_limit - len(marker)) :], True
+
+    def _run_index(self, database: Path) -> dict[str, Any]:
+        command = [
+            sys.executable,
+            "-m",
+            "scripts.ingest_chroma",
+            "--database",
+            str(database.resolve()),
+            "--batch-size",
+            os.getenv("RAGNROLL_INDEX_BATCH_SIZE", "64"),
+        ]
+        try:
+            runner = self._runner or subprocess.run
+            result = runner(
+                command,
+                cwd=PROJECT_ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=self.index_timeout_seconds,
+            )
+            message, _ = self._bounded_output(result.stdout, result.stderr)
+            return {
+                "index_status": "completed" if result.returncode == 0 else "failed",
+                "index_return_code": result.returncode,
+                "index_message": message or f"İndeks çıkış kodu: {result.returncode}",
+            }
+        except subprocess.TimeoutExpired as exc:
+            output, _ = self._bounded_output(exc.stdout, exc.stderr)
+            message = f"İndeks {self.index_timeout_seconds:g} saniye sonra zaman aşımına uğradı"
+            return {
+                "index_status": "failed",
+                "index_return_code": None,
+                "index_message": f"{output}\n{message}" if output else message,
+            }
+        except OSError as exc:
+            return {
+                "index_status": "failed",
+                "index_return_code": None,
+                "index_message": str(exc),
+            }
+        except Exception as exc:
+            return {
+                "index_status": "failed",
+                "index_return_code": None,
+                "index_message": f"İndeks beklenmeyen bir hatayla durdu: {exc}",
+            }
+
+    def _skipped_index(self) -> dict[str, Any]:
+        if not self.auto_index:
+            return {}
+        return {
+            "index_status": "skipped",
+            "index_message": "Veri yenilemesi tamamlanamadığı için indeks çalıştırılmadı",
+        }
 
     def _update(self, job_id: str, **values: Any) -> None:
         with self._lock:

@@ -33,10 +33,33 @@ curl --fail http://localhost:8000/api/v1/llm/status
 terminal çıktısını kontrol edin. API'yi durdurmanız gerekmez; bütün sohbet uçları
 yerel fallback ile çalışmaya devam eder.
 
-Chroma koleksiyonunun embedding modeli değiştirildiyse aynı koleksiyona farklı
-boyutlu vektör yazmayın. Yeni koleksiyon adı verin veya mevcut indeksi kontrollü
-biçimde yeniden kurun. İndeksleyici `upsert` kullanır ve artık kaynakta olmayan
-kimlikleri başarılı yüklemenin sonunda temizler.
+Varsayılan embedding modeli `Qwen/Qwen3-Embedding-0.6B`, koleksiyon ise
+`katilim_bankaciligi_qwen3` değeridir. Önceki embedding uzayı ayrı koleksiyonda
+kalır; farklı boyutlu vektörler karıştırılmaz. İlk çalıştırma bütün semantik
+parçaları üretir. Sonraki çalıştırmalar `index_hash` eşleşen parçaları atlar,
+değişenleri embed eder ve artık kaynakta bulunmayan parçaları temizler. Çıktıdaki
+`embedded`, `unchanged` ve `stale_deleted` değerlerini kontrol edin.
+Apple Silicon birleşik belleğinde aşırı padding ve bellek baskısını önlemek için
+model içi varsayılan embedding batch değeri 4'tür;
+`RAGNROLL_EMBEDDING_BATCH_SIZE` ile ölçerek değiştirilebilir.
+Hazır indeksle API başlatıldığında query modeli varsayılan olarak ısıtılır; böylece
+model yükleme maliyeti ilk kullanıcı sorgusuna taşınmaz. Kısıtlı test ortamlarında
+bu davranış `RAGNROLL_EMBEDDING_WARMUP=false` ile kapatılabilir.
+
+Model veya koleksiyon açıkça seçilecekse:
+
+```bash
+python -m scripts.ingest_chroma \
+  --embedding-model Qwen/Qwen3-Embedding-0.6B \
+  --collection katilim_bankaciligi_qwen3 \
+  --batch-size 64
+```
+
+API veri yenilemesinden sonra indeksin otomatik güncellenmesi için
+`RAGNROLL_CHROMA_AUTO_INDEX=true` ayarlanır. İndeksleme başarısız olursa veri
+korunur, iş `partial` görünür ve sohbet BM25 fallback ile hizmet vermeye devam
+eder. Qwen modelini API ile aynı Apple Silicon cihazında kullanırken embedding
+servisinin MPS seçmesi için gerekirse `RAGNROLL_EMBEDDING_DEVICE=mps` verilebilir.
 
 GEPA optimizasyonunu yalnız vLLM sağlıklıyken çalıştırın:
 

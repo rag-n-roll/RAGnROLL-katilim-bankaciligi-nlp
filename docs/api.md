@@ -45,6 +45,16 @@ yüklemeden kontrol eder.
 
 `SAFE_REDIRECT` rotası müşteri işlemi veya şikâyet kaydı yapmaz.
 
+## Veri yenileme
+
+`POST /api/v1/data-refresh` tek bir kontrollü toplama işi başlatır. Otomatik
+indeksleme açıksa başarılı veya kısmi veri güncellemesinin ardından yalnız değişen
+semantik parçalar embed edilir. `GET /api/v1/data-refresh/{job_id}` yanıtındaki
+`index_status`, `index_return_code` ve `index_message` alanları bu ikinci aşamayı
+ayrı olarak görünür tutar. Veri yenilemesi başarısızsa indeks durumu `skipped`
+olur. İndeks hatası veri güncellemesini geri almaz; iş kısmi duruma geçer ve
+retrieval yerel fallback ile devam eder.
+
 ## Karşılaştırma
 
 `POST /api/v1/compare`, `product_type` ve `currency` alanlarını zorunlu tutar.

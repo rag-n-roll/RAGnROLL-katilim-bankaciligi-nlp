@@ -112,7 +112,9 @@ class CampaignStore:
                 );
                 """)
             connection.execute(
-                "INSERT OR REPLACE INTO schema_meta(key, value) VALUES (?, ?)",
+                "INSERT INTO schema_meta(key, value) VALUES (?, ?) "
+                "ON CONFLICT(key) DO UPDATE SET value=excluded.value "
+                "WHERE schema_meta.value <> excluded.value",
                 ("schema_version", "2026.08"),
             )
             for column, definition in (

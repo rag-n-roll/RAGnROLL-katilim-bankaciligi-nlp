@@ -157,6 +157,85 @@ def test_definition_keeps_only_exact_terminology_source(tmp_path):
     assert "Muhabir Banka" not in grounded["answer"]
 
 
+def test_chunk_evidence_keeps_bounded_source_offsets(tmp_path):
+    assistant = GroundedAssistant(
+        _store(tmp_path), llm=FakeLLM(), chroma_enabled=False
+    )
+
+    class ChunkRetriever:
+        last_backend = "chroma+bm25"
+
+        def retrieve(self, query, *, filters, limit):
+            del query, filters, limit
+            return [
+                {
+                    "text": (
+                        "Başlık: Uzun kampanya\nBanka: Örnek Katılım\n"
+                        "İçerik: İkinci bölümde öğrencilere 750 TL ödül sunulur."
+                    ),
+                    "score": 1.0,
+                    "retrieval_method": "chroma+semantic+bm25+ontology",
+                    "metadata": {
+                        "campaign_id": "long",
+                        "title": "Uzun kampanya",
+                        "section": "content",
+                        "char_start": 420,
+                        "char_end": 472,
+                    },
+                }
+            ]
+
+    assistant.retriever = ChunkRetriever()
+    result = assistant._grounded_result("Öğrenci ödülü nedir?", limit=5)
+    evidence = result["sources"][0]["evidence"]
+
+    assert evidence["text"].startswith("İkinci bölümde")
+    assert evidence["char_start"] == 420
+    assert evidence["char_end"] <= 472
+
+
+def test_graph_relationship_is_preserved_in_deterministic_fallback(tmp_path):
+    assistant = GroundedAssistant(
+        _store(tmp_path), llm=FakeLLM(), chroma_enabled=False
+    )
+
+    class GraphRetriever:
+        last_backend = "bm25+knowledge-graph"
+
+        def retrieve(self, query, *, filters, limit):
+            del query, filters, limit
+            return [
+                {
+                    "text": "Peşinat: Satış bedelinin önceden ödenen kısmı.",
+                    "score": 1.0,
+                    "retrieval_method": "metadata+bm25+ontology+knowledge-graph",
+                    "metadata": {
+                        "term_id": "TRM1110",
+                        "title": "Peşinat",
+                        "graph_relations": [
+                            {
+                                "source_id": "TRM1110",
+                                "source_term": "Peşinat",
+                                "relation": "RELATED_TO",
+                                "target_id": "TRM0045",
+                                "target_term": "Konut Finansmanı",
+                            }
+                        ],
+                    },
+                }
+            ]
+
+    assistant.retriever = GraphRetriever()
+    result = assistant._grounded_result(
+        "Peşinat konut finansmanı ile nasıl ilişkilidir?", limit=5
+    )
+
+    assert result["answer"].startswith(
+        "Peşinat, Konut Finansmanı ile ilişkilidir."
+    )
+    assert result["sources"][0]["relations"]
+
+
 def test_llm_answer_gets_bounded_turkish_orthography_polish(tmp_path):
     llm = FakeLLM(["Konut finansmanı bir satış akdıdır [K1]."])
 

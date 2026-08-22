@@ -15,9 +15,15 @@
     },
     {
       "name": "hybrid-retriever",
-      "runtime": "bm25-ontology",
+      "runtime": "qwen-chroma-bm25-knowledge-graph",
       "artifact": "src/retrieval/hybrid.py",
       "output_contract": "evidence-package"
+    },
+    {
+      "name": "semantic-embedding",
+      "runtime": "sentence-transformers",
+      "artifact": "Qwen/Qwen3-Embedding-0.6B",
+      "output_contract": "normalized-1024-dimensional-vectors"
     }
   ],
   "generation_policy": "A language model may verbalize evidence but cannot create facts."

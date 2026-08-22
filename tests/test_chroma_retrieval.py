@@ -1,6 +1,18 @@
-import chromadb
+import json
 
-from src.retrieval.chroma import ChromaVectorRetriever
+import chromadb
+import numpy as np
+
+from src.persistence import CampaignStore
+from src.preprocessing.clean_text import preprocess_record
+from src.retrieval.chroma import (
+    DEFAULT_EMBEDDING_MODEL,
+    ChromaIndexer,
+    ChromaVectorRetriever,
+    SemanticEmbeddingProvider,
+)
+from src.retrieval.documents import terminology_documents
+from src.scraper.models import Campaign
 
 
 class FakeEmbeddingProvider:
@@ -70,3 +82,133 @@ def test_chroma_retriever_rejects_embedding_model_mismatch(tmp_path):
 
     assert retriever.ready() is False
     assert retriever.retrieve("konut") == []
+
+
+class RecordingModel:
+    def __init__(self):
+        self.calls = []
+
+    def encode(self, values, **options):
+        self.calls.append((values, options))
+        return np.array([[1.0, 0.0] for _ in values])
+
+
+def test_qwen_provider_uses_domain_instruction_only_for_queries():
+    provider = SemanticEmbeddingProvider()
+    provider._model = RecordingModel()
+
+    provider.embed_documents(["Konut finansmanı belgesi"])
+    provider.embed_query("Hangi belgeler gerekir?")
+
+    assert DEFAULT_EMBEDDING_MODEL == "Qwen/Qwen3-Embedding-0.6B"
+    document_values, document_options = provider._model.calls[0]
+    query_values, query_options = provider._model.calls[1]
+    assert document_values == ["Konut finansmanı belgesi"]
+    assert "prompt" not in document_options
+    assert query_values == ["Hangi belgeler gerekir?"]
+    assert "Turkish participation banking" in query_options["prompt"]
+
+
+def test_embedding_provider_caches_repeated_query_without_exposing_mutable_state():
+    provider = SemanticEmbeddingProvider()
+    provider._model = RecordingModel()
+
+    first = provider.embed_query("Konut koşulları")
+    first[0] = 99.0
+    second = provider.embed_query("Konut koşulları")
+
+    assert len(provider._model.calls) == 1
+    assert second == [1.0, 0.0]
+
+
+class CountingEmbeddingProvider:
+    model_name = "test-incremental"
+
+    def __init__(self):
+        self.embedded = []
+
+    def embed_documents(self, texts):
+        self.embedded.extend(texts)
+        return [[1.0, float(index % 2)] for index, _ in enumerate(texts)]
+
+    def embed_query(self, text):
+        return [1.0, 0.0]
+
+
+def _incremental_store(tmp_path):
+    store = CampaignStore(tmp_path / "campaigns.sqlite3")
+    row = Campaign(
+        id="education",
+        bank_slug="ornek",
+        bank_name="Örnek Katılım",
+        title="Eğitim kampanyası",
+        content="Öğrencilere 500 TL ödül sunulur.",
+        source_url="https://ornek.example/education",
+    ).to_dict()
+    store.upsert_rows([preprocess_record(row)], run_status="success")
+    return store, row
+
+
+def test_indexer_embeds_only_changed_documents(tmp_path, monkeypatch):
+    terminology_path = tmp_path / "terms.jsonl"
+    terminology_path.write_text(
+        json.dumps(
+            {
+                "chunk_id": "CHK_1",
+                "title": "Murabaha",
+                "text": "Murabaha bir katılım finans akdidir.",
+                "metadata": {"term_id": "TRM_1"},
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    terms = terminology_documents(terminology_path)
+    monkeypatch.setattr("src.retrieval.chroma.terminology_documents", lambda: terms)
+    store, row = _incremental_store(tmp_path)
+    provider = CountingEmbeddingProvider()
+    indexer = ChromaIndexer(
+        store,
+        path=tmp_path / "chroma",
+        collection_name="incremental",
+        provider=provider,
+    )
+
+    first = indexer.build(batch_size=8)
+    second = indexer.build(batch_size=8)
+    row["content"] = "Öğrencilere 750 TL ödül sunulur."
+    store.upsert_rows([preprocess_record(row)], run_status="success")
+    third = indexer.build(batch_size=8)
+
+    assert first["embedded"] == 2
+    assert first["unchanged"] == 0
+    assert second["embedded"] == 0
+    assert second["unchanged"] == 2
+    assert third["embedded"] == 1
+    assert third["unchanged"] == 1
+    assert third["stale_deleted"] == 0
+    assert indexer.retriever.ready() is True
+
+
+def test_indexer_deletes_stale_chunks_after_campaign_becomes_short(tmp_path, monkeypatch):
+    monkeypatch.setattr("src.retrieval.chroma.terminology_documents", lambda: [])
+    store, row = _incremental_store(tmp_path)
+    row["content"] = " ".join(f"uzun koşul {index}." for index in range(500))
+    store.upsert_rows([preprocess_record(row)], run_status="success")
+    indexer = ChromaIndexer(
+        store,
+        path=tmp_path / "chroma",
+        collection_name="stale-chunks",
+        provider=CountingEmbeddingProvider(),
+    )
+    first = indexer.build(batch_size=8)
+
+    row["content"] = "Kısa kampanya koşulu."
+    store.upsert_rows([preprocess_record(row)], run_status="success")
+    second = indexer.build(batch_size=8)
+
+    assert first["campaigns"] > 1
+    assert second["campaigns"] == 1
+    assert second["embedded"] == 1
+    assert second["stale_deleted"] == first["campaigns"]

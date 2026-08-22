@@ -7,6 +7,7 @@ services:
       RAGNROLL_CORS_ORIGINS: http://localhost:3000
       RAGNROLL_DB_PATH: /app/runtime/ragnroll.sqlite3
       RAGNROLL_CHROMA_ENABLED: "true"
+      RAGNROLL_CHROMA_AUTO_INDEX: "true"
       RAGNROLL_CHROMA_PATH: /app/chroma_db
       RAGNROLL_LLM_ENABLED: "true"
       RAGNROLL_LLM_BASE_URL: ${RAGNROLL_LLM_BASE_URL:-http://host.docker.internal:8001/v1}

@@ -34,6 +34,23 @@ def test_compiler_links_domain_definition_to_ontology():
     assert any(item.get("term_id") == "TRM0462" for item in plan.terminology_rewrites)
 
 
+@pytest.mark.parametrize(
+    ("query", "intent"),
+    (
+        ("Konut finansmanı hangi teminatları gerektirir?", "application_requirements"),
+        (
+            "Peşinat konut finansmanı ile nasıl ilişkilidir?",
+            "relationship_query",
+        ),
+    ),
+)
+def test_compiler_routes_relational_questions_to_graph_capable_rag(query, intent):
+    plan = DomainQueryCompiler().compile(query)
+
+    assert plan.route == "HYBRID_RAG"
+    assert plan.intent == intent
+
+
 def test_compiler_safely_redirects_complaints_and_rejects_empty_queries():
     compiler = DomainQueryCompiler()
     plan = compiler.compile("Şikâyet kaydı açmak istiyorum")

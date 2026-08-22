@@ -16,7 +16,10 @@ Temizleme ──► hash / tekrar kümesi / kaynak sürümü
 Alan çıkarımı ──► değer + durum + güven + kanıt
       │
       ├──► SQL-first sorgu ve karşılaştırma
-      └──► Chroma + çok dilli embedding + BM25 + ontoloji retrieval
+      └──► semantik chunking + Qwen embedding
+                    │
+                    ▼
+          Chroma + BM25 + seçici graph retrieval
                     │
                     ▼
              Kanıt paketli yanıt
@@ -46,9 +49,24 @@ SQLite güncel görünümü tutar; `record_versions` tablosu içerik değişimin
 Yapılandırılmış sorular SQL rotasına, tanım/koşul soruları retrieval rotasına,
 şikâyet ve işlem talepleri güvenli yönlendirmeye gider.
 
-Ana cevap motoru ağ veya model servisi olmadan çalışır. Chroma indeksi mevcutsa
-semantik sonuçlar BM25 sıralamasıyla birleştirilir; indeks boş, uyumsuz veya
-erişilemezse BM25 geri dönüşü devreye girer.
+Ana cevap motoru ağ veya model servisi olmadan çalışır. Uzun kampanyalar kaynak
+karakter aralıklarını koruyan semantik pencerelere ayrılır. Qwen doküman
+embeddingleri yalnız `index_hash` değiştiğinde üretilir; sorgu embeddingi ise her
+istekte aynı model ve sorgu talimatıyla hesaplanır. Chroma indeksi boş, yapım
+aşamasında, model/şema açısından uyumsuz veya erişilemezse BM25 geri dönüşü
+devreye girer.
+
+BM25 ve Chroma sıralamaları reciprocal-rank fusion ile kampanya düzeyinde
+birleştirilir; aynı kampanyanın birden fazla parçası kaynak listesini işgal etmez.
+Mevcut kaynaklı ontoloji graph'ı yalnız belge, koşul, teminat ve ilişki sorularında
+en fazla iki adımlı komşuluk aramasına açılır. Basit tanım ve kampanya sorguları
+graph maliyeti taşımaz.
+
+Değişmeyen doküman korpusu ve tokenize BM25 girdileri süreç içinde önbellekte
+tutulur; SQLite veya ontoloji dosyası değiştiğinde önbellek kendini yeniler.
+Tekrarlanan query embeddingleri 256 girdilik sınırlı LRU önbelleği kullanır.
+Hazır indeksle API açılışında Qwen query modeli ısıtılarak ilk kullanıcı
+isteğindeki model yükleme gecikmesi kaldırılır.
 
 Gemma, vLLM'in OpenAI uyumlu Chat Completions akışı üzerinden yalnız `facts` ve
 `sources` paketini profesyonel Türkçe cevaba dönüştürür. Model sorgu planı üretmez,

@@ -11,7 +11,8 @@ karşılaştırma ve kaynaklı soru-cevap sunan yerel çalışabilir platform.
 - Exact hash, near-duplicate kümeleri ve zamansal kayıt sürüm geçmişi
 - Her alan için değer, durum, güven, yöntem ve karakter aralıklı kanıt
 - 12 intent, katılım finans terminolojisi ve SQL-first sorgu derleyici
-- Koşul/tanım soruları için Chroma + çok dilli embedding + BM25 + ontoloji retrieval
+- Koşul/tanım soruları için Qwen embedding + Chroma + BM25 + yönlendirilmiş graph retrieval
+- Kaynak konumunu koruyan semantik chunking ve yalnız değişen parçaları embed eden indeksleme
 - vLLM-Metal üzerinde Gemma ile kaynak etiketli, token bazlı streaming yanıt
 - Model hatasında kesintisiz çalışan doğrulanabilir yerel fallback
 - DSPy GEPA ile ölçülebilir ve tekrar üretilebilir Türkçe istem iyileştirme
@@ -68,11 +69,22 @@ yükleyicisiyle doğrudan uyumlu değildir. Bu nedenle aynı model ailesinin MLX
 topluluk dönüşümü kullanılır; başka uyumlu bir yerel dizin `--model` ile
 verilebilir.
 
-Düzeltilmiş SQLite kampanyalarını ve terminoloji kayıtlarını Chroma'ya yükleyin:
+Düzeltilmiş SQLite kampanyalarını ve terminoloji kayıtlarını Chroma'ya yükleyin.
+İlk geçişte Qwen modeli ve yeni indeks bir kez oluşturulur; sonraki çalıştırmalarda
+yalnız içerik parmak izi değişen parçalar yeniden embed edilir:
 
 ```bash
 python -m scripts.ingest_chroma --batch-size 64
 ```
+
+Varsayılan `Qwen/Qwen3-Embedding-0.6B` modeli, Türkçe sorguya özel İngilizce
+retrieval talimatıyla çalışır. Uzun kampanyalar yaklaşık 320 kelimelik, sınırlı
+örtüşen parçalara ayrılır. Banka, ürün ve finansman türü filtreleri vektör
+aramasından önce uygulanır; ontoloji graph'ı yalnız ilişkisel sorgularda açılır.
+
+API üzerinden başarılı veya kısmi veri yenilemesinden sonra artımlı indekslemeyi
+otomatik çalıştırmak için `RAGNROLL_CHROMA_AUTO_INDEX=true` ayarlanabilir. Compose
+kurulumunda bu seçenek açıktır.
 
 Ardından API ve dashboard'u hızlı başlangıçtaki komutlarla çalıştırın. vLLM
 erişilemez, boş yanıt üretir veya geçerli kaynak etiketi vermezse kullanıcıya

@@ -24,6 +24,7 @@ langchain-chroma==1.0.0
 
 chromadb==1.5.9
 sentence-transformers==3.1.1
+transformers>=4.51,<5
 dspy==3.3.1
 gepa==0.1.4
 

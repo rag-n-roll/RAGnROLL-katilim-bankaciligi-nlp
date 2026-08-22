@@ -68,6 +68,44 @@ def test_retrieval_can_limit_definition_search_to_terminology(tmp_path):
     assert {item["metadata"]["source_type"] for item in results} == {"terminology"}
 
 
+def test_retrieval_reuses_unchanged_corpus_and_token_cache(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    retriever = HybridRetriever(store)
+    first = retriever.retrieve("konut finansmanı", limit=5)
+
+    def fail_if_corpus_is_loaded_again():
+        raise AssertionError("değişmeyen veri seti yeniden yüklenmemeli")
+
+    monkeypatch.setattr(store, "list_campaigns", fail_if_corpus_is_loaded_again)
+    second = retriever.retrieve("konut finansmanı", limit=5)
+
+    assert first == second
+    assert retriever._token_cache
+
+
+def test_retrieval_invalidates_corpus_after_database_update(tmp_path):
+    store = _store(tmp_path)
+    retriever = HybridRetriever(store)
+    retriever.retrieve("konut finansmanı", limit=5)
+    new_row = preprocess_record(
+        Campaign(
+            id="education",
+            bank_slug="ornek",
+            bank_name="Örnek Katılım",
+            title="Öğrenci eğitim desteği",
+            content="Öğrencilere eğitim desteği ve taksit avantajı sunulur.",
+            source_url="https://ornek.example/education",
+        ).to_dict()
+    )
+
+    store.upsert_rows([new_row], run_status="success")
+    results = retriever.retrieve("öğrenci eğitim desteği", limit=10)
+
+    assert any(
+        item["metadata"].get("campaign_id") == "education" for item in results
+    )
+
+
 @pytest.mark.parametrize("limit", (0, 21))
 def test_retrieval_rejects_unbounded_limit(tmp_path, limit):
     with pytest.raises(ValueError, match="1 ile 20"):

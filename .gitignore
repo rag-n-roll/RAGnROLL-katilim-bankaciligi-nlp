@@ -19,6 +19,7 @@ __pycache__/
 data/raw/*.json
 data/processed/*.json
 outputs/*.json
+output/playwright/
 
 # Calistirma sirasinda uretilen veri ve raporlar
 data/raw/*.json*

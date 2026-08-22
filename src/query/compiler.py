@@ -100,6 +100,22 @@ class DomainQueryCompiler:
             return "trade_finance_query", 0.94
         if "AGRICULTURE_TERM" in entities:
             return "agriculture_finance_query", 0.94
+        if any(
+            term in normalized
+            for term in ("ilişkilidir", "ilişkili", "bağlantılı", "arasındaki ilişki")
+        ):
+            return "relationship_query", 0.97
+        if any(
+            term in normalized
+            for term in (
+                "hangi belge",
+                "hangi teminat",
+                "hangi koşul",
+                "hangi şart",
+                "neleri gerektir",
+            )
+        ):
+            return "application_requirements", 0.97
         priorities = (
             "application_requirements",
             "trade_finance_query",
