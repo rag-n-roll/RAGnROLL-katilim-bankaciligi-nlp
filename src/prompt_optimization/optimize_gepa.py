@@ -13,11 +13,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 os.environ.setdefault("DSPY_CACHEDIR", str(PROJECT_ROOT / ".codex_tmp" / "dspy_cache"))
 Path(os.environ["DSPY_CACHEDIR"]).mkdir(parents=True, exist_ok=True)
 
-import dspy
+import dspy  # noqa: E402
 
-from src.prompt_optimization.dataset import DEFAULT_OUTPUT_PATH
-from src.prompt_optimization.dspy_program import CampaignAnswerProgram
-from src.prompt_optimization.metrics import gepa_metric
+from src.prompt_optimization.dataset import DEFAULT_OUTPUT_PATH  # noqa: E402
+from src.prompt_optimization.dspy_program import CampaignAnswerProgram  # noqa: E402
+from src.prompt_optimization.metrics import gepa_metric  # noqa: E402
 
 
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "models" / "dspy_gepa"
@@ -80,8 +80,15 @@ def main() -> None:
     parser.add_argument("--shots", type=int, nargs="+", default=[1, 4])
     parser.add_argument("--auto", choices=("light", "medium", "heavy"), default="light")
     parser.add_argument("--threads", type=int, default=1)
-    parser.add_argument("--max-train", type=int, default=0, help="0 uses every training example")
-    parser.add_argument("--max-validation", type=int, default=0, help="0 uses every validation example")
+    parser.add_argument(
+        "--max-train", type=int, default=0, help="0 uses every training example"
+    )
+    parser.add_argument(
+        "--max-validation",
+        type=int,
+        default=0,
+        help="0 uses every validation example",
+    )
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
@@ -89,10 +96,22 @@ def main() -> None:
     train = _limit(splits["train"], args.max_train, args.seed)
     validation = _limit(splits["validation"], args.max_validation, args.seed + 1)
     if not train or not validation or not splits["test"]:
-        raise ValueError("Dataset must contain non-empty train, validation and test splits.")
+        raise ValueError(
+            "Dataset must contain non-empty train, validation and test splits."
+        )
 
-    student_lm = dspy.LM(args.student_model, api_base=args.api_base, api_key="ollama", temperature=0.1)
-    reflection_lm = dspy.LM(args.reflection_model, api_base=args.api_base, api_key="ollama", temperature=0.7)
+    student_lm = dspy.LM(
+        args.student_model,
+        api_base=args.api_base,
+        api_key="ollama",
+        temperature=0.1,
+    )
+    reflection_lm = dspy.LM(
+        args.reflection_model,
+        api_base=args.api_base,
+        api_key="ollama",
+        temperature=0.7,
+    )
     dspy.configure(lm=student_lm)
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
