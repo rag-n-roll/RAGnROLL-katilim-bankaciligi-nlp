@@ -11,6 +11,7 @@ from src.services import GroundedAssistant
 
 app = FastAPI(title="Katılım Bankacılığı Chatbot", version="0.1.0")
 app.include_router(data_api_router)
+app.state.chroma_enabled = True
 
 app.add_middleware(
     CORSMiddleware,
@@ -35,7 +36,9 @@ class LocalChatFacade:
 
     def ask_question(self, message: str) -> str:
         if self._assistant is None:
-            self._assistant = GroundedAssistant(CampaignStore(DEFAULT_DATABASE))
+            self._assistant = GroundedAssistant(
+                CampaignStore(DEFAULT_DATABASE), chroma_enabled=True
+            )
         return self._assistant.answer(message)["answer"]
 
 

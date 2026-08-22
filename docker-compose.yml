@@ -6,8 +6,16 @@ services:
     environment:
       RAGNROLL_CORS_ORIGINS: http://localhost:3000
       RAGNROLL_DB_PATH: /app/runtime/ragnroll.sqlite3
+      RAGNROLL_CHROMA_ENABLED: "true"
+      RAGNROLL_CHROMA_PATH: /app/chroma_db
+      RAGNROLL_LLM_ENABLED: "true"
+      RAGNROLL_LLM_BASE_URL: ${RAGNROLL_LLM_BASE_URL:-http://host.docker.internal:8001/v1}
+      RAGNROLL_LLM_MODEL: ${RAGNROLL_LLM_MODEL:-gemma4:e4b-mlx}
     volumes:
       - runtime_data:/app/runtime
+      - chroma_data:/app/chroma_db
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8000/api/v1/health"]
       interval: 10s
@@ -27,15 +35,6 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  ollama:
-    image: ollama/ollama:0.11.4
-    profiles: ["generation"]
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    restart: unless-stopped
-
 volumes:
   runtime_data:
-  ollama_data:
+  chroma_data:

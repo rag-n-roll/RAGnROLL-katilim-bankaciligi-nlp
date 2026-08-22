@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from math import isfinite
+import re
 from time import perf_counter
-from typing import Any
+from typing import Any, Iterator
 
+from src.llm import GroundedPromptBuilder, OpenAICompatibleLLM
+from src.llm.client import LLMUnavailableError
 from src.observability import EventRecorder
 from src.persistence import CampaignStore
 from src.preprocessing.clean_text import tokenize_turkish
@@ -30,11 +33,20 @@ class GroundedAssistant:
         *,
         compiler: DomainQueryCompiler | None = None,
         recorder: EventRecorder | None = None,
+        llm: OpenAICompatibleLLM | None = None,
+        prompt_builder: GroundedPromptBuilder | None = None,
+        chroma_enabled: bool | None = None,
     ) -> None:
         self.store = store
         self.compiler = compiler or DomainQueryCompiler()
         self.recorder = recorder or EventRecorder()
-        self.retriever = HybridRetriever(store, self.compiler.terminology)
+        self.llm = llm or OpenAICompatibleLLM()
+        self.prompt_builder = prompt_builder or GroundedPromptBuilder()
+        self.retriever = HybridRetriever(
+            store,
+            self.compiler.terminology,
+            chroma_enabled=chroma_enabled,
+        )
 
     def compile(self, message: str) -> QueryPlan:
         return self.compiler.compile(message, known_banks=self.store.bank_summary())
@@ -197,6 +209,20 @@ class GroundedAssistant:
         documents = self.retriever.retrieve(
             plan.canonical_query, filters=filters, limit=limit
         )
+        if plan.intent == "definition" and plan.terminology_rewrites:
+            exact_term_ids = {
+                str(item.get("term_id"))
+                for item in plan.terminology_rewrites
+                if item.get("term_id")
+            }
+            exact_documents = [
+                document
+                for document in documents
+                if str(document.get("metadata", {}).get("term_id"))
+                in exact_term_ids
+            ]
+            if exact_documents:
+                documents = exact_documents
         if not documents:
             return {
                 "answer": "Bu bilgi sağlanan resmî içerik ve terminoloji kayıtlarında bulunamadı.",
@@ -223,39 +249,148 @@ class GroundedAssistant:
                     "retrieval_method": document["retrieval_method"],
                 }
             )
+        answer = "\n\n".join(excerpts[:3])
+        if plan.intent == "definition" and excerpts:
+            answer = excerpts[0].split(" Ana kategori:", 1)[0].strip()
         return {
-            "answer": "\n\n".join(excerpts[:3]),
+            "answer": answer,
             "facts": [],
             "sources": sources,
             "confidence": min(0.92, plan.confidence),
             "warnings": plan.warnings,
         }
 
-    def answer(self, message: str, *, limit: int = 5) -> dict[str, Any]:
+    def _grounded_result(self, message: str, *, limit: int) -> dict[str, Any]:
         if not 1 <= limit <= 10:
             raise ValueError("limit 1 ile 10 arasında olmalıdır")
+        plan = self.compile(message)
+        if plan.route == "SAFE_REDIRECT":
+            result = {
+                "answer": (
+                    "Bu sistem müşteri işlemi veya şikâyet kaydı gerçekleştirmez. "
+                    "Lütfen ilgili bankanın resmî destek kanalını kullanın."
+                ),
+                "facts": [],
+                "sources": [],
+                "confidence": plan.confidence,
+                "warnings": plan.warnings,
+            }
+        elif plan.route == "STRUCTURED_SQL":
+            result = self._structured_answer(plan)
+        else:
+            result = self._hybrid_answer(plan, limit=limit)
+        return {**result, "plan": plan.to_dict()}
+
+    @staticmethod
+    def _valid_llm_answer(answer: str, *, source_count: int) -> bool:
+        normalized = answer.strip()
+        if len(normalized) < 12 or "<think>" in normalized.casefold():
+            return False
+        citations = [int(value) for value in re.findall(r"\[K(\d+)\]", normalized)]
+        if source_count and not citations:
+            return False
+        return all(1 <= citation <= source_count for citation in citations)
+
+    @staticmethod
+    def _polish_llm_answer(answer: str) -> str:
+        """Küçük modelin sık yaptığı, anlamı değiştirmeyen yazım kusurlarını düzeltir."""
+
+        replacements = {
+            "akdıdır": "akdidir",
+            "akdı": "akdi",
+        }
+        polished = answer
+        for incorrect, correct in replacements.items():
+            polished = re.sub(rf"\b{incorrect}\b", correct, polished, flags=re.IGNORECASE)
+        return polished
+
+    def _generation(
+        self, *, mode: str, fallback_reason: str | None = None
+    ) -> dict[str, Any]:
+        return {
+            "mode": mode,
+            "model": self.llm.model if mode == "llm" else None,
+            "fallback_reason": fallback_reason,
+            "prompt": self.prompt_builder.metadata(),
+            "retrieval_backend": getattr(self.retriever, "last_backend", "bm25"),
+        }
+
+    def stream_answer(
+        self, message: str, *, limit: int = 5
+    ) -> Iterator[dict[str, Any]]:
+        """Kanıt paketini önce üretir, LLM yanıtını token parçalarıyla aktarır."""
+
         started = perf_counter()
         success = True
         route = "UNKNOWN"
+        mode = "fallback"
         try:
-            plan = self.compile(message)
-            route = plan.route
+            grounded = self._grounded_result(message, limit=limit)
+            route = str(grounded["plan"]["route"])
+            fallback_answer = str(grounded["answer"])
+            metadata = {key: value for key, value in grounded.items() if key != "answer"}
+            yield {"event": "meta", "data": metadata}
+
+            fallback_reason = None
             if route == "SAFE_REDIRECT":
-                result = {
-                    "answer": (
-                        "Bu sistem müşteri işlemi veya şikâyet kaydı gerçekleştirmez. "
-                        "Lütfen ilgili bankanın resmî destek kanalını kullanın."
+                fallback_reason = "safe_redirect"
+            elif not grounded["sources"]:
+                fallback_reason = "evidence_not_found"
+            elif not self.llm.enabled:
+                fallback_reason = "llm_disabled"
+
+            if fallback_reason:
+                yield {"event": "delta", "data": {"text": fallback_answer}}
+                yield {
+                    "event": "done",
+                    "data": self._generation(
+                        mode="fallback", fallback_reason=fallback_reason
                     ),
-                    "facts": [],
-                    "sources": [],
-                    "confidence": plan.confidence,
-                    "warnings": plan.warnings,
                 }
-            elif route == "STRUCTURED_SQL":
-                result = self._structured_answer(plan)
-            else:
-                result = self._hybrid_answer(plan, limit=limit)
-            return {**result, "plan": plan.to_dict()}
+                return
+
+            system_prompt, user_prompt = self.prompt_builder.build(
+                question=message,
+                fallback_answer=fallback_answer,
+                facts=grounded["facts"],
+                sources=grounded["sources"],
+                plan=grounded["plan"],
+            )
+            chunks: list[str] = []
+            try:
+                for chunk in self.llm.stream_chat(
+                    system_prompt=system_prompt,
+                    user_prompt=user_prompt,
+                ):
+                    chunks.append(chunk)
+                    yield {"event": "delta", "data": {"text": chunk}}
+                generated = "".join(chunks).strip()
+                if not self._valid_llm_answer(
+                    generated, source_count=len(grounded["sources"])
+                ):
+                    event = "replace" if chunks else "delta"
+                    yield {"event": event, "data": {"text": fallback_answer}}
+                    yield {
+                        "event": "done",
+                        "data": self._generation(
+                            mode="fallback", fallback_reason="llm_output_rejected"
+                        ),
+                    }
+                    return
+                polished = self._polish_llm_answer(generated)
+                if polished != generated:
+                    yield {"event": "replace", "data": {"text": polished}}
+                mode = "llm"
+                yield {"event": "done", "data": self._generation(mode="llm")}
+            except LLMUnavailableError:
+                event = "replace" if chunks else "delta"
+                yield {"event": event, "data": {"text": fallback_answer}}
+                yield {
+                    "event": "done",
+                    "data": self._generation(
+                        mode="fallback", fallback_reason="llm_unavailable"
+                    ),
+                }
         except Exception:
             success = False
             raise
@@ -265,4 +400,35 @@ class GroundedAssistant:
                 latency_ms=(perf_counter() - started) * 1000,
                 success=success,
                 route=route,
+                generation_mode=mode,
             )
+
+    def answer(self, message: str, *, limit: int = 5) -> dict[str, Any]:
+        """Streaming sözleşmesini tüketerek geriye uyumlu toplu yanıt döndürür."""
+
+        response: dict[str, Any] = {}
+        answer_parts: list[str] = []
+        generation = self._generation(mode="fallback", fallback_reason="unknown")
+        for item in self.stream_answer(message, limit=limit):
+            event = item["event"]
+            data = item["data"]
+            if event == "meta":
+                response.update(data)
+            elif event == "delta":
+                answer_parts.append(str(data.get("text") or ""))
+            elif event == "replace":
+                answer_parts = [str(data.get("text") or "")]
+            elif event == "done":
+                generation = data
+        if generation.get("mode") == "fallback" and generation.get("fallback_reason") in {
+            "llm_unavailable",
+            "llm_output_rejected",
+        }:
+            response.setdefault("warnings", []).append(
+                "Dil modeli kullanılamadığı için doğrulanabilir yerel yanıt gösterildi"
+            )
+        return {
+            **response,
+            "answer": "".join(answer_parts).strip(),
+            "generation": generation,
+        }

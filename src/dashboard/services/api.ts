@@ -156,7 +156,99 @@ export function sendChat(message: string) {
       evidence?: { text: string } | null;
     }>;
     plan: { intent: string; route: string };
+    generation: ChatGeneration;
   }>("/chat", { method: "POST", body: JSON.stringify({ message }) });
+}
+
+export type ChatSource = {
+  campaign_id?: string | null;
+  term_id?: string | null;
+  bank_name?: string | null;
+  title?: string | null;
+  source_url?: string | null;
+  evidence?: { text: string } | null;
+};
+
+export type ChatMeta = {
+  api_version: string;
+  request_id: string;
+  confidence: number;
+  warnings: string[];
+  sources: ChatSource[];
+  facts: Array<Record<string, unknown>>;
+  plan: { intent: string; route: string };
+};
+
+export type ChatGeneration = {
+  mode: "llm" | "fallback";
+  model?: string | null;
+  fallback_reason?: string | null;
+  retrieval_backend?: string;
+  prompt?: { profile?: string; optimizer?: string; status?: string };
+};
+
+type StreamHandlers = {
+  onMeta: (data: ChatMeta) => void;
+  onDelta: (text: string) => void;
+  onReplace: (text: string) => void;
+  onDone: (data: ChatGeneration) => void;
+};
+
+export async function streamChat(
+  message: string,
+  handlers: StreamHandlers,
+  signal?: AbortSignal
+) {
+  const response = await fetch(`${API_BASE_URL}/chat/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+    body: JSON.stringify({ message }),
+    signal,
+  });
+  if (!response.ok) {
+    let detail = `API isteği başarısız oldu (${response.status}).`;
+    try {
+      const payload = await response.json();
+      detail = payload.detail ?? detail;
+    } catch {
+      // JSON olmayan hata yanıtında güvenli genel mesaj korunur.
+    }
+    throw new Error(detail);
+  }
+  if (!response.body) throw new Error("Tarayıcı streaming yanıtını okuyamadı.");
+
+  const decoder = new TextDecoder();
+  const reader = response.body.getReader();
+  let buffer = "";
+
+  function consume(block: string) {
+    let event = "message";
+    const dataLines: string[] = [];
+    for (const line of block.split(/\r?\n/)) {
+      if (line.startsWith("event:")) event = line.slice(6).trim();
+      if (line.startsWith("data:")) dataLines.push(line.slice(5).trimStart());
+    }
+    if (!dataLines.length) return;
+    const data = JSON.parse(dataLines.join("\n"));
+    if (event === "meta") handlers.onMeta(data as ChatMeta);
+    else if (event === "delta") handlers.onDelta(String(data.text ?? ""));
+    else if (event === "replace") handlers.onReplace(String(data.text ?? ""));
+    else if (event === "done") handlers.onDone(data as ChatGeneration);
+    else if (event === "error") throw new Error(String(data.message ?? "Yanıt üretilemedi."));
+  }
+
+  while (true) {
+    const { done, value } = await reader.read();
+    buffer += decoder.decode(value, { stream: !done }).replaceAll("\r\n", "\n");
+    let boundary = buffer.indexOf("\n\n");
+    while (boundary >= 0) {
+      consume(buffer.slice(0, boundary));
+      buffer = buffer.slice(boundary + 2);
+      boundary = buffer.indexOf("\n\n");
+    }
+    if (done) break;
+  }
+  if (buffer.trim()) consume(buffer);
 }
 
 export function getMetricsSummary() {

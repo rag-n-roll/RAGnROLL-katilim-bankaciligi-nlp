@@ -11,7 +11,10 @@ karşılaştırma ve kaynaklı soru-cevap sunan yerel çalışabilir platform.
 - Exact hash, near-duplicate kümeleri ve zamansal kayıt sürüm geçmişi
 - Her alan için değer, durum, güven, yöntem ve karakter aralıklı kanıt
 - 12 intent, katılım finans terminolojisi ve SQL-first sorgu derleyici
-- Koşul/tanım soruları için metadata filtreli BM25 + ontoloji retrieval
+- Koşul/tanım soruları için Chroma + çok dilli embedding + BM25 + ontoloji retrieval
+- vLLM-Metal üzerinde Gemma ile kaynak etiketli, token bazlı streaming yanıt
+- Model hatasında kesintisiz çalışan doğrulanabilir yerel fallback
+- DSPy GEPA ile ölçülebilir ve tekrar üretilebilir Türkçe istem iyileştirme
 - FastAPI sözleşmeleri ve canlı Next.js dashboard
 - Golden Set, edge-case testleri, gecikme/hata ve veri kalitesi metrikleri
 
@@ -44,15 +47,46 @@ Tüm platformu container ile çalıştırmak için:
 docker compose up --build
 ```
 
-Yerel üretim modelini ayrıca çalıştırmak isterseniz:
+### Yerel Gemma ve Chroma kurulumu
+
+Apple Silicon üzerinde vLLM'in MLX arka uçlu eklentisini bir kez kurun:
 
 ```bash
-docker compose --profile generation up --build
+curl -fsSL https://raw.githubusercontent.com/vllm-project/vllm-metal/main/install.sh | bash
 ```
 
-Temel cevap motoru dış modele ihtiyaç duymadan yapılandırılmış veri ve yerel
-terminoloji üzerinde deterministik çalışır. Bir dil modeli eklendiğinde rolü
-yalnız kanıt paketini sözele dökmektir; yeni olgu üretmesine izin verilmez.
+OpenAI uyumlu servisi başlatın. İlk çalıştırmada Gemma 4 E4B'nin vLLM-Metal ile
+uyumlu 4 bit MLX kontrol noktası yerel önbelleğe indirilir; API'de
+`gemma4:e4b-mlx` adıyla sunulur:
+
+```bash
+python -m scripts.serve_local_llm
+```
+
+Ollama paketindeki ModelOpt NVFP4 tensor şeması vLLM-Metal'in MLX Gemma
+yükleyicisiyle doğrudan uyumlu değildir. Bu nedenle aynı model ailesinin MLX
+topluluk dönüşümü kullanılır; başka uyumlu bir yerel dizin `--model` ile
+verilebilir.
+
+Düzeltilmiş SQLite kampanyalarını ve terminoloji kayıtlarını Chroma'ya yükleyin:
+
+```bash
+python -m scripts.ingest_chroma --batch-size 64
+```
+
+Ardından API ve dashboard'u hızlı başlangıçtaki komutlarla çalıştırın. vLLM
+erişilemez, boş yanıt üretir veya geçerli kaynak etiketi vermezse kullanıcıya
+yarım model cevabı bırakılmaz; doğrulanmış deterministik yanıt otomatik gösterilir.
+
+Türkçe cevap istemini değerlendirme örnekleriyle iyileştirmek için vLLM çalışırken:
+
+```bash
+python -m scripts.optimize_assistant_prompt --max-metric-calls 24
+```
+
+GEPA çevrimdışı çalışır; canlı kullanıcı mesajını değiştirmez. Eğitim ve doğrulama
+örnekleri üzerinde en iyi talimatı seçerek çalışma zamanı istem profiline kaydeder.
+Daha geniş bir arama gerektiğinde bunun yerine `--auto light` kullanılabilir.
 
 ## Veri hattı
 
@@ -86,6 +120,8 @@ python -m src.scraper.scraper db import-json data/processed/campaigns.json \
 - `POST /api/v1/compare`: açıklanabilir karşılaştırma
 - `POST /api/v1/query/compile`: intent, slot, filtre ve rota planı
 - `POST /api/v1/chat`: kanıt paketli yanıt
+- `POST /api/v1/chat/stream`: SSE ile kaynak meta verisi ve token akışı
+- `GET /api/v1/llm/status`: vLLM bağlantısı ve servis edilen model durumu
 - `GET /api/v1/dashboard/snapshot`: dashboard başlangıç verisi
 - `GET /api/v1/metrics/summary`: çalışma zamanı ve veri kalitesi özeti
 

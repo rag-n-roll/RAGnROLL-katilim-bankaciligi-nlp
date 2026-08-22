@@ -30,6 +30,18 @@ terminoloji eşlemesi ve yürütme rotasına çevirir.
 - güven skoru,
 - açık uyarılar,
 - yürütülen sorgu planı döndürür.
+- `generation.mode`, model, retrieval arka ucu ve fallback nedenini döndürür.
+
+`POST /api/v1/chat/stream` aynı sözleşmeyi Server-Sent Events ile aktarır:
+
+- `meta`: plan, facts, sources, güven, uyarılar ve istek kimliği,
+- `delta`: kullanıcıya eklenecek cevap parçası,
+- `replace`: yarım/geçersiz model çıktısını güvenli fallback ile değiştirir,
+- `done`: `llm` veya `fallback` üretim modu ve kullanılan istem profili.
+
+Yanıt `text/event-stream` tipindedir; proxy buffering `X-Accel-Buffering: no`
+başlığıyla kapatılır. `GET /api/v1/llm/status`, vLLM bağlantı durumunu model
+yüklemeden kontrol eder.
 
 `SAFE_REDIRECT` rotası müşteri işlemi veya şikâyet kaydı yapmaz.
 

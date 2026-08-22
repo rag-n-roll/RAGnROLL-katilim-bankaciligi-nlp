@@ -16,11 +16,17 @@ Temizleme ──► hash / tekrar kümesi / kaynak sürümü
 Alan çıkarımı ──► değer + durum + güven + kanıt
       │
       ├──► SQL-first sorgu ve karşılaştırma
-      └──► BM25 + ontoloji retrieval
+      └──► Chroma + çok dilli embedding + BM25 + ontoloji retrieval
                     │
                     ▼
              Kanıt paketli yanıt
                     │
+           ┌────────┴─────────┐
+           ▼                  ▼
+    Gemma cevap yazımı   yerel fallback
+           └────────┬─────────┘
+                    ▼
+             Streaming API
                     ▼
               API ve dashboard
 ```
@@ -40,6 +46,15 @@ SQLite güncel görünümü tutar; `record_versions` tablosu içerik değişimin
 Yapılandırılmış sorular SQL rotasına, tanım/koşul soruları retrieval rotasına,
 şikâyet ve işlem talepleri güvenli yönlendirmeye gider.
 
-Ana cevap motoru ağ veya model servisi olmadan çalışır. İsteğe bağlı üretim
-modeli yalnız `facts` ve `sources` paketini sözele dökebilir; sayısal olgu
-üretme yetkisi yoktur.
+Ana cevap motoru ağ veya model servisi olmadan çalışır. Chroma indeksi mevcutsa
+semantik sonuçlar BM25 sıralamasıyla birleştirilir; indeks boş, uyumsuz veya
+erişilemezse BM25 geri dönüşü devreye girer.
+
+Gemma, vLLM'in OpenAI uyumlu Chat Completions akışı üzerinden yalnız `facts` ve
+`sources` paketini profesyonel Türkçe cevaba dönüştürür. Model sorgu planı üretmez,
+SQL çalıştırmaz ve sayısal olgu bulmaz. Kaynaksız, boş, yarım veya geçersiz kaynak
+etiketli üretim `replace` olayıyla geri alınır ve deterministik cevap gösterilir.
+
+DSPy GEPA canlı istek yolunda değildir. Değerlendirme örnekleri ve metinsel geri
+bildirim metriğiyle istem talimatını çevrimdışı iyileştirir; seçilen profil çalışma
+zamanında sade bir yapılandırma dosyasından yüklenir.

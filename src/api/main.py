@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,6 +15,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, BackgroundTasks, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from src.comparison import ComparisonQuery, compare_records
 from src.extraction.hybrid import HybridExtractor
 from src.observability import EventRecorder
@@ -229,7 +231,11 @@ def _recorder(request: Request) -> EventRecorder:
 def _assistant(request: Request) -> GroundedAssistant:
     assistant = getattr(request.app.state, "grounded_assistant", None)
     if assistant is None:
-        assistant = GroundedAssistant(_store(request), recorder=_recorder(request))
+        assistant = GroundedAssistant(
+            _store(request),
+            recorder=_recorder(request),
+            chroma_enabled=getattr(request.app.state, "chroma_enabled", None),
+        )
         request.app.state.grounded_assistant = assistant
     return assistant
 
@@ -439,6 +445,51 @@ def grounded_chat(payload: GroundedChatRequest, request: Request) -> dict[str, A
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@router.post(
+    "/chat/stream",
+    tags=["chatbot"],
+    response_class=StreamingResponse,
+)
+def grounded_chat_stream(
+    payload: GroundedChatRequest, request: Request
+) -> StreamingResponse:
+    """Yanıt metnini ve kaynak meta verisini SSE olaylarıyla aktarır."""
+
+    request_id = uuid4().hex
+
+    def events():
+        try:
+            for item in _assistant(request).stream_answer(
+                payload.message, limit=payload.source_limit
+            ):
+                data = dict(item["data"])
+                if item["event"] == "meta":
+                    data.update(api_version="2026.08", request_id=request_id)
+                yield (
+                    f"event: {item['event']}\n"
+                    f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+                )
+        except ValueError as exc:
+            yield (
+                "event: error\n"
+                f"data: {json.dumps({'message': str(exc)}, ensure_ascii=False)}\n\n"
+            )
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.get("/llm/status", tags=["system"])
+def llm_status(request: Request) -> dict[str, Any]:
+    return _assistant(request).llm.status()
+
+
 @router.get(
     "/metrics/summary",
     response_model=MetricsSummaryResponse,
@@ -482,7 +533,11 @@ def data_refresh_status(job_id: str, request: Request) -> dict[str, Any]:
     return job
 
 
-def create_app(*, database_path: str | Path | None = None) -> FastAPI:
+def create_app(
+    *,
+    database_path: str | Path | None = None,
+    chroma_enabled: bool | None = None,
+) -> FastAPI:
     api = FastAPI(
         title="RAGnROLL Katılım Bankacılığı API",
         version="0.4.0",
@@ -504,6 +559,9 @@ def create_app(*, database_path: str | Path | None = None) -> FastAPI:
         allow_headers=["*"],
     )
     api.state.database_path = Path(database_path) if database_path else DEFAULT_DATABASE
+    api.state.chroma_enabled = (
+        chroma_enabled if chroma_enabled is not None else database_path is None
+    )
     api.state.refresh_manager = RefreshManager()
     api.state.event_recorder = EventRecorder()
     api.include_router(router)

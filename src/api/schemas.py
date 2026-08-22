@@ -51,6 +51,7 @@ class GroundedChatResponse(ContractResponse):
     confidence: float = Field(ge=0, le=1)
     warnings: list[str]
     plan: dict[str, Any]
+    generation: dict[str, Any]
 
 
 class MetricsSummaryResponse(ContractResponse):

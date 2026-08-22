@@ -27,6 +27,7 @@ outputs/*.json
 
 # ChromaDB lokal veritabanı
 chroma_db/
+runtime/
 
 *.sqlite3
 venv311/

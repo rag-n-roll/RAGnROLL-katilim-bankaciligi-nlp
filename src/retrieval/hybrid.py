@@ -5,12 +5,14 @@ from __future__ import annotations
 from collections import Counter
 import json
 from math import log
+import os
 from pathlib import Path
 from typing import Any
 
 from src.knowledge import TerminologyService
 from src.persistence import CampaignStore
 from src.preprocessing.clean_text import tokenize_turkish
+from src.retrieval.chroma import ChromaVectorRetriever
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -23,15 +25,25 @@ class HybridRetriever:
         self,
         store: CampaignStore,
         terminology: TerminologyService | None = None,
+        *,
+        chroma_enabled: bool | None = None,
+        vector_retriever: ChromaVectorRetriever | None = None,
     ) -> None:
         self.store = store
         self.terminology = terminology or TerminologyService()
+        if chroma_enabled is None:
+            configured = os.getenv("RAGNROLL_CHROMA_ENABLED", "false").casefold()
+            chroma_enabled = configured not in {"0", "false", "off", "hayır", "hayir"}
+        self.vector_retriever = (
+            vector_retriever or ChromaVectorRetriever() if chroma_enabled else None
+        )
+        self.last_backend = "bm25"
 
     @staticmethod
     def _campaign_document(record: dict[str, Any]) -> dict[str, Any]:
         content = str(record.get("clean_text") or record.get("content") or "")
         return {
-            "id": str(record.get("id") or ""),
+            "id": f"campaign:{record.get('id') or ''}",
             "text": "\n".join(
                 part
                 for part in (
@@ -67,7 +79,8 @@ class HybridRetriever:
             )
             documents.append(
                 {
-                    "id": str(
+                    "id": "term:"
+                    + str(
                         item.get("chunk_id")
                         or item.get("term_id")
                         or item_metadata.get("term_id")
@@ -152,7 +165,7 @@ class HybridRetriever:
         )
         query_tokens = list(dict.fromkeys(tokenize_turkish(" ".join(expanded))))
         scores = self._bm25(query_tokens, documents)
-        ranked = sorted(
+        lexical = sorted(
             (
                 {
                     **document,
@@ -164,4 +177,35 @@ class HybridRetriever:
             ),
             key=lambda item: (-item["score"], item["id"]),
         )
-        return ranked[:limit]
+        if self.vector_retriever is None:
+            self.last_backend = "bm25"
+            return lexical[:limit]
+        try:
+            vector = self.vector_retriever.retrieve(
+                query, filters=filters, limit=min(20, limit * 3)
+            )
+        except Exception:
+            vector = []
+        if not vector:
+            self.last_backend = "bm25-fallback"
+            return lexical[:limit]
+
+        by_id = {item["id"]: item for item in vector}
+        by_id.update({item["id"]: item for item in lexical if item["id"] not in by_id})
+        fused: dict[str, float] = {}
+        for ranking in (vector, lexical):
+            for rank, item in enumerate(ranking, start=1):
+                fused[item["id"]] = fused.get(item["id"], 0.0) + 1 / (60 + rank)
+        ranked = sorted(
+            by_id.values(),
+            key=lambda item: (-fused.get(item["id"], 0.0), item["id"]),
+        )
+        self.last_backend = "chroma+bm25"
+        return [
+            {
+                **item,
+                "score": round(fused[item["id"]], 6),
+                "retrieval_method": "chroma+semantic+bm25+ontology",
+            }
+            for item in ranked[:limit]
+        ]

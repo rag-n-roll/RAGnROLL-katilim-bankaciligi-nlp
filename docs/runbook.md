@@ -10,6 +10,50 @@ curl --fail http://localhost:8000/api/v1/metrics/summary
 Dashboard API'ye erişemiyorsa `NEXT_PUBLIC_API_BASE_URL` değerini ve API'nin
 `RAGNROLL_CORS_ORIGINS` listesini kontrol edin.
 
+## Yerel model ve retrieval
+
+Apple Silicon servis sırası:
+
+```bash
+python -m scripts.serve_local_llm
+python -m scripts.ingest_chroma --batch-size 64
+```
+
+İki komutu ayrı terminallerde çalıştırın. Varsayılan model kaynağı
+`mlx-community/gemma-4-e4b-it-4bit` olup ilk çalıştırmada yerel önbelleğe
+indirilir. Ollama ModelOpt NVFP4 tensorları MLX yükleyicisine doğrudan
+bağlanmamalıdır. Durumu doğrulayın:
+
+```bash
+curl --fail http://127.0.0.1:8001/v1/models
+curl --fail http://localhost:8000/api/v1/llm/status
+```
+
+`/llm/status` erişilemez görünüyorsa `RAGNROLL_LLM_BASE_URL`, model adı ve vLLM
+terminal çıktısını kontrol edin. API'yi durdurmanız gerekmez; bütün sohbet uçları
+yerel fallback ile çalışmaya devam eder.
+
+Chroma koleksiyonunun embedding modeli değiştirildiyse aynı koleksiyona farklı
+boyutlu vektör yazmayın. Yeni koleksiyon adı verin veya mevcut indeksi kontrollü
+biçimde yeniden kurun. İndeksleyici `upsert` kullanır ve artık kaynakta olmayan
+kimlikleri başarılı yüklemenin sonunda temizler.
+
+GEPA optimizasyonunu yalnız vLLM sağlıklıyken çalıştırın:
+
+```bash
+python -m scripts.optimize_assistant_prompt --dry-run
+python -m scripts.optimize_assistant_prompt --max-metric-calls 24
+```
+
+Varsayılan bütçe de 24 metrik çağrısıdır. Daha uzun deneyler için
+`--auto light`, `--auto medium` veya `--auto heavy` seçeneklerinden yalnız biri
+kullanılabilir. Aynı veri, model ve bütçe birleşimi yarım kalırsa çalışma kendi
+parmak izine ait günlük dizininden sürdürülür; `--log-dir` ile bu dizin açıkça
+seçilebilir.
+
+Canlı kullanıcı içeriği GEPA eğitim verisine otomatik eklenmez. Yeni örnekler
+insan doğrulamasıyla değerlendirme dosyasına alınmalıdır.
+
 ## Veri yenileme
 
 Tam yenileme öncesi mevcut SQLite ve kanonik JSON dosyalarını yedekleyin.
