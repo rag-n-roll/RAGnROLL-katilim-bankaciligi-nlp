@@ -704,22 +704,20 @@ class LangChainRAG:
 
     def _build_prompt(self, question: str, context: str) -> str:
         return f"""
-Sen Türkçe konuşan bir katılım bankacılığı
-asistanısın.
-
-Sadece aşağıdaki bağlamdaki bilgileri kullan.
-
-Bağlamda bulunmayan bilgileri kesinlikle uydurma.
-
-Sorunun cevabı bağlamda bulunmuyorsa aynen:
-
-"Bu bilgi sağlanan dokümanlarda bulunmamaktadır."
-
-cevabını ver.
-
-Cevabı Türkçe, kısa ve anlaşılır şekilde ver.
-
-Kullanıcı tam liste veya sayım istiyorsa bağlamdaki tüm maddeleri eksiltmeden listele.
+Sen Türkçe konuşan bir katılım bankacılığı asistanısın.
+Sadece aşağıdaki bağlamdaki bilgileri kullan; bağlamda olmayan bilgiyi uydurma.
+Bağlamda cevap yoksa aynen "Bu bilgi sağlanan dokümanlarda bulunmamaktadır." de.
+Kullanıcı teşekkür, onay veya kısa olumlu geri bildirim yazıyorsa yeni konu açma;
+kısaca "Rica ederim. Başka bir sorunuz olursa yardımcı olabilirim." benzeri cevap ver.
+Kısa tanım sorularında 1-2 cümle yaz; metadata, eş anlamlı ve İngilizce çeviri ekleme.
+Tanım cevabında "Metadata", "Eş Anlamlıları", "İngilizce Çevirisi",
+"Ana Kategori", "Alt Kategori" veya "İlişkili Terimler" başlıklarını asla yazma.
+Kampanya/avantaj sorularında doğal konuş, rapor gibi uzatma; en alakalı bilgileri özetle.
+Geniş banka kampanyası sorularında tüm kampanyaları dökme; hangi alanı merak ettiğini sor
+ve bağlamdaki örnek alanlardan birkaçını kısa şekilde belirt.
+Kullanıcı katılım bankalarını saymanı veya listelemeni isterse örnek liste deme;
+bağlamdaki BDDK katılım bankaları listesindeki tüm bankaları eksiksiz numaralandır.
+Markdown başlığı, tablo ve emoji kullanma.
 
 Bağlam:
 {context}
@@ -737,6 +735,14 @@ Cevap:
     # HYBRID RETRIEVAL
     # ========================================================
 
+    def _search_text(
+        self,
+        value: object,
+    ) -> str:
+        """Türkçe büyük İ gibi arama eşleşmelerini normalize eder."""
+
+        return str(value).lower().replace("i̇", "i")
+
     def _keyword_score(
         self,
         question: str,
@@ -747,12 +753,12 @@ Cevap:
         Mevcut Chroma embedding'lerini değiştirmez.
         """
 
-        q = question.lower()
+        q = self._search_text(question)
 
-        text = doc.page_content.lower()
+        text = self._search_text(doc.page_content)
 
         metadata_text = " ".join(
-            str(value).lower()
+            self._search_text(value)
             for value in doc.metadata.values()
         )
 
@@ -781,6 +787,19 @@ Cevap:
             "banka listesi",
             "bankaları say",
             "bankalarını say",
+            "kampanya",
+            "kampanyaları",
+            "kampanyalarında",
+            "avantaj",
+            "kredi kart",
+            "kart",
+            "türkiye finans",
+            "turkiye finans",
+            "kuveyt türk",
+            "kuveytturk",
+            "albaraka",
+            "ziraat katılım",
+            "vakıf katılım",
         ]
 
         for phrase in important_phrases:
@@ -813,6 +832,75 @@ Cevap:
         if bank_catalog_query and source_type == "bank_catalog_item":
             score += 25
 
+        finance_product_query = any(
+            phrase in q
+            for phrase in [
+                "ihtiyaç finansmanı",
+                "ihtiyac finansmani",
+                "konut finansmanı",
+                "konut finansmani",
+                "ev finansmanı",
+                "ev finansmani",
+                "taşıt finansmanı",
+                "tasit finansmani",
+                "seyahat finansmanı",
+                "seyahat finansmani",
+                "döviz işlemleri",
+                "doviz islemleri",
+                "döviz",
+                "doviz",
+                "altın",
+                "altin",
+                "kıymetli maden",
+                "kiymetli maden",
+                "kur",
+            ]
+        )
+
+        campaign_query = any(
+            phrase in q
+            for phrase in [
+                "kampanya",
+                "kampanyaları",
+                "kampanyalarında",
+                "fırsat",
+                "firsat",
+            ]
+        ) or ("avantaj" in q and not finance_product_query)
+
+        if campaign_query and source_type in {
+            "processed_campaign",
+            "raw_campaign",
+        }:
+            score += 35
+
+        if finance_product_query and source_type in {
+            "rag_chunk",
+            "terminology",
+            "ontology",
+        }:
+            score += 110
+
+        known_banks = [
+            "türkiye finans",
+            "turkiye finans",
+            "kuveyt türk",
+            "kuveytturk",
+            "albaraka",
+            "ziraat katılım",
+            "vakıf katılım",
+            "emlak katılım",
+            "hayat finans",
+            "dünya katılım",
+        ]
+
+        for bank in known_banks:
+            if bank in q and (
+                bank in text
+                or bank in metadata_text
+            ):
+                score += 180
+
         return score
 
     def _hybrid_retrieval(
@@ -830,22 +918,226 @@ Cevap:
         semantic_docs = (
             self.vector_store.similarity_search(
                 question,
-                k=30,
+                k=80,
             )
         )
+
+        q = self._search_text(question)
+        bank_slug = ""
+        bank_slugs = []
+
+        bank_slug_aliases = {
+            "türkiye finans": "turkiye-finans",
+            "turkiye finans": "turkiye-finans",
+            "finans katılım": "turkiye-finans",
+            "finans katilim": "turkiye-finans",
+            "kuveyt türk": "kuveyt-turk",
+            "kuveytturk": "kuveyt-turk",
+            "albaraka": "albaraka",
+            "ziraat katılım": "ziraat-katilim",
+            "ziraat katilim": "ziraat-katilim",
+            "vakıf katılım": "vakif-katilim",
+            "vakif katilim": "vakif-katilim",
+            "emlak katılım": "emlak-katilim",
+            "emlak katilim": "emlak-katilim",
+            "hayat finans": "hayat-finans",
+            "dünya katılım": "dunya-katilim",
+            "dunya katilim": "dunya-katilim",
+        }
+
+        for alias, slug in bank_slug_aliases.items():
+            if alias in q:
+                if slug not in bank_slugs:
+                    bank_slugs.append(slug)
+
+        if bank_slugs:
+            bank_slug = bank_slugs[0]
+
+        finance_product_query = any(
+            phrase in q
+            for phrase in [
+                "ihtiyaç finansmanı",
+                "ihtiyac finansmani",
+                "konut finansmanı",
+                "konut finansmani",
+                "ev finansmanı",
+                "ev finansmani",
+                "taşıt finansmanı",
+                "tasit finansmani",
+                "seyahat finansmanı",
+                "seyahat finansmani",
+                "döviz işlemleri",
+                "doviz islemleri",
+                "döviz",
+                "doviz",
+                "altın",
+                "altin",
+                "kıymetli maden",
+                "kiymetli maden",
+                "kur",
+            ]
+        )
+
+        campaign_query = any(
+            phrase in q
+            for phrase in [
+                "kampanya",
+                "kampanyaları",
+                "kampanyalarında",
+                "fırsat",
+                "firsat",
+            ]
+        ) or ("avantaj" in q and not finance_product_query)
+
+        if campaign_query and bank_slugs:
+            try:
+                for scoped_bank_slug in bank_slugs:
+                    semantic_docs.extend(
+                        self.vector_store.similarity_search(
+                            question,
+                            k=40,
+                            filter={"bank_slug": scoped_bank_slug},
+                        )
+                    )
+            except Exception as exc:  # noqa: BLE001
+                print(
+                    "Banka filtreli Chroma araması atlandı: "
+                    f"{exc}"
+                )
+
+        if finance_product_query:
+            product_queries = []
+
+            if any(
+                phrase in q
+                for phrase in [
+                    "konut finansmanı",
+                    "konut finansmani",
+                    "ev finansmanı",
+                    "ev finansmani",
+                ]
+            ):
+                product_queries.extend(
+                    [
+                        "Konut Finansmanı",
+                        "İlk Evim Konut Finansmanı",
+                        "Konut Edindirme Finansmanı",
+                    ]
+                )
+
+            if any(
+                phrase in q
+                for phrase in [
+                    "ihtiyaç finansmanı",
+                    "ihtiyac finansmani",
+                ]
+            ):
+                product_queries.append("İhtiyaç Finansmanı")
+
+            if any(
+                phrase in q
+                for phrase in [
+                    "taşıt finansmanı",
+                    "tasit finansmani",
+                ]
+            ):
+                product_queries.append("Taşıt Finansmanı")
+
+            if any(
+                phrase in q
+                for phrase in [
+                    "seyahat finansmanı",
+                    "seyahat finansmani",
+                ]
+            ):
+                product_queries.append("Seyahat Finansmanı")
+
+            if any(
+                phrase in q
+                for phrase in [
+                    "döviz işlemleri",
+                    "doviz islemleri",
+                    "döviz",
+                    "doviz",
+                    "altın",
+                    "altin",
+                    "kıymetli maden",
+                    "kiymetli maden",
+                    "kur",
+                ]
+            ):
+                product_queries.extend(
+                    [
+                        "Döviz Alım-Satımı",
+                        "Döviz Katılma Hesabı",
+                        "Para Birimi",
+                        "Altın Alım-Satımı",
+                        "Altın Katılma Hesabı",
+                    ]
+                )
+
+            for product_query in product_queries:
+                semantic_docs.extend(
+                    self.vector_store.similarity_search(
+                        product_query,
+                        k=12,
+                    )
+                )
+
+                for scoped_bank_slug in bank_slugs:
+                    try:
+                        semantic_docs.extend(
+                            self.vector_store.similarity_search(
+                                f"{question} {product_query}",
+                                k=25,
+                                filter={"bank_slug": scoped_bank_slug},
+                            )
+                        )
+                    except Exception as exc:  # noqa: BLE001
+                        print(
+                            "Banka filtreli ürün araması atlandı: "
+                            f"{exc}"
+                        )
 
         if not semantic_docs:
             return []
 
         # Keyword + metadata skoruyla yeniden sırala.
         scored_docs = []
+        seen_doc_keys = set()
 
         for index, doc in enumerate(semantic_docs):
+            doc_key = (
+                doc.metadata.get("campaign_id")
+                or doc.metadata.get("term_id")
+                or doc.metadata.get("chunk_id")
+                or doc.metadata.get("title")
+                or doc.metadata.get("source_file")
+                or doc.page_content[:120]
+            )
+
+            if doc_key in seen_doc_keys:
+                continue
+
+            seen_doc_keys.add(doc_key)
 
             keyword_score = self._keyword_score(
                 question,
                 doc,
             )
+
+            if bank_slugs:
+                doc_bank_slug = str(
+                    doc.metadata.get("bank_slug")
+                    or ""
+                )
+
+                if finance_product_query and doc_bank_slug in bank_slugs:
+                    keyword_score += 35
+                elif doc_bank_slug in bank_slugs:
+                    keyword_score += 160
+                elif doc_bank_slug:
+                    keyword_score -= 120
 
             # Semantic sırasını da tamamen çöpe atmıyoruz.
             semantic_score = 30 - index
@@ -867,15 +1159,870 @@ Cevap:
             reverse=True,
         )
 
+        if campaign_query and bank_slugs and not finance_product_query:
+            bank_scored_docs = [
+                item
+                for item in scored_docs
+                if str(
+                    item[1].metadata.get("bank_slug")
+                    or ""
+                ) in bank_slugs
+            ]
+
+            if bank_scored_docs:
+                scored_docs = bank_scored_docs
+
+        if finance_product_query and bank_slugs:
+            scoped_scored_docs = []
+
+            for item in scored_docs:
+                doc_bank_slug = str(
+                    item[1].metadata.get("bank_slug")
+                    or ""
+                )
+
+                if doc_bank_slug == "" or doc_bank_slug in bank_slugs:
+                    scoped_scored_docs.append(item)
+
+            if scoped_scored_docs:
+                scored_docs = scoped_scored_docs
+
+        campaign_area_terms = {
+            "card": [
+                "kart",
+                "kredi kart",
+                "mastercard",
+                "sağlam kart",
+                "saglam kart",
+                "ihtiyaç kart",
+                "ihtiyac kart",
+            ],
+            "mobile": [
+                "mobil",
+                "self nokta",
+                "dijital",
+            ],
+            "invoice": [
+                "fatura",
+                "talimat",
+            ],
+            "vehicle": [
+                "taşıt",
+                "tasit",
+                "araç",
+                "arac",
+                "otomobil",
+            ],
+            "housing": [
+                "konut finansmanı",
+                "konut finansmani",
+                "ev finansmanı",
+                "ev finansmani",
+                "ilk evim",
+                "ilk konut",
+                "konut",
+            ],
+            "need_finance": [
+                "ihtiyaç finansmanı",
+                "ihtiyac finansmani",
+                "ihtiyaç finansmani",
+                "ihtiyac finansmanı",
+                "ihtiyaç",
+                "ihtiyac",
+            ],
+            "wedding": [
+                "evlilik",
+                "düğün",
+                "dugun",
+                "çeyiz",
+                "ceyiz",
+                "ev eşyası",
+                "ev esyasi",
+                "balayı",
+                "balayi",
+            ],
+            "cashback": [
+                "nakit iade",
+                "iade",
+                "bonus",
+                "puan",
+            ],
+            "installment": [
+                "taksit",
+                "vade farksız",
+                "vade farksiz",
+            ],
+            "travel": [
+                "seyahat planları",
+                "seyehat planları",
+                "seyahat planlari",
+                "seyehat planlari",
+                "seyahat",
+                "seyehat",
+                "miles",
+                "smiles",
+                "uçak",
+                "ucak",
+                "yurt dışı",
+                "yurt disi",
+            ],
+            "exchange": [
+                "döviz işlemleri",
+                "doviz islemleri",
+                "döviz",
+                "doviz",
+                "altın",
+                "altin",
+                "kıymetli maden",
+                "kiymetli maden",
+                "kur",
+                "para birimi",
+            ],
+        }
+
+        matched_area_terms = []
+        matched_area_name = ""
+
+        for area_name, terms in campaign_area_terms.items():
+            query_matched_terms = [
+                term
+                for term in terms
+                if term in q
+            ]
+
+            if query_matched_terms:
+                matched_area_name = area_name
+                matched_area_terms.extend(query_matched_terms)
+
+                if area_name == "exchange" and any(
+                    term in query_matched_terms
+                    for term in [
+                        "döviz işlemleri",
+                        "doviz islemleri",
+                        "döviz",
+                        "doviz",
+                    ]
+                ):
+                    matched_area_terms.extend(["kur"])
+
+        if (campaign_query or finance_product_query) and matched_area_terms:
+            area_scored_docs = []
+
+            for item in scored_docs:
+                doc = item[1]
+                title_text = self._search_text(
+                    doc.metadata.get("title")
+                    or ""
+                )
+                source_url_text = self._search_text(
+                    doc.metadata.get("source_url")
+                    or ""
+                )
+                metadata_text = self._search_text(
+                    " ".join(
+                        self._search_text(value)
+                        for value in doc.metadata.values()
+                    )
+                )
+                content_text = self._search_text(doc.page_content)
+
+                area_score = 0
+
+                for term in matched_area_terms:
+                    if term in title_text:
+                        area_score += 260
+
+                    if term in source_url_text:
+                        area_score += 160
+
+                    if term in metadata_text:
+                        area_score += 35
+
+                    if term in content_text:
+                        area_score += 12
+
+                if area_score > 0:
+                    area_scored_docs.append(
+                        (
+                            item[0] + area_score * 4,
+                            doc,
+                        )
+                    )
+
+            area_scored_docs.sort(
+                key=lambda item: item[0],
+                reverse=True,
+                )
+
+            if area_scored_docs:
+                scored_docs = area_scored_docs
+
+        if (campaign_query or finance_product_query) and matched_area_name == "exchange":
+            title_matched_docs = []
+            other_docs = []
+
+            for item in scored_docs:
+                doc = item[1]
+                title_and_url = self._search_text(
+                    " ".join(
+                        [
+                            str(doc.metadata.get("title") or ""),
+                            str(doc.metadata.get("source_url") or ""),
+                        ]
+                    )
+                )
+
+                if any(term in title_and_url for term in matched_area_terms):
+                    title_matched_docs.append(item)
+                else:
+                    other_docs.append(item)
+
+            if title_matched_docs:
+                scored_docs = title_matched_docs + other_docs
+
         return [
             doc
             for _, doc in scored_docs[:k]
         ]
+
+    def _is_campaign_query(
+        self,
+        question: str,
+    ) -> bool:
+        q = self._search_text(question)
+
+        finance_product_query = any(
+            phrase in q
+            for phrase in [
+                "ihtiyaç finansmanı",
+                "ihtiyac finansmani",
+                "konut finansmanı",
+                "konut finansmani",
+                "ev finansmanı",
+                "ev finansmani",
+                "taşıt finansmanı",
+                "tasit finansmani",
+                "seyahat finansmanı",
+                "seyahat finansmani",
+                "döviz işlemleri",
+                "doviz islemleri",
+                "döviz",
+                "doviz",
+                "altın",
+                "altin",
+                "kıymetli maden",
+                "kiymetli maden",
+                "kur",
+            ]
+        )
+
+        return any(
+            phrase in q
+            for phrase in [
+                "kampanya",
+                "kampanyaları",
+                "kampanyalarında",
+                "fırsat",
+                "firsat",
+            ]
+        ) or ("avantaj" in q and not finance_product_query)
+
+    def _is_finance_product_query(
+        self,
+        question: str,
+    ) -> bool:
+        q = self._search_text(question)
+
+        return any(
+            phrase in q
+            for phrase in [
+                "ihtiyaç finansmanı",
+                "ihtiyac finansmani",
+                "konut finansmanı",
+                "konut finansmani",
+                "ev finansmanı",
+                "ev finansmani",
+                "taşıt finansmanı",
+                "tasit finansmani",
+                "seyahat finansmanı",
+                "seyahat finansmani",
+            ]
+        )
+
+    def _is_definition_query(
+        self,
+        question: str,
+    ) -> bool:
+        q = self._search_text(question)
+
+        return any(
+            phrase in q
+            for phrase in [
+                "nedir",
+                "ne demek",
+                "tanım",
+                "tanımı",
+            ]
+        )
+
+    def _is_bank_catalog_query(
+        self,
+        question: str,
+    ) -> bool:
+        q = self._search_text(question)
+
+        return any(
+            phrase in q
+            for phrase in [
+                "katılım bankalarını",
+                "katilim bankalarini",
+                "katılım bankaları",
+                "katilim bankalari",
+                "bankaları say",
+                "bankalari say",
+                "bankalarını say",
+                "bankalarini say",
+                "banka listesi",
+                "tüm bankalar",
+                "tum bankalar",
+                "tam liste",
+            ]
+        )
+
+    def _needs_comparable_selection(
+        self,
+        question: str,
+    ) -> bool:
+        q = self._search_text(question)
+
+        return any(
+            phrase in q
+            for phrase in [
+                "en iyi",
+                "en uygun",
+                "hangisi daha iyi",
+                "hangi banka daha iyi",
+                "hangi banka",
+            ]
+        ) and any(
+            phrase in q
+            for phrase in [
+                "konut finansmanı",
+                "konut finansmani",
+                "ev finansmanı",
+                "ev finansmani",
+                "ihtiyaç finansmanı",
+                "ihtiyac finansmani",
+                "taşıt finansmanı",
+                "tasit finansmani",
+            ]
+        )
+
+    def _selection_missing_data_response(
+        self,
+    ) -> str:
+        return (
+            "Bunu tek bir banka diye seçebilmem için bankaların aynı ürüne ait "
+            "oran, vade, masraf ve kampanya şartları birlikte verilmiş olmalı. "
+            "Sağlanan dokümanlarda bu karşılaştırmayı güvenilir şekilde yapacak "
+            "yeterli veri bulunmuyor."
+        )
+
+    def _format_context(
+        self,
+        question: str,
+        docs: list[Document],
+    ) -> str:
+        """
+        Kampanya kayıtları uzun olduğu için prompt penceresinde en alakalı
+        başlıkların düşmesini engelleyen kısa RAG bağlamı üretir.
+        """
+
+        if self._is_bank_catalog_query(question):
+            catalog_docs = [
+                doc
+                for doc in docs
+                if doc.metadata.get("source_type") == "bank_catalog"
+            ]
+
+            if catalog_docs:
+                return catalog_docs[0].page_content
+
+            return "\n\n---\n\n".join(
+                doc.page_content
+                for doc in docs
+                if doc.metadata.get("source_type") == "bank_catalog_item"
+            )
+
+        if self._is_definition_query(question):
+            context_items = []
+
+            for doc in docs[:1]:
+                title = str(doc.metadata.get("title") or "").strip()
+                content = re.sub(
+                    r"\s+",
+                    " ",
+                    doc.page_content,
+                ).strip()
+                content = re.split(
+                    r"\bAna kategori:|\bAlt kategori:|\bEntity:|\bEş anlamlılar:|\bİlişkili terimler:",
+                    content,
+                    maxsplit=1,
+                )[0].strip()
+
+                if title and not content.startswith(title):
+                    content = f"{title}: {content}"
+
+                context_items.append(content)
+
+            return "\n\n---\n\n".join(context_items)
+
+        if (
+            not self._is_campaign_query(question)
+            or self._is_finance_product_query(question)
+        ):
+            return "\n\n---\n\n".join(
+                doc.page_content
+                for doc in docs
+            )
+
+        context_items = []
+
+        for index, doc in enumerate(docs[:5]):
+            metadata = doc.metadata
+            title = str(metadata.get("title") or "").strip()
+            bank = str(metadata.get("bank_name") or "").strip()
+            source_type = str(metadata.get("source_type") or "").strip()
+            source_url = str(metadata.get("source_url") or "").strip()
+            content = re.sub(
+                r"\s+",
+                " ",
+                doc.page_content,
+            ).strip()
+
+            content_limit = 1800 if index == 0 else 850
+
+            if len(content) > content_limit:
+                content = f"{content[:content_limit].rstrip()}..."
+
+            context_items.append(
+                "\n".join(
+                    part
+                    for part in [
+                        f"Kaynak türü: {source_type}" if source_type else "",
+                        f"Banka: {bank}" if bank else "",
+                        f"Kampanya başlığı: {title}" if title else "",
+                        f"Kaynak URL: {source_url}" if source_url else "",
+                        f"İçerik: {content}",
+                    ]
+                    if part
+                )
+            )
+
+        return "\n\n---\n\n".join(context_items)
+
+    def _answer_char_limit(
+        self,
+        question: str,
+    ) -> int:
+        """Demo UI'da cevapların rapora dönüşmesini engeller."""
+
+        q = self._search_text(question)
+
+        full_list_query = any(
+            phrase in q
+            for phrase in [
+                "katılım bankalarını",
+                "katılım bankaları",
+                "banka listesi",
+                "bankaları say",
+                "bankalarını say",
+                "tüm bankalar",
+                "tam liste",
+            ]
+        )
+
+        if full_list_query:
+            return 1800
+
+        if self._is_definition_query(question):
+            return 1200
+
+        finance_product_query = any(
+            phrase in q
+            for phrase in [
+                "ihtiyaç finansmanı",
+                "ihtiyac finansmani",
+                "konut finansmanı",
+                "konut finansmani",
+                "ev finansmanı",
+                "ev finansmani",
+                "taşıt finansmanı",
+                "tasit finansmani",
+                "seyahat finansmanı",
+                "seyahat finansmani",
+            ]
+        )
+
+        if finance_product_query:
+            return 3200
+
+        broad_campaign_query = any(
+            word in q
+            for word in [
+                "kampanya",
+                "avantaj",
+                "fırsat",
+                "karşılaştır",
+                "en uygun",
+            ]
+        )
+
+        if broad_campaign_query:
+            broad_bank_campaign_query = (
+                "kampanya" in q
+                and any(word in q for word in ["hangi", "neler", "nelerdir"])
+                and not any(
+                    term in q
+                    for term in [
+                        "kart",
+                        "mobil",
+                        "fatura",
+                        "davet",
+                        "seyahat",
+                        "seyehat",
+                        "evlilik",
+                        "düğün",
+                        "dugun",
+                        "çeyiz",
+                        "ceyiz",
+                        "döviz",
+                        "doviz",
+                        "kur",
+                        "ihtiyaç finansmanı",
+                        "ihtiyac finansmani",
+                        "konut finansmanı",
+                        "konut finansmani",
+                        "taşıt finansmanı",
+                        "tasit finansmani",
+                    ]
+                )
+            )
+
+            return 1800 if broad_bank_campaign_query else 1700
+
+        return 1400
+
+    def _limit_suffix(
+        self,
+        question: str,
+    ) -> str:
+        if self._is_campaign_query(question):
+            return (
+                "\n\nBelirli bir kampanya veya ürün adı verirsen "
+                "daha net bakabilirim."
+            )
+
+        return ""
+
+    def _strip_partial_suffix(
+        self,
+        answer: str,
+    ) -> str:
+        return re.sub(
+            r"\s*Belirli bir kampanya(?:\s+veya(?:\s+ürün(?:\s+adı(?:\s+verirsen(?:\s+daha(?:\s+net(?:\s+bakabilirim\.?)?)?)?)?)?)?)?\s*$",
+            "",
+            answer,
+            flags=re.IGNORECASE,
+        ).rstrip()
+
+    def _limited_answer(
+        self,
+        question: str,
+        answer: str,
+        limit: int,
+    ) -> str | None:
+        """
+        Model çok uzatırsa cevabı cümle sonunda kapatır.
+        None dönerse cevap henüz sınırı aşmamıştır.
+        """
+
+        if len(answer) <= limit:
+            return None
+
+        suffix = self._limit_suffix(question)
+
+        usable_limit = max(
+            120,
+            limit - len(suffix),
+        )
+        candidate = answer[:usable_limit].rstrip()
+
+        sentence_ends = list(
+            re.finditer(
+                r"[.!?]\s+",
+                candidate,
+            )
+        )
+
+        if sentence_ends:
+            last_end = sentence_ends[-1].end()
+
+            if last_end >= usable_limit * 0.55:
+                candidate = candidate[:last_end].strip()
+
+        if not suffix:
+            return candidate
+
+        candidate = self._strip_partial_suffix(candidate)
+        return f"{candidate}{suffix}"
+
+    def _cleanup_answer_text(
+        self,
+        answer: str,
+    ) -> str:
+        """Model markdown/rapor formatına kaçarsa demo cevabını sadeleştirir."""
+
+        cleaned = answer
+
+        replacements = {
+            "\\*\\*": "",
+            "**": "",
+            "\\*": "-",
+            "###": "",
+            "---": "",
+        }
+
+        for old, new in replacements.items():
+            cleaned = cleaned.replace(old, new)
+
+        cleaned = re.sub(
+            r"[\U0001F300-\U0001FAFF]",
+            "",
+            cleaned,
+        )
+        cleaned = re.sub(
+            r"[ \t]{2,}",
+            " ",
+            cleaned,
+        )
+        cleaned = re.sub(
+            r"\n{3,}",
+            "\n\n",
+            cleaned,
+        )
+
+        lines = []
+
+        for raw_line in cleaned.splitlines():
+            line = raw_line.strip()
+
+            if not line:
+                continue
+
+            if any(
+                phrase in self._search_text(line)
+                for phrase in [
+                    "şeffaf maliyetlendirme",
+                    "seffaf maliyetlendirme",
+                    "önemli hatırlatma",
+                    "onemli hatirlatma",
+                    "genel bilgilendirme",
+                    "maliyet tabloları",
+                    "maliyet tablolari",
+                    "özetle yapmanız gerekenler",
+                    "ozetle yapmaniz gerekenler",
+                    "yapmanız gerekenler",
+                    "yapmaniz gerekenler",
+                ]
+            ):
+                continue
+
+            line = re.sub(
+                r"^\s*[-•]\s*",
+                "- ",
+                line,
+            )
+            line = re.sub(
+                r"^\s*\d+\.\s+",
+                "",
+                line,
+            )
+
+            lines.append(line)
+
+        return "\n".join(lines).strip()
+
+    def _stream_clean_answer(
+        self,
+        question: str,
+        prompt: str,
+    ):
+        """LLM stream'ini küçük parçalar halinde dışarı verir."""
+
+        limit = self._answer_char_limit(question)
+        q = self._search_text(question)
+        finance_product_query = any(
+            phrase in q
+            for phrase in [
+                "ihtiyaç finansmanı",
+                "ihtiyac finansmani",
+                "konut finansmanı",
+                "konut finansmani",
+                "ev finansmanı",
+                "ev finansmani",
+                "taşıt finansmanı",
+                "tasit finansmani",
+                "seyahat finansmanı",
+                "seyahat finansmani",
+            ]
+        )
+        emitted = ""
+        buffer = ""
+        suffix = self._limit_suffix(question)
+        stop_markers = [
+            "özetle yapmanız gerekenler",
+            "ozetle yapmaniz gerekenler",
+            "yapmanız gerekenler",
+            "yapmaniz gerekenler",
+        ]
+
+        def emit_piece(piece: str) -> tuple[str, bool]:
+            nonlocal emitted
+
+            cleaned = self._cleanup_answer_text(piece)
+
+            if not cleaned:
+                return "", False
+
+            separator = ""
+
+            if emitted and not emitted.endswith(("\n", " ")):
+                separator = " "
+
+            next_text = f"{separator}{cleaned}"
+            next_total = f"{emitted}{next_text}"
+
+            if finance_product_query and any(
+                marker in self._search_text(next_total)
+                for marker in stop_markers
+            ):
+                return "", True
+
+            if len(emitted) + len(next_text) > limit:
+                if emitted:
+                    closing = (
+                        " Detay istersen belirli bir başlığı ayrıca sorabilirsin."
+                        if emitted.rstrip().endswith((".", "!", "?"))
+                        else ". Detay istersen belirli bir başlığı ayrıca sorabilirsin."
+                    )
+                    emitted += closing
+                    return closing, True
+
+                limited = self._limited_answer(
+                    question,
+                    cleaned,
+                    limit,
+                )
+                cleaned = self._cleanup_answer_text(
+                    limited or cleaned,
+                )
+                emitted = cleaned
+                return cleaned, True
+
+            emitted += next_text
+
+            if self._is_definition_query(question):
+                sentence_count = len(
+                    re.findall(
+                        r"[.!?](?:\s|$)",
+                        emitted,
+                    )
+                )
+
+                if sentence_count >= 2:
+                    return next_text, True
+
+            if (
+                finance_product_query
+                and "özetle" in self._search_text(emitted)
+                and emitted.rstrip().endswith((".", "!", "?"))
+            ):
+                return next_text, True
+
+            return next_text, False
+
+        for chunk in self.llm.stream(prompt):
+            buffer += chunk
+
+            while True:
+                boundary_match = re.search(
+                    r"\s+",
+                    buffer,
+                )
+
+                if not boundary_match and len(buffer) < 24:
+                    break
+
+                boundary = (
+                    boundary_match.end()
+                    if boundary_match
+                    else len(buffer)
+                )
+                piece = buffer[:boundary]
+                buffer = buffer[boundary:]
+
+                outgoing, should_stop = emit_piece(piece)
+
+                if outgoing:
+                    yield outgoing
+
+                if should_stop:
+                    return
+
+        if buffer:
+            outgoing, _ = emit_piece(buffer)
+
+            if outgoing:
+                yield outgoing
+
+    def _stream_visible_answer(
+        self,
+        prompt: str,
+    ):
+        """Stream cevabında kullanıcıya metadata/çeviri satırlarını göstermez."""
+
+        blocked_labels = (
+            "Metadata:",
+            "Eş Anlamlıları:",
+            "Es Anlamlilari:",
+            "İngilizce Çevirisi:",
+            "Ingilizce Cevirisi:",
+            "Ana Kategori:",
+            "Alt Kategori:",
+            "İlişkili Terimler:",
+            "Iliskili Terimler:",
+        )
+        buffer = ""
+
+        for chunk in self.llm.stream(prompt):
+            buffer += str(chunk)
+
+            while "\n" in buffer:
+                line, buffer = buffer.split("\n", 1)
+
+                if any(label in line for label in blocked_labels):
+                    continue
+
+                yield f"{line}\n"
+
+        if buffer and not any(label in buffer for label in blocked_labels):
+            yield buffer
     
     def ask_question(
         self,
         question: str,
-        k: int = 5,
+        k: int = 8,
     ) -> str:
         """Soruyu RAG üzerinden cevaplar."""
 
@@ -893,23 +2040,23 @@ Cevap:
         )
 
         if not docs:
+            if self._needs_comparable_selection(question):
+                return self._selection_missing_data_response()
+
             return (
                 "Bu bilgi sağlanan dokümanlarda "
                 "bulunmamaktadır."
             )
 
-        context = "\n\n---\n\n".join(
-            doc.page_content
-            for doc in docs
-        )
+        context = self._format_context(question, docs)
 
         prompt = self._build_prompt(question, context)
 
-        chunks = []
-
         print("\nGemma4: ", end="", flush=True)
 
-        for chunk in self.llm.stream(prompt):
+        chunks = []
+
+        for chunk in self._stream_visible_answer(prompt):
             print(chunk, end="", flush=True)
             chunks.append(chunk)
 
@@ -920,7 +2067,7 @@ Cevap:
     def ask_question_stream(
         self,
         question: str,
-        k: int = 5,
+        k: int = 8,
     ):
         """API için: cevabı chunk chunk (token token) yield eder.
         Kutay backend'de bunu StreamingResponse ile sarmalayacak."""
@@ -939,21 +2086,21 @@ Cevap:
         )
 
         if not docs:
+            if self._needs_comparable_selection(question):
+                yield self._selection_missing_data_response()
+                return
+
             yield (
                 "Bu bilgi sağlanan dokümanlarda "
                 "bulunmamaktadır."
             )
             return
 
-        context = "\n\n---\n\n".join(
-            doc.page_content
-            for doc in docs
-        )
+        context = self._format_context(question, docs)
 
         prompt = self._build_prompt(question, context)
 
-        for chunk in self.llm.stream(prompt):
-            yield chunk
+        yield from self._stream_visible_answer(prompt)
 
 
 # ============================================================
