@@ -923,7 +923,6 @@ Cevap:
         )
 
         q = self._search_text(question)
-        bank_slug = ""
         bank_slugs = []
 
         bank_slug_aliases = {
