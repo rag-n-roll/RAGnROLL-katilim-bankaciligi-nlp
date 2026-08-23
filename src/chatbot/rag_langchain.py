@@ -950,9 +950,6 @@ Cevap:
                 if slug not in bank_slugs:
                     bank_slugs.append(slug)
 
-        if bank_slugs:
-            bank_slug = bank_slugs[0]
-
         finance_product_query = any(
             phrase in q
             for phrase in [
@@ -1565,7 +1562,10 @@ Cevap:
                     doc.page_content,
                 ).strip()
                 content = re.split(
-                    r"\bAna kategori:|\bAlt kategori:|\bEntity:|\bEş anlamlılar:|\bİlişkili terimler:",
+                    (
+                        r"\bAna kategori:|\bAlt kategori:|\bEntity:|"
+                        r"\bEş anlamlılar:|\bİlişkili terimler:"
+                    ),
                     content,
                     maxsplit=1,
                 )[0].strip()
@@ -1729,8 +1729,14 @@ Cevap:
         self,
         answer: str,
     ) -> str:
+        partial_suffix_pattern = (
+            r"\s*Belirli bir kampanya(?:\s+veya(?:\s+ürün"
+            r"(?:\s+adı(?:\s+verirsen(?:\s+daha"
+            r"(?:\s+net(?:\s+bakabilirim\.?)?)?)?)?)?)?)?\s*$"
+        )
+
         return re.sub(
-            r"\s*Belirli bir kampanya(?:\s+veya(?:\s+ürün(?:\s+adı(?:\s+verirsen(?:\s+daha(?:\s+net(?:\s+bakabilirim\.?)?)?)?)?)?)?)?\s*$",
+            partial_suffix_pattern,
             "",
             answer,
             flags=re.IGNORECASE,
@@ -1879,7 +1885,6 @@ Cevap:
         )
         emitted = ""
         buffer = ""
-        suffix = self._limit_suffix(question)
         stop_markers = [
             "özetle yapmanız gerekenler",
             "ozetle yapmaniz gerekenler",
@@ -2018,7 +2023,7 @@ Cevap:
 
         if buffer and not any(label in buffer for label in blocked_labels):
             yield buffer
-    
+
     def ask_question(
         self,
         question: str,

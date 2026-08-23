@@ -719,7 +719,13 @@ HTML = r"""<!doctype html>
       <div class="chat-head">
         <div class="spark">✦</div>
         <h1>AI Asistanı</h1>
-        <button id="newChatButton" class="new-chat" type="button" title="Yeni sohbet" aria-label="Yeni sohbet">+</button>
+        <button
+          id="newChatButton"
+          class="new-chat"
+          type="button"
+          title="Yeni sohbet"
+          aria-label="Yeni sohbet"
+        >+</button>
         <div class="ribbons"><span></span><span></span><span></span></div>
       </div>
 
@@ -734,7 +740,10 @@ HTML = r"""<!doctype html>
       </form>
 
       <div id="notice" class="notice"></div>
-      <div class="fineprint">Yanıtlar bilgilendirme amaçlıdır. Detaylı bilgi için bankanızla iletişime geçiniz.</div>
+      <div class="fineprint">
+        Yanıtlar bilgilendirme amaçlıdır.
+        Detaylı bilgi için bankanızla iletişime geçiniz.
+      </div>
     </section>
 
     <aside class="side">
@@ -749,7 +758,10 @@ HTML = r"""<!doctype html>
 
         <div class="info-body">
           <div>
-            <p>Katılım Bankacılığı ürünleri hakkında sorularınızı yanıtlar, en uygun seçenekleri bulmanıza yardımcı olur.</p>
+            <p>
+              Katılım Bankacılığı ürünleri hakkında sorularınızı yanıtlar,
+              en uygun seçenekleri bulmanıza yardımcı olur.
+            </p>
             <div class="features">
               <div>☂ 7/24 Akıllı Destek</div>
               <div>♡ Güvenilir ve Güncel Bilgi</div>
@@ -768,14 +780,49 @@ HTML = r"""<!doctype html>
 
       <section class="card questions">
         <div class="questions-title">
-          <div class="spark" style="width:42px;height:42px;font-size:22px;background:white;">✦</div>
+          <div
+            class="spark"
+            style="width:42px;height:42px;font-size:22px;background:white;"
+          >✦</div>
           <h2>Hazır Sorular</h2>
         </div>
         <div class="question-list">
-          <button class="question" type="button" data-question="Türkiye'deki katılım bankalarını sayar mısın?"><span></span><em>Türkiye'deki katılım bankalarını sayar mısın?</em><strong>›</strong></button>
-          <button class="question" type="button" data-question="Katılma hesabı nedir?"><span></span><em>Katılma hesabı nedir?</em><strong>›</strong></button>
-          <button class="question" type="button" data-question="Murabaha nedir?"><span></span><em>Murabaha nedir?</em><strong>›</strong></button>
-          <button class="question" type="button" data-question="Kuveyt Türk kampanyalarında hangi avantajlar var?"><span></span><em>Kuveyt Türk kampanyalarında hangi avantajlar var?</em><strong>›</strong></button>
+          <button
+            class="question"
+            type="button"
+            data-question="Türkiye'deki katılım bankalarını sayar mısın?"
+          >
+            <span></span>
+            <em>Türkiye'deki katılım bankalarını sayar mısın?</em>
+            <strong>›</strong>
+          </button>
+          <button
+            class="question"
+            type="button"
+            data-question="Katılma hesabı nedir?"
+          >
+            <span></span>
+            <em>Katılma hesabı nedir?</em>
+            <strong>›</strong>
+          </button>
+          <button
+            class="question"
+            type="button"
+            data-question="Murabaha nedir?"
+          >
+            <span></span>
+            <em>Murabaha nedir?</em>
+            <strong>›</strong>
+          </button>
+          <button
+            class="question"
+            type="button"
+            data-question="Kuveyt Türk kampanyalarında hangi avantajlar var?"
+          >
+            <span></span>
+            <em>Kuveyt Türk kampanyalarında hangi avantajlar var?</em>
+            <strong>›</strong>
+          </button>
         </div>
       </section>
     </aside>
@@ -788,12 +835,18 @@ HTML = r"""<!doctype html>
     const sendButton = document.getElementById("sendButton");
     const newChatButton = document.getElementById("newChatButton");
     const notice = document.getElementById("notice");
-    const welcomeMessage = "Merhaba ben PUSULA AI! Bana katılım bankacılığı, kampanyalar, kâr payı, finansman veya banka karşılaştırmaları hakkında soru sorabilirsin.";
+    const welcomeMessage = [
+      "Merhaba ben PUSULA AI! Bana katılım bankacılığı, kampanyalar,",
+      "kâr payı, finansman veya banka karşılaştırmaları hakkında soru sorabilirsin."
+    ].join(" ");
     let activeController = null;
     let isGenerating = false;
 
     function time() {
-      return new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-digit" }).format(new Date());
+      return new Intl.DateTimeFormat(
+        "tr-TR",
+        { hour: "2-digit", minute: "2-digit" }
+      ).format(new Date());
     }
 
     function addMessage(role, text, pending = false) {
@@ -844,7 +897,11 @@ HTML = r"""<!doctype html>
       thinkingBody.className = "thinking-body";
       thinkingBody.innerHTML = [
         '<div class="thinking-status">ChromaDB kaynakları taranıyor</div>',
-        '<div class="thinking-note">Cevap, projedeki RAG kaynaklarından seçilen ilgili bilgilerle hazırlanır.</div>',
+        [
+          '<div class="thinking-note">',
+          "Cevap, projedeki RAG kaynaklarından seçilen ilgili bilgilerle hazırlanır.",
+          "</div>"
+        ].join(""),
         '<div class="thinking-note">Uygun kaynaklardan yanıt hazırlanıyor.</div>'
       ].join("");
 
@@ -856,7 +913,11 @@ HTML = r"""<!doctype html>
 
       const answerText = document.createElement("div");
       answerText.className = "answer-text";
-      answerText.innerHTML = '<span class="typing-dots" aria-label="Yanıt bekleniyor"><span></span><span></span><span></span></span>';
+      answerText.innerHTML = [
+        '<span class="typing-dots" aria-label="Yanıt bekleniyor">',
+        "<span></span><span></span><span></span>",
+        "</span>"
+      ].join("");
       bubble.appendChild(answerText);
 
       const stamp = document.createElement("span");
@@ -899,7 +960,9 @@ HTML = r"""<!doctype html>
         if (!status) return;
 
         if (chatMode === "casual") {
-          status.textContent = receivedAnyChunk ? "Sohbet yanıtını yazıyorum" : "Mesajını değerlendiriyorum";
+          status.textContent = receivedAnyChunk
+            ? "Sohbet yanıtını yazıyorum"
+            : "Mesajını değerlendiriyorum";
           return;
         }
 
@@ -952,21 +1015,32 @@ HTML = r"""<!doctype html>
 
           receivedAnyChunk = true;
           answer += chunk;
-          responseShell.summary.textContent = chatMode === "casual" ? "Sohbet" : "Düşünme süreci";
+          responseShell.summary.textContent = chatMode === "casual"
+            ? "Sohbet"
+            : "Düşünme süreci";
           responseShell.answerText.textContent = answer;
           messages.scrollTop = messages.scrollHeight;
         }
 
-        responseShell.answerText.textContent = answer.trim() || "Yanıt alınamadı. Lütfen tekrar deneyin.";
+        responseShell.answerText.textContent = (
+          answer.trim() || "Yanıt alınamadı. Lütfen tekrar deneyin."
+        );
         const status = responseShell.thinkingBody.querySelector(".thinking-status");
         if (status) {
-          status.textContent = chatMode === "casual" ? "Sohbet yanıtı yazıldı" : "Yanıt hazırlandı";
+          status.textContent = chatMode === "casual"
+            ? "Sohbet yanıtı yazıldı"
+            : "Yanıt hazırlandı";
         }
-        responseShell.summary.textContent = chatMode === "casual" ? "Sohbet" : "Düşünme süreci";
+        responseShell.summary.textContent = chatMode === "casual"
+          ? "Sohbet"
+          : "Düşünme süreci";
         responseShell.thinking.open = false;
       } catch (error) {
         if (error.name === "AbortError") {
-          responseShell.answerText.textContent = "Yanıt durduruldu. Sorunu yeniden yazabilir ya da başka bir soru sorabilirsin.";
+          responseShell.answerText.textContent = (
+            "Yanıt durduruldu. Sorunu yeniden yazabilir ya da "
+            + "başka bir soru sorabilirsin."
+          );
           responseShell.summary.textContent = "Düşünme süreci";
           const status = responseShell.thinkingBody.querySelector(".thinking-status");
           if (status) {
@@ -982,7 +1056,10 @@ HTML = r"""<!doctype html>
         if (status) {
           status.textContent = "Sunucu yanıtı alınamadı.";
         }
-        notice.textContent = "Backend yanıt vermedi. Terminalde standalone_ui.py çalışıyor mu kontrol edin.";
+        notice.textContent = (
+          "Backend yanıt vermedi. Terminalde standalone_ui.py "
+          + "çalışıyor mu kontrol edin."
+        );
       } finally {
         window.clearInterval(progressTimer);
         isGenerating = false;
