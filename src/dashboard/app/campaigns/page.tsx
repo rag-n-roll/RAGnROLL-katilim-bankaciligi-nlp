@@ -18,6 +18,33 @@ function displayValue(value: unknown) {
   return String(value);
 }
 
+const PAGE_SIZES = [10, 50] as const;
+
+function joinCampaignFragments(left: string, right: string) {
+  if (!left) return right;
+  if (/^[,.;:!?%)}\]’']/.test(right) || /[(\[{'’]$/.test(left)) return left + right;
+  return `${left} ${right}`;
+}
+
+function formatCampaignContent(content: string) {
+  const lines = content
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  const paragraphs: string[] = [];
+  let current = "";
+  for (const line of lines) {
+    current = joinCampaignFragments(current, line);
+    if (/[.!?]$/.test(current) || (/:$/.test(current) && current.length <= 120)) {
+      paragraphs.push(current);
+      current = "";
+    }
+  }
+  if (current) paragraphs.push(current);
+  return paragraphs;
+}
+
 export default function CampaignsPage() {
   const [filters, setFilters] = useState<Filters | null>(null);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -26,10 +53,12 @@ export default function CampaignsPage() {
   const [product, setProduct] = useState("");
   const [search, setSearch] = useState("");
   const [total, setTotal] = useState(0);
+  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(10);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function loadCampaigns() {
+  async function loadCampaigns(limit = pageSize) {
     setLoading(true);
     setError("");
     try {
@@ -37,7 +66,8 @@ export default function CampaignsPage() {
         bank_slug: bank,
         product_type: product,
         search: search.trim() || undefined,
-        limit: 50,
+        limit,
+        offset: 0,
       });
       setCampaigns(result.items);
       setTotal(result.total);
@@ -54,7 +84,7 @@ export default function CampaignsPage() {
   }
 
   useEffect(() => {
-    Promise.all([getFilters(), getCampaigns({ limit: 50 })])
+    Promise.all([getFilters(), getCampaigns({ limit: 10, offset: 0 })])
       .then(async ([filterResult, campaignResult]) => {
         setFilters(filterResult);
         setCampaigns(campaignResult.items);
@@ -70,6 +100,36 @@ export default function CampaignsPage() {
   function submit(event: FormEvent) {
     event.preventDefault();
     void loadCampaigns();
+  }
+
+  async function changePageSize(size: (typeof PAGE_SIZES)[number]) {
+    if (size === pageSize || loading) return;
+    setPageSize(size);
+    await loadCampaigns(size);
+  }
+
+  async function loadMore() {
+    if (loadingMore || campaigns.length >= total) return;
+    setLoadingMore(true);
+    setError("");
+    try {
+      const result = await getCampaigns({
+        bank_slug: bank,
+        product_type: product,
+        search: search.trim() || undefined,
+        limit: pageSize,
+        offset: campaigns.length,
+      });
+      setCampaigns((current) => [
+        ...current,
+        ...result.items.filter((item) => !current.some((row) => row.id === item.id)),
+      ]);
+      setTotal(result.total);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Diğer kampanyalar yüklenemedi.");
+    } finally {
+      setLoadingMore(false);
+    }
   }
 
   async function selectCampaign(campaign: Campaign) {
@@ -145,6 +205,34 @@ export default function CampaignsPage() {
               </button>
             ))}
           </div>
+          <footer className={styles.campaignListFooter}>
+            <div className={styles.pageSizeControl} aria-label="Bir seferde gösterilecek kampanya sayısı">
+              <span>Gösterim</span>
+              {PAGE_SIZES.map((size) => (
+                <button
+                  aria-pressed={pageSize === size}
+                  className={pageSize === size ? styles.pageSizeActive : ""}
+                  disabled={loading || loadingMore}
+                  key={size}
+                  onClick={() => void changePageSize(size)}
+                  type="button"
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+            <span className={styles.shownCount}>{campaigns.length} / {total} gösteriliyor</span>
+            {campaigns.length < total && (
+              <button
+                className={styles.loadMoreButton}
+                disabled={loading || loadingMore}
+                onClick={() => void loadMore()}
+                type="button"
+              >
+                {loadingMore ? "Yükleniyor…" : `${pageSize} kampanya daha göster`}
+              </button>
+            )}
+          </footer>
         </article>
         <article className={`${styles.card} ${styles.campaignDetail}`} aria-live="polite">
           {selected && (
@@ -156,7 +244,13 @@ export default function CampaignsPage() {
           <h2>{selected?.title ?? "Kampanya detayı"}</h2>
           {selected ? (
             <>
-              <p className={styles.code}>{selected.content || "Kaynak metin bulunmuyor."}</p>
+              <div className={styles.campaignCopy}>
+                {formatCampaignContent(selected.content || "Kaynak metin bulunmuyor.").map((paragraph, index) => (
+                  /:$/.test(paragraph) && paragraph.length <= 120
+                    ? <h3 key={`${index}-${paragraph}`}>{paragraph}</h3>
+                    : <p key={`${index}-${paragraph}`}>{paragraph}</p>
+                ))}
+              </div>
               <a className={styles.source} href={selected.source_url} rel="noreferrer" target="_blank">
                 Resmî kaynağı yeni sekmede aç <span aria-hidden="true">↗</span>
               </a>

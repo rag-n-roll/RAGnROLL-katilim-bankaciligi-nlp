@@ -123,7 +123,7 @@ def train_bundle(
     bundle = {
         "product_model": product_model,
         "field_models": field_models,
-        "taxonomy_version": "campaign-2026-08-24",
+        "taxonomy_version": "campaign-2026-08-25-target-audience",
         "seed": seed,
     }
     output = Path(output_path)

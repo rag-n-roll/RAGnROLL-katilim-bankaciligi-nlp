@@ -225,6 +225,14 @@ def test_training_manifest_detects_file_digest_change(tmp_path):
         ("data/model_training_data/ner_dataset_approved.jsonl", "ner"),
         ("data/model_training_data/classifier_dataset_final.jsonl", "classification"),
         ("data/model_training_data/ner_dataset_final.jsonl", "ner"),
+        (
+            "data/model_training_data/target_audience_llm_large.jsonl",
+            "target_audience_extraction",
+        ),
+        (
+            "data/enrichment/context_entities_llm_large.jsonl",
+            "context_entity_extraction",
+        ),
     ):
         destination = project / relative
         destination.parent.mkdir(parents=True, exist_ok=True)

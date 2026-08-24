@@ -826,7 +826,7 @@ class CampaignStore:
             raise ValueError("max_records pozitif bir tam sayı olmalıdır")
         self.initialize()
         query = (
-            "SELECT id, content_hash, source_version, processed_json "
+            "SELECT id, content_hash, source_version, processed_json, scraped_at "
             "FROM campaigns ORDER BY id"
         )
         parameters: tuple[Any, ...] = ()
@@ -836,7 +836,7 @@ class CampaignStore:
         with self._connect() as connection:
             rows = connection.execute(query, parameters).fetchall()
         result = []
-        for record_id, hash_value, source_version, processed_json in rows:
+        for record_id, hash_value, source_version, processed_json, scraped_at in rows:
             processed = self._json_object(processed_json)
             text = self._nlp_text(processed)
             if not text:
@@ -849,6 +849,7 @@ class CampaignStore:
                     "source_version": int(source_version or 1),
                     "text": text,
                     "text_sha256": sha256(text.encode("utf-8")).hexdigest(),
+                    "scraped_at": str(scraped_at or processed.get("scraped_at") or ""),
                     "structured": structured if isinstance(structured, dict) else {},
                 }
             )
@@ -1093,6 +1094,10 @@ class CampaignStore:
         records = self.list_campaigns()
         statuses: dict[str, int] = {}
         evidenced_fields = 0
+        enriched_evidenced_fields = 0
+        recovered_failed_fields = 0
+        grounded_entity_counts: dict[str, int] = {}
+        temporal_observation_count = 0
         field_count = 0
         clusters: dict[str, int] = {}
         for record in records:
@@ -1102,13 +1107,42 @@ class CampaignStore:
                 clusters[key] = clusters.get(key, 0) + 1
             structured = record.get("structured")
             fields = structured.get("fields", {}) if isinstance(structured, dict) else {}
-            for field in fields.values():
-                if not isinstance(field, dict):
+            analysis = record.get("nlp_analysis")
+            suggestions = (
+                analysis.get("suggestions", {}) if isinstance(analysis, dict) else {}
+            )
+            suggestions = suggestions if isinstance(suggestions, dict) else {}
+            if isinstance(analysis, dict):
+                temporal_observation_count += isinstance(
+                    analysis.get("temporal_observation"), dict
+                )
+                entities = analysis.get("entities")
+                entities = entities if isinstance(entities, list) else []
+                for entity in entities:
+                    if not isinstance(entity, dict):
+                        continue
+                    if entity.get("source") != "grounded_context_extraction":
+                        continue
+                    label = str(entity.get("label") or "")
+                    if label:
+                        grounded_entity_counts[label] = (
+                            grounded_entity_counts.get(label, 0) + 1
+                        )
+            for field_name, field in fields.items():
+                if not isinstance(field_name, str) or not isinstance(field, dict):
                     continue
                 status = str(field.get("status") or "UNKNOWN")
                 statuses[status] = statuses.get(status, 0) + 1
                 field_count += 1
-                evidenced_fields += field.get("evidence") is not None
+                has_source_evidence = field.get("evidence") is not None
+                has_verified_suggestion = field_name in suggestions
+                evidenced_fields += has_source_evidence
+                enriched_evidenced_fields += (
+                    has_source_evidence or has_verified_suggestion
+                )
+                recovered_failed_fields += (
+                    status == "EXTRACTION_FAILED" and has_verified_suggestion
+                )
         return {
             "record_count": len(records),
             "duplicate_cluster_count": sum(
@@ -1118,6 +1152,17 @@ class CampaignStore:
             "evidence_coverage": (
                 round(evidenced_fields / field_count, 4) if field_count else 0.0
             ),
+            "enriched_evidence_coverage": (
+                round(enriched_evidenced_fields / field_count, 4)
+                if field_count
+                else 0.0
+            ),
+            "verified_enrichment_fields": (
+                enriched_evidenced_fields - evidenced_fields
+            ),
+            "recovered_extraction_failures": recovered_failed_fields,
+            "grounded_entity_counts": grounded_entity_counts,
+            "temporal_observation_count": temporal_observation_count,
         }
 
     def dashboard_summary(self) -> dict[str, Any]:

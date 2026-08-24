@@ -1,6 +1,28 @@
 {
   "contract": "training-dataset-lineage",
   "files": {
+    "data/enrichment/context_entities_llm_large.jsonl": {
+      "bytes": 797593,
+      "line_count": 470,
+      "provenance_counts": {
+        "auto": 470,
+        "excluded": 0,
+        "human": 0,
+        "synthetic": 0
+      },
+      "record_count": 470,
+      "record_kind_counts": {
+        "real": 470,
+        "synthetic": 0
+      },
+      "sha256": "bfff84236d9c49b310bb9839a816958166794b2047dfbd43e3b73b3e3cab149a",
+      "split_counts": {
+        "unassigned": 470
+      },
+      "task_counts": {
+        "context_entity_extraction": 470
+      }
+    },
     "data/model_training_data/campaign_nlp_output_schema.json": {
       "bytes": 1653,
       "line_count": 41,
@@ -43,7 +65,7 @@
       }
     },
     "data/model_training_data/classifier_dataset_final.jsonl": {
-      "bytes": 2483715,
+      "bytes": 2483214,
       "line_count": 642,
       "provenance_counts": {
         "auto": 408,
@@ -56,7 +78,7 @@
         "real": 472,
         "synthetic": 170
       },
-      "sha256": "ff02d4a3efb9b984583ef44d0ddff2b1c0e242d4163068082e52dc52f5a90bfe",
+      "sha256": "efb912e8add820e479dbff95c76f82a48a9341a8ae07a8d53015cdb53dfee2b7",
       "split_counts": {
         "test": 90,
         "train": 496,
@@ -90,7 +112,7 @@
       }
     },
     "data/model_training_data/ner_dataset_final.jsonl": {
-      "bytes": 1616877,
+      "bytes": 2231081,
       "line_count": 577,
       "provenance_counts": {
         "auto": 466,
@@ -103,7 +125,7 @@
         "real": 469,
         "synthetic": 108
       },
-      "sha256": "be7badce9d1a8f8d5587ac0fa836148457f7ee31041aa754774331f555475049",
+      "sha256": "1e656f89be493daa36c4f1c1168fa2290394420973d3fdd88cef630f30a359d1",
       "split_counts": {
         "test": 90,
         "train": 431,
@@ -111,6 +133,28 @@
       },
       "task_counts": {
         "ner": 577
+      }
+    },
+    "data/model_training_data/target_audience_llm_large.jsonl": {
+      "bytes": 158378,
+      "line_count": 470,
+      "provenance_counts": {
+        "auto": 470,
+        "excluded": 0,
+        "human": 0,
+        "synthetic": 0
+      },
+      "record_count": 470,
+      "record_kind_counts": {
+        "real": 470,
+        "synthetic": 0
+      },
+      "sha256": "92b159d17773f3deea26eb546fb2825100fe7e5d5ca182c773096b05c0e4668d",
+      "split_counts": {
+        "unassigned": 470
+      },
+      "task_counts": {
+        "target_audience_extraction": 470
       }
     }
   },

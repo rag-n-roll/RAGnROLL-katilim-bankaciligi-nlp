@@ -155,6 +155,42 @@ def test_assistant_uses_llm_only_as_grounded_answer_writer(tmp_path):
     assert "kanıta dayalı" in llm.calls[0][0]
 
 
+def test_campaign_count_uses_exact_structured_total_without_raw_rag_fallback(tmp_path):
+    llm = FakeLLM(["Bu yanıt kullanılmamalı."])
+    store = CampaignStore(tmp_path / "counts.sqlite3")
+    store.upsert_rows(
+        [
+            Campaign(
+                id=f"campaign-{index}",
+                bank_slug="albaraka-turk",
+                bank_name="Albaraka Türk",
+                title=f"Kampanya {index}",
+                content="Doğrulanmış kampanya içeriği.",
+                source_url=f"https://albaraka.example/{index}",
+            ).to_dict()
+            for index in range(3)
+        ],
+        run_status="success",
+    )
+    assistant = GroundedAssistant(store, llm=llm, chroma_enabled=False)
+
+    result = assistant.answer("Albaraka Türk kampanyalarını say")
+
+    assert result["plan"]["route"] == "STRUCTURED_SQL"
+    assert result["plan"]["intent"] == "campaign_count"
+    assert result["answer"] == "Albaraka Türk için doğrulanmış 3 kampanya bulundu."
+    assert result["facts"] == [
+        {
+            "metric": "CAMPAIGN_COUNT",
+            "value": 3,
+            "bank_slugs": ["albaraka-turk"],
+        }
+    ]
+    assert result["generation"]["fallback_reason"] == "deterministic_count"
+    assert len(result["sources"]) == 3
+    assert llm.calls == []
+
+
 def test_structured_extrema_scans_beyond_first_hundred_rows(tmp_path):
     records = [
         Campaign(
@@ -319,6 +355,39 @@ def test_numeric_claim_must_be_supported_by_the_cited_source():
     )
 
 
+def test_ordered_list_markers_are_not_treated_as_financial_claims():
+    sources = [
+        {"evidence": {"text": "2.000 TL iade sunulur"}},
+        {"evidence": {"text": "13.500 TL hediye sunulur"}},
+    ]
+
+    assert GroundedAssistant._valid_llm_answer(
+        "1. 2.000 TL iade sunulur [K1].\n2. 13.500 TL hediye sunulur [K2].",
+        sources=sources,
+    )
+
+
+def test_bullet_citation_covers_its_sentences_and_unsupported_bullet_is_removed():
+    sources = [
+        {
+            "title": "%10 indirim kampanyası",
+            "evidence": {"text": "Yurt dışı turlarında indirim sunulur."},
+        },
+        {"title": "Diğer kampanya", "evidence": {"text": "500 TL iade"}},
+    ]
+    answer = (
+        "Avantajlar:\n"
+        "* Tur fırsatı sunulur. İndirim oranı %10'dur [K1].\n"
+        "* Türetilmiş 1.000 TL ödül sunulur [K2]."
+    )
+
+    assert not GroundedAssistant._valid_llm_answer(answer, sources=sources)
+    assert GroundedAssistant._sanitize_llm_answer(answer, sources=sources) == (
+        "Avantajlar:\n"
+        "* Tur fırsatı sunulur. İndirim oranı %10'dur [K1]."
+    )
+
+
 def test_safe_redirect_never_calls_language_model(tmp_path):
     llm = FakeLLM(["Çağrılmamalı [K1]"])
     result = GroundedAssistant(
@@ -404,6 +473,44 @@ def test_chunk_evidence_keeps_bounded_source_offsets(tmp_path):
     assert evidence["char_end"] <= 472
 
 
+def test_campaign_fallback_never_exposes_raw_index_document_format(tmp_path):
+    assistant = GroundedAssistant(
+        _store(tmp_path), llm=FakeLLM(), chroma_enabled=False
+    )
+
+    class StructuredFieldRetriever:
+        last_backend = "bm25"
+
+        def retrieve(self, query, *, filters, limit):
+            del query, filters, limit
+            return [
+                {
+                    "text": (
+                        "Başlık: Öğrenci Kampanyası Banka: Örnek Katılım "
+                        "Yapılandırılmış alanlar: campaign_benefit: Ücretsiz internet"
+                    ),
+                    "score": 1.0,
+                    "retrieval_method": "bm25",
+                    "metadata": {
+                        "campaign_id": "student",
+                        "bank_name": "Örnek Katılım",
+                        "title": "Öğrenci Kampanyası",
+                        "section": "structured_fields",
+                    },
+                }
+            ]
+
+    assistant.retriever = StructuredFieldRetriever()
+    result = assistant.answer("Öğrencilere hangi fırsatlar var?")
+
+    assert result["answer"] == (
+        "İlgili doğrulanmış kampanya kayıtları:\n"
+        "- Örnek Katılım — Öğrenci Kampanyası [K1]"
+    )
+    assert "Yapılandırılmış alanlar" not in result["answer"]
+    assert "campaign_benefit" not in result["answer"]
+
+
 def test_graph_relationship_is_preserved_in_deterministic_fallback(tmp_path):
     assistant = GroundedAssistant(
         _store(tmp_path), llm=FakeLLM(), chroma_enabled=False
@@ -456,6 +563,14 @@ def test_llm_answer_gets_bounded_turkish_orthography_polish(tmp_path):
     assert "satış akdidir" in result["answer"]
     assert "akdıdır" not in result["answer"]
     assert result["generation"]["mode"] == "llm"
+
+
+def test_llm_answer_markdown_is_normalized_for_plain_text_chat_ui():
+    answer = "*   **Avantaj:** %10 indirim [K1].\n\n*Not: Koşulları doğrulayın.*"
+
+    assert GroundedAssistant._polish_llm_answer(answer) == (
+        "• Avantaj: %10 indirim [K1].\n\nNot: Koşulları doğrulayın."
+    )
 
 
 def test_streaming_endpoint_emits_metadata_validated_answer_and_completion(tmp_path):

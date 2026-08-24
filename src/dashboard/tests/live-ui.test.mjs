@@ -51,6 +51,26 @@ test("yeni sohbet yalnız istemci durumunu sıfırlar", async () => {
   assert.doesNotMatch(chatbot, /\/api\/reset/);
 });
 
+test("chatbot arayüzü sağlayıcı veya model adı göstermez", async () => {
+  const [chatbot, quality] = await Promise.all([
+    source("app/chatbot/page.tsx"),
+    source("app/quality/page.tsx"),
+  ]);
+
+  assert.doesNotMatch(chatbot, /Gemma|EVREN|\bmodel\b/i);
+  assert.doesNotMatch(quality, /Gemma|EVREN|llm-(?:fast|large)|\bmodel\b/i);
+  assert.match(chatbot, /Kanıta bağlı üretim/);
+});
+
+test("kalite sayfası doğrulanmış bağlam ve gözlem tarihini açıklar", async () => {
+  const quality = await source("app/quality/page.tsx");
+
+  assert.match(quality, /Doğrulanmış bağlam varlıkları/);
+  assert.match(quality, /Kart adı/);
+  assert.match(quality, /temporal_observation_count/);
+  assert.match(quality, /yalnız kaynakta görülme kanıtı/);
+});
+
 test("arayüz statik sahte veri veya PR26 hero görseli taşımaz", async () => {
   const pages = await Promise.all([
     source("app/page.tsx"),
@@ -94,4 +114,14 @@ test("klavye, canlı bölge, sonuç odağı ve responsive kuralları görünürd
   assert.match(liveCss, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(liveCss, /overflow-x: auto/);
   assert.match(globals, /:focus-visible/);
+});
+
+test("kampanya kataloğu artımlı sayfalama ve temiz metin sunumu kullanır", async () => {
+  const campaigns = await source("app/campaigns/page.tsx");
+
+  assert.match(campaigns, /const PAGE_SIZES = \[10, 50\]/);
+  assert.match(campaigns, /offset: campaigns\.length/);
+  assert.match(campaigns, /kampanya daha göster/);
+  assert.match(campaigns, /formatCampaignContent/);
+  assert.doesNotMatch(campaigns, /className=\{styles\.code\}/);
 });

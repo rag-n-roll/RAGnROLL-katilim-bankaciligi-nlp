@@ -174,6 +174,20 @@ değildir. Container yalnız bu kapı için gereken üç lineage dosyasını ta�
 python -m scripts.enrich_nlp --database data/ragnroll.sqlite3
 ```
 
+Kanal, özel kart adı ve müşteri hitabı bağlamlarını kanıta bağlı toplu çıkarmak
+için EVREN ayarlarını yükleyip devam ettirilebilir batch'i çalıştırın. Çıktıyı
+uygulamadan önce deterministik uzlaştırma zorunludur:
+
+```bash
+python -m scripts.label_context_entities label --workers 4
+python -m scripts.label_context_entities reconcile
+python -m scripts.label_context_entities apply-database
+```
+
+Kampanya başlangıç veya bitiş tarihi bilinmiyorsa bu akış tarih uydurmaz;
+`scraped_at` lineage bilgisinden ayrı bir `temporal_observation` yazar. Bu kayıt
+yalnız kampanyanın ilgili tarihte kaynakta görüldüğünü ifade eder.
+
 Önce ağ kullanmayan prompt veri/bağımlılık/artifact sözleşmesi kontrolünü çalıştırın:
 
 ```bash

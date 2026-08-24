@@ -383,6 +383,10 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.contextQualityCard {
+  grid-column: 1 / -1;
+}
+
 .card {
   min-width: 0;
   padding: 22px;
@@ -559,6 +563,68 @@
   gap: 9px;
 }
 
+.campaignListFooter {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #e2ebe6;
+}
+
+.pageSizeControl {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #526660;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pageSizeControl button {
+  min-width: 38px;
+  min-height: 34px;
+  border: 1px solid #baccc3;
+  border-radius: 9px;
+  background: #fff;
+  color: #36534b;
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.pageSizeControl button:hover:not(:disabled),
+.pageSizeControl .pageSizeActive {
+  border-color: #08766f;
+  background: #e8f3ee;
+  color: #06473e;
+}
+
+.shownCount {
+  color: #667972;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.loadMoreButton {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #08766f;
+  border-radius: 11px;
+  background: #fff;
+  color: #075e59;
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.loadMoreButton:hover:not(:disabled) {
+  background: #e8f3ee;
+}
+
+.loadMoreButton:disabled,
+.pageSizeControl button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .listButton {
   width: 100%;
   min-width: 0;
@@ -625,7 +691,7 @@
   font-weight: 800;
 }
 
-.code {
+.campaignCopy {
   max-height: 390px;
   margin: 16px 0;
   overflow: auto;
@@ -633,9 +699,27 @@
   border-left: 4px solid #08766f;
   border-radius: 4px 12px 12px 4px;
   background: #f2f6f4;
-  white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: anywhere;
   line-height: 1.65;
+}
+
+.campaignCopy p {
+  margin: 0 0 12px;
+}
+
+.campaignCopy p:last-child {
+  margin-bottom: 0;
+}
+
+.campaignCopy h3 {
+  margin: 20px 0 7px;
+  color: #06473e;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.campaignCopy h3:first-child {
+  margin-top: 0;
 }
 
 .source {

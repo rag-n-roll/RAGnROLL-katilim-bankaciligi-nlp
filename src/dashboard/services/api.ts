@@ -182,6 +182,8 @@ export type ChatMeta = {
 export type ChatGeneration = {
   mode: "llm" | "fallback";
   model?: string | null;
+  provider?: string | null;
+  requested_model?: string | null;
   fallback_reason?: string | null;
   retrieval_backend?: string;
   prompt?: { profile?: string; optimizer?: string; status?: string };
@@ -277,6 +279,11 @@ export function getMetricsSummary() {
       duplicate_cluster_count: number;
       field_statuses: Record<string, number>;
       evidence_coverage: number;
+      enriched_evidence_coverage: number;
+      verified_enrichment_fields: number;
+      recovered_extraction_failures: number;
+      grounded_entity_counts: Record<string, number>;
+      temporal_observation_count: number;
     };
   }>("/metrics/summary");
 }

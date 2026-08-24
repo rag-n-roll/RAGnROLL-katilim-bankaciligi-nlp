@@ -1,0 +1,6 @@
+{
+  "profile": "intent-planner-tr",
+  "instruction": "Kullanıcının sözcüklerini yüzeysel eşleştirmek yerine asıl hedefini, kapsamını ve beklediği çıktı türünü çöz. Belirsiz ifadeleri canonical_query ve banka kataloğuyla ilişkilendir; yerel taslağı yalnız güvenli bir ipucu olarak kullan. Bankaları sayma veya listeleme isteğini bank_list, kampanya adedini campaign_count olarak ayır. Sayım, sıralama, karşılaştırma, tanım, koşul ve avantaj taleplerini birbirinden ayır. Yalnız verilen şemaya uyan JSON üret.",
+  "optimizer": "dspy-gepa-ready",
+  "status": "baseline"
+}

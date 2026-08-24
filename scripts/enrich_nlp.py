@@ -15,6 +15,7 @@ from src.nlp_runtime import (
     EvrenAdvisoryError,
 )
 from src.nlp_runtime.integrity import DEFAULT_MANIFEST
+from src.nlp_runtime.integrity import RUNTIME_CONTRACT
 from src.persistence import CampaignStore
 
 
@@ -25,6 +26,7 @@ def enrich_database(
     max_records: int | None = None,
     runtime_loader: Callable[[str | Path], Any] = CampaignNlpRuntime.load,
     augmenter: EvrenAdvisoryAugmenter | None = None,
+    evren_only: bool = False,
 ) -> dict[str, Any]:
     """Analyze every selected snapshot before opening the single write transaction."""
 
@@ -37,19 +39,38 @@ def enrich_database(
             "changed": 0,
             "database": str(Path(database)),
         }
-    runtime = runtime_loader(manifest)
+    runtime = None if evren_only else runtime_loader(manifest)
     augmenter = augmenter or EvrenAdvisoryAugmenter()
     analyses = []
     evren_augmented = 0
     evren_failed = 0
     for candidate in candidates:
-        analysis = runtime.analyze(
-            candidate["text"],
-            structured=candidate["structured"],
-            record_id=candidate["id"],
-            content_hash=candidate["content_hash"],
-            source_version=candidate["source_version"],
-        )
+        if runtime is None:
+            analysis = {
+                "contract": RUNTIME_CONTRACT,
+                "record": {
+                    "id": candidate["id"],
+                    "source_content_hash": candidate["content_hash"],
+                    "source_version": candidate["source_version"],
+                    "text_sha256": candidate["text_sha256"],
+                },
+                "classification": {},
+                "entities": [],
+                "suggestions": {},
+                "quality": {"suggestion_count": 0, "warnings": []},
+                "provenance": {
+                    "runtime_contract": RUNTIME_CONTRACT,
+                    "mode": "evren_only",
+                },
+            }
+        else:
+            analysis = runtime.analyze(
+                candidate["text"],
+                structured=candidate["structured"],
+                record_id=candidate["id"],
+                content_hash=candidate["content_hash"],
+                source_version=candidate["source_version"],
+            )
         if augmenter.enabled:
             try:
                 analysis = augmenter.augment(
@@ -71,6 +92,7 @@ def enrich_database(
         "evren_enabled": augmenter.enabled,
         "evren_augmented": evren_augmented,
         "evren_failed": evren_failed,
+        "mode": "evren_only" if evren_only else "hybrid",
         "database": str(Path(database)),
     }
 
@@ -95,6 +117,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
     parser.add_argument("--max-records", type=int, default=None)
+    parser.add_argument(
+        "--evren-only",
+        action="store_true",
+        help="Yerel model yüklemeden yalnız kanıt doğrulamalı EVREN önerilerini çalıştır",
+    )
     args = parser.parse_args(argv)
     try:
         max_records = (
@@ -106,6 +133,7 @@ def main(argv: list[str] | None = None) -> int:
             args.database,
             manifest=args.manifest,
             max_records=max_records,
+            evren_only=args.evren_only,
         )
     except (OSError, RuntimeError, ValueError) as exc:
         error = json.dumps(

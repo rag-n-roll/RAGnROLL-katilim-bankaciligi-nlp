@@ -21,6 +21,8 @@
   "structured_intents": [
     "product_search",
     "product_comparison",
+    "bank_list",
+    "campaign_count",
     "rate_query",
     "maturity_query"
   ],

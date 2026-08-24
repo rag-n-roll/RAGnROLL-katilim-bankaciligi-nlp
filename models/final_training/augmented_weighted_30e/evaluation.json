@@ -1,0 +1,138 @@
+{
+  "model": "spacy-blank-tr-ner",
+  "train_split": "train",
+  "evaluation_split": "validation",
+  "train_documents": 431,
+  "labels": [
+    "ALISVERIS_PUANI",
+    "BANKA",
+    "FINANSMAN_TUTARI",
+    "HEDEF_KITLE",
+    "INDIRIM_ORANI",
+    "KAMPANYA_AVANTAJI",
+    "KAMPANYA_KOSULU",
+    "KAMPANYA_TARIHI",
+    "KART_ADI",
+    "KAR_PAYI_ORANI",
+    "MASRAF_BILGISI",
+    "MUSTERI_HITABI",
+    "ODUL_MIKTARI",
+    "PROMOSYON_KODU",
+    "TAHSIS_UCRETI",
+    "TAKSIT_SAYISI",
+    "URUN_TURU",
+    "UYGULAMA_KANALI",
+    "VADE"
+  ],
+  "epochs": 30,
+  "seed": 42,
+  "oversample_label": "HEDEF_KITLE",
+  "oversample_factor": 4,
+  "oversampled_documents": 267,
+  "synthetic_documents": 108,
+  "synthetic_data_warning": true,
+  "evaluation_provenance_counts": {
+    "auto": 56
+  },
+  "evaluation_metric_kind": "proxy",
+  "competition_metric_eligible": false,
+  "metrics": {
+    "precision": 0.9238187078109933,
+    "recall": 0.9149952244508118,
+    "f1": 0.9193857965451055,
+    "per_entity": {
+      "BANKA": {
+        "p": 1.0,
+        "r": 1.0,
+        "f": 1.0
+      },
+      "KART_ADI": {
+        "p": 0.9946524064171123,
+        "r": 0.9841269841269841,
+        "f": 0.9893617021276594
+      },
+      "TAKSIT_SAYISI": {
+        "p": 1.0,
+        "r": 1.0,
+        "f": 1.0
+      },
+      "UYGULAMA_KANALI": {
+        "p": 0.9813664596273292,
+        "r": 0.9813664596273292,
+        "f": 0.9813664596273292
+      },
+      "URUN_TURU": {
+        "p": 0.9619047619047619,
+        "r": 0.9805825242718447,
+        "f": 0.9711538461538461
+      },
+      "KAMPANYA_AVANTAJI": {
+        "p": 1.0,
+        "r": 1.0,
+        "f": 1.0
+      },
+      "KAMPANYA_KOSULU": {
+        "p": 0.8411214953271028,
+        "r": 0.7563025210084033,
+        "f": 0.7964601769911505
+      },
+      "FINANSMAN_TUTARI": {
+        "p": 0.5,
+        "r": 0.5,
+        "f": 0.5
+      },
+      "MUSTERI_HITABI": {
+        "p": 0.9814814814814815,
+        "r": 1.0,
+        "f": 0.9906542056074767
+      },
+      "KAR_PAYI_ORANI": {
+        "p": 1.0,
+        "r": 1.0,
+        "f": 1.0
+      },
+      "VADE": {
+        "p": 1.0,
+        "r": 0.9512195121951219,
+        "f": 0.975
+      },
+      "ODUL_MIKTARI": {
+        "p": 0.6607142857142857,
+        "r": 0.6981132075471698,
+        "f": 0.6788990825688073
+      },
+      "KAMPANYA_TARIHI": {
+        "p": 0.9558823529411765,
+        "r": 0.9154929577464789,
+        "f": 0.9352517985611511
+      },
+      "MASRAF_BILGISI": {
+        "p": 0.0,
+        "r": 0.0,
+        "f": 0.0
+      },
+      "INDIRIM_ORANI": {
+        "p": 1.0,
+        "r": 0.9523809523809523,
+        "f": 0.975609756097561
+      },
+      "PROMOSYON_KODU": {
+        "p": 1.0,
+        "r": 0.4166666666666667,
+        "f": 0.5882352941176471
+      },
+      "HEDEF_KITLE": {
+        "p": 0.47058823529411764,
+        "r": 0.6153846153846154,
+        "f": 0.5333333333333333
+      },
+      "ALISVERIS_PUANI": {
+        "p": 0.5625,
+        "r": 1.0,
+        "f": 0.72
+      }
+    },
+    "documents": 56
+  },
+  "last_training_loss": 1102.34814453125
+}

@@ -66,6 +66,16 @@ class DomainQueryCompiler:
         normalized = self._normalized(query)
         if any(term in normalized for term in ("şikâyet", "şikayet", "itiraz")):
             return "complaint_support", 0.99
+        if "katılım banka" in normalized and any(
+            term in normalized
+            for term in ("kaç", "sayısı", "sayisi", "say", "liste")
+        ):
+            return "bank_list", 0.99
+        if "kampanya" in normalized and any(
+            term in normalized
+            for term in ("kaç", "sayısı", "sayisi", "say", "adet")
+        ):
+            return "campaign_count", 0.99
         if bank_count > 1 or any(
             term in normalized
             for term in (

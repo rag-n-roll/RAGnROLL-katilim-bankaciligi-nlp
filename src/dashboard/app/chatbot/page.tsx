@@ -20,6 +20,13 @@ const suggestions = [
   "Murabaha nedir?",
 ];
 
+function generationLabel(generation?: ChatGeneration) {
+  if (!generation) return "Kaynaklar hazırlanıyor";
+  return generation.mode === "llm"
+    ? "Kanıta bağlı üretim"
+    : "Güvenli doğrulanmış yanıt";
+}
+
 type Exchange = {
   question: string;
   answer: string;
@@ -154,7 +161,7 @@ export default function ChatbotPage() {
         <div>
           <span className={styles.eyebrow}>Kaynakla sınırlandırılmış üretim</span>
           <h1>Kanıta dayalı asistan</h1>
-          <p>Gemma yanıtları doğrulanmış kampanya verileri ve yerel bilgi tabanı üzerinden gerçek zamanlı yazar.</p>
+          <p>Doğrulanmış kampanya verileri ve bilgi tabanı üzerinden kanıta bağlı yanıtlar sunar.</p>
         </div>
         <div className={styles.chatHeaderActions}>
           <button
@@ -165,7 +172,7 @@ export default function ChatbotPage() {
           >
             Yeni sohbet
           </button>
-          <span className={styles.liveStatus}><span /> Yerel ve gizli</span>
+          <span className={styles.liveStatus}><span /> Kanıta bağlı</span>
         </div>
       </header>
       <section className={styles.chatLayout}>
@@ -193,11 +200,7 @@ export default function ChatbotPage() {
                     <div>
                       <strong>RAGnROLL Asistan</strong>
                       <small>
-                        {exchange.generation?.mode === "llm"
-                          ? "Gemma · kanıta bağlı üretim"
-                          : exchange.generation
-                            ? "Güvenli yerel yanıt"
-                            : "Kaynaklar hazırlanıyor"}
+                        {generationLabel(exchange.generation)}
                       </small>
                     </div>
                   </div>
@@ -251,7 +254,7 @@ export default function ChatbotPage() {
           <div className={styles.list}>
             {suggestions.map((question) => <button className={styles.listButton} disabled={loading} key={question} onClick={() => void ask(question)} type="button">{question}</button>)}
           </div>
-          <div className={styles.safetyNote}><strong>Kanıt koruması</strong><p>Model ulaşılamazsa veya kaynak dışı yanıt üretirse doğrulanmış yerel cevap otomatik gösterilir.</p></div>
+          <div className={styles.safetyNote}><strong>Kanıt koruması</strong><p>Üretim servisine ulaşılamazsa veya kaynak dışı yanıt oluşursa doğrulanmış yerel cevap otomatik gösterilir.</p></div>
         </aside>
       </section>
     </main>

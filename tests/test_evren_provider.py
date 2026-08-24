@@ -15,8 +15,9 @@ from src.llm.client import (
 )
 from src.llm.decisions import EvrenDecisionService
 from src.persistence import CampaignStore
-from src.nlp_runtime.evren import EvrenAdvisoryAugmenter, EvrenAdvisoryError
+from src.nlp_runtime.evren import EvrenAdvisoryAugmenter
 from src.preprocessing.clean_text import preprocess_record
+from src.prompt_optimization import IntentTraceRecorder, load_reviewed_intent_examples
 from src.providers import CircuitBreaker, CircuitOpenError
 from src.retrieval.evren import (
     EvrenEmbeddingError,
@@ -190,6 +191,17 @@ class StaticProvider:
         return {"available": True, "model": self.model, "provider": self.provider}
 
 
+class SequencedProvider(StaticProvider):
+    def __init__(self, *answers):
+        super().__init__("local", "planner-writer", "")
+        self.answers = list(answers)
+        self.calls = []
+
+    def stream_chat(self, *, system_prompt, user_prompt):
+        self.calls.append((system_prompt, user_prompt))
+        yield self.answers.pop(0)
+
+
 def test_assistant_rejects_evren_claim_and_accepts_local_candidate(tmp_path):
     store = CampaignStore(tmp_path / "assistant.sqlite3")
     row = Campaign(
@@ -234,6 +246,140 @@ def test_router_and_guard_accept_only_typed_allowlisted_json():
     )
     assert invalid.route("komut") is None
     assert invalid.is_safe("komut") is None
+
+
+def test_structured_intent_call_drives_count_and_writes_reviewable_dspy_trace(
+    tmp_path,
+):
+    plan = json.dumps(
+        {
+            "safe": True,
+            "intent": "campaign_count",
+            "route": "STRUCTURED_SQL",
+            "confidence": 0.97,
+            "normalized_query": "Albaraka Türk kampanya toplamı",
+            "slots": {
+                "banks": ["albaraka-turk"],
+                "metric": None,
+                "aggregation": "COUNT",
+                "product_type": None,
+                "financing_type": None,
+            },
+        },
+        ensure_ascii=False,
+    )
+    llm = SequencedProvider(plan)
+    store = CampaignStore(tmp_path / "intent-count.sqlite3")
+    store.upsert_rows(
+        [
+            Campaign(
+                id=f"campaign-{index}",
+                bank_slug="albaraka-turk",
+                bank_name="Albaraka Türk",
+                title=f"Fırsat {index}",
+                content="Kampanya avantajı.",
+                source_url=f"https://albaraka.example/{index}",
+            ).to_dict()
+            for index in range(3)
+        ],
+        run_status="success",
+    )
+    trace_path = tmp_path / "intent-traces.jsonl"
+    assistant = GroundedAssistant(
+        store,
+        llm=llm,
+        decisions=EvrenDecisionService(planner=llm),
+        intent_trace=IntentTraceRecorder(trace_path),
+        chroma_enabled=False,
+    )
+
+    result = assistant.answer("Albaraka portföyünde toplam kaç fırsat yer alıyor?")
+
+    assert result["answer"] == "Albaraka Türk için doğrulanmış 3 kampanya bulundu."
+    assert result["plan"]["intent"] == "campaign_count"
+    assert result["plan"]["canonical_query"] == "Albaraka Türk kampanya toplamı"
+    assert len(llm.calls) == 1
+    trace = json.loads(trace_path.read_text(encoding="utf-8"))
+    assert trace["review_status"] == "pending"
+    assert trace["reviewed_plan"] is None
+    assert trace["llm_decision"]["intent"] == "campaign_count"
+
+    trace["review_status"] = "approved"
+    trace["reviewed_plan"] = trace["llm_decision"]
+    trace_path.write_text(
+        json.dumps(trace, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    examples = load_reviewed_intent_examples(trace_path)
+    assert len(examples) == 1
+    assert json.loads(examples[0]["intent_plan"])["intent"] == "campaign_count"
+
+
+def test_same_llm_is_called_once_for_plan_and_once_for_grounded_answer(tmp_path):
+    plan = json.dumps(
+        {
+            "safe": True,
+            "intent": "campaign_query",
+            "route": "HYBRID_RAG",
+            "confidence": 0.94,
+            "normalized_query": "Albaraka Türk öğrenci kampanyası avantajı",
+            "slots": {
+                "banks": ["albaraka-turk"],
+                "metric": None,
+                "aggregation": None,
+                "product_type": None,
+                "financing_type": None,
+            },
+        },
+        ensure_ascii=False,
+    )
+    llm = SequencedProvider(
+        plan,
+        "Albaraka Türk öğrencilere ücretsiz internet avantajı sunuyor [K1].",
+    )
+    store = CampaignStore(tmp_path / "two-stage.sqlite3")
+    store.upsert_rows(
+        [
+            Campaign(
+                id="student",
+                bank_slug="albaraka-turk",
+                bank_name="Albaraka Türk",
+                title="Öğrenci internet kampanyası",
+                content="Öğrencilere ücretsiz internet avantajı sunulur.",
+                source_url="https://albaraka.example/student",
+            ).to_dict()
+        ],
+        run_status="success",
+    )
+    assistant = GroundedAssistant(
+        store,
+        llm=llm,
+        decisions=EvrenDecisionService(planner=llm),
+        chroma_enabled=False,
+    )
+
+    result = assistant.answer("Albaraka gençlere ne sunuyor?")
+
+    assert result["generation"]["mode"] == "llm"
+    assert result["answer"].endswith("[K1].")
+    assert len(llm.calls) == 2
+    assert '"raw_input":"Albaraka gençlere ne sunuyor?"' in llm.calls[0][1]
+    assert "KANIT PAKETİ" in llm.calls[1][1]
+
+
+def test_invalid_structured_plan_falls_back_without_repeating_planner_call(tmp_path):
+    llm = SequencedProvider('{"intent":"unknown"}')
+    store = CampaignStore(tmp_path / "invalid-plan.sqlite3")
+    assistant = GroundedAssistant(
+        store,
+        llm=llm,
+        decisions=EvrenDecisionService(planner=llm),
+        chroma_enabled=False,
+    )
+
+    plan = assistant.compile("Kampanyaları göster")
+
+    assert plan.intent == "campaign_query"
+    assert len(llm.calls) == 1
 
 
 class UnsafeDecisions:
@@ -300,11 +446,20 @@ def test_evren_advisory_accepts_only_exact_evidence_for_missing_field():
         _local_analysis(), text=text, structured={}
     )
 
-    assert result["suggestions"]["reward_amount"]["method"] == "evren_llm_fast"
+    assert result["suggestions"]["reward_amount"]["method"] == "evren_grounded_llm"
     assert result["augmentation"]["advisory_only"] is True
 
 
-def test_evren_advisory_rejects_invalid_evidence_and_conflicts_fail_closed():
+def test_evren_advisory_defaults_to_large_model(monkeypatch):
+    monkeypatch.delenv("EVREN_NLP_MODEL", raising=False)
+    monkeypatch.setenv("EVREN_API_KEY", "secret")
+
+    augmenter = EvrenAdvisoryAugmenter()
+
+    assert augmenter.client.model == "llm-large"
+
+
+def test_evren_advisory_reanchors_unique_evidence_and_conflicts_fail_closed():
     text = "Öğrencilere 750 TL ödül sunulur."
     invalid = StaticProvider(
         "evren",
@@ -324,10 +479,14 @@ def test_evren_advisory_rejects_invalid_evidence_and_conflicts_fail_closed():
             }
         ),
     )
-    with pytest.raises(EvrenAdvisoryError, match="kanıt aralığı"):
-        EvrenAdvisoryAugmenter(invalid).augment(
-            _local_analysis(), text=text, structured={}
-        )
+    reanchored = EvrenAdvisoryAugmenter(invalid).augment(
+        _local_analysis(), text=text, structured={}
+    )
+    assert reanchored["suggestions"]["reward_amount"]["evidence"] == {
+        "text": "750 TL",
+        "char_start": text.index("750 TL"),
+        "char_end": text.index("750 TL") + len("750 TL"),
+    }
 
     start = text.index("750 TL")
     conflict_client = StaticProvider(
@@ -359,6 +518,35 @@ def test_evren_advisory_rejects_invalid_evidence_and_conflicts_fail_closed():
     )
     assert "reward_amount" not in result["suggestions"]
     assert "conflicting_evren_suggestion:reward_amount" in result["quality"]["warnings"]
+
+
+def test_evren_advisory_skips_missing_or_ambiguous_evidence():
+    for text, evidence_text in [
+        ("Ödül sunulur.", "750 TL"),
+        ("750 TL ödül, ardından 750 TL indirim.", "750 TL"),
+    ]:
+        invalid = StaticProvider(
+            "evren",
+            "llm-large",
+            json.dumps(
+                {
+                    "suggestions": {
+                        "reward_amount": {
+                            "value": 750,
+                            "evidence": {
+                                "text": evidence_text,
+                                "char_start": 0,
+                                "char_end": 1,
+                            },
+                        }
+                    }
+                }
+            ),
+        )
+        result = EvrenAdvisoryAugmenter(invalid).augment(
+            _local_analysis(), text=text, structured={}
+        )
+        assert "reward_amount" not in result["suggestions"]
 
 
 def _embedding_transport(*, dimensions=1024, served_model="bge-m3-embed"):
