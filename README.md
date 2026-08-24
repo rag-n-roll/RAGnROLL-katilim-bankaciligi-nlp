@@ -234,10 +234,32 @@ RAGNROLL_EMBEDDING_WARMUP=false \
 RAGNROLL_LLM_ENABLED=false \
 RAGNROLL_CHROMA_COLLECTION=ragnroll_container_smoke \
 docker compose up --build --detach
-curl --fail -X POST http://localhost:8000/api/v1/data-refresh \
+job_response="$(curl --fail --silent --show-error -X POST http://localhost:8000/api/v1/data-refresh \
   -H 'content-type: application/json' \
-  -d '{"max_per_bank":1}'
-curl --fail http://localhost:8000/api/v1/data-refresh/JOB_ID
+  -d '{"max_per_bank":1}')"
+job_id="$(printf '%s' "$job_response" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
+status=""
+enrichment_status=""
+index_status=""
+attempt=1
+while [ "$attempt" -le 60 ]; do
+  job_json="$(curl --fail --silent --show-error "http://localhost:8000/api/v1/data-refresh/$job_id")"
+  status="$(printf '%s' "$job_json" | python -c 'import json,sys; print(json.load(sys.stdin)["status"])')"
+  enrichment_status="$(printf '%s' "$job_json" | python -c 'import json,sys; print(json.load(sys.stdin)["enrichment_status"])')"
+  index_status="$(printf '%s' "$job_json" | python -c 'import json,sys; print(json.load(sys.stdin)["index_status"])')"
+  case "$status" in
+    completed|partial|failed) break ;;
+  esac
+  sleep 2
+  attempt=$((attempt + 1))
+done
+[ "$status" = "completed" ] && \
+  [ "$enrichment_status" = "completed" ] && \
+  [ "$index_status" = "completed" ] || {
+    printf 'Smoke job did not complete successfully: status=%s enrichment_status=%s index_status=%s\n' \
+      "$status" "$enrichment_status" "$index_status" >&2
+    exit 1
+  }
 ```
 
 Windows PowerShell karşılığı:
@@ -254,7 +276,20 @@ $job = Invoke-RestMethod -Method Post `
   -Uri http://localhost:8000/api/v1/data-refresh `
   -ContentType "application/json" `
   -Body '{"max_per_bank":1}'
-Invoke-RestMethod "http://localhost:8000/api/v1/data-refresh/$($job.id)"
+$jobId = $job.id
+$terminalStatuses = @("completed", "partial", "failed")
+$state = $null
+for ($attempt = 1; $attempt -le 60; $attempt++) {
+  $state = Invoke-RestMethod "http://localhost:8000/api/v1/data-refresh/$jobId"
+  if ($terminalStatuses -contains $state.status) { break }
+  Start-Sleep -Seconds 2
+}
+if ($null -eq $state -or
+    $state.status -ne "completed" -or
+    $state.enrichment_status -ne "completed" -or
+    $state.index_status -ne "completed") {
+  throw "Smoke job did not complete successfully: status=$($state.status) enrichment_status=$($state.enrichment_status) index_status=$($state.index_status)"
+}
 ```
 
 İzole smoke işi bittikten sonra yalnız onun volume'larını kaldırın:
@@ -295,11 +330,11 @@ rm -rf .venv
 ```
 
 Chroma ve runtime verilerini de sıfırlamak istiyorsanız bunun geri alınamaz
-olduğunu kontrol ettikten sonra yalnız bu Compose projesinin volume'larını
-kaldırın:
+olduğunu kontrol ettikten sonra yalnızca izole `ragnroll-smoke` Compose
+projesinin volume'larını kaldırın:
 
 ```bash
-docker compose down --volumes --remove-orphans
+COMPOSE_PROJECT_NAME=ragnroll-smoke docker compose down --volumes --remove-orphans
 ```
 
 ## Hızlı başlangıç
