@@ -240,10 +240,34 @@ curl --fail -X POST http://localhost:8000/api/v1/data-refresh \
 curl --fail http://localhost:8000/api/v1/data-refresh/JOB_ID
 ```
 
+Windows PowerShell karşılığı:
+
+```powershell
+$env:COMPOSE_PROJECT_NAME = "ragnroll-smoke"
+$env:RAGNROLL_REFRESH_DATASET = "/app/bootstrap/campaigns.json"
+$env:RAGNROLL_INDEX_SMOKE = "true"
+$env:RAGNROLL_EMBEDDING_WARMUP = "false"
+$env:RAGNROLL_LLM_ENABLED = "false"
+$env:RAGNROLL_CHROMA_COLLECTION = "ragnroll_container_smoke"
+docker compose up --build --detach
+$job = Invoke-RestMethod -Method Post `
+  -Uri http://localhost:8000/api/v1/data-refresh `
+  -ContentType "application/json" `
+  -Body '{"max_per_bank":1}'
+Invoke-RestMethod "http://localhost:8000/api/v1/data-refresh/$($job.id)"
+```
+
 İzole smoke işi bittikten sonra yalnız onun volume'larını kaldırın:
 
 ```bash
 COMPOSE_PROJECT_NAME=ragnroll-smoke docker compose down --volumes --remove-orphans
+```
+
+Windows PowerShell'de yalnızca `ragnroll-smoke` Compose projesinin volume'larını kaldırın:
+
+```powershell
+$env:COMPOSE_PROJECT_NAME = "ragnroll-smoke"
+docker compose down --volumes --remove-orphans
 ```
 
 Retrieval ve GEPA yollarını ayrıca doğrulayın:
