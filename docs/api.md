@@ -48,12 +48,14 @@ yüklemeden kontrol eder.
 ## Veri yenileme
 
 `POST /api/v1/data-refresh` tek bir kontrollü toplama işi başlatır. Otomatik
-indeksleme açıksa başarılı veya kısmi veri güncellemesinin ardından yalnız değişen
-semantik parçalar embed edilir. `GET /api/v1/data-refresh/{job_id}` yanıtındaki
-`index_status`, `index_return_code` ve `index_message` alanları bu ikinci aşamayı
-ayrı olarak görünür tutar. Veri yenilemesi başarısızsa indeks durumu `skipped`
-olur. İndeks hatası veri güncellemesini geri almaz; iş kısmi duruma geçer ve
-retrieval yerel fallback ile devam eder.
+NLP zenginleştirmesi ve indeksleme açıksa başarılı veya kısmi veri güncellemesinin
+ardından önce danışmanlık analizi, sonra yalnız değişen semantik parçaların
+embedding'i çalışır. `GET /api/v1/data-refresh/{job_id}` yanıtındaki
+`enrichment_status`, `enrichment_return_code`, `enrichment_message`,
+`index_status`, `index_return_code` ve `index_message` alanları iki aşamayı ayrı
+görünür tutar. Veri yenilemesi başarısızsa iki aşama da `skipped` olur. Aşama
+hataları veri güncellemesini geri almaz; iş kısmi duruma geçer ve retrieval yerel
+fallback ile devam eder.
 
 ## Karşılaştırma
 

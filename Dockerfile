@@ -20,6 +20,12 @@ COPY --chown=app:app src/ ./src/
 COPY --chown=app:app scripts/ ./scripts/
 COPY --chown=app:app configs/ ./configs/
 COPY --chown=app:app data/ontology/ ./data/ontology/
+# Runtime bütünlük kapısı yalnız beyan edilen eğitim lineage girdilerini doğrular.
+COPY --chown=app:app \
+    data/model_training_data/classifier_dataset_final.jsonl \
+    data/model_training_data/ner_dataset_final.jsonl \
+    data/model_training_data/training_dataset_manifest.json \
+    ./data/model_training_data/
 COPY --chown=app:app data/processed/campaigns.json ./bootstrap/campaigns.json
 COPY --chown=app:app prompts/ ./prompts/
 COPY --chown=app:app models/ ./models/

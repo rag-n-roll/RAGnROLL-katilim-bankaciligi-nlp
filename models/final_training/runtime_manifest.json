@@ -1,0 +1,36 @@
+{
+  "contract": "ragnroll-nlp-runtime-2026.08",
+  "dependencies": {
+    "joblib": "1.5.3",
+    "scikit-learn": "1.9.0",
+    "spacy": "3.8.15"
+  },
+  "artifacts": {
+    "classifier": {
+      "path": "models/final_training/campaign_classifier.joblib",
+      "sha256": "327f7fdeece6798c83bbc8096d54ad9e7de7c911f5579717b11ba9c1782399e7",
+      "training_dataset": {
+        "path": "data/model_training_data/classifier_dataset_final.jsonl",
+        "sha256": "ff02d4a3efb9b984583ef44d0ddff2b1c0e242d4163068082e52dc52f5a90bfe"
+      }
+    },
+    "ner": {
+      "path": "models/final_training/augmented_weighted_30e",
+      "sha256": "7a39078461b2e574a9eb673a23fab565ae8eb0a0e8c03a686346967ef48be8cf",
+      "tree_hash": "sorted relative POSIX path + NUL + file SHA256 hex + LF",
+      "training_dataset": {
+        "path": "data/model_training_data/ner_dataset_final.jsonl",
+        "sha256": "be7badce9d1a8f8d5587ac0fa836148457f7ee31041aa754774331f555475049"
+      }
+    }
+  },
+  "training_provenance": {
+    "manifest": {
+      "path": "data/model_training_data/training_dataset_manifest.json",
+      "sha256": "6babed7782fa03bb374dd96818a4e7c2a4b22364b3ac34fcebbc50e0fdb2f0cd",
+      "contract": "training-dataset-lineage"
+    },
+    "automatic_references": "proxy_only",
+    "independent_gold": "not_provided"
+  }
+}

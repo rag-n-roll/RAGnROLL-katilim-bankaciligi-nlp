@@ -208,6 +208,11 @@ class RefreshJobResponse(ApiModel):
     completed_at: str | None
     timeout_seconds: float = Field(gt=0)
     output_truncated: bool
+    enrichment_status: Literal[
+        "disabled", "pending", "completed", "failed", "skipped"
+    ] = "disabled"
+    enrichment_return_code: int | None = None
+    enrichment_message: str | None = None
     index_status: Literal[
         "disabled", "pending", "completed", "failed", "skipped"
     ] = "disabled"

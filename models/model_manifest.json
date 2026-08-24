@@ -24,6 +24,18 @@
       "runtime": "sentence-transformers",
       "artifact": "Qwen/Qwen3-Embedding-0.6B",
       "output_contract": "normalized-1024-dimensional-vectors"
+    },
+    {
+      "name": "campaign-classifier",
+      "runtime": "verified-scikit-learn",
+      "artifact": "models/final_training/campaign_classifier.joblib",
+      "output_contract": "advisory-classification"
+    },
+    {
+      "name": "campaign-ner",
+      "runtime": "verified-spacy",
+      "artifact": "models/final_training/augmented_weighted_30e",
+      "output_contract": "evidence-located-advisory-entities"
     }
   ],
   "generation_policy": "A language model may verbalize evidence but cannot create facts."

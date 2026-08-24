@@ -8,6 +8,9 @@ from pathlib import Path
 import re
 from typing import Any
 
+from src.nlp_runtime.advisory import SUGGESTION_ALLOWLIST
+from src.nlp_runtime.integrity import REQUIRED_RUNTIME_PROVENANCE, RUNTIME_CONTRACT
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 INDEX_SCHEMA = "semantic-sections-1"
@@ -15,6 +18,16 @@ DEFAULT_CHUNK_WORDS = 320
 DEFAULT_CHUNK_OVERLAP_WORDS = 40
 
 IndexDocument = tuple[str, str, dict[str, Any]]
+RETRIEVAL_ENTITY_ALLOWLIST = frozenset(
+    {
+        "BANKA",
+        "HEDEF_KITLE",
+        "KAMPANYA_AVANTAJI",
+        "KAMPANYA_TARIHI",
+        "PROMOSYON_KODU",
+        "URUN_TURU",
+    }
+)
 
 
 def _digest(*values: Any) -> str:
@@ -33,6 +46,131 @@ def _field_lines(structured: dict[str, Any]) -> list[str]:
         unit = f" {contract.get('unit')}" if contract.get("unit") else ""
         lines.append(f"{name}: {contract['value']}{unit}")
     return lines
+
+
+def _evidence_matches(text: str, evidence: Any) -> bool:
+    if not isinstance(evidence, dict):
+        return False
+    start = evidence.get("char_start")
+    end = evidence.get("char_end")
+    value = evidence.get("text")
+    return (
+        isinstance(start, int)
+        and not isinstance(start, bool)
+        and isinstance(end, int)
+        and not isinstance(end, bool)
+        and isinstance(value, str)
+        and start >= 0
+        and end > start
+        and text[start:end] == value
+    )
+
+
+def _render_advisory_value(value: Any) -> str:
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return str(value)
+
+
+def _advisory_lines(record: dict[str, Any], content: str) -> list[str]:
+    analysis = record.get("nlp_analysis")
+    if (
+        not isinstance(analysis, dict)
+        or analysis.get("contract") != RUNTIME_CONTRACT
+        or analysis.get("provenance") != REQUIRED_RUNTIME_PROVENANCE
+    ):
+        return []
+    analyzed_text = "\n".join(
+        part for part in (str(record.get("title") or "").strip(), content) if part
+    )
+    nested_record = analysis.get("record")
+    if not isinstance(nested_record, dict):
+        return []
+    source_hash = nested_record.get("source_content_hash")
+    current_hash = record.get("content_hash")
+    if (
+        not isinstance(source_hash, str)
+        or not source_hash
+        or not isinstance(current_hash, str)
+        or not current_hash
+        or source_hash != current_hash
+    ):
+        return []
+    source_version = nested_record.get("source_version")
+    current_version = record.get("source_version")
+    if (
+        isinstance(source_version, bool)
+        or not isinstance(source_version, int)
+        or isinstance(current_version, bool)
+        or not isinstance(current_version, int)
+        or source_version != current_version
+    ):
+        return []
+    if nested_record.get("text_sha256") != sha256(analyzed_text.encode("utf-8")).hexdigest():
+        return []
+    lines = []
+    suggestions = analysis.get("suggestions")
+    if isinstance(suggestions, dict):
+        for field, suggestion in sorted(suggestions.items()):
+            if (
+                field not in SUGGESTION_ALLOWLIST
+                or not isinstance(suggestion, dict)
+                or suggestion.get("advisory") is not True
+                or suggestion.get("value") is None
+            ):
+                continue
+            evidence = suggestion.get("evidence")
+            if not _evidence_matches(analyzed_text, evidence):
+                continue
+            lines.append(
+                "Alan önerisi "
+                f"{field}: {_render_advisory_value(suggestion.get('value'))}; "
+                f"kanıt: {evidence['text']}"
+            )
+    classification = analysis.get("classification")
+    if isinstance(classification, dict):
+        product = classification.get("product_category")
+        if isinstance(product, dict) and _evidence_matches(
+            analyzed_text, product.get("evidence")
+        ):
+            lines.append(
+                "Sınıflandırma sinyali product_category: "
+                f"{product.get('value')}; kanıt: {product['evidence']['text']}"
+            )
+        dimensions = classification.get("dimensions")
+        if isinstance(dimensions, dict):
+            for dimension, values in sorted(dimensions.items()):
+                if not isinstance(values, list):
+                    continue
+                for value in values:
+                    if not isinstance(value, dict) or not _evidence_matches(
+                        analyzed_text, value.get("evidence")
+                    ):
+                        continue
+                    lines.append(
+                        f"Sınıflandırma sinyali {dimension}: {value.get('value')}; "
+                        f"kanıt: {value['evidence']['text']}"
+                    )
+    entities = analysis.get("entities")
+    if isinstance(entities, list):
+        for entity in entities:
+            if (
+                not isinstance(entity, dict)
+                or entity.get("label") not in RETRIEVAL_ENTITY_ALLOWLIST
+            ):
+                continue
+            evidence = {
+                "text": entity.get("text"),
+                "char_start": entity.get("start"),
+                "char_end": entity.get("end"),
+            }
+            if not _evidence_matches(analyzed_text, evidence):
+                continue
+            lines.append(
+                f"NER sinyali {entity.get('label')}: {entity.get('text')}; "
+                f"kanıt: {entity.get('text')}"
+            )
+    return list(dict.fromkeys(lines))
 
 
 def _word_windows(
@@ -104,6 +242,8 @@ def campaign_documents(
         if part
     )
     field_text = "; ".join(field_lines)
+    advisory_lines = _advisory_lines(record, content)
+    advisory_text = "\n".join(advisory_lines)
     base_metadata = {
         "source_type": "campaign",
         "campaign_id": identifier,
@@ -121,6 +261,10 @@ def campaign_documents(
     combined_parts = [part for part in (header, content) if part]
     if field_text:
         combined_parts.append("Yapılandırılmış alanlar: " + field_text)
+    if advisory_text:
+        combined_parts.append(
+            "NLP danışmanlık sinyalleri (otoriter filtre değildir):\n" + advisory_text
+        )
     combined = "\n".join(combined_parts)
     if len(re.findall(r"\S+", combined)) <= max_words:
         if not combined:
@@ -153,23 +297,33 @@ def campaign_documents(
             },
         )
         documents.append((f"campaign:{identifier}:content:{index:03d}", text, metadata))
-    if field_text:
+    if field_text or advisory_text:
         text = "\n".join(
             part
-            for part in (header, "Yapılandırılmış alanlar: " + field_text)
+            for part in (
+                header,
+                "Yapılandırılmış alanlar: " + field_text if field_text else "",
+                (
+                    "NLP danışmanlık sinyalleri (otoriter filtre değildir):\n"
+                    + advisory_text
+                    if advisory_text
+                    else ""
+                ),
+            )
             if part
         )
         metadata = _metadata_with_hash(
             text,
             {
                 **base_metadata,
-                "section": "structured_fields",
+                "section": "structured_fields" if field_text else "nlp_advisory",
                 "chunk_index": 0,
                 "char_start": -1,
                 "char_end": -1,
             },
         )
-        documents.append((f"campaign:{identifier}:structured:000", text, metadata))
+        suffix = "structured" if field_text else "nlp-advisory"
+        documents.append((f"campaign:{identifier}:{suffix}:000", text, metadata))
     return documents
 
 

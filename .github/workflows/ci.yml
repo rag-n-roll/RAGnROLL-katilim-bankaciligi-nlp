@@ -60,6 +60,8 @@ jobs:
       COMPOSE_PROJECT_NAME: ragnroll-ci
       RAGNROLL_CHROMA_ENABLED: "false"
       RAGNROLL_CHROMA_AUTO_INDEX: "true"
+      RAGNROLL_NLP_AUTO_ENRICH: "true"
+      RAGNROLL_NLP_MAX_RECORDS: "1"
       RAGNROLL_EMBEDDING_WARMUP: "false"
       RAGNROLL_LLM_ENABLED: "false"
       RAGNROLL_REFRESH_DATASET: /app/bootstrap/campaigns.json
@@ -113,7 +115,7 @@ jobs:
             fi
             sleep 2
           done
-          python -c 'import json,sys; p=json.loads(sys.argv[1]); assert p["status"] == "completed"; assert p["index_status"] == "completed"; assert "\"smoke\": true" in p["index_message"]' \
+          python -c 'import json,sys; p=json.loads(sys.argv[1]); assert p["status"] == "completed"; assert p["enrichment_status"] == "completed"; assert p["index_status"] == "completed"; assert "\"smoke\": true" in p["index_message"]' \
             "$payload"
       - name: Container logları
         if: always()

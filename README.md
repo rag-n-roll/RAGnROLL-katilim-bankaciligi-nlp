@@ -9,6 +9,7 @@ karşılaştırma ve kaynaklı soru-cevap sunan yerel çalışabilir platform.
 - BDDK kataloğu güdümlü, robots/TLS kurallarına saygılı 10 banka adaptörü
 - Ham kayıt, temiz metin, yapılandırılmış alan ve değerlendirme katmanları
 - Exact hash, near-duplicate kümeleri ve zamansal kayıt sürüm geçmişi
+- Hash ve tam bağımlılık sürümü doğrulanan sınıflandırıcı + NER danışmanlık analizi
 - Her alan için değer, durum, güven, yöntem ve karakter aralıklı kanıt
 - 12 intent, katılım finans terminolojisi ve SQL-first sorgu derleyici
 - Koşul/tanım soruları için Qwen embedding + Chroma + BM25 + yönlendirilmiş graph retrieval
@@ -21,7 +22,8 @@ karşılaştırma ve kaynaklı soru-cevap sunan yerel çalışabilir platform.
 
 ## Hızlı başlangıç
 
-Python 3.11 veya üstü önerilir.
+Python 3.11 önerilir. Model artefaktları spaCy 3.8.15, scikit-learn 1.9.0 ve
+joblib 1.5.3 ile fail-closed çalışır; farklı sürümde deserialize edilmez.
 
 ```bash
 python3 -m venv .venv
@@ -92,7 +94,17 @@ aramasından önce uygulanır; ontoloji graph'ı yalnız ilişkisel sorgularda a
 
 API üzerinden başarılı veya kısmi veri yenilemesinden sonra artımlı indekslemeyi
 otomatik çalıştırmak için `RAGNROLL_CHROMA_AUTO_INDEX=true` ayarlanabilir. Compose
-kurulumunda bu seçenek açıktır.
+kurulumunda `RAGNROLL_NLP_AUTO_ENRICH=true` ile danışmanlık analizi de açıktır;
+iş sırası scrape, zenginleştirme ve indekslemedir. Doğrudan Python çalıştırmada
+zenginleştirme varsayılan olarak kapalıdır. Elle çalıştırmak için:
+
+```bash
+python -m scripts.enrich_nlp --database data/ragnroll.sqlite3
+```
+
+Analiz `structured` alanları değiştirmez; yalnız eksik alan önerilerini üst düzey
+`nlp_analysis` altında saklar. İndeks filtreleri otoriter alanlardan gelmeye devam
+eder.
 
 Ardından API ve dashboard'u hızlı başlangıçtaki komutlarla çalıştırın. vLLM
 erişilemez, boş yanıt üretir veya geçerli kaynak etiketi vermezse kullanıcıya

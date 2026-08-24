@@ -303,6 +303,97 @@ def test_refresh_manager_marks_index_failure_as_partial(tmp_path):
     assert "model belleği kullanılamadı" in status["index_message"]
 
 
+def test_refresh_manager_runs_enrichment_before_incremental_index(tmp_path):
+    calls = []
+
+    def successful_pipeline(command, **kwargs):
+        calls.append(command)
+        if "scripts.enrich_nlp" in command:
+            return SimpleNamespace(
+                returncode=0,
+                stdout='{"status":"completed","changed":1}',
+                stderr="",
+            )
+        if "scripts.ingest_chroma" in command:
+            return SimpleNamespace(
+                returncode=0,
+                stdout='{"embedded":1}',
+                stderr="",
+            )
+        return SimpleNamespace(returncode=0, stdout="1 kayıt güncellendi", stderr="")
+
+    manager = RefreshManager(
+        runner=successful_pipeline,
+        auto_enrich=True,
+        auto_index=True,
+    )
+    job = manager.create(1)
+    manager.run(job["id"], tmp_path / "ordered.sqlite3")
+
+    assert [
+        "scrape"
+        if "src.scraper.scraper" in command
+        else "enrich"
+        if "scripts.enrich_nlp" in command
+        else "index"
+        for command in calls
+    ] == ["scrape", "enrich", "index"]
+    status = manager.get(job["id"])
+    assert status["status"] == "completed"
+    assert status["enrichment_status"] == "completed"
+    assert status["index_status"] == "completed"
+
+
+def test_enrichment_failure_is_partial_but_index_still_runs(tmp_path):
+    calls = []
+
+    def enrichment_failure(command, **kwargs):
+        calls.append(command)
+        if "scripts.enrich_nlp" in command:
+            return SimpleNamespace(returncode=1, stdout="", stderr="manifest uyuşmuyor")
+        if "scripts.ingest_chroma" in command:
+            return SimpleNamespace(returncode=0, stdout='{"embedded":0}', stderr="")
+        return SimpleNamespace(returncode=0, stdout="scrape tamamlandı", stderr="")
+
+    manager = RefreshManager(
+        runner=enrichment_failure,
+        auto_enrich=True,
+        auto_index=True,
+    )
+    job = manager.create(1)
+    manager.run(job["id"], tmp_path / "enrichment-failure.sqlite3")
+
+    status = manager.get(job["id"])
+    assert len(calls) == 3
+    assert status["status"] == "partial"
+    assert status["enrichment_status"] == "failed"
+    assert status["enrichment_return_code"] == 1
+    assert status["index_status"] == "completed"
+    assert "manifest uyuşmuyor" in status["message"]
+
+
+def test_scrape_failure_skips_both_enrichment_and_index(tmp_path):
+    calls = []
+
+    def scrape_failure(command, **kwargs):
+        calls.append(command)
+        return SimpleNamespace(returncode=1, stdout="", stderr="kaynak hatası")
+
+    manager = RefreshManager(
+        runner=scrape_failure,
+        auto_enrich=True,
+        auto_index=True,
+    )
+    job = manager.create(1)
+    manager.run(job["id"], tmp_path / "scrape-failure.sqlite3")
+
+    status = manager.get(job["id"])
+    assert len(calls) == 1
+    assert status["status"] == "failed"
+    assert status["enrichment_status"] == "skipped"
+    assert status["index_status"] == "skipped"
+
+
 def test_refresh_manager_bounds_reported_subprocess_output(tmp_path):
     def noisy_run(command, **kwargs):
         return SimpleNamespace(returncode=1, stdout="x" * 200, stderr="son-hata")
