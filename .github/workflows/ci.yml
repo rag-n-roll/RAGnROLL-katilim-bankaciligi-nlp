@@ -1,33 +1,123 @@
 name: CI
 
-on:
+"on":
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
-  lint-and-test:
+  backend:
     runs-on: ubuntu-latest
-
     steps:
       - name: Kodları çek
         uses: actions/checkout@v4
-
       - name: Python kur
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
+          cache: pip
       - name: Bağımlılıkları kur
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: Lint (flake8)
+      - name: Python lint
+        run: flake8 src tests --max-line-length=100 --extend-ignore=E203
+      - name: Backend testleri
+        run: pytest tests/ -q --cov=src --cov-report=term --cov-fail-under=70
+      - name: Golden Set değerlendirmesi
         run: |
-          flake8 src tests --max-line-length=100 --extend-ignore=E203
+          python -m src.evaluation.golden \
+            data/model_training_data/golden_evaluation_set.jsonl \
+            --output /tmp/golden-report.json
+          python -c 'import json; p=json.load(open("/tmp/golden-report.json")); assert p["intent"]["exact_match"] >= 0.85; assert p["supported_extraction_fields"]["exact_match"] >= 0.82'
 
-      - name: Testleri çalıştır (pytest)
+  dashboard:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/dashboard
+    steps:
+      - name: Kodları çek
+        uses: actions/checkout@v4
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: src/dashboard/package-lock.json
+      - name: Bağımlılıkları kur
+        run: npm ci
+      - name: Dashboard lint
+        run: npm run lint
+      - name: Dashboard build
+        run: npm run build
+
+  container-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      COMPOSE_PROJECT_NAME: ragnroll-ci
+      RAGNROLL_CHROMA_ENABLED: "false"
+      RAGNROLL_CHROMA_AUTO_INDEX: "true"
+      RAGNROLL_EMBEDDING_WARMUP: "false"
+      RAGNROLL_LLM_ENABLED: "false"
+      RAGNROLL_REFRESH_DATASET: /app/bootstrap/campaigns.json
+      RAGNROLL_INDEX_SMOKE: "true"
+      RAGNROLL_CHROMA_COLLECTION: ragnroll_container_smoke
+    steps:
+      - name: Kodları çek
+        uses: actions/checkout@v4
+      - name: Compose sözleşmesini doğrula
+        run: docker compose config --quiet
+      - name: API ve dashboard imajlarını oluştur
+        run: docker compose build api dashboard
+      - name: Temiz volume ile servisleri başlat
+        run: docker compose up --detach api dashboard
+      - name: API ve dashboard smoke
         run: |
-          pytest tests/ -v
+          for attempt in $(seq 1 45); do
+            if curl --fail --silent http://localhost:8000/api/v1/health >/dev/null \
+              && curl --fail --silent http://localhost:3000/ >/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 45 ]; then
+              docker compose ps
+              exit 1
+            fi
+            sleep 2
+          done
+          summary=$(curl --fail --silent --show-error \
+            http://localhost:8000/api/v1/dashboard/summary)
+          python -c 'import json,sys; p=json.loads(sys.argv[1]); assert p["record_count"] > 0' \
+            "$summary"
+      - name: API refresh ve otomatik indeks smoke
+        run: |
+          created=$(curl --fail --silent --show-error \
+            -X POST http://localhost:8000/api/v1/data-refresh \
+            -H 'content-type: application/json' \
+            -d '{"max_per_bank":1}')
+          job_id=$(python -c 'import json,sys; print(json.loads(sys.argv[1])["id"])' \
+            "$created")
+          payload='{}'
+          for attempt in $(seq 1 60); do
+            payload=$(curl --fail --silent --show-error \
+              "http://localhost:8000/api/v1/data-refresh/$job_id")
+            status=$(python -c 'import json,sys; print(json.loads(sys.argv[1])["status"])' \
+              "$payload")
+            case "$status" in
+              completed|partial|failed) break ;;
+            esac
+            if [ "$attempt" -eq 60 ]; then
+              exit 1
+            fi
+            sleep 2
+          done
+          python -c 'import json,sys; p=json.loads(sys.argv[1]); assert p["status"] == "completed"; assert p["index_status"] == "completed"; assert "\"smoke\": true" in p["index_message"]' \
+            "$payload"
+      - name: Container logları
+        if: always()
+        run: docker compose logs --no-color
+      - name: Container ve volume temizliği
+        if: always()
+        run: docker compose down --volumes --remove-orphans

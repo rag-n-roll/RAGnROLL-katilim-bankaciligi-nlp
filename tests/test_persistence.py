@@ -39,6 +39,16 @@ def test_initialize_creates_required_schema_idempotently(tmp_path):
     assert {"schema_meta", "scrape_runs", "banks", "products", "campaigns"} <= tables
 
 
+def test_initialize_does_not_touch_unchanged_database(tmp_path):
+    store = CampaignStore(tmp_path / "campaigns.sqlite3")
+    store.initialize()
+    modified_at = store.path.stat().st_mtime_ns
+
+    store.initialize()
+
+    assert store.path.stat().st_mtime_ns == modified_at
+
+
 def test_upsert_preserves_single_campaign_and_nullable_product_link(tmp_path):
     store = CampaignStore(tmp_path / "campaigns.sqlite3")
     row = record()

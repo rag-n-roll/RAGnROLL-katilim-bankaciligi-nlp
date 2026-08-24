@@ -1,26 +1,51 @@
-version: "3.9"
-
 services:
-  ollama:
-    image: ollama/ollama:latest
-    container_name: teknofest_ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    restart: unless-stopped
-
-  chatbot:
+  api:
     build: .
-    container_name: teknofest_chatbot
     ports:
       - "8000:8000"
     environment:
-      - OLLAMA_HOST=http://ollama:11434
-      - OLLAMA_MODEL=gemma2
+      RAGNROLL_CORS_ORIGINS: ${RAGNROLL_CORS_ORIGINS:-http://localhost:3000}
+      RAGNROLL_DB_PATH: /app/runtime/ragnroll.sqlite3
+      RAGNROLL_RUNTIME_ROOT: /app/runtime
+      RAGNROLL_BOOTSTRAP_DATASET: /app/bootstrap/campaigns.json
+      RAGNROLL_CHROMA_ENABLED: ${RAGNROLL_CHROMA_ENABLED:-true}
+      RAGNROLL_CHROMA_AUTO_INDEX: ${RAGNROLL_CHROMA_AUTO_INDEX:-true}
+      RAGNROLL_CHROMA_PATH: /app/chroma_db
+      RAGNROLL_CHROMA_COLLECTION: ${RAGNROLL_CHROMA_COLLECTION:-katilim_bankaciligi_qwen3}
+      RAGNROLL_EMBEDDING_MODEL: ${RAGNROLL_EMBEDDING_MODEL:-Qwen/Qwen3-Embedding-0.6B}
+      RAGNROLL_EMBEDDING_BATCH_SIZE: ${RAGNROLL_EMBEDDING_BATCH_SIZE:-4}
+      RAGNROLL_EMBEDDING_WARMUP: ${RAGNROLL_EMBEDDING_WARMUP:-true}
+      RAGNROLL_INDEX_BATCH_SIZE: ${RAGNROLL_INDEX_BATCH_SIZE:-64}
+      RAGNROLL_INDEX_SMOKE: ${RAGNROLL_INDEX_SMOKE:-false}
+      RAGNROLL_REFRESH_DATASET: ${RAGNROLL_REFRESH_DATASET:-}
+      RAGNROLL_LLM_ENABLED: ${RAGNROLL_LLM_ENABLED:-true}
+      RAGNROLL_LLM_BASE_URL: ${RAGNROLL_LLM_BASE_URL:-http://host.docker.internal:8001/v1}
+      RAGNROLL_LLM_MODEL: ${RAGNROLL_LLM_MODEL:-gemma4:e4b-mlx}
+    volumes:
+      - runtime_data:/app/runtime
+      - chroma_data:/app/chroma_db
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: ./src/dashboard
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
     depends_on:
-      - ollama
+      api:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  ollama_data:
+  runtime_data:
+  chroma_data:

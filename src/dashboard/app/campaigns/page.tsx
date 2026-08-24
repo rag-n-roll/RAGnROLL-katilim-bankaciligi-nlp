@@ -1,311 +1,165 @@
-import styles from "./page.module.css";
+"use client";
 
-const campaigns = [
-  {
-    bank: "Kuveyt Türk",
-    initials: "KT",
-    name: "Taşıt Finansmanı Özel Oran Kampanyası",
-    type: "Finansman",
-  },
-  {
-    bank: "Albaraka Türk",
-    initials: "AT",
-    name: "Davet Et Kazan Kampanyası",
-    type: "Kart",
-    selected: true,
-  },
-  {
-    bank: "Türkiye Finans",
-    initials: "TF",
-    name: "Katılma Hesabı Hoş Geldin Kampanyası",
-    type: "Yatırım",
-  },
-  {
-    bank: "Vakıf Katılım",
-    initials: "VK",
-    name: "Otomobil Finansmanı Avantajlı Paket",
-    type: "Finansman",
-  },
-  {
-    bank: "Ziraat Katılım",
-    initials: "ZK",
-    name: "Esnek Hesap Açılış Kampanyası",
-    type: "Yatırım",
-  },
-];
+import { FormEvent, useEffect, useState } from "react";
+import {
+  Campaign,
+  getCampaignDetail,
+  getCampaigns,
+  getFilters,
+} from "../../services/api";
+import styles from "../live.module.css";
 
-const tableRows = [
-  {
-    bank: "Kuveyt Türk",
-    initials: "KT",
-    campaign: "Taşıt Finansmanı Özel Oran Kampanyası",
-    type: "Finansman",
-    rate: "%2,49",
-    term: "24 Ay",
-    cost: "0 TL",
-    validity: "20 Mayıs 2024 – 30 Haziran 2024",
-    best: true,
-  },
-  {
-    bank: "Albaraka Türk",
-    initials: "AT",
-    campaign: "Davet Et Kazan Kampanyası",
-    type: "Kart",
-    rate: "%2,69",
-    term: "36 Ay",
-    cost: "0 TL",
-    validity: "19 Mayıs 2024 – 30 Haziran 2024",
-  },
-  {
-    bank: "Türkiye Finans",
-    initials: "TF",
-    campaign: "Katılma Hesabı Hoş Geldin Kampanyası",
-    type: "Yatırım",
-    rate: "%2,79",
-    term: "48 Ay",
-    cost: "250 TL",
-    validity: "18 Mayıs 2024 – 30 Haziran 2024",
-  },
-  {
-    bank: "Vakıf Katılım",
-    initials: "VK",
-    campaign: "Otomobil Finansmanı Avantajlı Paket",
-    type: "Finansman",
-    rate: "%2,89",
-    term: "36 Ay",
-    cost: "250 TL",
-    validity: "17 Mayıs 2024 – 30 Haziran 2024",
-  },
-  {
-    bank: "Ziraat Katılım",
-    initials: "ZK",
-    campaign: "Esnek Hesap Açılış Kampanyası",
-    type: "Yatırım",
-    rate: "%2,59",
-    term: "24 Ay",
-    cost: "0 TL",
-    validity: "16 Mayıs 2024 – 30 Haziran 2024",
-  },
-];
+type Filters = Awaited<ReturnType<typeof getFilters>>;
 
-function getTypeClass(type: string) {
-  if (type === "Kart") return styles.cardBadge;
-  if (type === "Yatırım") return styles.investmentBadge;
-
-  return styles.financeBadge;
+function displayValue(value: unknown) {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "object") return JSON.stringify(value, null, 2);
+  return String(value);
 }
 
 export default function CampaignsPage() {
+  const [filters, setFilters] = useState<Filters | null>(null);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [selected, setSelected] = useState<Campaign | null>(null);
+  const [bank, setBank] = useState("");
+  const [product, setProduct] = useState("");
+  const [search, setSearch] = useState("");
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  async function loadCampaigns() {
+    setLoading(true);
+    setError("");
+    try {
+      const result = await getCampaigns({
+        bank_slug: bank,
+        product_type: product,
+        search: search.trim() || undefined,
+        limit: 50,
+      });
+      setCampaigns(result.items);
+      setTotal(result.total);
+      if (result.items[0]) {
+        setSelected(await getCampaignDetail(result.items[0].id));
+      } else {
+        setSelected(null);
+      }
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Kampanyalar yüklenemedi.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    Promise.all([getFilters(), getCampaigns({ limit: 50 })])
+      .then(async ([filterResult, campaignResult]) => {
+        setFilters(filterResult);
+        setCampaigns(campaignResult.items);
+        setTotal(campaignResult.total);
+        if (campaignResult.items[0]) {
+          setSelected(await getCampaignDetail(campaignResult.items[0].id));
+        }
+      })
+      .catch((reason: Error) => setError(reason.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    void loadCampaigns();
+  }
+
+  async function selectCampaign(campaign: Campaign) {
+    setError("");
+    try {
+      setSelected(await getCampaignDetail(campaign.id));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Kampanya detayı yüklenemedi.");
+    }
+  }
+
+  const fields = Object.entries(selected?.structured?.fields ?? {});
+
   return (
     <main className={styles.main}>
-      <section className={styles.pageHeader}>
+      <header className={styles.header}>
         <div>
-          <h1 className={styles.title}>Kampanya Merkezi</h1>
-
-          <p className={styles.description}>
-            Bankaların güncel kampanyalarını, kampanya metinlerini ve çıkarılan
-            finansal bilgileri tek ekranda inceleyin.
-          </p>
+          <h1>Kampanya merkezi</h1>
+          <p>Ham metni, yapılandırılmış alanı ve alanın kaynak kanıtını birlikte inceleyin.</p>
         </div>
+        <span className={styles.badge}>{total} kayıt</span>
+      </header>
 
-        <div className={styles.headerDecoration}>
-          <span className={styles.waveOne}></span>
-          <span className={styles.waveTwo}></span>
-          <span className={styles.waveThree}></span>
-        </div>
-      </section>
+      <form className={styles.controls} onSubmit={submit}>
+        <select aria-label="Banka" value={bank} onChange={(event) => setBank(event.target.value)}>
+          <option value="">Tüm bankalar</option>
+          {filters?.banks.map((item) => <option key={item.value} value={item.value}>{item.label} ({item.count})</option>)}
+        </select>
+        <select aria-label="Ürün türü" value={product} onChange={(event) => setProduct(event.target.value)}>
+          <option value="">Tüm ürün türleri</option>
+          {filters?.product_types.map((item) => <option key={item.value} value={item.value}>{item.label} ({item.count})</option>)}
+        </select>
+        <input aria-label="Kampanya ara" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Kampanya başlığında ara" minLength={2} />
+        <button className={styles.button} disabled={loading} type="submit">Filtrele</button>
+      </form>
 
-      <section className={styles.campaignWorkspace}>
-        {/* SOL KART */}
-        <article className={styles.panel}>
-          <div className={styles.panelHeader}>
-            <h2>Banka Bazlı Tüm Kampanyalar</h2>
+      {error && <p className={styles.error} role="alert">{error}</p>}
+      {loading && <p className={styles.status}>Kampanyalar yükleniyor…</p>}
+      {!loading && !error && campaigns.length === 0 && <p className={styles.status}>Filtreyle eşleşen kampanya bulunamadı.</p>}
 
-            <span className={styles.campaignCount}>25 kampanya</span>
-          </div>
-
-          <div className={styles.campaignList}>
+      <section className={styles.grid}>
+        <article className={styles.card}>
+          <h2>Kampanyalar</h2>
+          <div className={styles.list}>
             {campaigns.map((campaign) => (
-              <div
-                key={campaign.bank}
-                className={`${styles.campaignRow} ${
-                  campaign.selected ? styles.selectedCampaign : ""
-                }`}
+              <button
+                className={`${styles.listButton} ${selected?.id === campaign.id ? styles.selected : ""}`}
+                key={campaign.id}
+                onClick={() => void selectCampaign(campaign)}
+                type="button"
               >
-                <div className={styles.bankIcon}>{campaign.initials}</div>
-
-                <div className={styles.campaignInfo}>
-                  <strong>{campaign.bank}</strong>
-                  <span>{campaign.name}</span>
-                </div>
-
-                <span
-                  className={`${styles.typeBadge} ${getTypeClass(
-                    campaign.type
-                  )}`}
-                >
-                  {campaign.type}
-                </span>
-              </div>
+                <strong>{campaign.bank_name}</strong><br />
+                <span className={styles.muted}>{campaign.title}</span>
+              </button>
             ))}
           </div>
-
-          <button className={styles.viewAllButton}>
-            Tümünü Görüntüle <span>›</span>
-          </button>
         </article>
-
-        {/* ORTA KART */}
-        <article className={styles.panel}>
-          <div className={styles.contentTitle}>
-            <span className={styles.titleIcon}>▤</span>
-            <h2>Kampanya Metni</h2>
-          </div>
-
-          <div className={styles.campaignText}>
-            <p>
-              Albaraka Türk müşterilerini Albaraka Mobil uygulaması üzerinden
-              “Davet Et Kazan” kampanyasına davet ediyoruz.
-            </p>
-
-            <p>
-              Kampanya kapsamında, Albaraka Mobil’i ilk kez indiren ve davet
-              kodunuzu kullanarak müşteri olan her arkadaşınız için 100 TL
-              değerinde hediye puan kazanırsınız. Arkadaşınızın ilk harcaması
-              sonrasında puanınız hesabınıza yüklenir.
-            </p>
-
-            <p>
-              Kampanyadan yararlanmak için Albaraka Mobil uygulamasında yer alan
-              kampanya sayfasından davet kodunuzu paylaşmanız yeterlidir.
-            </p>
-
-            <p>
-              Kampanya 19 Mayıs 2024 – 30 Haziran 2024 tarihleri arasında
-              geçerlidir.
-            </p>
-
-            <p>
-              Detaylı bilgi için uygulamamızdaki kampanya sayfasını ziyaret
-              ediniz.
-            </p>
-          </div>
-
-          <div className={styles.aiNotice}>
-            <span>ⓘ</span>
-            Bu metin yapay zeka ile analiz edilerek finansal bilgiler
-            çıkarılmıştır.
-          </div>
-        </article>
-
-        {/* SAĞ KART */}
-        <article className={styles.panel}>
-          <div className={styles.contentTitle}>
-            <span className={styles.titleIcon}>✣</span>
-            <h2>Çıkarılan Bilgiler</h2>
-          </div>
-
-          <div className={styles.extractedList}>
-            <div className={styles.extractedRow}>
-              <span className={styles.extractedLabel}>🏦 Banka</span>
-              <strong>Albaraka Türk</strong>
-            </div>
-
-            <div className={styles.extractedRow}>
-              <span className={styles.extractedLabel}>▣ Ürün Türü</span>
-              <span
-                className={`${styles.typeBadge} ${styles.cardBadge}`}
-              >
-                Kart
-              </span>
-            </div>
-
-            <div className={styles.extractedRow}>
-              <span className={styles.extractedLabel}>% Kâr Payı</span>
-              <strong>%2,69</strong>
-            </div>
-
-            <div className={styles.extractedRow}>
-              <span className={styles.extractedLabel}>▣ Vade</span>
-              <strong>36 Ay</strong>
-            </div>
-
-            <div className={styles.extractedRow}>
-              <span className={styles.extractedLabel}>◉ Masraf</span>
-              <strong>0 TL</strong>
-            </div>
-
-            <div className={styles.extractedRow}>
-              <span className={styles.extractedLabel}>♙ Başvuru Koşulu</span>
-              <strong>Albaraka Mobil üzerinden ilk kez müşteri olanlar</strong>
-            </div>
-
-            <div className={styles.extractedRow}>
-              <span className={styles.extractedLabel}>▣ Geçerlilik Tarihi</span>
-              <strong>19 Mayıs 2024 – 30 Haziran 2024</strong>
-            </div>
-          </div>
+        <article className={styles.card}>
+          <h2>{selected?.title ?? "Kampanya detayı"}</h2>
+          {selected ? (
+            <>
+              <p className={styles.code}>{selected.content || "Kaynak metin bulunmuyor."}</p>
+              <p className={styles.muted}>
+                Kaynak: <a className={styles.source} href={selected.source_url} rel="noreferrer" target="_blank">{selected.source_url}</a>
+              </p>
+            </>
+          ) : <p className={styles.muted}>İncelemek için bir kampanya seçin.</p>}
         </article>
       </section>
 
-      {/* ALT TABLO */}
-      <section className={styles.tableCard}>
-        <h2>Yapılandırılmış Veri Tablosu</h2>
-
-        <div className={styles.tableWrapper}>
-          <table className={styles.dataTable}>
-            <thead>
-              <tr>
-                <th>Banka</th>
-                <th>Kampanya Adı</th>
-                <th>Tür</th>
-                <th>Kâr Payı</th>
-                <th>Vade</th>
-                <th>Masraf</th>
-                <th>Geçerlilik</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {tableRows.map((row) => (
-                <tr key={row.bank}>
-                  <td>
-                    <div className={styles.tableBank}>
-                      <span className={styles.smallBankIcon}>
-                        {row.initials}
-                      </span>
-
-                      <strong>{row.bank}</strong>
-                    </div>
-                  </td>
-
-                  <td className={styles.campaignCell}>{row.campaign}</td>
-
-                  <td>
-                    <span
-                      className={`${styles.typeBadge} ${getTypeClass(row.type)}`}
-                    >
-                      {row.type}
-                    </span>
-                  </td>
-
-                  <td>
-                    <strong>{row.rate}</strong>
-
-                    {row.best && (
-                      <span className={styles.bestBadge}>En Düşük</span>
-                    )}
-                  </td>
-
-                  <td>{row.term}</td>
-                  <td>{row.cost}</td>
-                  <td>{row.validity}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {selected && (
+        <section className={styles.card} style={{ marginTop: 16 }}>
+          <h2>Alan sözleşmeleri</h2>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead><tr><th>Alan</th><th>Değer</th><th>Durum</th><th>Güven</th><th>Kanıt</th></tr></thead>
+              <tbody>
+                {fields.map(([name, field]) => (
+                  <tr key={name}>
+                    <td><strong>{name}</strong></td>
+                    <td><pre>{displayValue(field.value)}</pre></td>
+                    <td><span className={`${styles.badge} ${field.status === "EXPLICIT" ? "" : styles.warningBadge}`}>{field.status}</span></td>
+                    <td>{Math.round(field.confidence * 100)}%</td>
+                    <td>{field.evidence?.text ?? "Kaynakta belirtilmemiş"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

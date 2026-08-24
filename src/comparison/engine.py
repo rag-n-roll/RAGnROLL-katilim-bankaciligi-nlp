@@ -341,6 +341,10 @@ def compare_records(
         row["advantage_score"] = (
             round(total_score / total_weight, 4) if total_weight else None
         )
+        configured_weight = sum(weights.values())
+        row["comparison_confidence"] = (
+            round(total_weight / configured_weight, 4) if configured_weight else 0.0
+        )
         reasons = []
         if "rate" in criteria:
             reasons.append(
@@ -360,6 +364,7 @@ def compare_records(
     included.sort(
         key=lambda row: (
             row["advantage_score"] is None,
+            -row["comparison_confidence"],
             -(row["advantage_score"] or 0.0),
             -row["match_score"],
             row["id"],

@@ -3,12 +3,71 @@
 from __future__ import annotations
 
 from typing import Any, Literal
+from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
 
 class ApiModel(BaseModel):
     """Shared base for the versioned API contract."""
+
+
+class ContractResponse(BaseModel):
+    """Yeni uçların ortak izlenebilirlik alanları."""
+
+    api_version: str = "2026.08"
+    request_id: str = Field(default_factory=lambda: uuid4().hex)
+
+
+class ExtractionRequest(ApiModel):
+    text: str = Field(min_length=1, max_length=100_000)
+    start_date: str | None = Field(default=None, max_length=50)
+    end_date: str | None = Field(default=None, max_length=50)
+    source_url: str | None = Field(default=None, max_length=2000)
+
+
+class ExtractionResponse(ContractResponse):
+    extraction: dict[str, Any]
+    warnings: list[str]
+
+
+class QueryCompileRequest(ApiModel):
+    query: str = Field(min_length=1, max_length=2000)
+
+
+class QueryCompileResponse(ContractResponse):
+    plan: dict[str, Any]
+
+
+class GroundedChatRequest(ApiModel):
+    message: str = Field(min_length=1, max_length=4000)
+    source_limit: int = Field(default=5, ge=1, le=10)
+
+
+class GroundedChatResponse(ContractResponse):
+    answer: str
+    facts: list[dict[str, Any]]
+    sources: list[dict[str, Any]]
+    confidence: float = Field(ge=0, le=1)
+    warnings: list[str]
+    plan: dict[str, Any]
+    generation: dict[str, Any]
+
+
+class MetricsSummaryResponse(ContractResponse):
+    observability: dict[str, Any]
+    data_quality: dict[str, Any]
+
+
+class ComparisonContractResponse(ContractResponse):
+    included: list[dict[str, Any]]
+    excluded: list[dict[str, str]]
+    pair_cache_keys: list[str]
+
+
+class RecordVersionsResponse(ContractResponse):
+    record_id: str
+    versions: list[dict[str, Any]]
 
 
 class ComparisonRequest(ApiModel):
@@ -149,3 +208,8 @@ class RefreshJobResponse(ApiModel):
     completed_at: str | None
     timeout_seconds: float = Field(gt=0)
     output_truncated: bool
+    index_status: Literal[
+        "disabled", "pending", "completed", "failed", "skipped"
+    ] = "disabled"
+    index_return_code: int | None = None
+    index_message: str | None = None

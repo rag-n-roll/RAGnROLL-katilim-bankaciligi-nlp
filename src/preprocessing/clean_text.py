@@ -13,6 +13,7 @@ from typing import Any
 
 from bs4 import BeautifulSoup
 
+from src.data_quality import cluster_near_duplicates, content_hash, simhash
 from src.extraction.campaign_fields import extract_prd_fields
 
 TOKEN_RE = re.compile(r"\d+(?:[.,]\d+)*|[^\W\d_]+(?:['’][^\W\d_]+)?", re.UNICODE)
@@ -61,6 +62,11 @@ def preprocess_record(record: dict[str, Any]) -> dict[str, Any]:
     result["clean_text"] = cleaned
     result["tokens"] = tokens
     result["token_count"] = len(tokens)
+    result["canonical_url"] = record.get("canonical_url") or record.get("source_url")
+    result["content_hash"] = content_hash(
+        str(record.get("title") or ""), str(record.get("content") or "")
+    )
+    result["duplicate_fingerprint"] = simhash(cleaned)
     result["structured"] = extract_prd_fields(
         "\n".join(filter(None, [str(record.get("title") or ""), cleaned])),
         start_date=record.get("start_date"),
@@ -75,7 +81,9 @@ def preprocess_dataset(payload: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("Veri setinde 'records' listesi bulunmuyor")
     result = dict(payload)
     result["preprocessed_at"] = datetime.now(timezone.utc).isoformat()
-    result["records"] = [preprocess_record(record) for record in records]
+    result["records"] = cluster_near_duplicates(
+        preprocess_record(record) for record in records if isinstance(record, dict)
+    )
     result["record_count"] = len(result["records"])
     return result
 

@@ -8,6 +8,7 @@ const navItems = [
   { label: "Ana Sayfa", href: "/" },
   { label: "Karşılaştırma", href: "/compare" },
   { label: "Kampanyalar", href: "/campaigns" },
+  { label: "Kalite", href: "/quality" },
 ];
 
 export default function Navbar() {

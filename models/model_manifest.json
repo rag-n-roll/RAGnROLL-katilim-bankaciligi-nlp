@@ -1,0 +1,30 @@
+{
+  "contract": "2026.08",
+  "components": [
+    {
+      "name": "campaign-field-extractor",
+      "runtime": "python-rules",
+      "artifact": "src/extraction/campaign_fields.py",
+      "output_contract": "typed-field-contracts"
+    },
+    {
+      "name": "domain-query-compiler",
+      "runtime": "python-rules-ontology",
+      "artifact": "src/query/compiler.py",
+      "output_contract": "query-plan"
+    },
+    {
+      "name": "hybrid-retriever",
+      "runtime": "qwen-chroma-bm25-knowledge-graph",
+      "artifact": "src/retrieval/hybrid.py",
+      "output_contract": "evidence-package"
+    },
+    {
+      "name": "semantic-embedding",
+      "runtime": "sentence-transformers",
+      "artifact": "Qwen/Qwen3-Embedding-0.6B",
+      "output_contract": "normalized-1024-dimensional-vectors"
+    }
+  ],
+  "generation_policy": "A language model may verbalize evidence but cannot create facts."
+}
