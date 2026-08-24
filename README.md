@@ -110,15 +110,30 @@ Ardından API ve dashboard'u hızlı başlangıçtaki komutlarla çalıştırın
 erişilemez, boş yanıt üretir veya geçerli kaynak etiketi vermezse kullanıcıya
 yarım model cevabı bırakılmaz; doğrulanmış deterministik yanıt otomatik gösterilir.
 
-Türkçe cevap istemini değerlendirme örnekleriyle iyileştirmek için vLLM çalışırken:
+Opsiyonel DSPy/GEPA bağımlılıklarını yalnız deney ortamına kurup önce çevrimdışı
+sözleşme kontrolünü çalıştırın:
 
 ```bash
-python -m scripts.optimize_assistant_prompt --max-metric-calls 24
+pip install -r requirements-prompt-optimization.txt
+python -m src.prompt_optimization.optimize_gepa --check
 ```
 
-GEPA çevrimdışı çalışır; canlı kullanıcı mesajını değiştirmez. Eğitim ve doğrulama
-örnekleri üzerinde en iyi talimatı seçerek çalışma zamanı istem profiline kaydeder.
-Daha geniş bir arama gerektiğinde bunun yerine `--auto light` kullanılabilir.
+Gerçek deney ayrıca çalışan OpenAI uyumlu model endpoint'i ve açık bir runtime
+dizini gerektirir:
+
+```bash
+python -m src.prompt_optimization.optimize_gepa \
+  --runtime-dir runtime \
+  --max-metric-calls 24
+```
+
+934 örneğin committed train/validation/test alanları değiştirilmez. Adaylar yalnız
+validation proxy skoruyla seçilir; test yalnız seçilen adaya uygulanır. Referanslar
+sınıflandırma/NER etiketlerinden türetildiği için bütün sonuçlar `proxy`dir;
+bağımsız gold sağlanmamıştır. Yeni bir deney sonucu bu repoda varsayılmaz veya
+raporlanmaz. Varsayılan canlı prompt değişmez; üretilen aday ancak
+`RAGNROLL_PROMPT_MODE=gepa` ve doğrulanan artifact ile açılır. Ayrıntılar için
+[prompt optimizasyon sözleşmesine](docs/prompt-optimization.md) bakın.
 
 ## Veri hattı
 
