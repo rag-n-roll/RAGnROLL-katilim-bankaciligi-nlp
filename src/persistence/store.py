@@ -5,15 +5,25 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
+from hashlib import sha256
 from pathlib import Path
 import sqlite3
 from typing import Any, Iterable
 
 from src.data_quality import cluster_near_duplicates, content_hash, hamming_distance, simhash
+from src.nlp_runtime.advisory import (
+    RUNTIME_CONTRACT,
+    SUGGESTION_ALLOWLIST,
+    field_is_missing,
+)
 from src.preprocessing.clean_text import preprocess_record
 from src.scraper.models import SCHEMA_VERSION
 
 _DERIVED_FIELDS = frozenset({"clean_text", "tokens", "token_count", "structured"})
+
+
+class StaleNlpAnalysisError(RuntimeError):
+    """Analiz kaynağı ile güncel kayıt artık aynı olmadığında yükseltilir."""
 
 
 class CampaignStore:
@@ -796,6 +806,188 @@ class CampaignStore:
             self._enrich_processed({**preprocess_record(raw), "structured": structured})
             for raw, structured in products
         ]
+
+    @staticmethod
+    def _nlp_text(record: dict[str, Any]) -> str:
+        title = str(record.get("title") or "").strip()
+        content = str(record.get("clean_text") or record.get("content") or "").strip()
+        return "\n".join(part for part in (title, content) if part)
+
+    def nlp_enrichment_candidates(
+        self, *, max_records: int | None = None
+    ) -> list[dict[str, Any]]:
+        """Return a stable snapshot used for analyze-then-apply enrichment."""
+
+        if max_records is not None and (
+            isinstance(max_records, bool)
+            or not isinstance(max_records, int)
+            or max_records < 1
+        ):
+            raise ValueError("max_records pozitif bir tam sayı olmalıdır")
+        self.initialize()
+        query = (
+            "SELECT id, content_hash, source_version, processed_json "
+            "FROM campaigns ORDER BY id"
+        )
+        parameters: tuple[Any, ...] = ()
+        if max_records is not None:
+            query += " LIMIT ?"
+            parameters = (max_records,)
+        with self._connect() as connection:
+            rows = connection.execute(query, parameters).fetchall()
+        result = []
+        for record_id, hash_value, source_version, processed_json in rows:
+            processed = self._json_object(processed_json)
+            text = self._nlp_text(processed)
+            if not text:
+                continue
+            structured = processed.get("structured")
+            result.append(
+                {
+                    "id": str(record_id),
+                    "content_hash": str(hash_value or processed.get("content_hash") or ""),
+                    "source_version": int(source_version or 1),
+                    "text": text,
+                    "text_sha256": sha256(text.encode("utf-8")).hexdigest(),
+                    "structured": structured if isinstance(structured, dict) else {},
+                }
+            )
+        return result
+
+    @staticmethod
+    def _validated_analysis(analysis: Any) -> tuple[str, str, int, str]:
+        if not isinstance(analysis, dict) or analysis.get("contract") != RUNTIME_CONTRACT:
+            raise ValueError("Geçersiz NLP analiz sözleşmesi")
+        record = analysis.get("record")
+        if not isinstance(record, dict):
+            raise ValueError("NLP analizinde kayıt bilgisi eksik")
+        record_id = record.get("id")
+        hash_value = record.get("source_content_hash")
+        source_version = record.get("source_version")
+        text_hash = record.get("text_sha256")
+        if not isinstance(record_id, str) or not record_id:
+            raise ValueError("NLP analizinde kayıt kimliği eksik")
+        if not isinstance(hash_value, str) or len(hash_value) != 64:
+            raise ValueError("NLP analizinde kaynak SHA256 eksik")
+        if (
+            isinstance(source_version, bool)
+            or not isinstance(source_version, int)
+            or source_version < 1
+        ):
+            raise ValueError("NLP analizinde kaynak sürümü eksik")
+        if not isinstance(text_hash, str) or len(text_hash) != 64:
+            raise ValueError("NLP analizinde metin SHA256 eksik")
+        suggestions = analysis.get("suggestions")
+        if not isinstance(suggestions, dict):
+            raise ValueError("NLP analizinde öneri nesnesi eksik")
+        unexpected = set(suggestions) - SUGGESTION_ALLOWLIST
+        if unexpected:
+            raise ValueError(
+                "İzin verilmeyen NLP önerileri: " + ", ".join(sorted(unexpected))
+            )
+        return record_id, hash_value, source_version, text_hash
+
+    @staticmethod
+    def _validate_analysis_evidence(
+        analysis: dict[str, Any], *, text: str, structured: dict[str, Any]
+    ) -> None:
+        for field, suggestion in analysis["suggestions"].items():
+            if not field_is_missing(structured, field):
+                raise ValueError(f"NLP önerisi yalnız eksik alan için saklanabilir: {field}")
+            if not isinstance(suggestion, dict) or suggestion.get("advisory") is not True:
+                raise ValueError(f"Geçersiz NLP önerisi: {field}")
+            suggested_value = suggestion.get("value")
+            if suggested_value in (None, "", [], {}):
+                raise ValueError(f"NLP önerisi değersiz olamaz: {field}")
+            evidence = suggestion.get("evidence")
+            if not isinstance(evidence, dict):
+                raise ValueError(f"NLP önerisi kanıtsız olamaz: {field}")
+            start = evidence.get("char_start")
+            end = evidence.get("char_end")
+            value = evidence.get("text")
+            if (
+                isinstance(start, bool)
+                or not isinstance(start, int)
+                or isinstance(end, bool)
+                or not isinstance(end, int)
+                or not isinstance(value, str)
+                or start < 0
+                or end <= start
+                or text[start:end] != value
+            ):
+                raise ValueError(f"NLP önerisi kanıt aralığı geçersiz: {field}")
+
+    def apply_nlp_analyses(self, analyses: Iterable[dict[str, Any]]) -> int:
+        """Atomically attach advisory analysis without changing source lineage."""
+
+        prepared = list(analyses)
+        if not prepared:
+            return 0
+        identities = [self._validated_analysis(item) for item in prepared]
+        record_ids = [item[0] for item in identities]
+        if len(record_ids) != len(set(record_ids)):
+            raise ValueError("Aynı kayıt için birden fazla NLP analizi verildi")
+        ordered = sorted(zip(identities, prepared), key=lambda item: item[0][0])
+        self.initialize()
+        changed = 0
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            for identity, analysis in ordered:
+                record_id, expected_hash, expected_version, expected_text_hash = identity
+                row = connection.execute(
+                    "SELECT content_hash, source_version, processed_json "
+                    "FROM campaigns WHERE id = ?",
+                    (record_id,),
+                ).fetchone()
+                if row is None:
+                    raise StaleNlpAnalysisError(
+                        f"NLP analiz kaydı artık mevcut değil: {record_id}"
+                    )
+                current_hash = str(row[0] or "")
+                current_version = int(row[1] or 1)
+                processed = self._json_object(row[2])
+                text = self._nlp_text(processed)
+                current_text_hash = sha256(text.encode("utf-8")).hexdigest()
+                if (
+                    current_hash != expected_hash
+                    or current_version != expected_version
+                    or current_text_hash != expected_text_hash
+                ):
+                    raise StaleNlpAnalysisError(
+                        f"NLP analiz kaynağı güncel değil: {record_id}"
+                    )
+                structured = processed.get("structured")
+                structured = structured if isinstance(structured, dict) else {}
+                self._validate_analysis_evidence(
+                    analysis, text=text, structured=structured
+                )
+                if processed.get("nlp_analysis") == analysis:
+                    continue
+                processed["nlp_analysis"] = analysis
+                processed_json = json.dumps(
+                    processed, ensure_ascii=False, sort_keys=True
+                )
+                updated = connection.execute(
+                    "UPDATE campaigns SET processed_json = ? "
+                    "WHERE id = ? AND content_hash = ? AND source_version = ?",
+                    (processed_json, record_id, expected_hash, expected_version),
+                )
+                if updated.rowcount != 1:
+                    raise StaleNlpAnalysisError(
+                        f"NLP analiz kaynağı yazma sırasında değişti: {record_id}"
+                    )
+                version_updated = connection.execute(
+                    "UPDATE record_versions SET processed_json = ? "
+                    "WHERE record_id = ? AND source_version = ? "
+                    "AND content_hash = ? AND is_current = 1",
+                    (processed_json, record_id, expected_version, expected_hash),
+                )
+                if version_updated.rowcount != 1:
+                    raise StaleNlpAnalysisError(
+                        f"NLP analiz kaynak sürümü bulunamadı: {record_id}"
+                    )
+                changed += 1
+        return changed
 
     def query_campaigns(
         self,

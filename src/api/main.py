@@ -57,24 +57,33 @@ class RefreshManager:
         self,
         *,
         timeout_seconds: float = 30 * 60,
+        enrich_timeout_seconds: float = 30 * 60,
         index_timeout_seconds: float = 60 * 60,
         output_limit: int = 4000,
         runner: Callable[..., subprocess.CompletedProcess[str]] | None = None,
+        auto_enrich: bool | None = None,
         auto_index: bool | None = None,
     ) -> None:
         if timeout_seconds <= 0:
             raise ValueError("timeout_seconds pozitif olmalıdır")
         if output_limit <= 0:
             raise ValueError("output_limit pozitif olmalıdır")
+        if enrich_timeout_seconds <= 0:
+            raise ValueError("enrich_timeout_seconds pozitif olmalıdır")
         if index_timeout_seconds <= 0:
             raise ValueError("index_timeout_seconds pozitif olmalıdır")
         self._lock = Lock()
         self._jobs: dict[str, dict[str, Any]] = {}
         self._active_job_id: str | None = None
         self.timeout_seconds = timeout_seconds
+        self.enrich_timeout_seconds = enrich_timeout_seconds
         self.index_timeout_seconds = index_timeout_seconds
         self.output_limit = output_limit
         self._runner = runner
+        if auto_enrich is None:
+            configured = os.getenv("RAGNROLL_NLP_AUTO_ENRICH", "false").casefold()
+            auto_enrich = configured not in {"0", "false", "off", "hayır", "hayir"}
+        self.auto_enrich = auto_enrich
         if auto_index is None:
             configured = os.getenv("RAGNROLL_CHROMA_AUTO_INDEX", "false").casefold()
             auto_index = configured not in {"0", "false", "off", "hayır", "hayir"}
@@ -157,6 +166,9 @@ class RefreshManager:
                 "completed_at": None,
                 "timeout_seconds": self.timeout_seconds,
                 "output_truncated": False,
+                "enrichment_status": "pending" if self.auto_enrich else "disabled",
+                "enrichment_return_code": None,
+                "enrichment_message": None,
                 "index_status": "pending" if self.auto_index else "disabled",
                 "index_return_code": None,
                 "index_message": None,
@@ -198,7 +210,21 @@ class RefreshManager:
             )
             if not message:
                 message = f"Scraper çıkış kodu: {result.returncode}"
+            enrichment_values: dict[str, Any] = {}
             index_values: dict[str, Any] = {}
+            if status in {"completed", "partial"} and self.auto_enrich:
+                enrichment_values = self._run_enrichment(database)
+                enrichment_message = str(
+                    enrichment_values.get("enrichment_message") or ""
+                )
+                if enrichment_values.get("enrichment_status") == "failed":
+                    status = "partial"
+                    message = (
+                        f"{message}\nNLP zenginleştirmesi tamamlanamadı: "
+                        f"{enrichment_message}"
+                    )
+            elif self.auto_enrich:
+                enrichment_values = self._skipped_enrichment()
             if status in {"completed", "partial"} and self.auto_index:
                 index_values = self._run_index(database)
                 index_message = str(index_values.get("index_message") or "")
@@ -218,6 +244,7 @@ class RefreshManager:
                 return_code=result.returncode,
                 message=message,
                 output_truncated=truncated,
+                **enrichment_values,
                 **index_values,
             )
         except subprocess.TimeoutExpired as exc:
@@ -232,6 +259,7 @@ class RefreshManager:
                 status="failed",
                 message=timeout_message,
                 output_truncated=truncated,
+                **self._skipped_enrichment(),
                 **self._skipped_index(),
             )
         except OSError as exc:
@@ -239,6 +267,7 @@ class RefreshManager:
                 job_id,
                 status="failed",
                 message=str(exc),
+                **self._skipped_enrichment(),
                 **self._skipped_index(),
             )
         except Exception as exc:
@@ -246,6 +275,7 @@ class RefreshManager:
                 job_id,
                 status="failed",
                 message=f"Scraper beklenmeyen bir hatayla durdu: {exc}",
+                **self._skipped_enrichment(),
                 **self._skipped_index(),
             )
         finally:
@@ -328,6 +358,76 @@ class RefreshManager:
                 "index_return_code": None,
                 "index_message": f"İndeks beklenmeyen bir hatayla durdu: {exc}",
             }
+
+    def _run_enrichment(self, database: Path) -> dict[str, Any]:
+        command = [
+            sys.executable,
+            "-m",
+            "scripts.enrich_nlp",
+            "--database",
+            str(database.resolve()),
+        ]
+        manifest = os.getenv("RAGNROLL_NLP_MANIFEST", "").strip()
+        if manifest:
+            command.extend(("--manifest", manifest))
+        max_records = os.getenv("RAGNROLL_NLP_MAX_RECORDS", "").strip()
+        if max_records and max_records != "0":
+            command.extend(("--max-records", max_records))
+        try:
+            runner = self._runner or subprocess.run
+            result = runner(
+                command,
+                cwd=PROJECT_ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=self.enrich_timeout_seconds,
+            )
+            message, _ = self._bounded_output(result.stdout, result.stderr)
+            return {
+                "enrichment_status": (
+                    "completed" if result.returncode == 0 else "failed"
+                ),
+                "enrichment_return_code": result.returncode,
+                "enrichment_message": (
+                    message or f"NLP zenginleştirme çıkış kodu: {result.returncode}"
+                ),
+            }
+        except subprocess.TimeoutExpired as exc:
+            output, _ = self._bounded_output(exc.stdout, exc.stderr)
+            message = (
+                "NLP zenginleştirmesi "
+                f"{self.enrich_timeout_seconds:g} saniye sonra zaman aşımına uğradı"
+            )
+            return {
+                "enrichment_status": "failed",
+                "enrichment_return_code": None,
+                "enrichment_message": f"{output}\n{message}" if output else message,
+            }
+        except OSError as exc:
+            return {
+                "enrichment_status": "failed",
+                "enrichment_return_code": None,
+                "enrichment_message": str(exc),
+            }
+        except Exception as exc:
+            return {
+                "enrichment_status": "failed",
+                "enrichment_return_code": None,
+                "enrichment_message": (
+                    f"NLP zenginleştirmesi beklenmeyen bir hatayla durdu: {exc}"
+                ),
+            }
+
+    def _skipped_enrichment(self) -> dict[str, Any]:
+        if not self.auto_enrich:
+            return {}
+        return {
+            "enrichment_status": "skipped",
+            "enrichment_message": (
+                "Veri yenilemesi tamamlanamadığı için NLP zenginleştirmesi çalıştırılmadı"
+            ),
+        }
 
     def _skipped_index(self) -> dict[str, Any]:
         if not self.auto_index:

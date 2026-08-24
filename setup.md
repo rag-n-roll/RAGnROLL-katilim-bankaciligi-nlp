@@ -12,6 +12,10 @@ Python 3.11.9 kullanmanız gerekiyor.
 4. Bağımlılıkları kurun:
    pip install -r requirements.txt
 
+Kampanya sınıflandırıcı ve NER artefaktları yalnız requirements dosyasındaki tam
+spaCy, scikit-learn ve joblib sürümleriyle yüklenir. Hash veya sürüm farkında
+çalışma zamanı modeli deserialize etmeden durur.
+
 ## Yerel Model Servisi
 
 Apple Silicon üzerinde Gemma cevap yazım modeli vLLM-Metal ile çalışır:

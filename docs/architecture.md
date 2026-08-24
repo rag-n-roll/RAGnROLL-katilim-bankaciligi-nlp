@@ -15,6 +15,7 @@ Temizleme ──► hash / tekrar kümesi / kaynak sürümü
       ▼
 Alan çıkarımı ──► değer + durum + güven + kanıt
       │
+      ├──► doğrulanmış sınıflandırıcı + NER ──► yalnız eksik alan önerileri
       ├──► SQL-first sorgu ve karşılaştırma
       └──► semantik chunking + Qwen embedding
                     │
@@ -47,6 +48,8 @@ Alan çıkarımı ──► değer + durum + güven + kanıt
 
 SQLite güncel görünümü tutar; `record_versions` tablosu içerik değişimini
 `valid_from`, `valid_to`, `superseded_by` ve tekrar görülme sayısıyla saklar.
+Sınıflandırıcı ve NER çıktısı otoriter `structured` alanları değiştirmez;
+kanıt aralıklı öneriler üst düzey `nlp_analysis` altında atomik saklanır.
 Yapılandırılmış sorular SQL rotasına, tanım/koşul soruları retrieval rotasına,
 şikâyet ve işlem talepleri güvenli yönlendirmeye gider.
 

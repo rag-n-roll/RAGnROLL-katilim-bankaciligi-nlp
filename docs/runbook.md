@@ -22,8 +22,8 @@ başlangıçta silinmez ya da üzerine yazılmaz. Bilerek boş bir veritabanı i
 volume'unda `/app/chroma_db` yolunda tutulur.
 
 Gerçek yenileme resmî dış kaynaklara çıkar ve robots/TLS/SSRF kontrollerini aynen
-uygular. Başarılı veya kısmi yenilemeden sonra imaj içine kopyalanan
-`scripts.ingest_chroma` modülü otomatik çağrılır:
+uygular. Başarılı veya kısmi yenilemeden sonra doğrulanmış kampanya modelleri,
+ardından `scripts.ingest_chroma` otomatik çağrılır:
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/data-refresh \
@@ -51,8 +51,10 @@ curl -X POST http://localhost:8000/api/v1/data-refresh \
   -d '{"max_per_bank":1}'
 ```
 
-İşin `status=completed` ve `index_status=completed` olduğunu job uç noktasından
-doğrulayın. Yalnız bu izole smoke projesinin verisini silmek isterseniz
+İşin `status=completed`, `enrichment_status=completed` ve
+`index_status=completed` olduğunu job uç noktasından doğrulayın. CI/smoke için
+`RAGNROLL_NLP_MAX_RECORDS=1`, tüm kayıtlar için `0` kullanılır. Yalnız bu izole
+smoke projesinin verisini silmek isterseniz
 `COMPOSE_PROJECT_NAME=ragnroll-smoke docker compose down --volumes` kullanın;
 normal proje volume'larında `--volumes` veri kaybına yol açar.
 
@@ -116,6 +118,21 @@ API veri yenilemesinden sonra indeksin otomatik güncellenmesi için
 korunur, iş `partial` görünür ve sohbet BM25 fallback ile hizmet vermeye devam
 eder. Qwen modelini API ile aynı Apple Silicon cihazında kullanırken embedding
 servisinin MPS seçmesi için gerekirse `RAGNROLL_EMBEDDING_DEVICE=mps` verilebilir.
+
+NLP danışmanlık analizi doğrudan çalışma zamanında varsayılan kapalı,
+Compose'da `RAGNROLL_NLP_AUTO_ENRICH=true` ile açıktır. Model veya bütünlük hatası
+işi `partial` yapar; buna rağmen indeksleme çalışır ve hata ayrıntısı
+`enrichment_message` alanında kalır. Elle zenginleştirme tek atomik yazma yapar:
+
+Runtime manifesti, model hash'lerine ek olarak beyan edilen sınıflandırıcı/NER
+eğitim girdilerini ve eğitim verisi manifestini digest ile sabitler. Otomatik
+referanslar yalnız proxy'dir ve bağımsız gold sağlanmamıştır. Bu bağ, beyan edilen
+lineage girdilerinin bütünlüğünü doğrular; eğitim çalışmasının bağımsız tasdiki
+değildir. Container yalnız bu kapı için gereken üç lineage dosyasını taşır.
+
+```bash
+python -m scripts.enrich_nlp --database data/ragnroll.sqlite3
+```
 
 GEPA optimizasyonunu yalnız vLLM sağlıklıyken çalıştırın:
 
