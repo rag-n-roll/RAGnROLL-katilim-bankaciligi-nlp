@@ -46,7 +46,7 @@ tüm `COMPOSE_PROJECT_NAME` ve `RAGNROLL_*` smoke değişkenlerini işlem sonund
 başarısızlık dahil, önceki değerlerine döndürür. CI/smoke için
 `RAGNROLL_NLP_MAX_RECORDS=1`, tüm kayıtlar için `0` kullanılır. Yalnız bu izole
 smoke projesinin verisini silmek isterseniz
-`COMPOSE_PROJECT_NAME=ragnroll-smoke docker compose down --volumes` kullanın;
+`COMPOSE_PROJECT_NAME=ragnroll-smoke docker compose down --volumes --remove-orphans` kullanın;
 normal proje volume'larında `--volumes` veri kaybına yol açar.
 
 ## Sağlık kontrolü

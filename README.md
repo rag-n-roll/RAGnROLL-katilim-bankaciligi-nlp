@@ -234,6 +234,7 @@ if ! COMPOSE_PROJECT_NAME=ragnroll-smoke \
   RAGNROLL_INDEX_SMOKE=true \
   RAGNROLL_EMBEDDING_WARMUP=false \
   RAGNROLL_LLM_ENABLED=false \
+  RAGNROLL_NLP_MAX_RECORDS=1 \
   RAGNROLL_CHROMA_COLLECTION=ragnroll_container_smoke \
   docker compose up --build --detach; then
   printf 'Compose smoke startup failed; refusing to probe services\n' >&2
@@ -285,12 +286,17 @@ $smokeEnv = @{
   RAGNROLL_INDEX_SMOKE = "true"
   RAGNROLL_EMBEDDING_WARMUP = "false"
   RAGNROLL_LLM_ENABLED = "false"
+  RAGNROLL_NLP_MAX_RECORDS = "1"
   RAGNROLL_CHROMA_COLLECTION = "ragnroll_container_smoke"
 }
 $previousSmokeEnv = @{}
 try {
   foreach ($name in $smokeEnv.Keys) {
-    $previousSmokeEnv[$name] = (Get-Item "Env:$name" -ErrorAction SilentlyContinue).Value
+    $previous = Get-Item "Env:$name" -ErrorAction SilentlyContinue
+    $previousSmokeEnv[$name] = @{
+      Exists = $null -ne $previous
+      Value = if ($null -ne $previous) { $previous.Value } else { $null }
+    }
     Set-Item "Env:$name" $smokeEnv[$name]
   }
   docker compose up --build --detach
@@ -330,10 +336,10 @@ try {
   }
 } finally {
   foreach ($name in $smokeEnv.Keys) {
-    if ($null -eq $previousSmokeEnv[$name]) {
+    if (-not $previousSmokeEnv[$name].Exists) {
       Remove-Item "Env:$name" -ErrorAction SilentlyContinue
     } else {
-      Set-Item "Env:$name" $previousSmokeEnv[$name]
+      Set-Item "Env:$name" $previousSmokeEnv[$name].Value
     }
   }
 }
@@ -350,7 +356,7 @@ COMPOSE_PROJECT_NAME=ragnroll-smoke docker compose down --volumes --remove-orpha
 Windows PowerShell'de:
 
 ```powershell
-$previousComposeProjectName = (Get-Item Env:COMPOSE_PROJECT_NAME -ErrorAction SilentlyContinue).Value
+$previousComposeProjectName = Get-Item Env:COMPOSE_PROJECT_NAME -ErrorAction SilentlyContinue
 try {
   $env:COMPOSE_PROJECT_NAME = "ragnroll-smoke"
   docker compose down --volumes --remove-orphans
@@ -359,7 +365,7 @@ try {
   if ($null -eq $previousComposeProjectName) {
     Remove-Item Env:COMPOSE_PROJECT_NAME -ErrorAction SilentlyContinue
   } else {
-    $env:COMPOSE_PROJECT_NAME = $previousComposeProjectName
+    $env:COMPOSE_PROJECT_NAME = $previousComposeProjectName.Value
   }
 }
 ```
