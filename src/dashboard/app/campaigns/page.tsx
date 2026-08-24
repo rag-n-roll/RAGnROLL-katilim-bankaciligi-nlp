@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import BankLogo from "../../components/BankLogo";
 import {
   Campaign,
   getCampaignDetail,
@@ -83,67 +84,98 @@ export default function CampaignsPage() {
   const fields = Object.entries(selected?.structured?.fields ?? {});
 
   return (
-    <main className={styles.main}>
+    <main className={styles.main} aria-busy={loading}>
       <header className={styles.header}>
         <div>
+          <span className={styles.eyebrow}>Canlı kampanya kataloğu</span>
           <h1>Kampanya merkezi</h1>
           <p>Ham metni, yapılandırılmış alanı ve alanın kaynak kanıtını birlikte inceleyin.</p>
         </div>
-        <span className={styles.badge}>{total} kayıt</span>
+        <span className={styles.headerBadge}>{total} kayıt</span>
       </header>
 
-      <form className={styles.controls} onSubmit={submit}>
-        <select aria-label="Banka" value={bank} onChange={(event) => setBank(event.target.value)}>
-          <option value="">Tüm bankalar</option>
-          {filters?.banks.map((item) => <option key={item.value} value={item.value}>{item.label} ({item.count})</option>)}
-        </select>
-        <select aria-label="Ürün türü" value={product} onChange={(event) => setProduct(event.target.value)}>
-          <option value="">Tüm ürün türleri</option>
-          {filters?.product_types.map((item) => <option key={item.value} value={item.value}>{item.label} ({item.count})</option>)}
-        </select>
-        <input aria-label="Kampanya ara" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Kampanya başlığında ara" minLength={2} />
+      <form className={styles.controls} onSubmit={submit} aria-label="Kampanya filtreleri">
+        <label className={styles.filterField}>
+          <span>Banka</span>
+          <select value={bank} onChange={(event) => setBank(event.target.value)}>
+            <option value="">Tüm bankalar</option>
+            {filters?.banks.map((item) => <option key={item.value} value={item.value}>{item.label} ({item.count})</option>)}
+          </select>
+        </label>
+        <label className={styles.filterField}>
+          <span>Ürün türü</span>
+          <select value={product} onChange={(event) => setProduct(event.target.value)}>
+            <option value="">Tüm ürün türleri</option>
+            {filters?.product_types.map((item) => <option key={item.value} value={item.value}>{item.label} ({item.count})</option>)}
+          </select>
+        </label>
+        <label className={styles.filterField}>
+          <span>Kampanya ara</span>
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Başlıkta ara" minLength={2} />
+        </label>
         <button className={styles.button} disabled={loading} type="submit">Filtrele</button>
       </form>
 
       {error && <p className={styles.error} role="alert">{error}</p>}
-      {loading && <p className={styles.status}>Kampanyalar yükleniyor…</p>}
+      {loading && <p className={styles.status} role="status">Kampanyalar yükleniyor…</p>}
       {!loading && !error && campaigns.length === 0 && <p className={styles.status}>Filtreyle eşleşen kampanya bulunamadı.</p>}
 
-      <section className={styles.grid}>
-        <article className={styles.card}>
-          <h2>Kampanyalar</h2>
+      <section className={styles.campaignGrid} aria-label="Kampanya sonuçları">
+        <article className={`${styles.card} ${styles.campaignListCard}`}>
+          <div className={styles.cardHeading}>
+            <div>
+              <span className={styles.eyebrow}>Sonuçlar</span>
+              <h2>Kampanyalar</h2>
+            </div>
+          </div>
           <div className={styles.list}>
             {campaigns.map((campaign) => (
               <button
                 className={`${styles.listButton} ${selected?.id === campaign.id ? styles.selected : ""}`}
+                aria-pressed={selected?.id === campaign.id}
                 key={campaign.id}
                 onClick={() => void selectCampaign(campaign)}
                 type="button"
               >
-                <strong>{campaign.bank_name}</strong><br />
-                <span className={styles.muted}>{campaign.title}</span>
+                <span className={styles.campaignBank}>
+                  <BankLogo bank={campaign.bank_name} decorative size={34} />
+                  <strong>{campaign.bank_name}</strong>
+                </span>
+                <span className={styles.campaignTitle}>{campaign.title}</span>
               </button>
             ))}
           </div>
         </article>
-        <article className={styles.card}>
+        <article className={`${styles.card} ${styles.campaignDetail}`} aria-live="polite">
+          {selected && (
+            <div className={styles.detailBank}>
+              <BankLogo bank={selected.bank_name} decorative size={42} />
+              <span>{selected.bank_name}</span>
+            </div>
+          )}
           <h2>{selected?.title ?? "Kampanya detayı"}</h2>
           {selected ? (
             <>
               <p className={styles.code}>{selected.content || "Kaynak metin bulunmuyor."}</p>
-              <p className={styles.muted}>
-                Kaynak: <a className={styles.source} href={selected.source_url} rel="noreferrer" target="_blank">{selected.source_url}</a>
-              </p>
+              <a className={styles.source} href={selected.source_url} rel="noreferrer" target="_blank">
+                Resmî kaynağı yeni sekmede aç <span aria-hidden="true">↗</span>
+              </a>
             </>
           ) : <p className={styles.muted}>İncelemek için bir kampanya seçin.</p>}
         </article>
       </section>
 
       {selected && (
-        <section className={styles.card} style={{ marginTop: 16 }}>
-          <h2>Alan sözleşmeleri</h2>
+        <section className={`${styles.card} ${styles.contractCard}`}>
+          <div className={styles.cardHeading}>
+            <div>
+              <span className={styles.eyebrow}>İzlenebilir veri</span>
+              <h2>Alan sözleşmeleri</h2>
+            </div>
+          </div>
           <div className={styles.tableWrap}>
             <table className={styles.table}>
+              <caption className={styles.visuallyHidden}>{selected.title} için yapılandırılmış alanlar</caption>
               <thead><tr><th>Alan</th><th>Değer</th><th>Durum</th><th>Güven</th><th>Kanıt</th></tr></thead>
               <tbody>
                 {fields.map(([name, field]) => (

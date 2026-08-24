@@ -104,74 +104,84 @@ export default function ChatbotPage() {
   }
 
   return (
-    <main className={styles.main}>
+    <main className={styles.main} aria-busy={loading}>
       <header className={styles.header}>
         <div>
+          <span className={styles.eyebrow}>Kaynakla sınırlandırılmış üretim</span>
           <h1>Kanıta dayalı asistan</h1>
           <p>Gemma yanıtları doğrulanmış kampanya verileri ve yerel bilgi tabanı üzerinden gerçek zamanlı yazar.</p>
         </div>
         <span className={styles.liveStatus}><span /> Yerel ve gizli</span>
       </header>
       <section className={styles.chatLayout}>
-        <article className={`${styles.card} ${styles.chat}`} aria-live="polite">
-          {exchanges.length === 0 && (
-            <div className={styles.chatWelcome}>
-              <span className={styles.assistantMark}>RnR</span>
-              <h2>Size nasıl yardımcı olabilirim?</h2>
-              <p>Finansman oranlarını karşılaştırabilir, kampanya koşullarını inceleyebilir veya katılım bankacılığı terimlerini sorabilirsiniz.</p>
-            </div>
-          )}
-          {exchanges.map((exchange, index) => (
-            <div className={styles.exchange} key={`${exchange.question}-${index}`}>
-              <div className={`${styles.message} ${styles.userMessage}`}>{exchange.question}</div>
-              <div className={`${styles.message} ${styles.assistantMessage}`}>
-                <div className={styles.answerHeader}>
-                  <span className={styles.assistantMark}>RnR</span>
-                  <div>
-                    <strong>RAGnROLL Asistan</strong>
-                    <small>
-                      {exchange.generation?.mode === "llm"
-                        ? "Gemma · kanıta bağlı üretim"
-                        : exchange.generation
-                          ? "Güvenli yerel yanıt"
-                          : "Kaynaklar hazırlanıyor"}
-                    </small>
-                  </div>
-                </div>
-                {!exchange.answer && exchange.streaming && (
-                  <span className={styles.typing} aria-label="Yanıt hazırlanıyor"><i /><i /><i /></span>
-                )}
-                {exchange.error && <span className={styles.inlineError} role="alert">{exchange.error}</span>}
-                {exchange.answer && (
-                  <>
-                    <p className={styles.answerText}>{exchange.answer}<span className={exchange.streaming ? styles.cursor : undefined} /></p>
-                    {exchange.meta && (
-                      <div className={styles.answerMeta}>
-                        <span className={styles.badge}>{exchange.meta.plan.route}</span>
-                        <span className={styles.confidence}>Güven %{Math.round(exchange.meta.confidence * 100)}</span>
-                      </div>
-                    )}
-                    {exchange.meta?.warnings.map((warning) => <span className={`${styles.badge} ${styles.warningBadge}`} key={warning}>{warning}</span>)}
-                    {!!exchange.meta?.sources.length && (
-                      <details className={styles.sources}>
-                        <summary>{exchange.meta.sources.length} kanıt kaynağını görüntüle</summary>
-                        <div className={styles.sourceGrid}>
-                          {exchange.meta.sources.map((source, sourceIndex) => source.source_url ? (
-                            <a className={styles.sourceCard} href={source.source_url} key={`${source.source_url}-${sourceIndex}`} rel="noreferrer" target="_blank"><span>K{sourceIndex + 1}</span><div><strong>{source.bank_name || source.title || source.campaign_id}</strong><small>Resmî kaynağı aç ↗</small></div></a>
-                          ) : (
-                            <div className={styles.sourceCard} key={`${source.term_id}-${sourceIndex}`}><span>K{sourceIndex + 1}</span><div><strong>{source.title || source.term_id}</strong><small>Yerel terminoloji kaydı</small></div></div>
-                          ))}
-                        </div>
-                      </details>
-                    )}
-                  </>
-                )}
+        <article className={`${styles.card} ${styles.chat}`}>
+          <div
+            className={styles.transcript}
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions text"
+            aria-busy={loading}
+          >
+            {exchanges.length === 0 && (
+              <div className={styles.chatWelcome}>
+                <span className={styles.assistantMark}>RnR</span>
+                <h2>Size nasıl yardımcı olabilirim?</h2>
+                <p>Finansman oranlarını karşılaştırabilir, kampanya koşullarını inceleyebilir veya katılım bankacılığı terimlerini sorabilirsiniz.</p>
               </div>
-            </div>
-          ))}
-          <div ref={conversationEnd} />
+            )}
+            {exchanges.map((exchange, index) => (
+              <div className={styles.exchange} key={`${exchange.question}-${index}`}>
+                <div className={`${styles.message} ${styles.userMessage}`}>{exchange.question}</div>
+                <div className={`${styles.message} ${styles.assistantMessage}`}>
+                  <div className={styles.answerHeader}>
+                    <span className={styles.assistantMark}>RnR</span>
+                    <div>
+                      <strong>RAGnROLL Asistan</strong>
+                      <small>
+                        {exchange.generation?.mode === "llm"
+                          ? "Gemma · kanıta bağlı üretim"
+                          : exchange.generation
+                            ? "Güvenli yerel yanıt"
+                            : "Kaynaklar hazırlanıyor"}
+                      </small>
+                    </div>
+                  </div>
+                  {!exchange.answer && exchange.streaming && (
+                    <span className={styles.typing} aria-label="Yanıt hazırlanıyor"><i /><i /><i /></span>
+                  )}
+                  {exchange.error && <span className={styles.inlineError} role="alert">{exchange.error}</span>}
+                  {exchange.answer && (
+                    <>
+                      <p className={styles.answerText}>{exchange.answer}<span className={exchange.streaming ? styles.cursor : undefined} /></p>
+                      {exchange.meta && (
+                        <div className={styles.answerMeta}>
+                          <span className={styles.badge}>{exchange.meta.plan.route}</span>
+                          <span className={styles.confidence}>Güven %{Math.round(exchange.meta.confidence * 100)}</span>
+                        </div>
+                      )}
+                      {exchange.meta?.warnings.map((warning) => <span className={`${styles.badge} ${styles.warningBadge}`} key={warning}>{warning}</span>)}
+                      {!!exchange.meta?.sources.length && (
+                        <details className={styles.sources}>
+                          <summary>{exchange.meta.sources.length} kanıt kaynağını görüntüle</summary>
+                          <div className={styles.sourceGrid}>
+                            {exchange.meta.sources.map((source, sourceIndex) => source.source_url ? (
+                              <a className={styles.sourceCard} href={source.source_url} key={`${source.source_url}-${sourceIndex}`} rel="noreferrer" target="_blank"><span>K{sourceIndex + 1}</span><div><strong>{source.bank_name || source.title || source.campaign_id}</strong><small>Resmî kaynağı aç ↗</small></div></a>
+                            ) : (
+                              <div className={styles.sourceCard} key={`${source.term_id}-${sourceIndex}`}><span>K{sourceIndex + 1}</span><div><strong>{source.title || source.term_id}</strong><small>Yerel terminoloji kaydı</small></div></div>
+                            ))}
+                          </div>
+                        </details>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+            <div ref={conversationEnd} />
+          </div>
           <form className={styles.chatControls} onSubmit={submit}>
-            <textarea className={styles.chatInput} aria-label="Sorunuz" maxLength={4000} minLength={1} onChange={(event) => setMessage(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); if (!loading) void ask(message); } }} placeholder="Katılım bankacılığı hakkında sorunuzu yazın…" rows={2} value={message} />
+            <label className={styles.visuallyHidden} htmlFor="chat-message">Sorunuz</label>
+            <textarea className={styles.chatInput} id="chat-message" maxLength={4000} minLength={1} onChange={(event) => setMessage(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); if (!loading) void ask(message); } }} placeholder="Katılım bankacılığı hakkında sorunuzu yazın…" rows={2} value={message} />
             {loading ? (
               <button className={styles.stopButton} onClick={stop} type="button">Durdur</button>
             ) : (
