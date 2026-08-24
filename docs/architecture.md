@@ -17,17 +17,19 @@ Alan çıkarımı ──► değer + durum + güven + kanıt
       │
       ├──► doğrulanmış sınıflandırıcı + NER ──► yalnız eksik alan önerileri
       ├──► SQL-first sorgu ve karşılaştırma
-      └──► semantik chunking + Qwen embedding
+      └──► semantik chunking
                     │
                     ▼
-          Chroma + BM25 + seçici graph retrieval
+       EVREN bge-m3 + takım Qdrant (birincil)
+                    │
+          Qwen/Chroma + BM25 + graph fallback
                     │
                     ▼
              Kanıt paketli yanıt
                     │
            ┌────────┴─────────┐
            ▼                  ▼
-    Gemma cevap yazımı   yerel fallback
+ EVREN llm-fast yazımı   yerel model / deterministik fallback
            └────────┬─────────┘
                     ▼
              Streaming API
@@ -60,6 +62,12 @@ istekte aynı model ve sorgu talimatıyla hesaplanır. Chroma indeksi boş, yap�
 aşamasında, model/şema açısından uyumsuz veya erişilemezse BM25 geri dönüşü
 devreye girer.
 
+EVREN erişim bilgileri sağlandığında retrieval sırası takım-izole Qdrant üzerinde
+`bge-m3-embed`, yerel Qwen/Chroma ve BM25 + knowledge graph şeklindedir. EVREN ve
+Qwen vektörleri aynı koleksiyonda karıştırılmaz. EVREN koleksiyonu `prefix=teamNN`,
+REST ve TCP 443 sözleşmesiyle kullanılır; gRPC kapalıdır. Uzak indeks eksik, yapım
+aşamasında veya model/şema bakımından uyumsuzsa yerel indeks doğrudan devreye girer.
+
 BM25 ve Chroma sıralamaları reciprocal-rank fusion ile kampanya düzeyinde
 birleştirilir; aynı kampanyanın birden fazla parçası kaynak listesini işgal etmez.
 Mevcut kaynaklı ontoloji graph'ı yalnız belge, koşul, teminat ve ilişki sorularında
@@ -72,7 +80,12 @@ Tekrarlanan query embeddingleri 256 girdilik sınırlı LRU önbelleği kullanı
 Hazır indeksle API açılışında Qwen query modeli ısıtılarak ilk kullanıcı
 isteğindeki model yükleme gecikmesi kaldırılır.
 
-Gemma, vLLM'in OpenAI uyumlu Chat Completions akışı üzerinden yalnız `facts` ve
+EVREN `llm-fast`, sağlıklı ve tam alias doğrulamasından geçmişse birincil cevap
+yazarıdır. EVREN kullanılamaz veya çıktısı reddedilirse yerel model aynı kapılardan
+geçer; son güvenli yol deterministik cevaptır. Her yetenek kendi circuit breaker
+durumuna sahiptir ve bir EVREN arızası diğer yetenekleri kapatmaz.
+
+Yerel Gemma, vLLM'in OpenAI uyumlu Chat Completions akışı üzerinden yalnız `facts` ve
 `sources` paketini profesyonel Türkçe cevaba dönüştürür. Model sorgu planı üretmez,
 SQL çalıştırmaz ve sayısal olgu bulmaz. Kaynaksız, boş, yarım veya geçersiz kaynak
 etiketli üretim `replace` olayıyla geri alınır ve deterministik cevap gösterilir.

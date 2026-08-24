@@ -51,6 +51,33 @@ def test_bootstrap_runtime_seeds_empty_volume_and_preserves_existing_snapshot(tm
     assert snapshot.read_text(encoding="utf-8") == '{"operator":"owned"}'
     assert (runtime_root / "data" / "raw").is_dir()
     assert (runtime_root / "outputs").is_dir()
+    assert first["recovered_from_last_good"] is False
+    assert (runtime_root / "last-good" / "ragnroll.sqlite3").is_file()
+
+
+def test_bootstrap_runtime_recovers_corrupt_database_from_last_good(tmp_path):
+    seed = tmp_path / "bootstrap" / "campaigns.json"
+    seed.parent.mkdir()
+    seed.write_text(json.dumps(_seed_payload(), ensure_ascii=False), encoding="utf-8")
+    runtime_root = tmp_path / "runtime"
+    database = runtime_root / "ragnroll.sqlite3"
+
+    bootstrap_runtime(
+        database=database,
+        runtime_root=runtime_root,
+        seed_dataset=seed,
+    )
+    database.write_bytes(b"bozuk-sqlite")
+
+    recovered = bootstrap_runtime(
+        database=database,
+        runtime_root=runtime_root,
+        seed_dataset=seed,
+    )
+
+    assert recovered["record_count"] == 1
+    assert recovered["seeded_records"] == 0
+    assert recovered["recovered_from_last_good"] is True
 
 
 def test_smoke_embedding_is_deterministic_normalized_and_local():

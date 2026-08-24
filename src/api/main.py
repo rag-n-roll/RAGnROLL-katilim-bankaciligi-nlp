@@ -8,7 +8,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 import subprocess
 import sys
-from threading import Lock
+from queue import Empty, Queue
+from threading import Lock, Thread
 from time import perf_counter
 from typing import Annotated, Any, Callable
 from uuid import uuid4
@@ -696,21 +697,42 @@ def grounded_chat_stream(
     request_id = uuid4().hex
 
     def events():
-        try:
-            for item in _assistant(request).stream_answer(
-                payload.message, limit=payload.source_limit
-            ):
-                data = dict(item["data"])
-                if item["event"] == "meta":
-                    data.update(api_version="2026.08", request_id=request_id)
-                yield (
-                    f"event: {item['event']}\n"
-                    f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+        queue: Queue[dict[str, Any] | None] = Queue()
+
+        def produce() -> None:
+            try:
+                for item in _assistant(request).stream_answer(
+                    payload.message, limit=payload.source_limit
+                ):
+                    queue.put(item)
+            except ValueError as exc:
+                queue.put({"event": "error", "data": {"message": str(exc)}})
+            except Exception:
+                queue.put(
+                    {
+                        "event": "error",
+                        "data": {"message": "Yanıt akışı tamamlanamadı"},
+                    }
                 )
-        except ValueError as exc:
+            finally:
+                queue.put(None)
+
+        Thread(target=produce, daemon=True).start()
+        heartbeat_seconds = float(os.getenv("RAGNROLL_SSE_HEARTBEAT_SECONDS", "15"))
+        while True:
+            try:
+                item = queue.get(timeout=heartbeat_seconds)
+            except Empty:
+                yield "event: heartbeat\ndata: {}\n\n"
+                continue
+            if item is None:
+                return
+            data = dict(item["data"])
+            if item["event"] == "meta":
+                data.update(api_version="2026.08", request_id=request_id)
             yield (
-                "event: error\n"
-                f"data: {json.dumps({'message': str(exc)}, ensure_ascii=False)}\n\n"
+                f"event: {item['event']}\n"
+                f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
             )
 
     return StreamingResponse(
@@ -726,6 +748,16 @@ def grounded_chat_stream(
 @router.get("/llm/status", tags=["system"])
 def llm_status(request: Request) -> dict[str, Any]:
     return _assistant(request).llm.status()
+
+
+@router.get("/capabilities/status", tags=["system"])
+def capability_status(request: Request) -> dict[str, Any]:
+    assistant = _assistant(request)
+    return {
+        "generation": assistant.llm.status(),
+        "retrieval": assistant.retriever.status(),
+        "decisions": assistant.decisions.status(),
+    }
 
 
 @router.get(

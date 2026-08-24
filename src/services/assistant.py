@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from math import isfinite
 import re
 from time import perf_counter
 from typing import Any, Iterator
 
-from src.llm import GroundedPromptBuilder, OpenAICompatibleLLM
+from src.llm import (
+    EvrenDecisionService,
+    GroundedPromptBuilder,
+    OpenAICompatibleLLM,
+    build_llm_from_env,
+)
 from src.llm.client import LLMUnavailableError
 from src.normalization import normalize_duration, normalize_money, normalize_rate
 from src.normalization.values import parse_number
@@ -48,6 +54,24 @@ _FEE_FREE_CLAIM_RE = re.compile(
 )
 
 
+class _LocalDecisionFallback:
+    """Enjekte edilmiş test/yerel LLM'lerde harici karar çağrısını kapatır."""
+
+    @staticmethod
+    def is_safe(message: str) -> None:
+        del message
+        return None
+
+    @staticmethod
+    def route(message: str) -> None:
+        del message
+        return None
+
+    @staticmethod
+    def status() -> dict[str, Any]:
+        return {"enabled": False, "reason": "local_only"}
+
+
 class GroundedAssistant:
     """LLM olmadan da factual ve karşılaştırmalı sorgulara kanıtlı yanıt verir."""
 
@@ -58,13 +82,17 @@ class GroundedAssistant:
         compiler: DomainQueryCompiler | None = None,
         recorder: EventRecorder | None = None,
         llm: OpenAICompatibleLLM | None = None,
+        decisions: EvrenDecisionService | None = None,
         prompt_builder: GroundedPromptBuilder | None = None,
         chroma_enabled: bool | None = None,
     ) -> None:
         self.store = store
         self.compiler = compiler or DomainQueryCompiler()
         self.recorder = recorder or EventRecorder()
-        self.llm = llm or OpenAICompatibleLLM()
+        self.llm = llm or build_llm_from_env()
+        self.decisions = decisions or (
+            _LocalDecisionFallback() if llm is not None else EvrenDecisionService()
+        )
         self.prompt_builder = prompt_builder or GroundedPromptBuilder()
         self.retriever = HybridRetriever(
             store,
@@ -73,7 +101,21 @@ class GroundedAssistant:
         )
 
     def compile(self, message: str) -> QueryPlan:
-        return self.compiler.compile(message, known_banks=self.store.bank_summary())
+        plan = self.compiler.compile(message, known_banks=self.store.bank_summary())
+        if plan.route == "SAFE_REDIRECT":
+            return plan
+        safe = self.decisions.is_safe(message)
+        advised_route = self.decisions.route(message)
+        warnings = list(plan.warnings)
+        if safe is False or advised_route == "SAFE_REDIRECT":
+            warnings.append("EVREN güvenlik sinyali güvenli yönlendirme önerdi")
+            return replace(plan, route="SAFE_REDIRECT", warnings=warnings)
+        if advised_route == "STRUCTURED_SQL" and plan.slots.get("metric"):
+            return replace(plan, route="STRUCTURED_SQL")
+        if advised_route not in {None, plan.route, "HYBRID_RAG"}:
+            warnings.append("EVREN route önerisi yerel sözleşmeyle uyuşmadığı için yok sayıldı")
+            return replace(plan, warnings=warnings)
+        return plan
 
     @staticmethod
     def _relation_sentence(relation: dict[str, Any]) -> str | None:
@@ -562,12 +604,15 @@ class GroundedAssistant:
     def _generation(
         self, *, mode: str, fallback_reason: str | None = None
     ) -> dict[str, Any]:
+        metadata_factory = getattr(self.llm, "generation_metadata", None)
+        provider_metadata = metadata_factory() if callable(metadata_factory) else {}
         return {
             "mode": mode,
             "model": self.llm.model if mode == "llm" else None,
             "fallback_reason": fallback_reason,
             "prompt": self.prompt_builder.metadata(),
             "retrieval_backend": getattr(self.retriever, "last_backend", "bm25"),
+            **provider_metadata,
         }
 
     def stream_answer(
@@ -611,6 +656,42 @@ class GroundedAssistant:
                 sources=grounded["sources"],
                 plan=grounded["plan"],
             )
+            candidate_factory = getattr(self.llm, "stream_chat_candidates", None)
+            if callable(candidate_factory):
+                rejected = False
+                for chunks, candidate_metadata in candidate_factory(
+                    system_prompt=system_prompt,
+                    user_prompt=user_prompt,
+                ):
+                    generated = "".join(chunks).strip()
+                    valid = (
+                        candidate_metadata.get("finish_reason") != "length"
+                        and self._valid_llm_answer(
+                            generated, sources=grounded["sources"]
+                        )
+                    )
+                    if not valid:
+                        rejected = True
+                        self.llm.reject_candidate(candidate_metadata)
+                        continue
+                    self.llm.accept_candidate(candidate_metadata)
+                    polished = self._polish_llm_answer(generated)
+                    yield {"event": "delta", "data": {"text": polished}}
+                    mode = "llm"
+                    yield {"event": "done", "data": self._generation(mode="llm")}
+                    return
+                fallback_reason = (
+                    "llm_output_rejected" if rejected else "llm_unavailable"
+                )
+                yield {"event": "delta", "data": {"text": fallback_answer}}
+                yield {
+                    "event": "done",
+                    "data": self._generation(
+                        mode="fallback", fallback_reason=fallback_reason
+                    ),
+                }
+                return
+
             chunks: list[str] = []
             try:
                 for chunk in self.llm.stream_chat(
@@ -646,12 +727,18 @@ class GroundedAssistant:
             success = False
             raise
         finally:
+            metadata_factory = getattr(self.llm, "generation_metadata", None)
+            provider_metadata = metadata_factory() if callable(metadata_factory) else {}
             self.recorder.record(
                 "answer_generated",
                 latency_ms=(perf_counter() - started) * 1000,
                 success=success,
                 route=route,
                 generation_mode=mode,
+                provider=provider_metadata.get("provider"),
+                requested_model=provider_metadata.get("requested_model"),
+                circuit_state=provider_metadata.get("circuit_state"),
+                retrieval_backend=getattr(self.retriever, "last_backend", "bm25"),
             )
 
     def answer(self, message: str, *, limit: int = 5) -> dict[str, Any]:

@@ -6,6 +6,7 @@ python-dotenv==1.0.1
 
 requests>=2.32.5,<3
 httpx==0.28.1
+qdrant-client==1.19.0
 
 pytest>=8,<10
 pytest-cov==5.0.0

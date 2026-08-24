@@ -106,6 +106,78 @@ def test_retrieval_invalidates_corpus_after_database_update(tmp_path):
     )
 
 
+class StubVectorRetriever:
+    embedding_model = "stub"
+
+    def __init__(self, results):
+        self.results = results
+        self.calls = 0
+
+    def retrieve(self, query, *, filters, limit):
+        del query, filters, limit
+        self.calls += 1
+        return list(self.results)
+
+    def ready(self):
+        return bool(self.results)
+
+    def status(self):
+        return {"available": bool(self.results)}
+
+
+def _vector_result(method):
+    return {
+        "id": "campaign:housing",
+        "text": "Konut finansmanı",
+        "metadata": {
+            "source_type": "campaign",
+            "campaign_id": "housing",
+            "bank_slug": "ornek",
+        },
+        "score": 0.99,
+        "retrieval_method": method,
+    }
+
+
+def test_retrieval_prefers_evren_and_does_not_call_local_vector(tmp_path):
+    evren = StubVectorRetriever([_vector_result("evren")])
+    local = StubVectorRetriever([_vector_result("local")])
+    retriever = HybridRetriever(
+        _store(tmp_path),
+        evren_retriever=evren,
+        vector_retriever=local,
+    )
+
+    results = retriever.retrieve("konut finansmanı", limit=5)
+
+    assert results
+    assert evren.calls == 1
+    assert local.calls == 0
+    assert retriever.last_backend.startswith("evren-qdrant")
+
+
+def test_retrieval_falls_back_from_evren_to_local_then_bm25(tmp_path):
+    evren = StubVectorRetriever([])
+    local = StubVectorRetriever([_vector_result("local")])
+    retriever = HybridRetriever(
+        _store(tmp_path),
+        evren_retriever=evren,
+        vector_retriever=local,
+    )
+
+    results = retriever.retrieve("konut finansmanı", limit=5)
+
+    assert results
+    assert evren.calls == 1
+    assert local.calls == 1
+    assert retriever.last_backend.startswith("chroma")
+
+    local.results = []
+    fallback = retriever.retrieve("konut finansmanı", limit=5)
+    assert fallback
+    assert retriever.last_backend.endswith("fallback")
+
+
 @pytest.mark.parametrize("limit", (0, 21))
 def test_retrieval_rejects_unbounded_limit(tmp_path, limit):
     with pytest.raises(ValueError, match="1 ile 20"):

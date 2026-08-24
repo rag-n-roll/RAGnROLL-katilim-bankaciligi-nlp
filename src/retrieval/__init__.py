@@ -3,6 +3,8 @@
 from .chroma import ChromaIndexer, ChromaVectorRetriever, SemanticEmbeddingProvider
 from .graph import KnowledgeGraphRetriever
 from .hybrid import HybridRetriever
+from .evren import EvrenEmbeddingProvider, EvrenEmbeddingSettings
+from .qdrant import EvrenQdrantIndexer, EvrenQdrantRetriever, EvrenQdrantSettings
 
 __all__ = [
     "ChromaIndexer",
@@ -10,4 +12,9 @@ __all__ = [
     "HybridRetriever",
     "KnowledgeGraphRetriever",
     "SemanticEmbeddingProvider",
+    "EvrenEmbeddingProvider",
+    "EvrenEmbeddingSettings",
+    "EvrenQdrantIndexer",
+    "EvrenQdrantRetriever",
+    "EvrenQdrantSettings",
 ]

@@ -1,5 +1,50 @@
 # Operasyon rehberi
 
+## EVREN öncelikli çalışma
+
+EVREN anahtarları hiçbir zaman repoya veya Compose varsayılanına yazılmaz. Üretim
+secret store aşağıdaki iki farklı değeri sağlamalıdır:
+
+```text
+EVREN_API_KEY
+EVREN_QDRANT_API_KEY
+```
+
+LLM ve Qdrant anahtarları birbirinin yerine kullanılamaz. Qdrant için ayrıca
+`EVREN_QDRANT_PREFIX=teamNN`, `EVREN_QDRANT_PORT=443` ve REST kullanımı zorunludur.
+
+Başlangıç kontrolü:
+
+```bash
+curl -fsS https://evren-teknofest.ssyz.org.tr/status
+curl -fsS http://localhost:8000/api/v1/capabilities/status
+```
+
+`generation.providers` içinde `evren`, retrieval içinde `evren_qdrant` sağlıklı
+görünmelidir. EVREN yapılandırılmamışsa API yine açılır ve yerel zinciri kullanır.
+
+Uzak ve yerel indeksleri birlikte güncellemek için mevcut komut kullanılır:
+
+```bash
+python -m scripts.ingest_chroma --database data/ragnroll.sqlite3
+```
+
+Çıktıdaki `evren.status=ready` uzak indeksin hazır olduğunu gösterir. Uzak indeks
+başarısız olsa bile yerel Chroma korunur. Dağıtım kapısında EVREN'i zorunlu kılmak
+için aynı komuta `--require-evren` eklenir.
+
+Tek adımlı rollback:
+
+```dotenv
+RAGNROLL_GENERATION_PROVIDER_ORDER=local,deterministic
+RAGNROLL_RETRIEVAL_PROVIDER_ORDER=local_qwen_chroma,bm25_graph
+```
+
+401/403 ve model alias uyuşmazlığında retry yapılmaz. 429/5xx ve bağlantı
+hatalarında ilk token öncesinde en fazla bir retry uygulanır. Token geldikten sonra
+ve video çağrılarında otomatik retry yoktur. Kullanıcıya yalnız kaynak ve sayısal
+iddia doğrulamasını geçen model cevabı gösterilir.
+
 ## Container sözleşmesi
 
 Temiz bir Compose projesi API ve dashboard'u şu şekilde başlatır:
@@ -17,7 +62,11 @@ veritabanına bir kez aktarır. Scraper yenilemesinin
 `data/raw/participation_banks.json`, `data/raw/campaigns.json`,
 `data/processed/campaigns.json` ve `outputs/quality_report.json` çıktıları da
 `/app/runtime` altında aynı volume'da kalır. Mevcut SQLite veya processed snapshot
-başlangıçta silinmez ya da üzerine yazılmaz. Bilerek boş bir veritabanı işletilecekse
+başlangıçta silinmez ya da üzerine yazılmaz. Başarılı başlangıçtan sonra SQLite
+backup API'siyle `/app/runtime/last-good/ragnroll.sqlite3` atomik olarak yenilenir.
+Sonraki başlangıçta aktif veritabanı `PRAGMA quick_check` kontrolünü geçmezse bu
+doğrulanmış kopyadan otomatik kurtarılır; ikisi de bozuksa container fail-closed
+durur. Bilerek boş bir veritabanı işletilecekse
 `RAGNROLL_BOOTSTRAP_ON_EMPTY=false` verilebilir. Chroma ayrı `chroma_data`
 volume'unda `/app/chroma_db` yolunda tutulur.
 
