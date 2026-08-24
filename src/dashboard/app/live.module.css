@@ -1031,6 +1031,26 @@ a.sourceCard:hover {
   text-align: center;
 }
 
+.chatHeaderActions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.resetChatButton {
+  min-height: 40px;
+  padding: 0 15px;
+  border: 1px solid rgba(255, 255, 255, 0.46);
+  border-radius: 999px;
+  background: #fff;
+  color: #06473e;
+  cursor: pointer;
+  font-weight: 850;
+}
+
 .liveStatus {
   min-height: 40px;
   display: inline-flex;
@@ -1180,6 +1200,10 @@ a.sourceCard:hover {
     flex-direction: column;
     padding: 30px 24px;
     border-radius: 20px;
+  }
+
+  .chatHeaderActions {
+    justify-content: flex-start;
   }
 
   .header h1 {

@@ -41,6 +41,16 @@ test("sohbet abort ve eksik EOF durumunda doğrulanmamış cevabı temizler", as
   assert.match(api, /doğrulanmış bir sonuç üretmeden kesildi/);
 });
 
+test("yeni sohbet yalnız istemci durumunu sıfırlar", async () => {
+  const chatbot = await source("app/chatbot/page.tsx");
+
+  assert.match(chatbot, /Yeni sohbet/);
+  assert.match(chatbot, /aria-label="Yeni sohbet başlat"/);
+  assert.match(chatbot, /activeController\?\.abort\(\)/);
+  assert.match(chatbot, /messageInput\.current\?\.focus\(\)/);
+  assert.doesNotMatch(chatbot, /\/api\/reset/);
+});
+
 test("arayüz statik sahte veri veya PR26 hero görseli taşımaz", async () => {
   const pages = await Promise.all([
     source("app/page.tsx"),
