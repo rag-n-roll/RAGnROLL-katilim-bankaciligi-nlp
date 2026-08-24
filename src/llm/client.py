@@ -144,7 +144,8 @@ class OpenAICompatibleLLM:
                 "reason": type(exc).__name__,
             }
         return {
-            "available": self.model in models or bool(models),
+            "available": self.model in models,
             "model": self.model,
             "served_models": models,
+            **({} if self.model in models else {"reason": "model_not_served"}),
         }

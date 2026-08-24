@@ -110,6 +110,36 @@ def test_openai_compatible_client_hides_provider_error_details():
     assert "secret" not in str(error.value)
 
 
+def test_openai_compatible_status_requires_configured_model_to_be_served():
+    served = httpx.MockTransport(
+        lambda request: httpx.Response(
+            200, json={"data": [{"id": "configured-model"}, {"id": "other-model"}]}
+        )
+    )
+    missing = httpx.MockTransport(
+        lambda request: httpx.Response(200, json={"data": [{"id": "other-model"}]})
+    )
+
+    available = OpenAICompatibleLLM(
+        LLMSettings(model="configured-model"), transport=served
+    ).status()
+    unavailable = OpenAICompatibleLLM(
+        LLMSettings(model="configured-model"), transport=missing
+    ).status()
+
+    assert available == {
+        "available": True,
+        "model": "configured-model",
+        "served_models": ["configured-model", "other-model"],
+    }
+    assert unavailable == {
+        "available": False,
+        "model": "configured-model",
+        "served_models": ["other-model"],
+        "reason": "model_not_served",
+    }
+
+
 def test_assistant_uses_llm_only_as_grounded_answer_writer(tmp_path):
     llm = FakeLLM(["Örnek Katılım kaydında oran %1,89'dur ", "[K1]."])
     assistant = GroundedAssistant(

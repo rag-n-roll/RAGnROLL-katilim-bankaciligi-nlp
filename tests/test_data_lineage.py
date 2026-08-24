@@ -1,3 +1,6 @@
+import json
+import sqlite3
+
 from src.data_quality import (
     cluster_near_duplicates,
     content_hash,
@@ -87,6 +90,172 @@ def test_data_quality_summary_counts_fields_and_clusters(tmp_path):
     summary = store.data_quality_summary()
 
     assert summary["record_count"] == 1
-    assert summary["duplicate_cluster_count"] == 1
+    assert summary["duplicate_cluster_count"] == 0
     assert summary["field_statuses"]["EXPLICIT"] >= 1
     assert 0 <= summary["evidence_coverage"] <= 1
+
+
+def test_data_quality_summary_counts_only_clusters_with_multiple_records(tmp_path):
+    store = CampaignStore(tmp_path / "duplicate-quality.sqlite3")
+    store.upsert_rows(
+        [
+            _row("one", "Yeni müşterilere 100.000 TL finansman fırsatı"),
+            _row("two", "Yeni müşterilere 100.000 TL finansman fırsatı!"),
+            _row("three", "Tamamen farklı bir eğitim kampanyası"),
+        ],
+        run_status="success",
+    )
+
+    assert store.data_quality_summary()["duplicate_cluster_count"] == 1
+
+
+def test_initialize_backfills_legacy_campaign_and_product_lineage_idempotently(
+    tmp_path,
+):
+    path = tmp_path / "legacy-lineage.sqlite3"
+    timestamp = "2026-08-01T00:00:00+00:00"
+    with sqlite3.connect(path) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE schema_meta (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            );
+            CREATE TABLE banks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                slug TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                website TEXT,
+                is_active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            CREATE TABLE products (
+                id TEXT PRIMARY KEY,
+                bank_id INTEGER NOT NULL REFERENCES banks(id),
+                name TEXT NOT NULL,
+                product_type TEXT,
+                financing_type TEXT,
+                currency TEXT,
+                source_url TEXT NOT NULL,
+                raw_json TEXT NOT NULL,
+                structured_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            CREATE TABLE campaigns (
+                id TEXT PRIMARY KEY,
+                bank_id INTEGER NOT NULL REFERENCES banks(id),
+                product_id TEXT REFERENCES products(id),
+                title TEXT NOT NULL,
+                source_url TEXT NOT NULL,
+                financing_type TEXT,
+                profit_share_rate REAL,
+                discount_rate REAL,
+                reward_amount_minor INTEGER,
+                max_amount_minor INTEGER,
+                duration_value INTEGER,
+                duration_unit TEXT,
+                duration_days INTEGER,
+                eligibility TEXT,
+                fee_information TEXT,
+                raw_json TEXT NOT NULL,
+                processed_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            """
+        )
+        connection.execute(
+            "INSERT INTO banks(slug, name, created_at, updated_at) VALUES (?, ?, ?, ?)",
+            ("legacy-bank", "Legacy Bank", timestamp, timestamp),
+        )
+        campaigns = []
+        for index in range(470):
+            identifier = f"campaign-{index:03d}"
+            raw = {
+                "id": identifier,
+                "bank_slug": "legacy-bank",
+                "bank_name": "Legacy Bank",
+                "title": f"Kampanya {index}",
+                "content": f"Kampanya {index} için özgün içerik",
+                "source_url": f"https://legacy.example/{identifier}",
+                "legacy_raw_marker": index,
+            }
+            processed = {**raw, "legacy_processed_marker": index}
+            campaigns.append(
+                (
+                    identifier,
+                    1,
+                    raw["title"],
+                    raw["source_url"],
+                    json.dumps(raw, ensure_ascii=False),
+                    json.dumps(processed, ensure_ascii=False),
+                    timestamp,
+                    timestamp,
+                )
+            )
+        connection.executemany(
+            "INSERT INTO campaigns(id, bank_id, title, source_url, raw_json, "
+            "processed_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            campaigns,
+        )
+        product_raw = {
+            "id": "product-001",
+            "record_kind": "product",
+            "bank_slug": "legacy-bank",
+            "bank_name": "Legacy Bank",
+            "title": "Legacy Ürün",
+            "content": "Legacy ürün içeriği",
+            "source_url": "https://legacy.example/product-001",
+            "legacy_product_marker": True,
+        }
+        connection.execute(
+            "INSERT INTO products(id, bank_id, name, source_url, raw_json, "
+            "structured_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                "product-001",
+                1,
+                "Legacy Ürün",
+                product_raw["source_url"],
+                json.dumps(product_raw, ensure_ascii=False),
+                "{}",
+                timestamp,
+                timestamp,
+            ),
+        )
+
+    store = CampaignStore(path)
+    store.initialize()
+    with sqlite3.connect(path) as connection:
+        version_count = connection.execute(
+            "SELECT COUNT(*) FROM record_versions WHERE is_current = 1"
+        ).fetchone()[0]
+        missing_lineage = connection.execute(
+            "SELECT COUNT(*) FROM campaigns WHERE content_hash IS NULL "
+            "OR duplicate_fingerprint IS NULL OR duplicate_cluster_id IS NULL "
+            "OR source_version IS NULL OR valid_from IS NULL"
+        ).fetchone()[0]
+        campaign_raw, campaign_processed = connection.execute(
+            "SELECT raw_json, processed_json FROM campaigns WHERE id = ?",
+            ("campaign-000",),
+        ).fetchone()
+        product_json = connection.execute(
+            "SELECT raw_json FROM products WHERE id = ?", ("product-001",)
+        ).fetchone()[0]
+        snapshot = connection.iterdump()
+        first_dump = "\n".join(snapshot)
+
+    assert version_count == 471
+    assert missing_lineage == 0
+    assert json.loads(campaign_raw)["legacy_raw_marker"] == 0
+    assert json.loads(campaign_processed)["legacy_processed_marker"] == 0
+    assert json.loads(product_json)["legacy_product_marker"] is True
+    raw_export, processed_export = store.export_datasets()
+    assert raw_export["record_count"] == 471
+    assert processed_export["record_count"] == 471
+
+    store.initialize()
+    with sqlite3.connect(path) as connection:
+        second_dump = "\n".join(connection.iterdump())
+    assert second_dump == first_dump
