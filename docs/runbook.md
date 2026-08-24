@@ -1,5 +1,61 @@
 # Operasyon rehberi
 
+## Container sözleşmesi
+
+Temiz bir Compose projesi API ve dashboard'u şu şekilde başlatır:
+
+```bash
+docker compose up --build --detach
+curl --fail http://localhost:8000/api/v1/health
+curl --fail http://localhost:8000/api/v1/dashboard/summary
+curl --fail http://localhost:3000/
+```
+
+İmajdaki `/app/bootstrap/campaigns.json` salt-okunur başlangıç snapshot'ıdır.
+`runtime_data` boşsa entrypoint bu snapshot'ı `/app/runtime/ragnroll.sqlite3`
+veritabanına bir kez aktarır. Scraper yenilemesinin
+`data/raw/participation_banks.json`, `data/raw/campaigns.json`,
+`data/processed/campaigns.json` ve `outputs/quality_report.json` çıktıları da
+`/app/runtime` altında aynı volume'da kalır. Mevcut SQLite veya processed snapshot
+başlangıçta silinmez ya da üzerine yazılmaz. Bilerek boş bir veritabanı işletilecekse
+`RAGNROLL_BOOTSTRAP_ON_EMPTY=false` verilebilir. Chroma ayrı `chroma_data`
+volume'unda `/app/chroma_db` yolunda tutulur.
+
+Gerçek yenileme resmî dış kaynaklara çıkar ve robots/TLS/SSRF kontrollerini aynen
+uygular. Başarılı veya kısmi yenilemeden sonra imaj içine kopyalanan
+`scripts.ingest_chroma` modülü otomatik çağrılır:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/data-refresh \
+  -H 'content-type: application/json' \
+  -d '{"max_per_bank":1}'
+curl --fail http://localhost:8000/api/v1/data-refresh/JOB_ID
+```
+
+Dış banka veya model ağına çıkmadan container refresh→index zincirini denemek
+için ayrı bir Compose proje adı kullanın. Bu mod, aynı bootstrap snapshot'ını
+SQLite'a yeniden aktarır ve yalnız sözleşme doğrulaması için deterministik hash
+embedding üretir; oluşturduğu koleksiyon semantik aramada kullanılmamalıdır:
+
+```bash
+COMPOSE_PROJECT_NAME=ragnroll-smoke \
+RAGNROLL_REFRESH_DATASET=/app/bootstrap/campaigns.json \
+RAGNROLL_INDEX_SMOKE=true \
+RAGNROLL_EMBEDDING_WARMUP=false \
+RAGNROLL_LLM_ENABLED=false \
+RAGNROLL_CHROMA_COLLECTION=ragnroll_container_smoke \
+docker compose up --build --detach
+
+curl -X POST http://localhost:8000/api/v1/data-refresh \
+  -H 'content-type: application/json' \
+  -d '{"max_per_bank":1}'
+```
+
+İşin `status=completed` ve `index_status=completed` olduğunu job uç noktasından
+doğrulayın. Yalnız bu izole smoke projesinin verisini silmek isterseniz
+`COMPOSE_PROJECT_NAME=ragnroll-smoke docker compose down --volumes` kullanın;
+normal proje volume'larında `--volumes` veri kaybına yol açar.
+
 ## Sağlık kontrolü
 
 ```bash

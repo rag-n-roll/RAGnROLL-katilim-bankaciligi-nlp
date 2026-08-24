@@ -55,8 +55,69 @@ jobs:
 
   container-contract:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      COMPOSE_PROJECT_NAME: ragnroll-ci
+      RAGNROLL_CHROMA_ENABLED: "false"
+      RAGNROLL_CHROMA_AUTO_INDEX: "true"
+      RAGNROLL_EMBEDDING_WARMUP: "false"
+      RAGNROLL_LLM_ENABLED: "false"
+      RAGNROLL_REFRESH_DATASET: /app/bootstrap/campaigns.json
+      RAGNROLL_INDEX_SMOKE: "true"
+      RAGNROLL_CHROMA_COLLECTION: ragnroll_container_smoke
     steps:
       - name: Kodları çek
         uses: actions/checkout@v4
       - name: Compose sözleşmesini doğrula
         run: docker compose config --quiet
+      - name: API ve dashboard imajlarını oluştur
+        run: docker compose build api dashboard
+      - name: Temiz volume ile servisleri başlat
+        run: docker compose up --detach api dashboard
+      - name: API ve dashboard smoke
+        run: |
+          for attempt in $(seq 1 45); do
+            if curl --fail --silent http://localhost:8000/api/v1/health >/dev/null \
+              && curl --fail --silent http://localhost:3000/ >/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 45 ]; then
+              docker compose ps
+              exit 1
+            fi
+            sleep 2
+          done
+          summary=$(curl --fail --silent --show-error \
+            http://localhost:8000/api/v1/dashboard/summary)
+          python -c 'import json,sys; p=json.loads(sys.argv[1]); assert p["record_count"] > 0' \
+            "$summary"
+      - name: API refresh ve otomatik indeks smoke
+        run: |
+          created=$(curl --fail --silent --show-error \
+            -X POST http://localhost:8000/api/v1/data-refresh \
+            -H 'content-type: application/json' \
+            -d '{"max_per_bank":1}')
+          job_id=$(python -c 'import json,sys; print(json.loads(sys.argv[1])["id"])' \
+            "$created")
+          payload='{}'
+          for attempt in $(seq 1 60); do
+            payload=$(curl --fail --silent --show-error \
+              "http://localhost:8000/api/v1/data-refresh/$job_id")
+            status=$(python -c 'import json,sys; print(json.loads(sys.argv[1])["status"])' \
+              "$payload")
+            case "$status" in
+              completed|partial|failed) break ;;
+            esac
+            if [ "$attempt" -eq 60 ]; then
+              exit 1
+            fi
+            sleep 2
+          done
+          python -c 'import json,sys; p=json.loads(sys.argv[1]); assert p["status"] == "completed"; assert p["index_status"] == "completed"; assert "\"smoke\": true" in p["index_message"]' \
+            "$payload"
+      - name: Container logları
+        if: always()
+        run: docker compose logs --no-color
+      - name: Container ve volume temizliği
+        if: always()
+        run: docker compose down --volumes --remove-orphans

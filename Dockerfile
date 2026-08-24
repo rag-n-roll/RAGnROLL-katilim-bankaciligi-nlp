@@ -2,7 +2,9 @@ FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    RAGNROLL_DB_PATH=/app/runtime/ragnroll.sqlite3
+    RAGNROLL_DB_PATH=/app/runtime/ragnroll.sqlite3 \
+    RAGNROLL_RUNTIME_ROOT=/app/runtime \
+    RAGNROLL_BOOTSTRAP_DATASET=/app/bootstrap/campaigns.json
 
 WORKDIR /app
 
@@ -15,11 +17,14 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --chown=app:app src/ ./src/
+COPY --chown=app:app scripts/ ./scripts/
 COPY --chown=app:app configs/ ./configs/
 COPY --chown=app:app data/ontology/ ./data/ontology/
+COPY --chown=app:app data/processed/campaigns.json ./bootstrap/campaigns.json
 COPY --chown=app:app prompts/ ./prompts/
 COPY --chown=app:app models/ ./models/
-RUN mkdir -p /app/runtime && chown app:app /app/runtime
+RUN mkdir -p /app/runtime /app/chroma_db \
+    && chown app:app /app/runtime /app/chroma_db
 
 USER app
 EXPOSE 8000
@@ -27,4 +32,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=20s --timeout=5s --start-period=10s --retries=3 \
     CMD curl --fail http://localhost:8000/api/v1/health || exit 1
 
+ENTRYPOINT ["python", "-m", "scripts.container_entrypoint"]
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]

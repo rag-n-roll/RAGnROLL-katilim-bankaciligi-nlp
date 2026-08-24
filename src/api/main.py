@@ -84,6 +84,57 @@ class RefreshManager:
     def _now() -> str:
         return datetime.now(timezone.utc).isoformat()
 
+    @staticmethod
+    def _runtime_path(*parts: str) -> Path:
+        root = Path(os.getenv("RAGNROLL_RUNTIME_ROOT", str(PROJECT_ROOT)))
+        if not root.is_absolute():
+            root = PROJECT_ROOT / root
+        return root.joinpath(*parts)
+
+    def _refresh_command(self, max_per_bank: int, database: Path) -> list[str]:
+        banks_output = self._runtime_path("data", "raw", "participation_banks.json")
+        raw_output = self._runtime_path("data", "raw", "campaigns.json")
+        processed_output = self._runtime_path("data", "processed", "campaigns.json")
+        quality_report = self._runtime_path("outputs", "quality_report.json")
+        configured_dataset = os.getenv("RAGNROLL_REFRESH_DATASET", "").strip()
+        if configured_dataset:
+            dataset = Path(configured_dataset)
+            if not dataset.is_absolute():
+                dataset = PROJECT_ROOT / dataset
+            return [
+                sys.executable,
+                "-m",
+                "src.scraper.scraper",
+                "db",
+                "import-json",
+                str(dataset.resolve()),
+                "--database",
+                str(database.resolve()),
+                "--raw-output",
+                str(raw_output),
+                "--processed-output",
+                str(processed_output),
+            ]
+        return [
+            sys.executable,
+            "-m",
+            "src.scraper.scraper",
+            "--verbose",
+            "collect",
+            "--max-per-bank",
+            str(max_per_bank),
+            "--database",
+            str(database.resolve()),
+            "--banks-output",
+            str(banks_output),
+            "--raw-output",
+            str(raw_output),
+            "--processed-output",
+            str(processed_output),
+            "--quality-report",
+            str(quality_report),
+        ]
+
     def create(self, max_per_bank: int) -> dict[str, Any] | None:
         if (
             isinstance(max_per_bank, bool)
@@ -130,17 +181,7 @@ class RefreshManager:
                 message="Veri yenileme çalışıyor",
             )
             max_per_bank = job["max_per_bank"]
-        command = [
-            sys.executable,
-            "-m",
-            "src.scraper.scraper",
-            "--verbose",
-            "collect",
-            "--max-per-bank",
-            str(max_per_bank),
-            "--database",
-            str(database.resolve()),
-        ]
+        command = self._refresh_command(max_per_bank, database)
         try:
             runner = self._runner or subprocess.run
             result = runner(
@@ -243,6 +284,14 @@ class RefreshManager:
             "--batch-size",
             os.getenv("RAGNROLL_INDEX_BATCH_SIZE", "64"),
         ]
+        if os.getenv("RAGNROLL_INDEX_SMOKE", "false").casefold() not in {
+            "0",
+            "false",
+            "off",
+            "hayır",
+            "hayir",
+        }:
+            command.append("--smoke")
         try:
             runner = self._runner or subprocess.run
             result = runner(

@@ -45,8 +45,16 @@ npm run dev
 Tüm platformu container ile çalıştırmak için:
 
 ```bash
-docker compose up --build
+docker compose up --build --detach
+curl --fail http://localhost:8000/api/v1/health
+curl --fail http://localhost:3000/
 ```
+
+İmaj içindeki işlenmiş kampanya snapshot'ı yalnız boş `runtime_data` volume'unu
+başlatmak için kullanılır. SQLite, yenilemeyle oluşan ham/işlenmiş JSON ve kalite
+raporu `runtime_data`; Chroma koleksiyonu ise `chroma_data` volume'unda kalır.
+Container refresh/index smoke adımları ve volume sıfırlama uyarıları
+[operasyon rehberinde](docs/runbook.md#container-sözleşmesi) yer alır.
 
 ### Yerel Gemma ve Chroma kurulumu
 

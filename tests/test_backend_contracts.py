@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import subprocess
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -107,6 +108,9 @@ def test_comparison_empty_iterable_has_a_complete_deterministic_contract():
 def test_refresh_manager_success_records_output_command_and_releases_slot(
     tmp_path, monkeypatch
 ):
+    runtime_root = tmp_path / "runtime"
+    monkeypatch.setenv("RAGNROLL_RUNTIME_ROOT", str(runtime_root))
+    monkeypatch.delenv("RAGNROLL_REFRESH_DATASET", raising=False)
     manager = RefreshManager()
     first = manager.create(7)
     calls = []
@@ -124,13 +128,22 @@ def test_refresh_manager_success_records_output_command_and_releases_slot(
     assert status["return_code"] == 0
     assert status["message"] == "3 kayıt güncellendi"
     command, kwargs = calls[0]
-    assert command[-5:] == [
+    assert command[:5] == [
+        sys.executable,
+        "-m",
+        "src.scraper.scraper",
+        "--verbose",
         "collect",
-        "--max-per-bank",
-        "7",
-        "--database",
-        str(database),
     ]
+    options = dict(zip(command[5::2], command[6::2]))
+    assert options == {
+        "--max-per-bank": "7",
+        "--database": str(database),
+        "--banks-output": str(runtime_root / "data/raw/participation_banks.json"),
+        "--raw-output": str(runtime_root / "data/raw/campaigns.json"),
+        "--processed-output": str(runtime_root / "data/processed/campaigns.json"),
+        "--quality-report": str(runtime_root / "outputs/quality_report.json"),
+    }
     assert kwargs == {
         "cwd": PROJECT_ROOT,
         "capture_output": True,
@@ -140,6 +153,46 @@ def test_refresh_manager_success_records_output_command_and_releases_slot(
     }
     assert status["created_at"] <= status["started_at"] <= status["completed_at"]
     assert manager.create(1) is not None
+
+
+def test_refresh_manager_supports_offline_container_refresh_and_index_smoke(
+    tmp_path, monkeypatch
+):
+    runtime_root = tmp_path / "runtime"
+    dataset = tmp_path / "bootstrap.json"
+    dataset.write_text('{"records": []}', encoding="utf-8")
+    monkeypatch.setenv("RAGNROLL_RUNTIME_ROOT", str(runtime_root))
+    monkeypatch.setenv("RAGNROLL_REFRESH_DATASET", str(dataset))
+    monkeypatch.setenv("RAGNROLL_INDEX_SMOKE", "true")
+    calls = []
+
+    def successful_run(command, **kwargs):
+        calls.append(command)
+        if "scripts.ingest_chroma" in command:
+            return SimpleNamespace(
+                returncode=0,
+                stdout='{"embedded": 1, "smoke": true}\n',
+                stderr="",
+            )
+        return SimpleNamespace(returncode=0, stdout="snapshot içe aktarıldı\n", stderr="")
+
+    manager = RefreshManager(runner=successful_run, auto_index=True)
+    job = manager.create(1)
+    database = tmp_path / "runtime.sqlite3"
+    manager.run(job["id"], database)
+
+    assert calls[0][:6] == [
+        sys.executable,
+        "-m",
+        "src.scraper.scraper",
+        "db",
+        "import-json",
+        str(dataset),
+    ]
+    assert "--raw-output" in calls[0]
+    assert "--processed-output" in calls[0]
+    assert calls[1][-1] == "--smoke"
+    assert manager.get(job["id"])["index_status"] == "completed"
 
 
 def test_refresh_manager_maps_cli_partial_status_and_keeps_both_output_streams(
