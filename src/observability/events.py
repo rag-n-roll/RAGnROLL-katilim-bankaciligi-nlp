@@ -62,6 +62,22 @@ class EventRecorder:
                 for item in selected
                 if item.get("route") is not None
             )
+            dimensions = {}
+            for field in (
+                "provider",
+                "requested_model",
+                "circuit_state",
+                "retrieval_backend",
+                "generation_mode",
+                "fallback_reason",
+            ):
+                counts = Counter(
+                    str(item[field])
+                    for item in selected
+                    if item.get(field) is not None
+                )
+                if counts:
+                    dimensions[field] = dict(counts)
             by_event[name] = {
                 "count": len(selected),
                 "error_count": failures,
@@ -69,5 +85,6 @@ class EventRecorder:
                 "p50_latency_ms": self._percentile(latencies, 0.50),
                 "p95_latency_ms": self._percentile(latencies, 0.95),
                 "routes": dict(routes),
+                "dimensions": dimensions,
             }
         return {"event_count": len(events), "events": by_event}

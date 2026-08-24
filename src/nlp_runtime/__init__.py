@@ -6,10 +6,13 @@ from src.nlp_runtime.integrity import (
     DependencyVersionError,
     RuntimeManifestError,
 )
+from src.nlp_runtime.evren import EvrenAdvisoryAugmenter, EvrenAdvisoryError
 
 __all__ = [
     "ArtifactIntegrityError",
     "CampaignNlpRuntime",
     "DependencyVersionError",
     "RuntimeManifestError",
+    "EvrenAdvisoryAugmenter",
+    "EvrenAdvisoryError",
 ]

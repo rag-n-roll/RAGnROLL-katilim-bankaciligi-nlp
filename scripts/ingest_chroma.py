@@ -10,7 +10,12 @@ import os
 from pathlib import Path
 
 from src.persistence import CampaignStore
-from src.retrieval import ChromaIndexer, SemanticEmbeddingProvider
+from src.retrieval import (
+    ChromaIndexer,
+    EvrenQdrantIndexer,
+    EvrenQdrantRetriever,
+    SemanticEmbeddingProvider,
+)
 
 
 class SmokeEmbeddingProvider:
@@ -49,21 +54,44 @@ def main() -> int:
         action="store_true",
         help="Model indirmeden Chroma yazma sözleşmesini doğrula; arama için kullanma",
     )
+    parser.add_argument(
+        "--require-evren",
+        action="store_true",
+        help="EVREN yapılandırılmışsa uzak indeks başarısızlığında çıkış kodu 2 döndür",
+    )
     args = parser.parse_args()
     if args.smoke and args.embedding_model:
         parser.error("--smoke ile --embedding-model birlikte kullanılamaz")
     provider = SmokeEmbeddingProvider() if args.smoke else (
         SemanticEmbeddingProvider(args.embedding_model) if args.embedding_model else None
     )
+    store = CampaignStore(Path(args.database))
     result = ChromaIndexer(
-        CampaignStore(Path(args.database)),
+        store,
         path=Path(args.path) if args.path else None,
         collection_name=args.collection,
         provider=provider,
     ).build(batch_size=args.batch_size)
     result["smoke"] = args.smoke
+    evren_retriever = EvrenQdrantRetriever()
+    evren_failure = False
+    if args.smoke:
+        result["evren"] = {"status": "skipped", "reason": "smoke_mode"}
+    elif not evren_retriever.enabled:
+        result["evren"] = {"status": "disabled", "reason": "credentials_missing"}
+    else:
+        try:
+            result["evren"] = EvrenQdrantIndexer(
+                store, retriever=evren_retriever
+            ).build(batch_size=args.batch_size)
+        except Exception as exc:
+            evren_failure = True
+            result["evren"] = {
+                "status": "failed",
+                "reason": type(exc).__name__,
+            }
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0
+    return 2 if args.require_evren and evren_failure else 0
 
 
 if __name__ == "__main__":

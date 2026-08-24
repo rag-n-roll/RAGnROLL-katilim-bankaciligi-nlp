@@ -14,6 +14,7 @@ from src.preprocessing.clean_text import tokenize_turkish
 from src.retrieval.chroma import ChromaVectorRetriever
 from src.retrieval.documents import campaign_documents, terminology_documents
 from src.retrieval.graph import KnowledgeGraphRetriever
+from src.retrieval.qdrant import EvrenQdrantRetriever
 
 
 ONTOLOGY_CHUNKS_PATH = (
@@ -31,6 +32,7 @@ class HybridRetriever:
         *,
         chroma_enabled: bool | None = None,
         vector_retriever: ChromaVectorRetriever | None = None,
+        evren_retriever: EvrenQdrantRetriever | None = None,
         graph_retriever: KnowledgeGraphRetriever | None = None,
     ) -> None:
         self.store = store
@@ -38,9 +40,26 @@ class HybridRetriever:
         if chroma_enabled is None:
             configured = os.getenv("RAGNROLL_CHROMA_ENABLED", "false").casefold()
             chroma_enabled = configured not in {"0", "false", "off", "hayır", "hayir"}
-        self.vector_retriever = (
-            vector_retriever or ChromaVectorRetriever() if chroma_enabled else None
-        )
+        provider_order = {
+            value.strip().casefold()
+            for value in os.getenv(
+                "RAGNROLL_RETRIEVAL_PROVIDER_ORDER",
+                "evren_qdrant,local_qwen_chroma,bm25_graph",
+            ).split(",")
+            if value.strip()
+        }
+        chroma_enabled = chroma_enabled and "local_qwen_chroma" in provider_order
+        if vector_retriever is not None:
+            self.vector_retriever = vector_retriever
+        else:
+            self.vector_retriever = ChromaVectorRetriever() if chroma_enabled else None
+        if evren_retriever is not None:
+            self.evren_retriever = evren_retriever
+        elif "evren_qdrant" in provider_order:
+            candidate = EvrenQdrantRetriever()
+            self.evren_retriever = candidate if candidate.enabled else None
+        else:
+            self.evren_retriever = None
         self.graph_retriever = graph_retriever or KnowledgeGraphRetriever(
             self.terminology
         )
@@ -233,9 +252,34 @@ class HybridRetriever:
             key=lambda item: (-item["score"], item["id"]),
         )
         graph = self.graph_retriever.rank_documents(documents, graph_expansion)
-        if self.vector_retriever is None:
+        vector: list[dict[str, Any]] = []
+        vector_backend = ""
+        vector_fallback_attempted = (
+            self.evren_retriever is not None or self.vector_retriever is not None
+        )
+        if self.evren_retriever is not None:
+            try:
+                vector = self.evren_retriever.retrieve(
+                    query, filters=filters, limit=min(20, limit * 3)
+                )
+            except Exception:
+                vector = []
+            if vector:
+                vector_backend = "evren-qdrant+bge-m3-embed"
+        if not vector and self.vector_retriever is not None:
+            try:
+                vector = self.vector_retriever.retrieve(
+                    query, filters=filters, limit=min(20, limit * 3)
+                )
+            except Exception:
+                vector = []
+            if vector:
+                vector_backend = "chroma"
+        if not vector:
             if graph:
                 self.last_backend = "bm25+knowledge-graph"
+                if vector_fallback_attempted:
+                    self.last_backend += "-fallback"
                 return self._fuse(
                     [lexical, graph],
                     limit=limit,
@@ -243,28 +287,17 @@ class HybridRetriever:
                     rrf_constants=[60, 10],
                 )
             self.last_backend = "bm25"
-            return lexical[:limit]
-        try:
-            vector = self.vector_retriever.retrieve(
-                query, filters=filters, limit=min(20, limit * 3)
-            )
-        except Exception:
-            vector = []
-        if not vector:
-            if graph:
-                self.last_backend = "bm25+knowledge-graph-fallback"
-                return self._fuse(
-                    [lexical, graph],
-                    limit=limit,
-                    method="metadata+bm25+ontology+knowledge-graph",
-                    rrf_constants=[60, 10],
-                )
-            self.last_backend = "bm25-fallback"
+            if vector_fallback_attempted:
+                self.last_backend += "-fallback"
             return lexical[:limit]
 
         rankings = [vector, lexical]
-        method = "chroma+semantic+bm25+ontology"
-        self.last_backend = "chroma+bm25"
+        if vector_backend == "evren-qdrant+bge-m3-embed":
+            method = "evren-qdrant+bge-m3-embed+bm25+ontology"
+            self.last_backend = "evren-qdrant+bm25"
+        else:
+            method = "chroma+semantic+bm25+ontology"
+            self.last_backend = "chroma+bm25"
         if graph:
             rankings.append(graph)
             method += "+knowledge-graph"
@@ -276,3 +309,27 @@ class HybridRetriever:
             method=method,
             rrf_constants=constants,
         )
+
+    def status(self) -> dict[str, Any]:
+        """Birincil ve fallback retrieval yeteneklerinin durumunu döndürür."""
+
+        return {
+            "active_backend": self.last_backend,
+            "evren_qdrant": (
+                self.evren_retriever.status()
+                if self.evren_retriever is not None
+                else {"available": False, "reason": "disabled"}
+            ),
+            "local_qwen_chroma": {
+                "available": bool(
+                    self.vector_retriever is not None
+                    and self.vector_retriever.ready()
+                ),
+                "model": (
+                    self.vector_retriever.embedding_model
+                    if self.vector_retriever is not None
+                    else None
+                ),
+            },
+            "bm25_graph": {"available": True},
+        }

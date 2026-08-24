@@ -9,7 +9,11 @@ from pathlib import Path
 import sys
 from typing import Any, Callable
 
-from src.nlp_runtime import CampaignNlpRuntime
+from src.nlp_runtime import (
+    CampaignNlpRuntime,
+    EvrenAdvisoryAugmenter,
+    EvrenAdvisoryError,
+)
 from src.nlp_runtime.integrity import DEFAULT_MANIFEST
 from src.persistence import CampaignStore
 
@@ -20,6 +24,7 @@ def enrich_database(
     manifest: str | Path = DEFAULT_MANIFEST,
     max_records: int | None = None,
     runtime_loader: Callable[[str | Path], Any] = CampaignNlpRuntime.load,
+    augmenter: EvrenAdvisoryAugmenter | None = None,
 ) -> dict[str, Any]:
     """Analyze every selected snapshot before opening the single write transaction."""
 
@@ -33,22 +38,39 @@ def enrich_database(
             "database": str(Path(database)),
         }
     runtime = runtime_loader(manifest)
+    augmenter = augmenter or EvrenAdvisoryAugmenter()
     analyses = []
+    evren_augmented = 0
+    evren_failed = 0
     for candidate in candidates:
-        analyses.append(
-            runtime.analyze(
-                candidate["text"],
-                structured=candidate["structured"],
-                record_id=candidate["id"],
-                content_hash=candidate["content_hash"],
-                source_version=candidate["source_version"],
-            )
+        analysis = runtime.analyze(
+            candidate["text"],
+            structured=candidate["structured"],
+            record_id=candidate["id"],
+            content_hash=candidate["content_hash"],
+            source_version=candidate["source_version"],
         )
+        if augmenter.enabled:
+            try:
+                analysis = augmenter.augment(
+                    analysis,
+                    text=candidate["text"],
+                    structured=candidate["structured"],
+                )
+                evren_augmented += int(
+                    analysis.get("augmentation", {}).get("accepted_suggestions", 0) > 0
+                )
+            except EvrenAdvisoryError:
+                evren_failed += 1
+        analyses.append(analysis)
     changed = store.apply_nlp_analyses(analyses)
     return {
         "candidates": len(candidates),
         "analyzed": len(analyses),
         "changed": changed,
+        "evren_enabled": augmenter.enabled,
+        "evren_augmented": evren_augmented,
+        "evren_failed": evren_failed,
         "database": str(Path(database)),
     }
 
