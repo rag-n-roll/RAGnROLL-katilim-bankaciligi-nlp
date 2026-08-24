@@ -7,10 +7,16 @@ import {
   streamChat,
 } from "../../services/api";
 import styles from "../live.module.css";
+import {
+  applyActiveChatUpdate,
+  isActiveChatRequest,
+  nextChatRequestToken,
+  resetChatSession,
+} from "./sessionGuard";
 
 const suggestions = [
-  "Faizsiz ev finansmanında en düşük oran hangisi?",
-  "Kuveyt Türk ile Albaraka Türk taşıt finansmanını karşılaştır",
+  "Türkiye'deki katılım bankalarını sayar mısın?",
+  "Kuveyt Türk kampanyalarında hangi avantajlar var?",
   "Murabaha nedir?",
 ];
 
@@ -28,49 +34,70 @@ export default function ChatbotPage() {
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [loading, setLoading] = useState(false);
   const controller = useRef<AbortController | null>(null);
+  const requestToken = useRef(0);
   const conversationEnd = useRef<HTMLDivElement | null>(null);
+  const messageInput = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     conversationEnd.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [exchanges]);
 
-  function updateLatest(update: (exchange: Exchange) => Exchange) {
-    setExchanges((items) => [
-      ...items.slice(0, -1),
-      update(items[items.length - 1]),
-    ]);
+  function updateLatest(
+    activeToken: number,
+    update: (exchange: Exchange) => Exchange
+  ) {
+    setExchanges((items) =>
+      applyActiveChatUpdate(
+        requestToken.current,
+        activeToken,
+        items,
+        (currentItems: Exchange[]) => {
+          const latest = currentItems[currentItems.length - 1];
+          if (!latest) return currentItems;
+          return [...currentItems.slice(0, -1), update(latest)];
+        }
+      )
+    );
   }
 
   async function ask(question: string) {
     const trimmed = question.trim();
-    if (!trimmed || loading) return;
+    if (!trimmed || loading || controller.current) return;
+    const activeToken = nextChatRequestToken(requestToken.current);
+    requestToken.current = activeToken;
+    const activeController = new AbortController();
+    controller.current = activeController;
     setLoading(true);
     setMessage("");
     setExchanges((items) => [
       ...items,
       { question: trimmed, answer: "", streaming: true },
     ]);
-    controller.current = new AbortController();
     let completed = false;
     try {
       await streamChat(
         trimmed,
         {
-          onMeta: (meta) => updateLatest((item) => ({ ...item, meta })),
+          onMeta: (meta) =>
+            updateLatest(activeToken, (item) => ({ ...item, meta })),
           onDelta: (text) =>
-            updateLatest((item) => ({ ...item, answer: item.answer + text })),
+            updateLatest(activeToken, (item) => ({
+              ...item,
+              answer: item.answer + text,
+            })),
           onReplace: (text) =>
-            updateLatest((item) => ({ ...item, answer: text })),
+            updateLatest(activeToken, (item) => ({ ...item, answer: text })),
           onDone: (generation) => {
+            if (!isActiveChatRequest(requestToken.current, activeToken)) return;
             completed = true;
-            updateLatest((item) => ({
+            updateLatest(activeToken, (item) => ({
               ...item,
               generation,
               streaming: false,
             }));
           },
         },
-        controller.current.signal
+        activeController.signal
       );
     } catch (reason) {
       const stopped = reason instanceof DOMException && reason.name === "AbortError";
@@ -80,17 +107,21 @@ export default function ChatbotPage() {
           ? reason.message
           : "Yanıt üretilemedi.";
       if (!completed) {
-        updateLatest((item) => ({
-          ...item,
-          answer: "",
-          generation: undefined,
-          streaming: false,
-          error,
-        }));
+        if (isActiveChatRequest(requestToken.current, activeToken)) {
+          updateLatest(activeToken, (item) => ({
+            ...item,
+            answer: "",
+            generation: undefined,
+            streaming: false,
+            error,
+          }));
+        }
       }
     } finally {
-      setLoading(false);
-      controller.current = null;
+      if (isActiveChatRequest(requestToken.current, activeToken)) {
+        setLoading(false);
+        controller.current = null;
+      }
     }
   }
 
@@ -103,6 +134,20 @@ export default function ChatbotPage() {
     controller.current?.abort();
   }
 
+  function resetConversation() {
+    const resetState = resetChatSession(requestToken.current);
+    const activeController = controller.current;
+    requestToken.current = resetState.requestToken;
+    controller.current = null;
+    activeController?.abort();
+    setExchanges(resetState.exchanges);
+    setMessage(resetState.message);
+    setLoading(resetState.loading);
+    if (resetState.focusInput) {
+      requestAnimationFrame(() => messageInput.current?.focus());
+    }
+  }
+
   return (
     <main className={styles.main} aria-busy={loading}>
       <header className={styles.header}>
@@ -111,7 +156,17 @@ export default function ChatbotPage() {
           <h1>Kanıta dayalı asistan</h1>
           <p>Gemma yanıtları doğrulanmış kampanya verileri ve yerel bilgi tabanı üzerinden gerçek zamanlı yazar.</p>
         </div>
-        <span className={styles.liveStatus}><span /> Yerel ve gizli</span>
+        <div className={styles.chatHeaderActions}>
+          <button
+            aria-label="Yeni sohbet başlat"
+            className={styles.resetChatButton}
+            onClick={resetConversation}
+            type="button"
+          >
+            Yeni sohbet
+          </button>
+          <span className={styles.liveStatus}><span /> Yerel ve gizli</span>
+        </div>
       </header>
       <section className={styles.chatLayout}>
         <article className={`${styles.card} ${styles.chat}`}>
@@ -181,7 +236,7 @@ export default function ChatbotPage() {
           </div>
           <form className={styles.chatControls} onSubmit={submit}>
             <label className={styles.visuallyHidden} htmlFor="chat-message">Sorunuz</label>
-            <textarea className={styles.chatInput} id="chat-message" maxLength={4000} minLength={1} onChange={(event) => setMessage(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); if (!loading) void ask(message); } }} placeholder="Katılım bankacılığı hakkında sorunuzu yazın…" rows={2} value={message} />
+            <textarea className={styles.chatInput} id="chat-message" maxLength={4000} minLength={1} onChange={(event) => setMessage(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); if (!loading) void ask(message); } }} placeholder="Katılım bankacılığı hakkında sorunuzu yazın…" ref={messageInput} rows={2} value={message} />
             {loading ? (
               <button className={styles.stopButton} onClick={stop} type="button">Durdur</button>
             ) : (
