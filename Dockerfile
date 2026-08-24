@@ -14,7 +14,8 @@ RUN apt-get update \
     && useradd --create-home --uid 10001 app
 
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && python -c 'from importlib.util import find_spec; assert find_spec("dspy") is None; assert find_spec("gepa") is None'
 
 COPY --chown=app:app src/ ./src/
 COPY --chown=app:app scripts/ ./scripts/
@@ -26,6 +27,7 @@ COPY --chown=app:app \
     data/model_training_data/ner_dataset_final.jsonl \
     data/model_training_data/training_dataset_manifest.json \
     ./data/model_training_data/
+COPY --chown=app:app data/model_training_data/dspy_prompt_examples.manifest.json ./data/model_training_data/dspy_prompt_examples.manifest.json
 COPY --chown=app:app data/processed/campaigns.json ./bootstrap/campaigns.json
 COPY --chown=app:app prompts/ ./prompts/
 COPY --chown=app:app models/ ./models/

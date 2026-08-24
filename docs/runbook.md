@@ -134,18 +134,37 @@ değildir. Container yalnız bu kapı için gereken üç lineage dosyasını ta�
 python -m scripts.enrich_nlp --database data/ragnroll.sqlite3
 ```
 
-GEPA optimizasyonunu yalnız vLLM sağlıklıyken çalıştırın:
+Önce ağ kullanmayan prompt veri/bağımlılık/artifact sözleşmesi kontrolünü çalıştırın:
 
 ```bash
-python -m scripts.optimize_assistant_prompt --dry-run
-python -m scripts.optimize_assistant_prompt --max-metric-calls 24
+pip install -r requirements-prompt-optimization.txt
+python -m src.prompt_optimization.optimize_gepa --check
 ```
 
-Varsayılan bütçe de 24 metrik çağrısıdır. Daha uzun deneyler için
-`--auto light`, `--auto medium` veya `--auto heavy` seçeneklerinden yalnız biri
-kullanılabilir. Aynı veri, model ve bütçe birleşimi yarım kalırsa çalışma kendi
-parmak izine ait günlük dizininden sürdürülür; `--log-dir` ile bu dizin açıkça
-seçilebilir.
+Gerçek deney yalnız model endpoint'i sağlıklıyken ve çıktı kökü açıkça verilerek
+başlatılır:
+
+```bash
+python -m src.prompt_optimization.optimize_gepa \
+  --runtime-dir runtime \
+  --max-metric-calls 24
+```
+
+Cache, GEPA logları, atomik artifact ve raporlar yalnız bu runtime köküne yazılır.
+`--auto light`, `--auto medium` veya `--auto heavy`, metrik çağrısı bütçesinin
+yerine kullanılabilir. Aday seçimi train+validation ile yapılır; committed test
+spliti yalnız seçilen adaya bir kez uygulanır. Raporlar türetilmiş etiketlere
+dayalı proxy'dir ve `independent_gold:not_provided` taşır.
+
+Canlı servis varsayılan promptla kalır. İncelenen bir artifact'i etkinleştirmek
+için iki değişken birlikte ayarlanır; eksik/geçersiz artifact veya dataset digest
+uyuşmazlığı asistanın oluşturulmasını veya ilk asistan isteğini fail-closed
+durdurur:
+
+```bash
+RAGNROLL_PROMPT_MODE=gepa
+RAGNROLL_PROMPT_ARTIFACT=runtime/prompt-optimization/selected_prompt.json
+```
 
 Canlı kullanıcı içeriği GEPA eğitim verisine otomatik eklenmez. Yeni örnekler
 insan doğrulamasıyla değerlendirme dosyasına alınmalıdır.
