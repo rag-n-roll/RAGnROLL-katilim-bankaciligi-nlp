@@ -37,25 +37,16 @@ için ayrı bir Compose proje adı kullanın. Bu mod, aynı bootstrap snapshot'�
 SQLite'a yeniden aktarır ve yalnız sözleşme doğrulaması için deterministik hash
 embedding üretir; oluşturduğu koleksiyon semantik aramada kullanılmamalıdır:
 
-```bash
-COMPOSE_PROJECT_NAME=ragnroll-smoke \
-RAGNROLL_REFRESH_DATASET=/app/bootstrap/campaigns.json \
-RAGNROLL_INDEX_SMOKE=true \
-RAGNROLL_EMBEDDING_WARMUP=false \
-RAGNROLL_LLM_ENABLED=false \
-RAGNROLL_CHROMA_COLLECTION=ragnroll_container_smoke \
-docker compose up --build --detach
-
-curl -X POST http://localhost:8000/api/v1/data-refresh \
-  -H 'content-type: application/json' \
-  -d '{"max_per_bank":1}'
-```
-
-İşin `status=completed`, `enrichment_status=completed` ve
-`index_status=completed` olduğunu job uç noktasından doğrulayın. CI/smoke için
+Container smoke için [README'deki kanonik güvenli akışı](../README.md#kurulum-doğrulaması-ve-güvenli-temizlik)
+kullanın. Bu akış Compose başlangıcını başarısızlıkta durdurur, API health için
+retry yaparak hazır olmasını bekler, POST'tan sonra job durumunu terminal duruma
+dek polling yapar ve `status=completed`, `enrichment_status=completed` ile
+`index_status=completed` değerlerinin üçünü de doğrular. PowerShell akışı ayrıca
+tüm `COMPOSE_PROJECT_NAME` ve `RAGNROLL_*` smoke değişkenlerini işlem sonunda,
+başarısızlık dahil, önceki değerlerine döndürür. CI/smoke için
 `RAGNROLL_NLP_MAX_RECORDS=1`, tüm kayıtlar için `0` kullanılır. Yalnız bu izole
 smoke projesinin verisini silmek isterseniz
-`COMPOSE_PROJECT_NAME=ragnroll-smoke docker compose down --volumes` kullanın;
+`COMPOSE_PROJECT_NAME=ragnroll-smoke docker compose down --volumes --remove-orphans` kullanın;
 normal proje volume'larında `--volumes` veri kaybına yol açar.
 
 ## Sağlık kontrolü

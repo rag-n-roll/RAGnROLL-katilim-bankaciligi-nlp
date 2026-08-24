@@ -20,13 +20,389 @@ karşılaştırma ve kaynaklı soru-cevap sunan yerel çalışabilir platform.
 - FastAPI sözleşmeleri ve canlı Next.js dashboard
 - Golden Set, edge-case testleri, gecikme/hata ve veri kalitesi metrikleri
 
-## Hızlı başlangıç
+## Kurulum yolları ve önkoşullar
 
-Python 3.11 önerilir. Model artefaktları spaCy 3.8.15, scikit-learn 1.9.0 ve
-joblib 1.5.3 ile fail-closed çalışır; farklı sürümde deserialize edilmez.
+Platformdan bağımsız tüm yerel kurulumlar Python **3.11** ve Node.js **22**
+gerektirir. Python ve Node sürümlerini kurulumdan önce doğrulayın:
+
+```text
+python --version
+python3 --version
+node --version
+npm --version
+```
+
+Python 3.11, sabitlenmiş model artefaktlarının güvenli şekilde yüklenmesi için
+gereklidir. `python` komutu Python 3.11'i göstermiyorsa aşağıdaki platforma özel komutlarda
+`python3.11` kullanın. Node.js 22 için [Node.js indirme sayfasındaki](https://nodejs.org/en/download)
+LTS sürümünü tercih edin.
+
+### Windows PowerShell
+
+PowerShell'de proje dizininde:
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+cd src\dashboard
+npm ci
+cd ..\..
+```
+
+`Activate.ps1` çalıştırılırken script politikası hatası alırsanız yalnızca açık
+olan PowerShell oturumu için şu komutu çalıştırıp aktivasyonu tekrarlayın:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+Politikayı değiştirmek istemiyorsanız sanal ortamı aktive etmeden doğrudan
+`.\.venv\Scripts\python.exe` ve `.\.venv\Scripts\pip.exe` yürütülebilirlerini
+kullanın. Örneğin:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn src.main:app --reload
+```
+
+### Linux
+
+Dağıtımınızın paket yöneticisiyle Python 3.11, `python3.11-venv`, Node.js 22
+ve npm'i kurduktan sonra:
 
 ```bash
-python3 -m venv .venv
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+cd src/dashboard
+npm ci
+cd ../..
+```
+
+### macOS
+
+Homebrew veya Python.org üzerinden Python 3.11'i, Node.js 22'yi ise Node.js
+LTS paketinden kurun. Ardından:
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+cd src/dashboard
+npm ci
+cd ../..
+```
+
+### Yol 1 — Baseline API ve dashboard
+
+İlk kurulum için yalnızca API ve dashboard'u çalıştırın; Python ve Node
+bağımlılıkları yukarıdaki platform bölümünde bir kez kurulmuş olmalıdır. API'yi
+bir terminalde başlatın:
+
+```bash
+python -m uvicorn src.main:app --reload
+```
+
+Windows PowerShell'de aynı komut çalışır. Dashboard için ikinci terminalde:
+
+```bash
+cd src/dashboard
+npm run dev
+```
+
+Bu baseline yolunda yerel Gemma servisi veya embedding modeli başlatmanız
+gerekmez; API'nin deterministik fallback'i kullanılabilir.
+
+### Yol 2 — Chroma ve Qwen embedding
+
+Yerel retrieval'i etkinleştirmek için API'yi durdurmadan önce aynı sanal ortamda
+işlenmiş kampanyaları ve terminolojiyi indeksleyin:
+
+```bash
+python -m scripts.ingest_chroma --batch-size 64
+```
+
+İlk çalıştırma `Qwen/Qwen3-Embedding-0.6B` modelini ve Chroma indeksini indirir;
+sonraki çalıştırmalar yalnızca değişen parçaları embed eder. API yenilemesinden
+sonra otomatik indeksleme için `RAGNROLL_CHROMA_AUTO_INDEX=true` ayarlayın.
+
+### Yol 3 — İsteğe bağlı Gemma/vLLM
+
+Bu yol baseline için zorunlu değildir. Apple Silicon üzerinde vLLM-Metal'i bir
+kez kurup OpenAI uyumlu Gemma endpoint'ini başlatın:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vllm-project/vllm-metal/main/install.sh | bash
+python -m scripts.serve_local_llm
+```
+
+Linux veya Windows'ta Gemma/vLLM kullanacaksanız, makinenize uygun ve OpenAI
+uyumlu vLLM kurulumunu ayrıca sağlayın; API adresini `RAGNROLL_LLM_BASE_URL`,
+model adını `RAGNROLL_LLM_MODEL` ile verin. Servis erişilemezse API doğrulanmış
+deterministik fallback'e döner. Model uyumluluğu ve MLX kontrol noktası hakkında
+ayrıntılar aşağıdaki mevcut Gemma bölümündedir.
+
+### Yol 4 — İsteğe bağlı GEPA prompt optimizasyonu
+
+GEPA yalnız deney ortamı içindir; baseline veya retrieval kurulumu için gerekli
+değildir:
+
+```bash
+python -m pip install -r requirements-prompt-optimization.txt
+python -m src.prompt_optimization.optimize_gepa --check
+```
+
+Gerçek deney için ayrıca çalışan OpenAI uyumlu model endpoint'i gerekir:
+
+```bash
+python -m src.prompt_optimization.optimize_gepa --runtime-dir runtime --max-metric-calls 24
+```
+
+### Docker Desktop ve Linux Docker Compose
+
+Docker kullanacaksanız Python/Node'u host'a kurmak zorunda değilsiniz. Windows ve
+macOS'ta Docker Desktop'ı başlatın; Linux'ta Docker Engine ile Compose plugin'in
+kurulu olduğunu doğrulayın:
+
+```bash
+docker version
+docker compose version
+```
+
+Windows PowerShell'de imajları oluşturup servisleri arka planda başlatın:
+
+```powershell
+docker compose up --build --detach
+Invoke-RestMethod http://localhost:8000/api/v1/health
+Invoke-RestMethod http://localhost:3000/
+```
+
+Linux'ta ve macOS'ta aynı işlemin `curl` karşılığı:
+
+```bash
+docker compose up --build --detach
+curl --fail http://localhost:8000/api/v1/health
+curl --fail http://localhost:3000/
+```
+
+Compose API, dashboard ve Chroma için gerekli servisleri başlatır. Gemma host'ta
+çalışıyorsa Compose API'si varsayılan olarak `host.docker.internal:8001` adresini
+kullanır. Snapshot, SQLite ve Chroma volume'larının davranışı için
+[operasyon rehberindeki container sözleşmesine](docs/runbook.md#container-sözleşmesi)
+bakın.
+
+## Kurulum doğrulaması ve güvenli temizlik
+
+Çalışan baseline kurulumunu aşağıdaki kesin komutlarla doğrulayın.
+
+Windows PowerShell:
+
+```powershell
+Invoke-RestMethod http://localhost:8000/api/v1/health
+Invoke-RestMethod http://localhost:3000/
+```
+
+Linux/macOS:
+
+```bash
+curl --fail http://localhost:8000/api/v1/health
+curl --fail http://localhost:3000/
+```
+
+Kod kalite doğrulaması için:
+
+```bash
+python -m pytest tests/ -q --cov=src --cov-report=term
+python -m flake8 src tests --max-line-length=100 --extend-ignore=E203 --exclude=src/dashboard/node_modules
+cd src/dashboard && npm test && npm run lint && npm run build
+cd ../..
+```
+
+Compose tanımını ve izole refresh→index smoke yolunu doğrulamak için. Temel Compose
+kullanımı host'ta Python/Node gerektirmez; aşağıdaki smoke kontrolü, JSON yanıtlarını
+ayrıştırmak için host'ta Python gerektirir.
+
+```bash
+docker compose config --quiet
+if ! COMPOSE_PROJECT_NAME=ragnroll-smoke \
+  RAGNROLL_REFRESH_DATASET=/app/bootstrap/campaigns.json \
+  RAGNROLL_INDEX_SMOKE=true \
+  RAGNROLL_EMBEDDING_WARMUP=false \
+  RAGNROLL_LLM_ENABLED=false \
+  RAGNROLL_NLP_MAX_RECORDS=1 \
+  RAGNROLL_CHROMA_COLLECTION=ragnroll_container_smoke \
+  docker compose up --build --detach; then
+  printf 'Compose smoke startup failed; refusing to probe services\n' >&2
+  exit 1
+fi
+health_attempt=1
+until curl --fail --silent --show-error http://localhost:8000/api/v1/health >/dev/null; do
+  if [ "$health_attempt" -ge 60 ]; then
+    printf 'API health check did not become ready after %s attempts\n' "$health_attempt" >&2
+    exit 1
+  fi
+  sleep 2
+  health_attempt=$((health_attempt + 1))
+done
+job_response="$(curl --fail --silent --show-error -X POST http://localhost:8000/api/v1/data-refresh \
+  -H 'content-type: application/json' \
+  -d '{"max_per_bank":1}')"
+job_id="$(printf '%s' "$job_response" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
+status=""
+enrichment_status=""
+index_status=""
+attempt=1
+while [ "$attempt" -le 60 ]; do
+  job_json="$(curl --fail --silent --show-error "http://localhost:8000/api/v1/data-refresh/$job_id")"
+  status="$(printf '%s' "$job_json" | python -c 'import json,sys; print(json.load(sys.stdin)["status"])')"
+  enrichment_status="$(printf '%s' "$job_json" | python -c 'import json,sys; print(json.load(sys.stdin)["enrichment_status"])')"
+  index_status="$(printf '%s' "$job_json" | python -c 'import json,sys; print(json.load(sys.stdin)["index_status"])')"
+  case "$status" in
+    completed|partial|failed) break ;;
+  esac
+  sleep 2
+  attempt=$((attempt + 1))
+done
+[ "$status" = "completed" ] && \
+  [ "$enrichment_status" = "completed" ] && \
+  [ "$index_status" = "completed" ] || {
+    printf 'Smoke job did not complete successfully: status=%s enrichment_status=%s index_status=%s\n' \
+      "$status" "$enrichment_status" "$index_status" >&2
+    exit 1
+  }
+```
+
+Windows PowerShell karşılığı:
+
+```powershell
+$smokeEnv = @{
+  COMPOSE_PROJECT_NAME = "ragnroll-smoke"
+  RAGNROLL_REFRESH_DATASET = "/app/bootstrap/campaigns.json"
+  RAGNROLL_INDEX_SMOKE = "true"
+  RAGNROLL_EMBEDDING_WARMUP = "false"
+  RAGNROLL_LLM_ENABLED = "false"
+  RAGNROLL_NLP_MAX_RECORDS = "1"
+  RAGNROLL_CHROMA_COLLECTION = "ragnroll_container_smoke"
+}
+$previousSmokeEnv = @{}
+try {
+  foreach ($name in $smokeEnv.Keys) {
+    $previous = Get-Item "Env:$name" -ErrorAction SilentlyContinue
+    $previousSmokeEnv[$name] = @{
+      Exists = $null -ne $previous
+      Value = if ($null -ne $previous) { $previous.Value } else { $null }
+    }
+    Set-Item "Env:$name" $smokeEnv[$name]
+  }
+  docker compose up --build --detach
+  if ($LASTEXITCODE -ne 0) {
+    throw "Compose smoke startup failed; refusing to probe services"
+  }
+  $healthReady = $false
+  for ($attempt = 1; $attempt -le 60; $attempt++) {
+    try {
+      Invoke-RestMethod "http://localhost:8000/api/v1/health" | Out-Null
+      $healthReady = $true
+      break
+    } catch {
+      if ($attempt -lt 60) { Start-Sleep -Seconds 2 }
+    }
+  }
+  if (-not $healthReady) {
+    throw "API health check did not become ready after 60 attempts"
+  }
+  $job = Invoke-RestMethod -Method Post `
+    -Uri http://localhost:8000/api/v1/data-refresh `
+    -ContentType "application/json" `
+    -Body '{"max_per_bank":1}'
+  $jobId = $job.id
+  $terminalStatuses = @("completed", "partial", "failed")
+  $state = $null
+  for ($attempt = 1; $attempt -le 60; $attempt++) {
+    $state = Invoke-RestMethod "http://localhost:8000/api/v1/data-refresh/$jobId"
+    if ($terminalStatuses -contains $state.status) { break }
+    if ($attempt -lt 60) { Start-Sleep -Seconds 2 }
+  }
+  if ($null -eq $state -or
+      $state.status -ne "completed" -or
+      $state.enrichment_status -ne "completed" -or
+      $state.index_status -ne "completed") {
+    throw "Smoke job did not complete successfully: status=$($state.status) enrichment_status=$($state.enrichment_status) index_status=$($state.index_status)"
+  }
+} finally {
+  foreach ($name in $smokeEnv.Keys) {
+    if (-not $previousSmokeEnv[$name].Exists) {
+      Remove-Item "Env:$name" -ErrorAction SilentlyContinue
+    } else {
+      Set-Item "Env:$name" $previousSmokeEnv[$name].Value
+    }
+  }
+}
+```
+
+İzole smoke işi bittikten sonra yalnızca `ragnroll-smoke` Compose projesine ait
+volume'ları kaldırın. Bu işlem normal çalışma ortamının `runtime_data` veya
+`chroma_data` volume'larını sıfırlamaz:
+
+```bash
+COMPOSE_PROJECT_NAME=ragnroll-smoke docker compose down --volumes --remove-orphans
+```
+
+Windows PowerShell'de:
+
+```powershell
+$previousComposeProjectName = Get-Item Env:COMPOSE_PROJECT_NAME -ErrorAction SilentlyContinue
+try {
+  $env:COMPOSE_PROJECT_NAME = "ragnroll-smoke"
+  docker compose down --volumes --remove-orphans
+  if ($LASTEXITCODE -ne 0) { throw "Failed to remove the smoke Compose project" }
+} finally {
+  if ($null -eq $previousComposeProjectName) {
+    Remove-Item Env:COMPOSE_PROJECT_NAME -ErrorAction SilentlyContinue
+  } else {
+    $env:COMPOSE_PROJECT_NAME = $previousComposeProjectName.Value
+  }
+}
+```
+
+Retrieval ve GEPA yollarını ayrıca doğrulayın:
+
+```bash
+python -m scripts.ingest_chroma --batch-size 64
+python -m src.prompt_optimization.optimize_gepa --check
+```
+
+Yerel servisleri ve verileri koruyarak durdurmak için:
+
+```bash
+docker compose down --remove-orphans
+```
+
+Yalnız sanal ortamı kaldırmak güvenlidir; kaynak kodu, `data/` ve Docker
+volume'larını silmez:
+
+```powershell
+Remove-Item -Recurse -Force .venv
+```
+
+```bash
+rm -rf .venv
+```
+
+## Hızlı başlangıç
+
+Python 3.11 gereklidir. Model artefaktları spaCy 3.8.15, scikit-learn 1.9.0 ve
+joblib 1.5.3 ile fail-closed çalışır; farklı sürümde deserialize edilmez.
+
+Linux/macOS'ta proje kökünde:
+
+```bash
+python3.11 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 python -m uvicorn src.main:app --reload
@@ -44,12 +420,20 @@ npm run dev
 - OpenAPI: `http://localhost:8000/docs`
 - Dashboard: `http://localhost:3000`
 
-Tüm platformu container ile çalıştırmak için:
+Linux/macOS'ta tüm platformu container ile çalıştırmak için:
 
 ```bash
 docker compose up --build --detach
 curl --fail http://localhost:8000/api/v1/health
 curl --fail http://localhost:3000/
+```
+
+Windows PowerShell'de:
+
+```powershell
+docker compose up --build --detach
+Invoke-RestMethod http://localhost:8000/api/v1/health
+Invoke-RestMethod http://localhost:3000/
 ```
 
 İmaj içindeki işlenmiş kampanya snapshot'ı yalnız boş `runtime_data` volume'unu
@@ -182,7 +566,7 @@ python -m flake8 src tests --max-line-length=100 --extend-ignore=E203 \
   --exclude=src/dashboard/node_modules
 python -m src.evaluation.golden \
   data/model_training_data/golden_evaluation_set.jsonl
-cd src/dashboard && npm run lint && npm run build
+cd src/dashboard && npm test && npm run lint && npm run build
 ```
 
 Dondurulmuş regresyon seti yalnız desteklenen alanları proxy başarı oranına dahil
