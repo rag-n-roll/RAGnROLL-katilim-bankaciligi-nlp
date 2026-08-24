@@ -1,10 +1,11 @@
-"""EVREN llm-fast çıktısını yerel NLP advisory sözleşmesine güvenle ekler."""
+"""EVREN çıktısını yerel NLP advisory sözleşmesine güvenle ekler."""
 
 from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import replace
 import json
+import os
 from typing import Any
 
 from src.llm.client import LLMSettings, LLMUnavailableError, OpenAICompatibleLLM
@@ -20,10 +21,11 @@ class EvrenAdvisoryAugmenter:
     """Yalnız eksik alan ve birebir kanıt aralığı için model önerisi kabul eder."""
 
     def __init__(self, client: OpenAICompatibleLLM | None = None) -> None:
+        enrichment_model = os.getenv("EVREN_NLP_MODEL", "llm-large").strip()
         settings = replace(
             LLMSettings.evren_from_env(),
-            model="llm-fast",
-            max_tokens=1024,
+            model=enrichment_model,
+            max_tokens=int(os.getenv("EVREN_NLP_MAX_TOKENS", "1536")),
             temperature=0.0,
         )
         self.client = client or OpenAICompatibleLLM(settings)
@@ -59,6 +61,27 @@ class EvrenAdvisoryAugmenter:
             start = evidence.get("char_start")
             end = evidence.get("char_end")
             evidence_text = evidence.get("text")
+            offsets_valid = (
+                not isinstance(start, bool)
+                and isinstance(start, int)
+                and not isinstance(end, bool)
+                and isinstance(end, int)
+                and isinstance(evidence_text, str)
+                and start >= 0
+                and end > start
+                and text[start:end] == evidence_text
+            )
+            if not offsets_valid and isinstance(evidence_text, str) and evidence_text:
+                anchored_start = text.find(evidence_text)
+                if (
+                    anchored_start >= 0
+                    and text.find(evidence_text, anchored_start + 1) < 0
+                ):
+                    start = anchored_start
+                    end = anchored_start + len(evidence_text)
+                    offsets_valid = True
+            if not offsets_valid:
+                continue
             if (
                 isinstance(start, bool)
                 or not isinstance(start, int)
@@ -69,11 +92,15 @@ class EvrenAdvisoryAugmenter:
                 or end <= start
                 or text[start:end] != evidence_text
             ):
-                raise EvrenAdvisoryError("EVREN advisory kanıt aralığı geçersiz")
+                continue
             validated[field] = {
                 "value": value,
-                "evidence": dict(evidence),
-                "method": "evren_llm_fast",
+                "evidence": {
+                    "text": evidence_text,
+                    "char_start": start,
+                    "char_end": end,
+                },
+                "method": "evren_grounded_llm",
                 "advisory": True,
             }
         return validated
@@ -135,7 +162,7 @@ class EvrenAdvisoryAugmenter:
         result["quality"]["suggestion_count"] = len(local)
         result["augmentation"] = {
             "provider": "evren",
-            "requested_model": "llm-fast",
+            "requested_model": self.client.model,
             "accepted_suggestions": accepted,
             "advisory_only": True,
         }

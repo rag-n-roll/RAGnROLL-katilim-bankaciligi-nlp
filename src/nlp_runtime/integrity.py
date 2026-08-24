@@ -17,11 +17,11 @@ RUNTIME_CONTRACT = "ragnroll-nlp-advisory-2026.08"
 REQUIRED_DEPENDENCIES = {
     "joblib": "1.5.3",
     "scikit-learn": "1.9.0",
-    "spacy": "3.8.15",
+    "spacy": "3.8.16",
 }
 REQUIRED_ARTIFACT_HASHES = {
-    "classifier": "327f7fdeece6798c83bbc8096d54ad9e7de7c911f5579717b11ba9c1782399e7",
-    "ner": "7a39078461b2e574a9eb673a23fab565ae8eb0a0e8c03a686346967ef48be8cf",
+    "classifier": "3a74bde2523593a23ea50e6625854ae8982607311f5fc54aa7e07dd580d4f796",
+    "ner": "bbf49f6c5b3d2da58a4ea3e273fc3822ee3a376f1b2568bdcad5f3ce8307e707",
 }
 REQUIRED_ARTIFACT_PATHS = {
     "classifier": "models/final_training/campaign_classifier.joblib",
@@ -30,17 +30,17 @@ REQUIRED_ARTIFACT_PATHS = {
 REQUIRED_TRAINING_DATASETS = {
     "classifier": {
         "path": "data/model_training_data/classifier_dataset_final.jsonl",
-        "sha256": "ff02d4a3efb9b984583ef44d0ddff2b1c0e242d4163068082e52dc52f5a90bfe",
+        "sha256": "efb912e8add820e479dbff95c76f82a48a9341a8ae07a8d53015cdb53dfee2b7",
     },
     "ner": {
         "path": "data/model_training_data/ner_dataset_final.jsonl",
-        "sha256": "be7badce9d1a8f8d5587ac0fa836148457f7ee31041aa754774331f555475049",
+        "sha256": "1e656f89be493daa36c4f1c1168fa2290394420973d3fdd88cef630f30a359d1",
     },
 }
 REQUIRED_TRAINING_PROVENANCE = {
     "manifest": {
         "path": "data/model_training_data/training_dataset_manifest.json",
-        "sha256": "6babed7782fa03bb374dd96818a4e7c2a4b22364b3ac34fcebbc50e0fdb2f0cd",
+        "sha256": "c48554441aa835071095fa6ba629558012ec740ad9c3244108483550e1ea0813",
         "contract": "training-dataset-lineage",
     },
     "automatic_references": "proxy_only",

@@ -71,6 +71,43 @@ def test_compile_and_chat_use_structured_first_route_with_sources(tmp_path):
     assert "%1.89" in answer["answer"]
 
 
+def test_campaign_count_chat_returns_sql_total_instead_of_retrieved_document_text(tmp_path):
+    with _client(tmp_path) as client:
+        compiled = client.post(
+            "/api/v1/query/compile",
+            json={"query": "Albaraka Türk kampanyalarını say"},
+        )
+        chat = client.post(
+            "/api/v1/chat",
+            json={"message": "Albaraka Türk kampanyalarını say"},
+        )
+
+    assert compiled.status_code == chat.status_code == 200
+    assert compiled.json()["plan"]["intent"] == "campaign_count"
+    assert compiled.json()["plan"]["route"] == "STRUCTURED_SQL"
+    answer = chat.json()
+    assert answer["answer"] == "Albaraka Türk için doğrulanmış 1 kampanya bulundu."
+    assert answer["facts"][0]["value"] == 1
+    assert answer["generation"]["fallback_reason"] == "deterministic_count"
+
+
+def test_bank_list_question_returns_banks_instead_of_campaign_total(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat",
+            json={"message": "Türkiye'deki katılım bankalarını sayar mısın?"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["plan"]["intent"] == "bank_list"
+    assert payload["plan"]["route"] == "STRUCTURED_SQL"
+    assert payload["facts"][0]["value"] == 2
+    assert "Albaraka Türk" in payload["answer"]
+    assert "Kuveyt Türk" in payload["answer"]
+    assert payload["generation"]["fallback_reason"] == "deterministic_bank_list"
+
+
 def test_definition_chat_uses_local_terminology_corpus(tmp_path):
     with _client(tmp_path) as client:
         response = client.post("/api/v1/chat", json={"message": "Murabaha nedir?"})

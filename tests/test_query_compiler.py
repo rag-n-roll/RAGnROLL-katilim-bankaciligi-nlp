@@ -26,6 +26,15 @@ def test_compiler_keeps_each_named_bank_in_comparison_filter():
     assert plan.filters["bank_slugs"] == plan.slots["banks"]
 
 
+def test_compiler_distinguishes_bank_list_from_campaign_count():
+    plan = DomainQueryCompiler().compile(
+        "Türkiye'deki katılım bankalarını sayar mısın?"
+    )
+
+    assert plan.intent == "bank_list"
+    assert plan.route == "STRUCTURED_SQL"
+
+
 def test_compiler_links_domain_definition_to_ontology():
     plan = DomainQueryCompiler().compile("Murabaha nedir?")
 

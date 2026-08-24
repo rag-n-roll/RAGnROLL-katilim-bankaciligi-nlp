@@ -121,11 +121,13 @@ def train_model(
     batch_size: int = 32,
     dropout: float = 0.2,
     seed: int = 42,
+    oversample_label: str | None = None,
+    oversample_factor: int = 1,
 ) -> dict[str, Any]:
     import spacy
     from spacy.util import fix_random_seed, minibatch
 
-    if epochs < 1 or batch_size < 1:
+    if epochs < 1 or batch_size < 1 or oversample_factor < 1:
         raise ValueError("epochs and batch_size must be positive")
     records = read_jsonl(dataset)
     train_records = select_split(records, train_split)
@@ -139,7 +141,20 @@ def train_model(
     )
     for label in labels:
         ner.add_label(label)
-    examples = _examples(nlp, train_records)
+    oversampled_records = list(train_records)
+    oversampled_documents = 0
+    if oversample_label and oversample_factor > 1:
+        focused = [
+            record
+            for record in train_records
+            if any(
+                entity.get("label") == oversample_label
+                for entity in record.get("entities", [])
+            )
+        ]
+        oversampled_records.extend(focused * (oversample_factor - 1))
+        oversampled_documents = len(focused) * (oversample_factor - 1)
+    examples = _examples(nlp, oversampled_records)
     optimizer = nlp.initialize(lambda: examples)
     losses: list[float] = []
     for _ in range(epochs):
@@ -163,6 +178,9 @@ def train_model(
         "labels": labels,
         "epochs": epochs,
         "seed": seed,
+        "oversample_label": oversample_label,
+        "oversample_factor": oversample_factor,
+        "oversampled_documents": oversampled_documents,
         "synthetic_documents": synthetic,
         "synthetic_data_warning": synthetic > 0,
         "evaluation_provenance_counts": dict(sorted(evaluation_provenance.items())),
@@ -231,6 +249,8 @@ def main() -> None:
     train.add_argument("--seed", type=int, default=42)
     train.add_argument("--train-split", default="train")
     train.add_argument("--evaluation-split", default="validation")
+    train.add_argument("--oversample-label")
+    train.add_argument("--oversample-factor", type=int, default=1)
     evaluate = commands.add_parser("evaluate", help="Evaluate an existing model")
     evaluate.add_argument("model")
     evaluate.add_argument("dataset")
@@ -247,6 +267,8 @@ def main() -> None:
             epochs=args.epochs,
             batch_size=args.batch_size,
             seed=args.seed,
+            oversample_label=args.oversample_label,
+            oversample_factor=args.oversample_factor,
         )
     else:
         result = evaluate_model(args.model, args.dataset, split=args.split)

@@ -20,6 +20,7 @@ from src.normalization.values import parse_number
 from src.observability import EventRecorder
 from src.persistence import CampaignStore
 from src.preprocessing.clean_text import tokenize_turkish
+from src.prompt_optimization import IntentTraceRecorder
 from src.query import DomainQueryCompiler, QueryPlan
 from src.retrieval import HybridRetriever
 
@@ -52,6 +53,7 @@ _FEE_FREE_CLAIM_RE = re.compile(
     r"ücret\s+yok|ucret\s+yok|masraf\s+yok)\b",
     re.IGNORECASE,
 )
+_ORDERED_LIST_MARKER_RE = re.compile(r"(?m)^\s*\d{1,2}[.)]\s+")
 
 
 class _LocalDecisionFallback:
@@ -84,6 +86,7 @@ class GroundedAssistant:
         llm: OpenAICompatibleLLM | None = None,
         decisions: EvrenDecisionService | None = None,
         prompt_builder: GroundedPromptBuilder | None = None,
+        intent_trace: IntentTraceRecorder | None = None,
         chroma_enabled: bool | None = None,
     ) -> None:
         self.store = store
@@ -91,9 +94,12 @@ class GroundedAssistant:
         self.recorder = recorder or EventRecorder()
         self.llm = llm or build_llm_from_env()
         self.decisions = decisions or (
-            _LocalDecisionFallback() if llm is not None else EvrenDecisionService()
+            _LocalDecisionFallback()
+            if llm is not None
+            else EvrenDecisionService(planner=self.llm)
         )
         self.prompt_builder = prompt_builder or GroundedPromptBuilder()
+        self.intent_trace = intent_trace or IntentTraceRecorder()
         self.retriever = HybridRetriever(
             store,
             self.compiler.terminology,
@@ -101,9 +107,39 @@ class GroundedAssistant:
         )
 
     def compile(self, message: str) -> QueryPlan:
-        plan = self.compiler.compile(message, known_banks=self.store.bank_summary())
+        known_banks = self.store.bank_summary()
+        plan = self.compiler.compile(message, known_banks=known_banks)
         if plan.route == "SAFE_REDIRECT":
             return plan
+        analyzer = getattr(self.decisions, "analyze", None)
+        decision = (
+            analyzer(
+                message,
+                canonical_query=plan.canonical_query,
+                deterministic_plan=plan.to_dict(),
+                known_banks=known_banks,
+            )
+            if callable(analyzer)
+            else None
+        )
+        if callable(analyzer):
+            if decision:
+                selected = self._merge_llm_plan(plan, decision)
+                try:
+                    self.intent_trace.record(
+                        raw_input=message,
+                        bank_catalog=known_banks,
+                        deterministic_plan=plan.to_dict(),
+                        llm_decision=decision,
+                        selected_plan=selected.to_dict(),
+                    )
+                except OSError:
+                    # Eğitim izi yanıt yolunu kesemez; metrikler ana akışta tutulur.
+                    pass
+                return selected
+            return plan
+
+        # Enjekte edilmiş eski karar servisleri için geriye uyumlu yol.
         safe = self.decisions.is_safe(message)
         advised_route = self.decisions.route(message)
         warnings = list(plan.warnings)
@@ -116,6 +152,62 @@ class GroundedAssistant:
             warnings.append("EVREN route önerisi yerel sözleşmeyle uyuşmadığı için yok sayıldı")
             return replace(plan, warnings=warnings)
         return plan
+
+    def _merge_llm_plan(
+        self, plan: QueryPlan, decision: dict[str, Any]
+    ) -> QueryPlan:
+        """Model planını yalnız yerel sözleşmenin izin verdiği ölçüde uygular."""
+
+        if decision.get("safe") is False or decision.get("route") == "SAFE_REDIRECT":
+            return replace(
+                plan,
+                intent=str(decision["intent"]),
+                route="SAFE_REDIRECT",
+                confidence=float(decision["confidence"]),
+                warnings=[*plan.warnings, "LLM güvenlik planı güvenli yönlendirme önerdi"],
+            )
+
+        intent = str(decision["intent"])
+        advised_route = str(decision["route"])
+        structured_intents = self.compiler.structured_intents
+        route = (
+            "STRUCTURED_SQL"
+            if intent in structured_intents and advised_route == "STRUCTURED_SQL"
+            else "HYBRID_RAG"
+        )
+        decision_slots = decision.get("slots") or {}
+        slots = dict(plan.slots)
+        for key in (
+            "banks",
+            "metric",
+            "aggregation",
+            "product_type",
+            "financing_type",
+        ):
+            value = decision_slots.get(key)
+            if value not in (None, [], ""):
+                slots[key] = value
+            elif key in {"metric", "aggregation", "product_type", "financing_type"}:
+                slots[key] = None
+        filters = {
+            key: value
+            for key, value in {
+                "bank_slugs": slots.get("banks"),
+                "product_type": slots.get("product_type"),
+                "financing_type": slots.get("financing_type"),
+                "active_only": True,
+            }.items()
+            if value not in (None, [], "")
+        }
+        return replace(
+            plan,
+            canonical_query=str(decision["normalized_query"]),
+            intent=intent,
+            route=route,
+            slots=slots,
+            filters=filters,
+            confidence=float(decision["confidence"]),
+        )
 
     @staticmethod
     def _relation_sentence(relation: dict[str, Any]) -> str | None:
@@ -327,6 +419,25 @@ class GroundedAssistant:
     def _structured_answer(self, plan: QueryPlan) -> dict[str, Any]:
         metric = plan.slots.get("metric")
         aggregation = plan.slots.get("aggregation")
+        if plan.intent == "bank_list":
+            banks = self.store.bank_summary()
+            names = [str(bank.get("name") or bank.get("slug") or "") for bank in banks]
+            answer = f"Kayıtlarda {len(names)} katılım bankası bulunuyor:"
+            if names:
+                answer += "\n" + "\n".join(f"- {name}" for name in names)
+            return {
+                "answer": answer,
+                "facts": [
+                    {
+                        "metric": "BANK_COUNT",
+                        "value": len(names),
+                        "banks": names,
+                    }
+                ],
+                "sources": [],
+                "confidence": 0.99,
+                "warnings": plan.warnings,
+            }
         query_filters = {
             "bank_slugs": plan.slots.get("banks") or None,
             "product_type": plan.slots.get("product_type"),
@@ -336,6 +447,34 @@ class GroundedAssistant:
             **query_filters,
             limit=100,
         )
+        if plan.intent == "campaign_count":
+            bank_names = list(
+                dict.fromkeys(
+                    str(row.get("bank_name") or "").strip()
+                    for row in rows
+                    if str(row.get("bank_name") or "").strip()
+                )
+            )
+            if len(bank_names) == 1:
+                subject = f"{bank_names[0]} için"
+            elif plan.slots.get("banks"):
+                subject = "Seçili bankalar için"
+            else:
+                subject = "Kayıtlarda"
+            return {
+                "answer": f"{subject} doğrulanmış {total} kampanya bulundu.",
+                "facts": [
+                    {
+                        "metric": "CAMPAIGN_COUNT",
+                        "value": total,
+                        "bank_slugs": plan.slots.get("banks") or [],
+                    }
+                ],
+                # Sayım SQL'de yapılıyor; bu örnekler sonucu denetlemeyi kolaylaştırır.
+                "sources": [self._source(row, None) for row in rows[:5]],
+                "confidence": 0.99,
+                "warnings": plan.warnings,
+            }
         if aggregation in {"MIN", "MAX"} and total > len(rows):
             rows, _ = self.store.query_campaigns(
                 **query_filters,
@@ -475,7 +614,22 @@ class GroundedAssistant:
                     "retrieval_method": document["retrieval_method"],
                 }
             )
-        answer = "\n\n".join(excerpts[:3])
+        campaign_lines = []
+        for index, source in enumerate(sources, start=1):
+            if not source.get("campaign_id"):
+                continue
+            bank = str(source.get("bank_name") or "").strip()
+            title = str(source.get("title") or "Kampanya").strip()
+            label = f"{bank} — {title}" if bank else title
+            line = f"- {label} [K{index}]"
+            if line not in campaign_lines:
+                campaign_lines.append(line)
+        if campaign_lines:
+            answer = "İlgili doğrulanmış kampanya kayıtları:\n" + "\n".join(
+                campaign_lines[:5]
+            )
+        else:
+            answer = "\n\n".join(excerpts[:3])
         if relation_sentences:
             answer = "\n".join(relation_sentences[:5]) + "\n\n" + answer
         if plan.intent == "definition" and excerpts:
@@ -514,6 +668,7 @@ class GroundedAssistant:
         """Metindeki sayısal/finansal iddiaları karşılaştırılabilir biçime getirir."""
 
         normalized = _CITATION_RE.sub("", str(text or ""))
+        normalized = _ORDERED_LIST_MARKER_RE.sub("", normalized)
         signatures: set[tuple[str, str, str]] = set()
         occupied: list[tuple[int, int]] = []
 
@@ -569,9 +724,24 @@ class GroundedAssistant:
             evidence_text = (
                 evidence.get("text") if isinstance(evidence, dict) else evidence
             )
-            source_signatures.append(cls._claim_signatures(str(evidence_text or "")))
+            supported_text = "\n".join(
+                (
+                    str(source.get("title") or ""),
+                    str(evidence_text or ""),
+                )
+            )
+            source_signatures.append(cls._claim_signatures(supported_text))
 
-        segments = re.split(r"(?<=[.!?])\s+|\n+", normalized)
+        claim_text = _ORDERED_LIST_MARKER_RE.sub("", normalized)
+        segments = []
+        for line in claim_text.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if stripped.startswith(("- ", "* ", "• ")):
+                segments.append(stripped)
+            else:
+                segments.extend(re.split(r"(?<=[.!?])\s+", stripped))
         for segment in segments:
             claims = cls._claim_signatures(segment)
             if not claims:
@@ -588,6 +758,45 @@ class GroundedAssistant:
                 return False
         return True
 
+    @classmethod
+    def _sanitize_llm_answer(
+        cls, answer: str, *, sources: list[dict[str, Any]]
+    ) -> str | None:
+        """Yalnız kanıtlanmayan sayısal iddia taşıyan liste satırlarını çıkarır."""
+
+        source_signatures = []
+        for source in sources:
+            evidence = source.get("evidence")
+            evidence_text = (
+                evidence.get("text") if isinstance(evidence, dict) else evidence
+            )
+            source_signatures.append(
+                cls._claim_signatures(
+                    f"{source.get('title') or ''}\n{evidence_text or ''}"
+                )
+            )
+        kept = []
+        removed = False
+        for line in str(answer or "").splitlines():
+            stripped = line.strip()
+            if not stripped.startswith(("- ", "* ", "• ")):
+                kept.append(line)
+                continue
+            claims = cls._claim_signatures(stripped)
+            citations = {int(value) for value in _CITATION_RE.findall(stripped)}
+            supported: set[tuple[str, str, str]] = set()
+            for citation in citations:
+                if 1 <= citation <= len(source_signatures):
+                    supported.update(source_signatures[citation - 1])
+            if claims and (not citations or not claims.issubset(supported)):
+                removed = True
+                continue
+            kept.append(line)
+        sanitized = "\n".join(kept).strip()
+        if not removed or not cls._valid_llm_answer(sanitized, sources=sources):
+            return None
+        return sanitized
+
     @staticmethod
     def _polish_llm_answer(answer: str) -> str:
         """Küçük modelin sık yaptığı, anlamı değiştirmeyen yazım kusurlarını düzeltir."""
@@ -599,6 +808,9 @@ class GroundedAssistant:
         polished = answer
         for incorrect, correct in replacements.items():
             polished = re.sub(rf"\b{incorrect}\b", correct, polished, flags=re.IGNORECASE)
+        polished = re.sub(r"(?m)^\s*\*\s+", "• ", polished)
+        polished = polished.replace("**", "")
+        polished = re.sub(r"\*([^*\n]+)\*", r"\1", polished)
         return polished
 
     def _generation(
@@ -634,6 +846,11 @@ class GroundedAssistant:
             fallback_reason = None
             if route == "SAFE_REDIRECT":
                 fallback_reason = "safe_redirect"
+            elif grounded["plan"]["intent"] == "bank_list":
+                fallback_reason = "deterministic_bank_list"
+            elif grounded["plan"]["intent"] == "campaign_count":
+                # SQL toplamı kesin yanıttır; modele yeniden yazdırmak gerekmez.
+                fallback_reason = "deterministic_count"
             elif not grounded["sources"]:
                 fallback_reason = "evidence_not_found"
             elif not self.llm.enabled:
@@ -664,18 +881,26 @@ class GroundedAssistant:
                     user_prompt=user_prompt,
                 ):
                     generated = "".join(chunks).strip()
+                    sanitized = None
                     valid = (
                         candidate_metadata.get("finish_reason") != "length"
                         and self._valid_llm_answer(
                             generated, sources=grounded["sources"]
                         )
                     )
+                    if not valid and candidate_metadata.get("finish_reason") != "length":
+                        sanitized = self._sanitize_llm_answer(
+                            generated, sources=grounded["sources"]
+                        )
+                        valid = sanitized is not None
                     if not valid:
                         rejected = True
                         self.llm.reject_candidate(candidate_metadata)
                         continue
+                    if sanitized is not None:
+                        candidate_metadata["validation"] = "unsupported_lines_removed"
                     self.llm.accept_candidate(candidate_metadata)
-                    polished = self._polish_llm_answer(generated)
+                    polished = self._polish_llm_answer(sanitized or generated)
                     yield {"event": "delta", "data": {"text": polished}}
                     mode = "llm"
                     yield {"event": "done", "data": self._generation(mode="llm")}

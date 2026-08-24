@@ -23,6 +23,14 @@ DEFAULT_FILE_SPECS = (
     ("data/model_training_data/ner_dataset_approved.jsonl", "ner"),
     ("data/model_training_data/classifier_dataset_final.jsonl", "classification"),
     ("data/model_training_data/ner_dataset_final.jsonl", "ner"),
+    (
+        "data/model_training_data/target_audience_llm_large.jsonl",
+        "target_audience_extraction",
+    ),
+    (
+        "data/enrichment/context_entities_llm_large.jsonl",
+        "context_entity_extraction",
+    ),
     ("data/model_training_data/campaign_nlp_output_schema.json", "schema"),
 )
 

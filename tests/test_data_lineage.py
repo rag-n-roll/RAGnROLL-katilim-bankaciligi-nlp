@@ -8,6 +8,7 @@ from src.data_quality import (
     simhash,
 )
 from src.persistence import CampaignStore
+from src.nlp_runtime.integrity import RUNTIME_CONTRACT
 from src.preprocessing.clean_text import preprocess_record
 from src.scraper.models import Campaign
 
@@ -107,6 +108,87 @@ def test_data_quality_summary_counts_only_clusters_with_multiple_records(tmp_pat
     )
 
     assert store.data_quality_summary()["duplicate_cluster_count"] == 1
+
+
+def test_data_quality_summary_counts_only_verified_advisory_evidence(tmp_path):
+    store = CampaignStore(tmp_path / "enriched-quality.sqlite3")
+    store.upsert_rows([_row()], run_status="success")
+    candidate = store.nlp_enrichment_candidates()[0]
+    analysis = {
+        "contract": RUNTIME_CONTRACT,
+        "record": {
+            "id": candidate["id"],
+            "source_content_hash": candidate["content_hash"],
+            "source_version": candidate["source_version"],
+            "text_sha256": candidate["text_sha256"],
+        },
+        "suggestions": {},
+    }
+    missing = next(
+        name
+        for name, field in candidate["structured"]["fields"].items()
+        if field["status"] in {"NOT_STATED", "EXTRACTION_FAILED"}
+    )
+    evidence_text = "Finansman"
+    start = candidate["text"].index(evidence_text)
+    analysis["suggestions"][missing] = {
+        "value": "doğrulanmış",
+        "evidence": {
+            "text": evidence_text,
+            "char_start": start,
+            "char_end": start + len(evidence_text),
+        },
+        "method": "evren_grounded_llm",
+        "advisory": True,
+    }
+    store.apply_nlp_analyses([analysis])
+
+    summary = store.data_quality_summary()
+
+    assert summary["verified_enrichment_fields"] == 1
+    assert summary["enriched_evidence_coverage"] > summary["evidence_coverage"]
+
+
+def test_data_quality_summary_counts_only_grounded_context_entities(tmp_path):
+    store = CampaignStore(tmp_path / "context-quality.sqlite3")
+    store.upsert_rows([_row()], run_status="success")
+    candidate = store.nlp_enrichment_candidates()[0]
+    analysis = {
+        "contract": RUNTIME_CONTRACT,
+        "record": {
+            "id": candidate["id"],
+            "source_content_hash": candidate["content_hash"],
+            "source_version": candidate["source_version"],
+            "text_sha256": candidate["text_sha256"],
+        },
+        "entities": [
+            {
+                "label": "KART_ADI",
+                "text": "Paraf",
+                "start": 0,
+                "end": 5,
+                "source": "grounded_context_extraction",
+            },
+            {
+                "label": "KART_ADI",
+                "text": "yanlış",
+                "start": 0,
+                "end": 6,
+                "source": "spacy_ner",
+            },
+        ],
+        "suggestions": {},
+        "temporal_observation": {
+            "observed_at": candidate["scraped_at"],
+            "method": "scrape_lineage",
+        },
+    }
+    store.apply_nlp_analyses([analysis])
+
+    summary = store.data_quality_summary()
+
+    assert summary["grounded_entity_counts"] == {"KART_ADI": 1}
+    assert summary["temporal_observation_count"] == 1
 
 
 def test_initialize_backfills_legacy_campaign_and_product_lineage_idempotently(

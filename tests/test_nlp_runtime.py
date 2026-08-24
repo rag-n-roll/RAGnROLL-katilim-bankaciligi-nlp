@@ -44,6 +44,23 @@ def test_shipped_artifacts_match_the_runtime_manifest():
     )
 
 
+def test_explicit_individual_customer_is_suggested_without_classifier_support():
+    text = "Kampanyadan yalnızca bireysel müşteriler faydalanabilir."
+    structured = {"fields": {"target_audience": None}}
+    classified = {
+        "product_category": {"value": "other", "decision_score": 0.1},
+        "dimensions": {"target_segments": [], "channels": []},
+    }
+
+    from src.nlp_runtime.advisory import suggestions
+
+    result, conflicts = suggestions(text, structured, classified, [])
+
+    assert conflicts == []
+    assert result["target_audience"]["value"] == "individual_customer"
+    assert result["target_audience"]["evidence"]["text"] == "bireysel müşteriler"
+
+
 def test_dependency_versions_are_exact_and_fail_closed(monkeypatch):
     manifest = load_manifest(DEFAULT_MANIFEST)
     installed = dict(manifest["dependencies"])
@@ -246,6 +263,42 @@ def test_sensitive_model_labels_are_suppressed_without_specific_regex_evidence()
     assert advisory["quality"]["suppressed_without_evidence"] == result[
         "suppressed_without_evidence"
     ]
+
+
+def test_customer_and_card_predictions_require_positive_explicit_evidence():
+    bundle = _classifier(
+        target_segments=[
+            ("cardholder", 1, 0.9),
+            ("individual_customer", 1, 0.8),
+        ]
+    )
+
+    generic = classification(bundle, "Mobil uygulamadan kartınızla ödeme yapın.")
+    explicit = analyze(
+        bundle,
+        _EmptyNer(),
+        "Kampanyadan yalnızca bireysel müşteriler faydalanabilir.",
+        structured={},
+    )
+
+    assert generic["dimensions"]["target_segments"] == []
+    assert explicit["suggestions"]["target_audience"]["value"] == (
+        "individual_customer"
+    )
+
+
+def test_excluded_customer_context_is_pruned_from_classifier_and_ner():
+    text = "Ticari müşteriler kampanyaya dahil değildir."
+    result = analyze(
+        _classifier(target_segments=[("commercial_sme", 1, 0.9)]),
+        _SingleEntityNer("Ticari müşteriler", "HEDEF_KITLE"),
+        text,
+        structured={},
+    )
+
+    assert result["classification"]["dimensions"]["target_segments"] == []
+    assert result["entities"] == []
+    assert "target_audience" not in result["suggestions"]
 
 
 @pytest.mark.parametrize(

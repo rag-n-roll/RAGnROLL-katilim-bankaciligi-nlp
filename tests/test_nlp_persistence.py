@@ -147,3 +147,25 @@ def test_cli_analyzes_every_candidate_before_the_single_write(tmp_path):
     assert calls == ["first", "second"]
     assert "nlp_analysis" not in store.get_campaign("first")
     assert "nlp_analysis" not in store.get_campaign("second")
+
+
+def test_evren_only_enrichment_does_not_load_local_runtime(tmp_path):
+    store = CampaignStore(tmp_path / "evren-only.sqlite3")
+    store.upsert_rows([_campaign("campaign")], run_status="success")
+
+    class DisabledAugmenter:
+        enabled = False
+
+    def reject_runtime_load(_manifest):
+        raise AssertionError("yerel runtime yüklenmemeli")
+
+    report = enrich_database(
+        store.path,
+        runtime_loader=reject_runtime_load,
+        augmenter=DisabledAugmenter(),
+        evren_only=True,
+    )
+
+    stored = store.get_campaign("campaign")["nlp_analysis"]
+    assert report["mode"] == "evren_only"
+    assert stored["provenance"]["mode"] == "evren_only"

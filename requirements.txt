@@ -28,7 +28,7 @@ sentence-transformers==3.1.1
 transformers>=4.51,<5
 
 # NLP model training and evaluation
-spacy==3.8.15
+spacy==3.8.16
 scikit-learn==1.9.0
 joblib==1.5.3
 streamlit==1.37.1

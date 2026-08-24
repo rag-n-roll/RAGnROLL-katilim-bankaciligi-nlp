@@ -30,7 +30,40 @@ SUGGESTION_ALLOWLIST = frozenset(
     }
 )
 SENSITIVE_LABELS = frozenset(
-    {"application_required", "new_customer", "physical_branch"}
+    {
+        "application_required",
+        "cardholder",
+        "commercial_sme",
+        "digital_customer",
+        "existing_customer",
+        "farmer",
+        "individual_customer",
+        "new_customer",
+        "physical_branch",
+        "private_banking_customer",
+        "retired_customer",
+        "salary_customer",
+        "youth_student",
+    }
+)
+TARGET_SEGMENT_PRIORITY = (
+    "new_customer",
+    "existing_customer",
+    "individual_customer",
+    "digital_customer",
+    "salary_customer",
+    "retired_customer",
+    "youth_student",
+    "commercial_sme",
+    "farmer",
+    "private_banking_customer",
+    "cardholder",
+)
+TARGET_SEGMENTS = frozenset(TARGET_SEGMENT_PRIORITY)
+TARGET_EXCLUSION_PATTERN = re.compile(
+    r"(?:dahil|kapsamında|geçerli)\s+(?:değil|değildir)|"
+    r"(?:yararlanamaz|faydalanamaz|hariç tutul|kapsam dışı)",
+    re.IGNORECASE | re.UNICODE,
 )
 PRODUCT_TYPE_MAP = {
     "agriculture_finance": "financing",
@@ -71,15 +104,21 @@ LABEL_PATTERNS = {
     "card_pos": _pattern(r"\bPOS\b"),
     "cardholder": _pattern(r"\bkart\s+sahip(?:leri|lerine)?\b"),
     "cashback": _pattern(r"\b(?:nakit\s+)?iade\b"),
-    "commercial_sme": _pattern(r"\b(?:ticari|KOBİ|esnaf)\b"),
+    "commercial_sme": _pattern(
+        r"\b(?:ticari\s+müşteri\w*|KOBİ\w*|esnaf\w*|işletme\s+sahibi\w*)"
+    ),
     "consumer_finance": _pattern(r"\b(?:ihtiyaç|bireysel)\s+finansman[ıi]?\b"),
     "date_limited": _pattern(
         r"\b\d{1,2}\s+[A-Za-zÇĞİÖŞÜçğıöşü]+\s+20\d{2}\b"
     ),
     "digital_customer": _pattern(r"\bdijital\s+müşteri(?:ler|lere)?\b"),
+    "existing_customer": _pattern(
+        r"\b(?:mevcut\s+müşteri\w*|halihazırdaki\s+müşteri\w*|"
+        r"müşterimiz\s+olan\w*)"
+    ),
     "discount": _pattern(r"\bindirim\b"),
     "ecommerce": _pattern(r"\b(?:e-ticaret|internetten|online)\b"),
-    "farmer": _pattern(r"\b(?:çiftçi|üretici)(?:ler|lere)?\b"),
+    "farmer": _pattern(r"\b(?:çiftçi\w*|tarım\s+müşteri\w*)"),
     "fee_exemption": _pattern(r"\b(?:ücret|masraf)\s+muafiyet[iı]?\b"),
     "free_service": _pattern(r"\b(?:ücretsiz|bedelsiz|hediye)\b"),
     "gift_voucher": _pattern(r"\b(?:hediye\s+çeki|kupon)\b"),
@@ -99,6 +138,9 @@ LABEL_PATTERNS = {
         r"\b(?:yeni\s+(?:bireysel\s+)?m[üu][şs]teri(?:ler|lere|si|miz)?|"
         r"ilk\s+kez\s+m[üu][şs]teri(?:ler|lere)?)\b"
     ),
+    "individual_customer": _pattern(
+        r"\b(?:bireysel\s+(?:müşteri|kart\s+sahib))\w*"
+    ),
     "participation_account": _pattern(r"\bkatıl(?:ım|ma)\s+hesab[ıi]\b"),
     "percentage_discount": _pattern(r"%\s*\d[\d.,]*\s+indirim\b"),
     "physical_branch": _pattern(
@@ -108,11 +150,17 @@ LABEL_PATTERNS = {
     "promo_code": _pattern(r"\b(?:promosyon|kampanya)\s+kod[uyla]*\b"),
     "reward_points": _pattern(r"\b(?:puan|worldpuan|sağlam\s+puan)\b"),
     "salary_customer": _pattern(r"\bmaaş\s+müşteri(?:leri|lerine)?\b"),
+    "retired_customer": _pattern(r"\bemekli(?:lik)?\s+müşteri\w*"),
+    "private_banking_customer": _pattern(
+        r"\bözel\s+bankacılık\s+(?:segment\s+)?müşteri\w*"
+    ),
     "special_profit_rate": _pattern(r"\b(?:özel|avantajlı)\s+k[aâ]r\s+pay[ıi]\b"),
     "specific_card": _pattern(r"\b[\wçğıöşü]+\s+kart(?:ınız|ıyla|ı\s+ile)\b"),
     "specific_merchant": _pattern(r"\b(?:iş\s*yeri|mağaza|marka)(?:nde|lerde)?\b"),
     "vehicle_finance": _pattern(r"\b(?:taşıt|araç)\s+finansman[ıi]?\b"),
-    "youth_student": _pattern(r"\b(?:genç|öğrenci)(?:ler|lere)?\b"),
+    "youth_student": _pattern(
+        r"\b(?:genç\s+müşteri\w*|öğrenci\w*|üniversite\s+öğrenci\w*)"
+    ),
     "zero_profit_rate": _pattern(r"\b(?:sıfır|0)\s+k[aâ]r\s+pay[ıi]\b"),
 }
 
@@ -156,6 +204,23 @@ def label_evidence(text: str, label: str) -> dict[str, Any] | None:
     while label == "physical_branch" and match is not None:
         prefix = text[max(0, match.start() - 12) : match.start()].casefold()
         if re.search(r"(?:internet|mobil|e-)\s*$", prefix):
+            match = pattern.search(text, match.end())
+            continue
+        break
+    while label in TARGET_SEGMENTS and match is not None:
+        sentence_start = max(
+            text.rfind(".", 0, match.start()),
+            text.rfind("!", 0, match.start()),
+            text.rfind("?", 0, match.start()),
+            text.rfind("\n", 0, match.start()),
+        ) + 1
+        endings = [
+            position
+            for marker in (".", "!", "?", "\n")
+            if (position := text.find(marker, match.end())) >= 0
+        ]
+        sentence_end = min(endings) + 1 if endings else len(text)
+        if TARGET_EXCLUSION_PATTERN.search(text[sentence_start:sentence_end]):
             match = pattern.search(text, match.end())
             continue
         break
@@ -237,6 +302,21 @@ def entities(ner: Any, text: str) -> list[dict[str, Any]]:
     result = []
     for entity in ner(text).ents:
         label = str(entity.label_)
+        if label == "HEDEF_KITLE":
+            sentence_start = max(
+                text.rfind(".", 0, entity.start_char),
+                text.rfind("!", 0, entity.start_char),
+                text.rfind("?", 0, entity.start_char),
+                text.rfind("\n", 0, entity.start_char),
+            ) + 1
+            endings = [
+                position
+                for marker in (".", "!", "?", "\n")
+                if (position := text.find(marker, entity.end_char)) >= 0
+            ]
+            sentence_end = min(endings) + 1 if endings else len(text)
+            if TARGET_EXCLUSION_PATTERN.search(text[sentence_start:sentence_end]):
+                continue
         result.append(
             {
                 "start": int(entity.start_char),
@@ -352,6 +432,17 @@ def _extracted_suggestions(text: str) -> dict[str, dict[str, Any]]:
             "advisory": True,
         }
         break
+    for label in TARGET_SEGMENT_PRIORITY:
+        target_evidence = label_evidence(text, label)
+        if target_evidence is None:
+            continue
+        suggestions["target_audience"] = {
+            "value": label,
+            "evidence": target_evidence,
+            "method": "deterministic_sensitive_rule",
+            "advisory": True,
+        }
+        break
     return suggestions
 
 
@@ -391,17 +482,23 @@ def suggestions(
         ),
     )
     target_labels = classified["dimensions"].get("target_segments", [])
-    new_customer = next(
-        (item for item in target_labels if item["value"] == "new_customer"), None
+    target_by_value = {str(item["value"]): item for item in target_labels}
+    selected_target = next(
+        (
+            target_by_value[label]
+            for label in TARGET_SEGMENT_PRIORITY
+            if label in target_by_value
+        ),
+        None,
     )
-    if new_customer is not None:
+    if selected_target is not None:
         add(
             "target_audience",
             _suggestion(
-                value="new_customer",
-                evidence=new_customer.get("evidence"),
+                value=selected_target["value"],
+                evidence=selected_target.get("evidence"),
                 method="classifier_sensitive_regex",
-                decision_score=new_customer.get("decision_score"),
+                decision_score=selected_target.get("decision_score"),
             ),
         )
     channel_labels = classified["dimensions"].get("channels", [])
@@ -444,6 +541,7 @@ def suggestions(
     warnings = []
     method_order = {
         "deterministic_rule": 0,
+        "deterministic_sensitive_rule": 0,
         "classifier_sensitive_regex": 1,
         "classifier_evidence": 2,
         "classifier_mapping": 3,
