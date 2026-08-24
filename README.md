@@ -20,6 +20,232 @@ karşılaştırma ve kaynaklı soru-cevap sunan yerel çalışabilir platform.
 - FastAPI sözleşmeleri ve canlı Next.js dashboard
 - Golden Set, edge-case testleri, gecikme/hata ve veri kalitesi metrikleri
 
+## Kurulum yolları ve önkoşullar
+
+Platformdan bağımsız tüm yerel kurulumlar Python **3.11** ve Node.js **22**
+gerektirir. Python ve Node sürümlerini kurulumdan önce doğrulayın:
+
+```text
+python --version
+python3 --version
+node --version
+npm --version
+```
+
+`python` komutu Python 3.11'i göstermiyorsa aşağıdaki platforma özel komutlarda
+`python3.11` kullanın. Node.js 22 için [Node.js indirme sayfasındaki](https://nodejs.org/en/download)
+LTS sürümünü tercih edin.
+
+### Windows PowerShell
+
+PowerShell'de proje dizininde:
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+cd src\dashboard
+npm ci
+cd ..\..
+```
+
+`Activate.ps1` çalıştırılırken script politikası hatası alırsanız yalnızca açık
+olan PowerShell oturumu için şu komutu çalıştırıp aktivasyonu tekrarlayın:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+Politikayı değiştirmek istemiyorsanız sanal ortamı aktive etmeden doğrudan
+`.\.venv\Scripts\python.exe` ve `\.venv\Scripts\pip.exe` yürütülebilirlerini
+kullanın. Örneğin:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn src.main:app --reload
+```
+
+### Linux
+
+Dağıtımınızın paket yöneticisiyle Python 3.11, `python3.11-venv`, Node.js 22
+ve npm'i kurduktan sonra:
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+cd src/dashboard
+npm ci
+cd ../..
+```
+
+### macOS
+
+Homebrew veya Python.org üzerinden Python 3.11'i, Node.js 22'yi ise Node.js
+LTS paketinden kurun. Ardından:
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+cd src/dashboard
+npm ci
+cd ../..
+```
+
+### Yol 1 — Baseline API ve dashboard
+
+İlk kurulum için yalnızca API ve dashboard'u çalıştırın; Python ve Node
+bağımlılıkları yukarıdaki platform bölümünde bir kez kurulmuş olmalıdır. API'yi
+bir terminalde başlatın:
+
+```bash
+python -m uvicorn src.main:app --reload
+```
+
+Windows PowerShell'de aynı komut çalışır. Dashboard için ikinci terminalde:
+
+```bash
+cd src/dashboard
+npm run dev
+```
+
+Bu baseline yolunda yerel Gemma servisi veya embedding modeli başlatmanız
+gerekmez; API'nin deterministik fallback'i kullanılabilir.
+
+### Yol 2 — Chroma ve Qwen embedding
+
+Yerel retrieval'i etkinleştirmek için API'yi durdurmadan önce aynı sanal ortamda
+işlenmiş kampanyaları ve terminolojiyi indeksleyin:
+
+```bash
+python -m scripts.ingest_chroma --batch-size 64
+```
+
+İlk çalıştırma `Qwen/Qwen3-Embedding-0.6B` modelini ve Chroma indeksini indirir;
+sonraki çalıştırmalar yalnızca değişen parçaları embed eder. API yenilemesinden
+sonra otomatik indeksleme için `RAGNROLL_CHROMA_AUTO_INDEX=true` ayarlayın.
+
+### Yol 3 — İsteğe bağlı Gemma/vLLM
+
+Bu yol baseline için zorunlu değildir. Apple Silicon üzerinde vLLM-Metal'i bir
+kez kurup OpenAI uyumlu Gemma endpoint'ini başlatın:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vllm-project/vllm-metal/main/install.sh | bash
+python -m scripts.serve_local_llm
+```
+
+Linux veya Windows'ta Gemma/vLLM kullanacaksanız, makinenize uygun ve OpenAI
+uyumlu vLLM kurulumunu ayrıca sağlayın; API adresini `RAGNROLL_LLM_BASE_URL`,
+model adını `RAGNROLL_LLM_MODEL` ile verin. Servis erişilemezse API doğrulanmış
+deterministik fallback'e döner. Model uyumluluğu ve MLX kontrol noktası hakkında
+ayrıntılar aşağıdaki mevcut Gemma bölümündedir.
+
+### Yol 4 — İsteğe bağlı GEPA prompt optimizasyonu
+
+GEPA yalnız deney ortamı içindir; baseline veya retrieval kurulumu için gerekli
+değildir:
+
+```bash
+python -m pip install -r requirements-prompt-optimization.txt
+python -m src.prompt_optimization.optimize_gepa --check
+```
+
+Gerçek deney için ayrıca çalışan OpenAI uyumlu model endpoint'i gerekir:
+
+```bash
+python -m src.prompt_optimization.optimize_gepa --runtime-dir runtime --max-metric-calls 24
+```
+
+### Docker Desktop ve Linux Docker Compose
+
+Docker kullanacaksanız Python/Node'u host'a kurmak zorunda değilsiniz. Windows ve
+macOS'ta Docker Desktop'ı başlatın; Linux'ta Docker Engine ile Compose plugin'in
+kurulu olduğunu doğrulayın:
+
+```bash
+docker version
+docker compose version
+```
+
+Windows PowerShell'de imajları oluşturup servisleri arka planda başlatın:
+
+```powershell
+docker compose up --build --detach
+Invoke-RestMethod http://localhost:8000/api/v1/health
+Invoke-RestMethod http://localhost:3000/
+```
+
+Linux'ta ve macOS'ta aynı işlemin `curl` karşılığı:
+
+```bash
+docker compose up --build --detach
+curl --fail http://localhost:8000/api/v1/health
+curl --fail http://localhost:3000/
+```
+
+Compose API, dashboard ve Chroma için gerekli servisleri başlatır. Gemma host'ta
+çalışıyorsa Compose API'si varsayılan olarak `host.docker.internal:8001` adresini
+kullanır. Snapshot, SQLite ve Chroma volume'larının davranışı için
+[operasyon rehberindeki container sözleşmesine](docs/runbook.md#container-sözleşmesi)
+bakın.
+
+## Kurulum doğrulaması ve güvenli temizlik
+
+Çalışan baseline kurulumunu aşağıdaki kesin komutlarla doğrulayın.
+
+Windows PowerShell:
+
+```powershell
+Invoke-RestMethod http://localhost:8000/api/v1/health
+Invoke-RestMethod http://localhost:3000/
+```
+
+Linux/macOS:
+
+```bash
+curl --fail http://localhost:8000/api/v1/health
+curl --fail http://localhost:3000/
+```
+
+Kod kalite doğrulaması için:
+
+```bash
+python -m pytest -q
+python -m flake8 src tests --max-line-length=100 --extend-ignore=E203 --exclude=src/dashboard/node_modules
+cd src/dashboard && npm run lint && npm run build
+```
+
+Yerel servisleri ve verileri koruyarak durdurmak için:
+
+```bash
+docker compose down --remove-orphans
+```
+
+Yalnız sanal ortamı kaldırmak güvenlidir; kaynak kodu, `data/` ve Docker
+volume'larını silmez:
+
+```powershell
+Remove-Item -Recurse -Force .venv
+```
+
+```bash
+rm -rf .venv
+```
+
+Chroma ve runtime verilerini de sıfırlamak istiyorsanız bunun geri alınamaz
+olduğunu kontrol ettikten sonra yalnız bu Compose projesinin volume'larını
+kaldırın:
+
+```bash
+docker compose down --volumes --remove-orphans
+```
+
 ## Hızlı başlangıç
 
 Python 3.11 önerilir. Model artefaktları spaCy 3.8.15, scikit-learn 1.9.0 ve
