@@ -229,13 +229,16 @@ ayrıştırmak için host'ta Python gerektirir.
 
 ```bash
 docker compose config --quiet
-COMPOSE_PROJECT_NAME=ragnroll-smoke \
-RAGNROLL_REFRESH_DATASET=/app/bootstrap/campaigns.json \
-RAGNROLL_INDEX_SMOKE=true \
-RAGNROLL_EMBEDDING_WARMUP=false \
-RAGNROLL_LLM_ENABLED=false \
-RAGNROLL_CHROMA_COLLECTION=ragnroll_container_smoke \
-docker compose up --build --detach
+if ! COMPOSE_PROJECT_NAME=ragnroll-smoke \
+  RAGNROLL_REFRESH_DATASET=/app/bootstrap/campaigns.json \
+  RAGNROLL_INDEX_SMOKE=true \
+  RAGNROLL_EMBEDDING_WARMUP=false \
+  RAGNROLL_LLM_ENABLED=false \
+  RAGNROLL_CHROMA_COLLECTION=ragnroll_container_smoke \
+  docker compose up --build --detach; then
+  printf 'Compose smoke startup failed; refusing to probe services\n' >&2
+  exit 1
+fi
 health_attempt=1
 until curl --fail --silent --show-error http://localhost:8000/api/v1/health >/dev/null; do
   if [ "$health_attempt" -ge 60 ]; then
@@ -276,43 +279,63 @@ done
 Windows PowerShell karşılığı:
 
 ```powershell
-$env:COMPOSE_PROJECT_NAME = "ragnroll-smoke"
-$env:RAGNROLL_REFRESH_DATASET = "/app/bootstrap/campaigns.json"
-$env:RAGNROLL_INDEX_SMOKE = "true"
-$env:RAGNROLL_EMBEDDING_WARMUP = "false"
-$env:RAGNROLL_LLM_ENABLED = "false"
-$env:RAGNROLL_CHROMA_COLLECTION = "ragnroll_container_smoke"
-docker compose up --build --detach
-$healthReady = $false
-for ($attempt = 1; $attempt -le 60; $attempt++) {
-  try {
-    Invoke-RestMethod "http://localhost:8000/api/v1/health" | Out-Null
-    $healthReady = $true
-    break
-  } catch {
+$smokeEnv = @{
+  COMPOSE_PROJECT_NAME = "ragnroll-smoke"
+  RAGNROLL_REFRESH_DATASET = "/app/bootstrap/campaigns.json"
+  RAGNROLL_INDEX_SMOKE = "true"
+  RAGNROLL_EMBEDDING_WARMUP = "false"
+  RAGNROLL_LLM_ENABLED = "false"
+  RAGNROLL_CHROMA_COLLECTION = "ragnroll_container_smoke"
+}
+$previousSmokeEnv = @{}
+try {
+  foreach ($name in $smokeEnv.Keys) {
+    $previousSmokeEnv[$name] = (Get-Item "Env:$name" -ErrorAction SilentlyContinue).Value
+    Set-Item "Env:$name" $smokeEnv[$name]
+  }
+  docker compose up --build --detach
+  if ($LASTEXITCODE -ne 0) {
+    throw "Compose smoke startup failed; refusing to probe services"
+  }
+  $healthReady = $false
+  for ($attempt = 1; $attempt -le 60; $attempt++) {
+    try {
+      Invoke-RestMethod "http://localhost:8000/api/v1/health" | Out-Null
+      $healthReady = $true
+      break
+    } catch {
+      if ($attempt -lt 60) { Start-Sleep -Seconds 2 }
+    }
+  }
+  if (-not $healthReady) {
+    throw "API health check did not become ready after 60 attempts"
+  }
+  $job = Invoke-RestMethod -Method Post `
+    -Uri http://localhost:8000/api/v1/data-refresh `
+    -ContentType "application/json" `
+    -Body '{"max_per_bank":1}'
+  $jobId = $job.id
+  $terminalStatuses = @("completed", "partial", "failed")
+  $state = $null
+  for ($attempt = 1; $attempt -le 60; $attempt++) {
+    $state = Invoke-RestMethod "http://localhost:8000/api/v1/data-refresh/$jobId"
+    if ($terminalStatuses -contains $state.status) { break }
     if ($attempt -lt 60) { Start-Sleep -Seconds 2 }
   }
-}
-if (-not $healthReady) {
-  throw "API health check did not become ready after 60 attempts"
-}
-$job = Invoke-RestMethod -Method Post `
-  -Uri http://localhost:8000/api/v1/data-refresh `
-  -ContentType "application/json" `
-  -Body '{"max_per_bank":1}'
-$jobId = $job.id
-$terminalStatuses = @("completed", "partial", "failed")
-$state = $null
-for ($attempt = 1; $attempt -le 60; $attempt++) {
-  $state = Invoke-RestMethod "http://localhost:8000/api/v1/data-refresh/$jobId"
-  if ($terminalStatuses -contains $state.status) { break }
-  Start-Sleep -Seconds 2
-}
-if ($null -eq $state -or
-    $state.status -ne "completed" -or
-    $state.enrichment_status -ne "completed" -or
-    $state.index_status -ne "completed") {
-  throw "Smoke job did not complete successfully: status=$($state.status) enrichment_status=$($state.enrichment_status) index_status=$($state.index_status)"
+  if ($null -eq $state -or
+      $state.status -ne "completed" -or
+      $state.enrichment_status -ne "completed" -or
+      $state.index_status -ne "completed") {
+    throw "Smoke job did not complete successfully: status=$($state.status) enrichment_status=$($state.enrichment_status) index_status=$($state.index_status)"
+  }
+} finally {
+  foreach ($name in $smokeEnv.Keys) {
+    if ($null -eq $previousSmokeEnv[$name]) {
+      Remove-Item "Env:$name" -ErrorAction SilentlyContinue
+    } else {
+      Set-Item "Env:$name" $previousSmokeEnv[$name]
+    }
+  }
 }
 ```
 
@@ -327,8 +350,18 @@ COMPOSE_PROJECT_NAME=ragnroll-smoke docker compose down --volumes --remove-orpha
 Windows PowerShell'de:
 
 ```powershell
-$env:COMPOSE_PROJECT_NAME = "ragnroll-smoke"
-docker compose down --volumes --remove-orphans
+$previousComposeProjectName = (Get-Item Env:COMPOSE_PROJECT_NAME -ErrorAction SilentlyContinue).Value
+try {
+  $env:COMPOSE_PROJECT_NAME = "ragnroll-smoke"
+  docker compose down --volumes --remove-orphans
+  if ($LASTEXITCODE -ne 0) { throw "Failed to remove the smoke Compose project" }
+} finally {
+  if ($null -eq $previousComposeProjectName) {
+    Remove-Item Env:COMPOSE_PROJECT_NAME -ErrorAction SilentlyContinue
+  } else {
+    $env:COMPOSE_PROJECT_NAME = $previousComposeProjectName
+  }
+}
 ```
 
 Retrieval ve GEPA yollarını ayrıca doğrulayın:
