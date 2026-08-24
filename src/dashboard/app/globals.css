@@ -1,20 +1,20 @@
 :root {
-  --petrol: #002b3a;
-  --petrol-secondary: #003d4f;
+  --petrol: #06473e;
+  --petrol-secondary: #002739;
 
-  --turquoise: #12b8b0;
-  --turquoise-light: #e3f8f6;
+  --turquoise: #08766f;
+  --turquoise-light: #e4f1ec;
 
-  --yellow: #e7aa2d;
-  --yellow-light: #fff4dd;
+  --yellow: #a66d08;
+  --yellow-light: #fff4d6;
 
-  --background: #f7f9fa;
+  --background: #f5f8f6;
   --card: #ffffff;
-  --surface: #f4f7f8;
-  --border: #e3e9eb;
+  --surface: #edf4ef;
+  --border: #d7e3dc;
 
-  --text-primary: #102f3d;
-  --text-secondary: #62737b;
+  --text-primary: #17313a;
+  --text-secondary: #526660;
 }
 
 * {
@@ -32,7 +32,8 @@ body {
 body {
   background: var(--background);
   color: var(--text-primary);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
 }
 
 a {
@@ -42,6 +43,22 @@ a {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #a66d08;
+  outline-offset: 3px;
+}
+
+::selection {
+  background: #dceee6;
+  color: #043f36;
 }
