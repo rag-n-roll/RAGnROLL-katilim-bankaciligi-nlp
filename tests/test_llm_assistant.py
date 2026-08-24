@@ -30,6 +30,42 @@ class FakeLLM:
         return {"available": True, "model": self.model}
 
 
+class StructuredStore:
+    def __init__(self, path, rows):
+        self.path = path
+        self.rows = rows
+
+    def bank_summary(self):
+        return []
+
+    def query_campaigns(self, *, limit, offset=0, **filters):
+        del filters
+        return self.rows[offset : offset + limit], len(self.rows)
+
+
+def _structured_row(identifier, field_name, value, evidence):
+    return {
+        "id": identifier,
+        "bank_slug": "ornek-katilim",
+        "bank_name": "Örnek Katılım",
+        "title": identifier,
+        "content": evidence,
+        "source_url": f"https://ornek.example/{identifier}",
+        "structured": {
+            field_name: value,
+            "fields": {
+                field_name: {
+                    "evidence": {
+                        "text": evidence,
+                        "char_start": 0,
+                        "char_end": len(evidence),
+                    }
+                }
+            },
+        },
+    }
+
+
 def _store(tmp_path):
     store = CampaignStore(tmp_path / "llm.sqlite3")
     record = Campaign(
@@ -89,6 +125,109 @@ def test_assistant_uses_llm_only_as_grounded_answer_writer(tmp_path):
     assert "kanıta dayalı" in llm.calls[0][0]
 
 
+def test_structured_extrema_scans_beyond_first_hundred_rows(tmp_path):
+    records = [
+        Campaign(
+            id=f"rate-{index:03d}",
+            bank_slug="ornek-katilim",
+            bank_name="Örnek Katılım",
+            title=f"Standart oran {index:03d}",
+            content="%1,00 kâr payı ile finansman.",
+            source_url=f"https://ornek.example/rate-{index:03d}",
+        ).to_dict()
+        for index in range(100)
+    ]
+    records.append(
+        Campaign(
+            id="zzz-global-max",
+            bank_slug="ornek-katilim",
+            bank_name="Örnek Katılım",
+            title="Global maksimum",
+            content="%99,00 kâr payı ile finansman.",
+            source_url="https://ornek.example/zzz-global-max",
+        ).to_dict()
+    )
+    store = CampaignStore(tmp_path / "structured.sqlite3")
+    store.upsert_rows(records, run_status="success")
+    assistant = GroundedAssistant(store, llm=FakeLLM(), chroma_enabled=False)
+
+    result = assistant._grounded_result(
+        "En yüksek kâr payı oranı hangisi?", limit=5
+    )
+
+    assert result["facts"][0]["campaign_id"] == "zzz-global-max"
+
+
+def test_reward_extrema_compare_each_currency_without_implicit_fx(tmp_path):
+    rows = [
+        _structured_row(
+            "try-low", "reward_amount", {"amount": 100, "currency": "TRY"}, "100 TL ödül"
+        ),
+        _structured_row(
+            "try-high", "reward_amount", {"amount": 1000, "currency": "TRY"}, "1.000 TL ödül"
+        ),
+        _structured_row(
+            "usd-only", "reward_amount", {"amount": 500, "currency": "USD"}, "500 USD ödül"
+        ),
+    ]
+    assistant = GroundedAssistant(
+        StructuredStore(tmp_path / "reward.sqlite3", rows),
+        llm=FakeLLM(),
+        chroma_enabled=False,
+    )
+
+    result = assistant._grounded_result("En yüksek ödül hangisi?", limit=5)
+
+    assert {fact["campaign_id"] for fact in result["facts"]} == {
+        "try-high",
+        "usd-only",
+    }
+    assert any("kur dönüşümü" in warning for warning in result["warnings"])
+
+
+def test_fee_minimum_prefers_explicit_fee_free_and_ignores_unknown(tmp_path):
+    rows = [
+        _structured_row("paid", "fee_information", "100 TL", "100 TL ücret"),
+        _structured_row("free", "fee_information", "masrafsız", "masrafsız"),
+        _structured_row(
+            "unknown", "fee_information", "ücret belirtilmedi", "ücret belirtilmedi"
+        ),
+    ]
+    assistant = GroundedAssistant(
+        StructuredStore(tmp_path / "fee.sqlite3", rows),
+        llm=FakeLLM(),
+        chroma_enabled=False,
+    )
+
+    result = assistant._grounded_result("En düşük ücret hangisi?", limit=5)
+
+    assert [fact["campaign_id"] for fact in result["facts"]] == ["free"]
+    assert any("karşılaştırmaya alınmadı" in warning for warning in result["warnings"])
+
+
+def test_extrema_return_all_ties_in_stable_identifier_order(tmp_path):
+    rows = [
+        _structured_row(
+            "tie-b", "reward_amount", {"amount": 1000, "currency": "TRY"}, "1.000 TL ödül"
+        ),
+        _structured_row(
+            "lower", "reward_amount", {"amount": 900, "currency": "TRY"}, "900 TL ödül"
+        ),
+        _structured_row(
+            "tie-a", "reward_amount", {"amount": 1000, "currency": "TRY"}, "1.000 TL ödül"
+        ),
+    ]
+    assistant = GroundedAssistant(
+        StructuredStore(tmp_path / "ties.sqlite3", rows),
+        llm=FakeLLM(),
+        chroma_enabled=False,
+    )
+
+    result = assistant._grounded_result("En yüksek ödül hangisi?", limit=5)
+
+    assert [fact["campaign_id"] for fact in result["facts"]] == ["tie-a", "tie-b"]
+
+
 @pytest.mark.parametrize(
     "llm",
     (
@@ -107,6 +246,47 @@ def test_assistant_replaces_invalid_or_interrupted_generation_with_fallback(
     assert result["generation"]["mode"] == "fallback"
     assert "%1.89" in result["answer"]
     assert "Yarım cevap" not in result["answer"]
+
+
+@pytest.mark.parametrize(
+    "unsupported",
+    (
+        "Örnek Katılım oranı %9,99'dur [K1].",
+        "Örnek Katılım finansmanı masrafsızdır [K1].",
+    ),
+)
+def test_assistant_buffers_and_rejects_unsupported_financial_claims(
+    tmp_path, unsupported
+):
+    assistant = GroundedAssistant(
+        _store(tmp_path), llm=FakeLLM([unsupported[:18], unsupported[18:]]), chroma_enabled=False
+    )
+
+    events = list(assistant.stream_answer("Konut finansmanında oran kaç?"))
+    delivered = "".join(
+        str(item["data"].get("text") or "")
+        for item in events
+        if item["event"] in {"delta", "replace"}
+    )
+
+    assert unsupported not in delivered
+    assert "%1.89" in delivered
+    assert events[-1]["data"]["fallback_reason"] == "llm_output_rejected"
+    assert all(item["event"] != "replace" for item in events)
+
+
+def test_numeric_claim_must_be_supported_by_the_cited_source():
+    sources = [
+        {"evidence": {"text": "100 TL ödül"}},
+        {"evidence": {"text": "200 TL ödül"}},
+    ]
+
+    assert GroundedAssistant._valid_llm_answer(
+        "Ödül 200 TL'dir [K2].", sources=sources
+    )
+    assert not GroundedAssistant._valid_llm_answer(
+        "Ödül 200 TL'dir [K1].", sources=sources
+    )
 
 
 def test_safe_redirect_never_calls_language_model(tmp_path):
@@ -248,7 +428,7 @@ def test_llm_answer_gets_bounded_turkish_orthography_polish(tmp_path):
     assert result["generation"]["mode"] == "llm"
 
 
-def test_streaming_endpoint_emits_metadata_tokens_and_completion(tmp_path):
+def test_streaming_endpoint_emits_metadata_validated_answer_and_completion(tmp_path):
     store = _store(tmp_path)
     app = create_app(database_path=store.path, chroma_enabled=False)
     app.state.grounded_assistant = GroundedAssistant(
@@ -273,6 +453,30 @@ def test_streaming_endpoint_emits_metadata_tokens_and_completion(tmp_path):
     assert "event: done" in body
     assert "Profesyonel" in body
     assert '"mode": "llm"' in body
+
+
+def test_streaming_endpoint_never_emits_rejected_chunks(tmp_path):
+    store = _store(tmp_path)
+    app = create_app(database_path=store.path, chroma_enabled=False)
+    app.state.grounded_assistant = GroundedAssistant(
+        store,
+        llm=FakeLLM(["Uydurma oran %9,99 ", "olarak açıklandı [K1]."]),
+        recorder=app.state.event_recorder,
+        chroma_enabled=False,
+    )
+
+    with TestClient(app) as client:
+        with client.stream(
+            "POST",
+            "/api/v1/chat/stream",
+            json={"message": "Konut finansmanında oran kaç?"},
+        ) as response:
+            body = "".join(response.iter_text())
+
+    assert response.status_code == 200
+    assert "%9,99" not in body
+    assert "%1.89" in body
+    assert '"fallback_reason": "llm_output_rejected"' in body
 
 
 def test_llm_status_contract_uses_configured_assistant(tmp_path):

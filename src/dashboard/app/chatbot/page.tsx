@@ -51,6 +51,7 @@ export default function ChatbotPage() {
       { question: trimmed, answer: "", streaming: true },
     ]);
     controller.current = new AbortController();
+    let completed = false;
     try {
       await streamChat(
         trimmed,
@@ -60,12 +61,14 @@ export default function ChatbotPage() {
             updateLatest((item) => ({ ...item, answer: item.answer + text })),
           onReplace: (text) =>
             updateLatest((item) => ({ ...item, answer: text })),
-          onDone: (generation) =>
+          onDone: (generation) => {
+            completed = true;
             updateLatest((item) => ({
               ...item,
               generation,
               streaming: false,
-            })),
+            }));
+          },
         },
         controller.current.signal
       );
@@ -76,7 +79,15 @@ export default function ChatbotPage() {
         : reason instanceof Error
           ? reason.message
           : "Yanıt üretilemedi.";
-      updateLatest((item) => ({ ...item, streaming: false, error }));
+      if (!completed) {
+        updateLatest((item) => ({
+          ...item,
+          answer: "",
+          generation: undefined,
+          streaming: false,
+          error,
+        }));
+      }
     } finally {
       setLoading(false);
       controller.current = null;

@@ -220,6 +220,7 @@ export async function streamChat(
   const decoder = new TextDecoder();
   const reader = response.body.getReader();
   let buffer = "";
+  let completed = false;
 
   function consume(block: string) {
     let event = "message";
@@ -233,7 +234,10 @@ export async function streamChat(
     if (event === "meta") handlers.onMeta(data as ChatMeta);
     else if (event === "delta") handlers.onDelta(String(data.text ?? ""));
     else if (event === "replace") handlers.onReplace(String(data.text ?? ""));
-    else if (event === "done") handlers.onDone(data as ChatGeneration);
+    else if (event === "done") {
+      completed = true;
+      handlers.onDone(data as ChatGeneration);
+    }
     else if (event === "error") throw new Error(String(data.message ?? "Yanıt üretilemedi."));
   }
 
@@ -249,6 +253,9 @@ export async function streamChat(
     if (done) break;
   }
   if (buffer.trim()) consume(buffer);
+  if (!completed) {
+    throw new Error("Yanıt akışı doğrulanmış bir sonuç üretmeden kesildi.");
+  }
 }
 
 export function getMetricsSummary() {

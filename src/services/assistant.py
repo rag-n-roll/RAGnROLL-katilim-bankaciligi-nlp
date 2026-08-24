@@ -9,6 +9,8 @@ from typing import Any, Iterator
 
 from src.llm import GroundedPromptBuilder, OpenAICompatibleLLM
 from src.llm.client import LLMUnavailableError
+from src.normalization import normalize_duration, normalize_money, normalize_rate
+from src.normalization.values import parse_number
 from src.observability import EventRecorder
 from src.persistence import CampaignStore
 from src.preprocessing.clean_text import tokenize_turkish
@@ -22,6 +24,28 @@ def _finite(value: Any) -> float | None:
     except (TypeError, ValueError):
         return None
     return number if isfinite(number) else None
+
+
+_CITATION_RE = re.compile(r"\[K(\d+)\]")
+_PERCENT_CLAIM_RE = re.compile(r"(?:%\s*\d[\d.,]*|\d[\d.,]*\s*%)")
+_MONEY_CLAIM_RE = re.compile(
+    r"(?:"
+    r"(?:₺|\$|€|£|\b(?:TL|TRY|USD|EUR|GBP)\b)\s*"
+    r"\d[\d.,]*(?:\s+milyon)?"
+    r"|\d[\d.,]*(?:\s+milyon)?\s*"
+    r"(?:₺|\$|€|£|\b(?:TL|TRY|USD|EUR|GBP)\b)"
+    r")",
+    re.IGNORECASE,
+)
+_DURATION_CLAIM_RE = re.compile(
+    r"(?<!\d)\d{1,4}\s*(?:gün|gun|ay|yıl|yil)(?!\w)", re.IGNORECASE
+)
+_NUMBER_CLAIM_RE = re.compile(r"(?<!\w)\d[\d.,]*(?!\w)")
+_FEE_FREE_CLAIM_RE = re.compile(
+    r"\b(?:masrafs[ıi]z(?:d[ıi]r)?|ücretsiz(?:d[ıi]r)?|ucretsiz(?:dir)?|"
+    r"ücret\s+yok|ucret\s+yok|masraf\s+yok)\b",
+    re.IGNORECASE,
+)
 
 
 class GroundedAssistant:
@@ -97,6 +121,98 @@ class GroundedAssistant:
         return structured.get(mapping.get(metric, ""))
 
     @classmethod
+    def _comparison_value(
+        cls, record: dict[str, Any], metric: str | None
+    ) -> tuple[float, str | None] | None:
+        """Karşılaştırılabilir değeri ve birimini açıkça üretir."""
+
+        value = cls._metric_value(record, metric)
+        if metric in {"PROFIT_RATE", "MATURITY"}:
+            number = _finite(value)
+            return (number, None) if number is not None else None
+        if metric == "REWARD_AMOUNT":
+            if not isinstance(value, dict):
+                return None
+            amount = _finite(value.get("amount"))
+            currency = str(value.get("currency") or "").strip().upper()
+            if amount is None or not currency:
+                return None
+            return amount, currency
+        if metric != "FEE":
+            return None
+        normalized = str(value or "").casefold().replace("i̇", "i")
+        if _FEE_FREE_CLAIM_RE.search(normalized):
+            return 0.0, "FEE_FREE"
+        money = normalize_money(str(value or ""))
+        if money is None:
+            return None
+        return float(money.amount), money.currency
+
+    @classmethod
+    def _extrema_candidates(
+        cls,
+        rows: list[dict[str, Any]],
+        metric: str | None,
+        aggregation: str,
+    ) -> tuple[list[dict[str, Any]], list[str]]:
+        """Aynı birimdeki gerçek extrema ve eşit liderleri döndürür."""
+
+        comparable: list[tuple[dict[str, Any], float, str | None]] = []
+        rejected_explicit = 0
+        for row in rows:
+            comparison = cls._comparison_value(row, metric)
+            if comparison is None:
+                if cls._metric_value(row, metric) not in (None, "", {}):
+                    rejected_explicit += 1
+                continue
+            comparable.append((row, comparison[0], comparison[1]))
+        warnings: list[str] = []
+        if rejected_explicit:
+            warnings.append(
+                "Birimi veya biçimi doğrulanamayan değerler karşılaştırmaya alınmadı"
+            )
+        if not comparable:
+            return [], warnings
+
+        if metric == "FEE" and aggregation == "MIN":
+            fee_free = [item for item in comparable if item[2] == "FEE_FREE"]
+            if fee_free:
+                return (
+                    [
+                        item[0]
+                        for item in sorted(
+                            fee_free, key=lambda item: str(item[0].get("id") or "")
+                        )
+                    ],
+                    warnings,
+                )
+
+        groups: dict[str | None, list[tuple[dict[str, Any], float]]] = {}
+        for row, number, unit in comparable:
+            groups.setdefault(unit, []).append((row, number))
+        if metric in {"REWARD_AMOUNT", "FEE"} and len(groups) > 1:
+            warnings.append(
+                "Farklı para birimleri kur dönüşümü yapılmadan ayrı karşılaştırıldı"
+            )
+
+        winners: list[dict[str, Any]] = []
+        for unit in sorted(groups, key=lambda value: str(value or "")):
+            group = groups[unit]
+            extreme = (
+                min(item[1] for item in group)
+                if aggregation == "MIN"
+                else max(item[1] for item in group)
+            )
+            winners.extend(
+                item[0]
+                for item in sorted(
+                    (item for item in group if item[1] == extreme),
+                    key=lambda item: str(item[0].get("id") or ""),
+                )
+            )
+        return winners, warnings
+
+    @classmethod
     def _source(cls, record: dict[str, Any], metric: str | None) -> dict[str, Any]:
         structured = cls._structured(record)
         field_name = {
@@ -167,27 +283,29 @@ class GroundedAssistant:
         return result
 
     def _structured_answer(self, plan: QueryPlan) -> dict[str, Any]:
-        rows, _ = self.store.query_campaigns(
-            bank_slugs=plan.slots.get("banks") or None,
-            product_type=plan.slots.get("product_type"),
-            financing_type=plan.slots.get("financing_type"),
-            limit=100,
-        )
-        candidates = self._balanced_candidates(rows, plan)
         metric = plan.slots.get("metric")
         aggregation = plan.slots.get("aggregation")
-        numeric = [
-            (row, _finite(self._metric_value(row, metric)))
-            for row in candidates
-        ]
-        numeric = [(row, value) for row, value in numeric if value is not None]
-        if numeric and aggregation in {"MIN", "MAX"}:
-            reverse = aggregation == "MAX"
-            numeric.sort(
-                key=lambda item: (item[1], str(item[0].get("id") or "")),
-                reverse=reverse,
+        query_filters = {
+            "bank_slugs": plan.slots.get("banks") or None,
+            "product_type": plan.slots.get("product_type"),
+            "financing_type": plan.slots.get("financing_type"),
+        }
+        rows, total = self.store.query_campaigns(
+            **query_filters,
+            limit=100,
+        )
+        if aggregation in {"MIN", "MAX"} and total > len(rows):
+            rows, _ = self.store.query_campaigns(
+                **query_filters,
+                limit=total,
             )
-            candidates = [row for row, _ in numeric]
+        comparison_warnings: list[str] = []
+        if aggregation in {"MIN", "MAX"}:
+            candidates, comparison_warnings = self._extrema_candidates(
+                rows, metric, aggregation
+            )
+        else:
+            candidates = self._balanced_candidates(rows, plan)
         if not candidates:
             return {
                 "answer": (
@@ -197,7 +315,11 @@ class GroundedAssistant:
                 "facts": [],
                 "sources": [],
                 "confidence": 0.0,
-                "warnings": [*plan.warnings, "Kaynakta doğrulanabilir aday bulunamadı"],
+                "warnings": [
+                    *plan.warnings,
+                    *comparison_warnings,
+                    "Kaynakta doğrulanabilir aday bulunamadı",
+                ],
             }
         facts = []
         for row in candidates[:5]:
@@ -220,6 +342,10 @@ class GroundedAssistant:
                     detail = f"%{float(value) * 100:.2f} kâr payı"
                 elif metric == "MATURITY":
                     detail = f"{value} ay vade"
+                elif metric == "REWARD_AMOUNT" and isinstance(value, dict):
+                    detail = (
+                        f"{value.get('amount')} {value.get('currency') or ''} ödül"
+                    ).strip()
                 else:
                     detail = str(value)
             lines.append(f"{fact['bank_name']} - {fact['title']}: {detail}")
@@ -228,7 +354,7 @@ class GroundedAssistant:
             "facts": facts,
             "sources": [self._source(row, metric) for row in candidates[:5]],
             "confidence": min(0.98, plan.confidence),
-            "warnings": plan.warnings,
+            "warnings": [*plan.warnings, *comparison_warnings],
         }
 
     def _hybrid_answer(self, plan: QueryPlan, *, limit: int) -> dict[str, Any]:
@@ -342,14 +468,83 @@ class GroundedAssistant:
         return {**result, "plan": plan.to_dict()}
 
     @staticmethod
-    def _valid_llm_answer(answer: str, *, source_count: int) -> bool:
+    def _claim_signatures(text: str) -> set[tuple[str, str, str]]:
+        """Metindeki sayısal/finansal iddiaları karşılaştırılabilir biçime getirir."""
+
+        normalized = _CITATION_RE.sub("", str(text or ""))
+        signatures: set[tuple[str, str, str]] = set()
+        occupied: list[tuple[int, int]] = []
+
+        for pattern, kind in (
+            (_PERCENT_CLAIM_RE, "rate"),
+            (_MONEY_CLAIM_RE, "money"),
+            (_DURATION_CLAIM_RE, "duration"),
+        ):
+            for match in pattern.finditer(normalized):
+                value = None
+                unit = ""
+                if kind == "rate":
+                    rate = normalize_rate(match.group(0))
+                    value = rate.fraction if rate else None
+                elif kind == "money":
+                    money = normalize_money(match.group(0))
+                    value = money.amount if money else None
+                    unit = money.currency if money else ""
+                else:
+                    duration = normalize_duration(match.group(0))
+                    value = duration.value if duration else None
+                    unit = duration.unit if duration else ""
+                if value is not None:
+                    signatures.add((kind, format(value, "f"), unit))
+                    occupied.append(match.span())
+
+        for match in _NUMBER_CLAIM_RE.finditer(normalized):
+            if any(start <= match.start() and match.end() <= end for start, end in occupied):
+                continue
+            number = parse_number(match.group(0))
+            if number is not None:
+                signatures.add(("number", format(number, "f"), ""))
+        if _FEE_FREE_CLAIM_RE.search(normalized):
+            signatures.add(("fee", "0", "fee_free"))
+        return signatures
+
+    @classmethod
+    def _valid_llm_answer(
+        cls, answer: str, *, sources: list[dict[str, Any]]
+    ) -> bool:
         normalized = answer.strip()
         if len(normalized) < 12 or "<think>" in normalized.casefold():
             return False
-        citations = [int(value) for value in re.findall(r"\[K(\d+)\]", normalized)]
-        if source_count and not citations:
+        citations = [int(value) for value in _CITATION_RE.findall(normalized)]
+        if sources and not citations:
             return False
-        return all(1 <= citation <= source_count for citation in citations)
+        if not all(1 <= citation <= len(sources) for citation in citations):
+            return False
+
+        source_signatures = []
+        for source in sources:
+            evidence = source.get("evidence")
+            evidence_text = (
+                evidence.get("text") if isinstance(evidence, dict) else evidence
+            )
+            source_signatures.append(cls._claim_signatures(str(evidence_text or "")))
+
+        segments = re.split(r"(?<=[.!?])\s+|\n+", normalized)
+        for segment in segments:
+            claims = cls._claim_signatures(segment)
+            if not claims:
+                continue
+            segment_citations = {
+                int(value) for value in _CITATION_RE.findall(segment)
+            }
+            if not segment_citations:
+                return False
+            supported: set[tuple[str, str, str]] = set()
+            for citation in segment_citations:
+                supported.update(source_signatures[citation - 1])
+            if not claims.issubset(supported):
+                return False
+        return True
 
     @staticmethod
     def _polish_llm_answer(answer: str) -> str:
@@ -378,7 +573,7 @@ class GroundedAssistant:
     def stream_answer(
         self, message: str, *, limit: int = 5
     ) -> Iterator[dict[str, Any]]:
-        """Kanıt paketini önce üretir, LLM yanıtını token parçalarıyla aktarır."""
+        """Kanıt paketini ve yalnız doğrulanmış nihai yanıtı aktarır."""
 
         started = perf_counter()
         success = True
@@ -423,13 +618,11 @@ class GroundedAssistant:
                     user_prompt=user_prompt,
                 ):
                     chunks.append(chunk)
-                    yield {"event": "delta", "data": {"text": chunk}}
                 generated = "".join(chunks).strip()
                 if not self._valid_llm_answer(
-                    generated, source_count=len(grounded["sources"])
+                    generated, sources=grounded["sources"]
                 ):
-                    event = "replace" if chunks else "delta"
-                    yield {"event": event, "data": {"text": fallback_answer}}
+                    yield {"event": "delta", "data": {"text": fallback_answer}}
                     yield {
                         "event": "done",
                         "data": self._generation(
@@ -438,13 +631,11 @@ class GroundedAssistant:
                     }
                     return
                 polished = self._polish_llm_answer(generated)
-                if polished != generated:
-                    yield {"event": "replace", "data": {"text": polished}}
+                yield {"event": "delta", "data": {"text": polished}}
                 mode = "llm"
                 yield {"event": "done", "data": self._generation(mode="llm")}
             except LLMUnavailableError:
-                event = "replace" if chunks else "delta"
-                yield {"event": event, "data": {"text": fallback_answer}}
+                yield {"event": "delta", "data": {"text": fallback_answer}}
                 yield {
                     "event": "done",
                     "data": self._generation(
