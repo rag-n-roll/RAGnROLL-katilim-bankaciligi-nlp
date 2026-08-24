@@ -32,7 +32,8 @@ node --version
 npm --version
 ```
 
-`python` komutu Python 3.11'i göstermiyorsa aşağıdaki platforma özel komutlarda
+Python 3.11, sabitlenmiş model artefaktlarının güvenli şekilde yüklenmesi için
+gereklidir. `python` komutu Python 3.11'i göstermiyorsa aşağıdaki platforma özel komutlarda
 `python3.11` kullanın. Node.js 22 için [Node.js indirme sayfasındaki](https://nodejs.org/en/download)
 LTS sürümünü tercih edin.
 
@@ -59,7 +60,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
 Politikayı değiştirmek istemiyorsanız sanal ortamı aktive etmeden doğrudan
-`.\.venv\Scripts\python.exe` ve `\.venv\Scripts\pip.exe` yürütülebilirlerini
+`.\.venv\Scripts\python.exe` ve `.\.venv\Scripts\pip.exe` yürütülebilirlerini
 kullanın. Örneğin:
 
 ```powershell
@@ -216,9 +217,40 @@ curl --fail http://localhost:3000/
 Kod kalite doğrulaması için:
 
 ```bash
-python -m pytest -q
+python -m pytest tests/ -q --cov=src --cov-report=term
 python -m flake8 src tests --max-line-length=100 --extend-ignore=E203 --exclude=src/dashboard/node_modules
-cd src/dashboard && npm run lint && npm run build
+cd src/dashboard && npm test && npm run lint && npm run build
+cd ../..
+```
+
+Compose tanımını ve izole refresh→index smoke yolunu doğrulamak için:
+
+```bash
+docker compose config --quiet
+COMPOSE_PROJECT_NAME=ragnroll-smoke \
+RAGNROLL_REFRESH_DATASET=/app/bootstrap/campaigns.json \
+RAGNROLL_INDEX_SMOKE=true \
+RAGNROLL_EMBEDDING_WARMUP=false \
+RAGNROLL_LLM_ENABLED=false \
+RAGNROLL_CHROMA_COLLECTION=ragnroll_container_smoke \
+docker compose up --build --detach
+curl --fail -X POST http://localhost:8000/api/v1/data-refresh \
+  -H 'content-type: application/json' \
+  -d '{"max_per_bank":1}'
+curl --fail http://localhost:8000/api/v1/data-refresh/JOB_ID
+```
+
+İzole smoke işi bittikten sonra yalnız onun volume'larını kaldırın:
+
+```bash
+COMPOSE_PROJECT_NAME=ragnroll-smoke docker compose down --volumes --remove-orphans
+```
+
+Retrieval ve GEPA yollarını ayrıca doğrulayın:
+
+```bash
+python -m scripts.ingest_chroma --batch-size 64
+python -m src.prompt_optimization.optimize_gepa --check
 ```
 
 Yerel servisleri ve verileri koruyarak durdurmak için:
@@ -248,11 +280,13 @@ docker compose down --volumes --remove-orphans
 
 ## Hızlı başlangıç
 
-Python 3.11 önerilir. Model artefaktları spaCy 3.8.15, scikit-learn 1.9.0 ve
+Python 3.11 gereklidir. Model artefaktları spaCy 3.8.15, scikit-learn 1.9.0 ve
 joblib 1.5.3 ile fail-closed çalışır; farklı sürümde deserialize edilmez.
 
+Linux/macOS'ta proje kökünde:
+
 ```bash
-python3 -m venv .venv
+python3.11 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 python -m uvicorn src.main:app --reload
@@ -270,12 +304,20 @@ npm run dev
 - OpenAPI: `http://localhost:8000/docs`
 - Dashboard: `http://localhost:3000`
 
-Tüm platformu container ile çalıştırmak için:
+Linux/macOS'ta tüm platformu container ile çalıştırmak için:
 
 ```bash
 docker compose up --build --detach
 curl --fail http://localhost:8000/api/v1/health
 curl --fail http://localhost:3000/
+```
+
+Windows PowerShell'de:
+
+```powershell
+docker compose up --build --detach
+Invoke-RestMethod http://localhost:8000/api/v1/health
+Invoke-RestMethod http://localhost:3000/
 ```
 
 İmaj içindeki işlenmiş kampanya snapshot'ı yalnız boş `runtime_data` volume'unu
@@ -408,7 +450,7 @@ python -m flake8 src tests --max-line-length=100 --extend-ignore=E203 \
   --exclude=src/dashboard/node_modules
 python -m src.evaluation.golden \
   data/model_training_data/golden_evaluation_set.jsonl
-cd src/dashboard && npm run lint && npm run build
+cd src/dashboard && npm test && npm run lint && npm run build
 ```
 
 Dondurulmuş regresyon seti yalnız desteklenen alanları proxy başarı oranına dahil
