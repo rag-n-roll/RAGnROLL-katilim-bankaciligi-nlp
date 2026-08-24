@@ -158,9 +158,11 @@ python -m src.evaluation.golden \
 cd src/dashboard && npm run lint && npm run build
 ```
 
-Golden Set ölçümü yalnız desteklenen alanları başarı oranına dahil eder;
-ölçülmeyen gold alanları ayrıca görünür tutar. Son doğrulama sonuçları ve eşikler
-[değerlendirme notunda](docs/evaluation.md) açıklanır.
+Dondurulmuş regresyon seti yalnız desteklenen alanları proxy başarı oranına dahil
+eder; ölçülmeyen referans alanlarını ayrıca görünür tutar. Bağımsız insan gold'u
+henüz sağlanmamıştır. Son doğrulama sonuçları ve sınırlar
+[değerlendirme notunda](docs/evaluation.md), dataset lineage/digest sözleşmesi ise
+[eğitim verisi notunda](docs/training-data-contract.md) açıklanır.
 
 ## Teknik belgeler
 
@@ -168,6 +170,7 @@ Golden Set ölçümü yalnız desteklenen alanları başarı oranına dahil eder
 - [Veri sözleşmesi](docs/data-contract.md)
 - [API](docs/api.md)
 - [Değerlendirme](docs/evaluation.md)
+- [Eğitim verisi sözleşmesi](docs/training-data-contract.md)
 - [Operasyon rehberi](docs/runbook.md)
 
 Kaynak siteler istemci tanımlı User-Agent, hız sınırı, kontrollü retry ve

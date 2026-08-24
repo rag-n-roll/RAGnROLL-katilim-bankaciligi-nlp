@@ -1,50 +1,56 @@
-# Model Training Data
+# Model eğitim verileri
 
-This directory contains the datasets prepared for training, validating, and evaluating the NLP models used in the TEKNOFEST 2026 AI Language Agents project for the Participation Banking domain.
+Bu dizin sınıflandırma, NER, bilgi çıkarımı ve prompt deneyi için hazırlanmış
+JSON/JSONL veri sözleşmelerini içerir. Dosya adında `test` veya `golden` geçmesi,
+tek başına bağımsız insan doğrulaması anlamına gelmez.
 
-The datasets were created using the terminology, ontology, and knowledge graph developed in the previous project phases. They serve as the primary resources for building and evaluating intent classification, named entity recognition, structured information extraction, dialogue understanding, and tool-calling capabilities.
+## Güncel sınıflandırma ve NER dosyaları
 
----
+| Dosya | Rol |
+| --- | --- |
+| `classifier_campaigns_review.jsonl` | Gerçek kampanyaların insan/otomatik/excluded etiket kuyruğu |
+| `ner_dataset_approved.jsonl` | Gerçek kampanyaların insan veya otomatik NER etiketleri |
+| `classifier_dataset_final.jsonl` | Ortak split uygulanmış gerçek ve kontrollü sentetik sınıflandırma verisi |
+| `ner_dataset_final.jsonl` | Ortak split uygulanmış gerçek ve kontrollü sentetik NER verisi |
+| `campaign_nlp_output_schema.json` | Kampanya NLP çıktı sözleşmesi |
+| `dspy_prompt_examples.jsonl` | Yukarıdaki etiketlerden türetilen prompt proxy örnekleri |
+| `training_dataset_manifest.json` | Eğitim dosyalarının digest, split ve provenance özeti |
+| `dspy_prompt_examples.manifest.json` | Prompt verisinin input/output ve split-assignment digestleri |
 
-## Directory Contents
+`classifier_dataset_final.jsonl` zaten kontrollü sentetik varyantları içerir;
+byte-identical ikinci bir tuning kopyası tutulmaz. NER için de aynı final veriyle
+aynı rolü üstlenen ayrı bir tuning kopyası tutulmaz.
 
-| File | Description |
-|------|-------------|
-| `classifier_dataset.jsonl` | Training dataset for intent classification. |
-| `ner_dataset.jsonl` | Annotated dataset for Named Entity Recognition (NER). |
-| `extraction_dataset.jsonl` | Dataset for structured information extraction. |
-| `multi_turn_dialogues.jsonl` | Multi-turn conversation dataset for dialogue understanding. |
-| `tool_calling_examples.jsonl` | Tool-calling examples for AI agent workflows. |
-| `golden_evaluation_set.jsonl` | Benchmark dataset used for model evaluation and regression testing. |
-| `label_schema.json` | Label definitions used across all datasets. |
-| `quality_report.json` | Dataset quality analysis and validation report. |
-| `phase4_dataset_overview.xlsx` | Human-readable overview of the generated datasets. |
+## Provenance ve metrik sözleşmesi
 
----
+- `human`: Gerçek kayıt üzerinde insan tarafından doğrulanmış referans.
+- `auto`: Kural/model tarafından otomatik üretilmiş referans.
+- `synthetic`: Kontrollü şablon üretimi. Kaydın eski alanlarında
+  `human_verified: true` bulunsa bile insan etiketi sayılmaz.
+- `excluded`: Eğitime uygun olmayan veya reddedilmiş kayıt.
 
-## Dataset Summary
+Otomatik ve sentetik referanslardan hesaplanan sonuçlar yalnız `proxy` metriktir.
+Prompt örneklerinin yanıtları da classifier/NER etiketlerinin deterministik
+projeksiyonudur; bağımsız soru-cevap gold'u değildir. Bu repoda bağımsız olarak
+yazılmış ve gözden geçirilmiş bir holdout bulunmadığı manifestlerde
+`independent_gold.status: not_provided` olarak kaydedilir.
 
-The datasets support multiple NLP tasks required by the project:
+Eski `golden_evaluation_set.jsonl`, mevcut kural sözleşmesinin dondurulmuş regresyon
+verisidir. İnsan doğrulama/lineage manifesti olmadığı için yarışma veya bağımsız
+genelleme metriği olarak sunulmamalıdır.
 
-- Intent Classification
-- Named Entity Recognition (NER)
-- Structured Information Extraction
-- Multi-turn Dialogue Understanding
-- Tool Calling
-- Model Evaluation
+## Doğrulama
 
+```bash
+python -m src.training.dataset_contract --check
+python -m src.training.create_unified_splits validate \
+  --classifier data/model_training_data/classifier_dataset_final.jsonl \
+  --ner data/model_training_data/ner_dataset_final.jsonl
+python -m src.prompt_optimization.dataset --check
+```
 
----
-
-## Purpose
-
-These datasets were prepared to support the development of an end-to-end AI language agent capable of understanding participation banking terminology, extracting structured information, retrieving domain knowledge, and generating accurate responses.
-
-The data is intended for:
-
-- Training NLP models
-- Fine-tuning Large Language Models (LLMs)
-- Benchmark evaluation
-- Retrieval-Augmented Generation (RAG)
-- Multi-agent workflows
-  
+Gerçek kayıtlar canonical `source_url` ailesiyle gruplanır. Host case, fragment,
+tracking parametreleri, query sırası ve root dışı trailing slash normalize edilir;
+işlevsel query değerleri korunur. Aynı aile classifier ve NER boyunca yalnız tek
+split'te bulunabilir. Gerçek kayıtta URL eksikliği hatadır; sentetik kayıtlar ise
+`source_id` taşır ve yalnız train split'inde yer alır.

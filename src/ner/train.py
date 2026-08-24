@@ -14,6 +14,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable
 
+from src.training.dataset_contract import record_provenance
+
 
 def _json_default(value: Any) -> Any:
     """Convert NumPy scalar values returned by spaCy's scorer."""
@@ -151,6 +153,8 @@ def train_model(
     nlp.to_disk(output)
     metrics = score_model(nlp, evaluation_records)
     synthetic = sum(bool(record.get("metadata", {}).get("synthetic")) for record in records)
+    evaluation_provenance = Counter(record_provenance(record) for record in evaluation_records)
+    proxy_evaluation = any(key != "human" for key in evaluation_provenance)
     report = {
         "model": "spacy-blank-tr-ner",
         "train_split": train_split,
@@ -161,6 +165,9 @@ def train_model(
         "seed": seed,
         "synthetic_documents": synthetic,
         "synthetic_data_warning": synthetic > 0,
+        "evaluation_provenance_counts": dict(sorted(evaluation_provenance.items())),
+        "evaluation_metric_kind": "proxy" if proxy_evaluation else "human_labeled",
+        "competition_metric_eligible": not proxy_evaluation,
         "metrics": metrics,
         "last_training_loss": losses[-1],
     }
@@ -178,12 +185,17 @@ def evaluate_model(
 
     records = read_jsonl(dataset)
     selected = select_split(records, split)
+    provenance = Counter(record_provenance(record) for record in selected)
+    proxy_evaluation = any(key != "human" for key in provenance)
     report = {
         "model_path": str(model_dir),
         "split": split,
         "synthetic_data_warning": any(
             bool(record.get("metadata", {}).get("synthetic")) for record in selected
         ),
+        "evaluation_provenance_counts": dict(sorted(provenance.items())),
+        "evaluation_metric_kind": "proxy" if proxy_evaluation else "human_labeled",
+        "competition_metric_eligible": not proxy_evaluation,
         "metrics": score_model(spacy.load(model_dir), selected),
     }
     return report
@@ -199,6 +211,9 @@ def dataset_report(dataset: str | Path) -> dict[str, Any]:
         ),
         "synthetic_documents": sum(
             bool(record.get("metadata", {}).get("synthetic")) for record in records
+        ),
+        "provenance_counts": dict(
+            sorted(Counter(record_provenance(record) for record in records).items())
         ),
     }
 
