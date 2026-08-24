@@ -1,0 +1,135 @@
+{
+  "contract": "training-dataset-lineage",
+  "files": {
+    "data/model_training_data/campaign_nlp_output_schema.json": {
+      "bytes": 1653,
+      "line_count": 41,
+      "provenance_counts": {
+        "auto": 0,
+        "excluded": 0,
+        "human": 0,
+        "synthetic": 0
+      },
+      "record_count": 0,
+      "record_kind_counts": {
+        "real": 0,
+        "synthetic": 0
+      },
+      "sha256": "41a3d131c0fe88da0dc12781df2c0f53f073ca8f4409a00998016032a74067da",
+      "split_counts": {},
+      "task_counts": {}
+    },
+    "data/model_training_data/classifier_campaigns_review.jsonl": {
+      "bytes": 2285938,
+      "line_count": 472,
+      "provenance_counts": {
+        "auto": 408,
+        "excluded": 7,
+        "human": 57,
+        "synthetic": 0
+      },
+      "record_count": 472,
+      "record_kind_counts": {
+        "real": 472,
+        "synthetic": 0
+      },
+      "sha256": "b3c94347e5802a93d834b8985d6705b077353acf6ef226efa94fc5c3e41e3189",
+      "split_counts": {
+        "test": 90,
+        "train": 382
+      },
+      "task_counts": {
+        "classification": 472
+      }
+    },
+    "data/model_training_data/classifier_dataset_final.jsonl": {
+      "bytes": 2483715,
+      "line_count": 642,
+      "provenance_counts": {
+        "auto": 408,
+        "excluded": 7,
+        "human": 57,
+        "synthetic": 170
+      },
+      "record_count": 642,
+      "record_kind_counts": {
+        "real": 472,
+        "synthetic": 170
+      },
+      "sha256": "ff02d4a3efb9b984583ef44d0ddff2b1c0e242d4163068082e52dc52f5a90bfe",
+      "split_counts": {
+        "test": 90,
+        "train": 496,
+        "validation": 56
+      },
+      "task_counts": {
+        "classification": 642
+      }
+    },
+    "data/model_training_data/ner_dataset_approved.jsonl": {
+      "bytes": 1546293,
+      "line_count": 469,
+      "provenance_counts": {
+        "auto": 466,
+        "excluded": 0,
+        "human": 3,
+        "synthetic": 0
+      },
+      "record_count": 469,
+      "record_kind_counts": {
+        "real": 469,
+        "synthetic": 0
+      },
+      "sha256": "aea189a5cc9396d78c9262b3c32b1f195019d2a67f7ead6045b65a03a71186c3",
+      "split_counts": {
+        "test": 97,
+        "train": 372
+      },
+      "task_counts": {
+        "ner": 469
+      }
+    },
+    "data/model_training_data/ner_dataset_final.jsonl": {
+      "bytes": 1616877,
+      "line_count": 577,
+      "provenance_counts": {
+        "auto": 466,
+        "excluded": 0,
+        "human": 3,
+        "synthetic": 108
+      },
+      "record_count": 577,
+      "record_kind_counts": {
+        "real": 469,
+        "synthetic": 108
+      },
+      "sha256": "be7badce9d1a8f8d5587ac0fa836148457f7ee31041aa754774331f555475049",
+      "split_counts": {
+        "test": 90,
+        "train": 431,
+        "validation": 56
+      },
+      "task_counts": {
+        "ner": 577
+      }
+    }
+  },
+  "independent_gold": {
+    "reason": "No independently authored and reviewed holdout is committed.",
+    "score": null,
+    "status": "not_provided"
+  },
+  "invariants": {
+    "real_records": 941,
+    "record_id_cross_split": 0,
+    "source_families": 471,
+    "source_family_cross_split": 0,
+    "synthetic_non_train": 0,
+    "synthetic_records": 278
+  },
+  "metric_contract": {
+    "automatic_references": "proxy_only",
+    "proxy_reports_require_provenance_slices": true
+  },
+  "schema_version": 1
+}

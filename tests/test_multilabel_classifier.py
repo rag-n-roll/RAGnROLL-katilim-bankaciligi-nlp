@@ -57,3 +57,26 @@ def test_rejects_empty_verified_split(tmp_path):
 
     with pytest.raises(ValueError, match="No verified"):
         load_multidimensional_examples(path, split="test")
+
+
+def test_controlled_template_requires_explicit_synthetic_opt_in(tmp_path):
+    path = tmp_path / "campaigns.jsonl"
+    row = {
+        "id": "synthetic-classifier-a",
+        "text": "Kontrollü şablon kart kampanyası",
+        "annotations": annotation(),
+        "human_verified": True,
+        "label_status": "synthetic_verified_template",
+        "training_eligible": True,
+        "split": "train",
+        "metadata": {"synthetic": True, "source_id": "campaign-a"},
+    }
+    path.write_text(json.dumps(row) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="No verified"):
+        load_multidimensional_examples(path, split="train")
+
+    texts, _ = load_multidimensional_examples(
+        path, split="train", allow_synthetic=True
+    )
+    assert texts == ["Kontrollü şablon kart kampanyası"]

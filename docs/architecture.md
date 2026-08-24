@@ -41,8 +41,9 @@ Alan çıkarımı ──► değer + durum + güven + kanıt
    simhash ve banka içi near-duplicate kümesi üretilir.
 3. **Gold:** Finansman, oran, tutar, vade, avantaj, koşul ve kanal alanları
    tipli sözleşmeyle sunulur.
-4. **Gold Eval:** İnsan doğrulamalı Golden Set ile intent ve desteklenen çıkarım
-   alanları tekrar üretilebilir biçimde ölçülür.
+4. **Regresyon Eval:** Dondurulmuş referans setiyle intent ve desteklenen çıkarım
+   alanları tekrar üretilebilir biçimde proxy olarak ölçülür. Bağımsız insan gold
+   holdout'u henüz sağlanmamıştır.
 
 SQLite güncel görünümü tutar; `record_versions` tablosu içerik değişimini
 `valid_from`, `valid_to`, `superseded_by` ve tekrar görülme sayısıyla saklar.
@@ -73,6 +74,6 @@ Gemma, vLLM'in OpenAI uyumlu Chat Completions akışı üzerinden yalnız `facts
 SQL çalıştırmaz ve sayısal olgu bulmaz. Kaynaksız, boş, yarım veya geçersiz kaynak
 etiketli üretim `replace` olayıyla geri alınır ve deterministik cevap gösterilir.
 
-DSPy GEPA canlı istek yolunda değildir. Değerlendirme örnekleri ve metinsel geri
-bildirim metriğiyle istem talimatını çevrimdışı iyileştirir; seçilen profil çalışma
-zamanında sade bir yapılandırma dosyasından yüklenir.
+Prompt optimizasyonu canlı istek yolunda değildir. Bu değişiklik yalnız
+source-family-safe, provenance etiketli örnek ve proxy değerlendirme sözleşmesini
+sağlar; optimizer çalışması veya seçilmiş üretim promptu içermez.
