@@ -1,6 +1,7 @@
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
+from math import isfinite
 from types import MappingProxyType
 from typing import TypeAlias
 
@@ -36,7 +37,11 @@ class ComparisonCriteria:
 
 
 def _freeze(value: object) -> JsonValue:
-    if value is None or isinstance(value, (bool, int, float, str)):
+    if isinstance(value, float):
+        if not isfinite(value):
+            raise TypeError("Tool-call numbers must be finite")
+        return value
+    if value is None or isinstance(value, (bool, int, str)):
         return value
     if isinstance(value, Mapping):
         frozen: dict[str, JsonValue] = {}

@@ -40,24 +40,32 @@ def _normalize(message: str) -> str:
     return "".join(character for character in folded if not unicodedata.combining(character))
 
 
-def _is_transaction_request(message: str) -> bool:
+def _clauses(message: str) -> tuple[str, ...]:
     normalized = _normalize(message)
+    return tuple(
+        clause.strip()
+        for clause in re.split(r"[.!?;:\n]+", normalized)
+        if clause.strip()
+    )
+
+
+def _is_transaction_request(message: str) -> bool:
     intent_patterns = (
         (_TRANSFER_CONCEPT_RE, _TRANSFER_ACTION_RE),
         (_COMPLAINT_CONCEPT_RE, _COMPLAINT_ACTION_RE),
         (_APPLICATION_CONCEPT_RE, _APPLICATION_ACTION_RE),
     )
     return any(
-        concept.search(normalized) and action.search(normalized)
+        concept.search(clause) and action.search(clause)
+        for clause in _clauses(message)
         for concept, action in intent_patterns
     )
 
 
 def _is_internal_information_request(message: str) -> bool:
-    normalized = _normalize(message)
-    return bool(
-        _INTERNAL_INFORMATION_RE.search(normalized)
-        and _EXTRACTION_RE.search(normalized)
+    return any(
+        _INTERNAL_INFORMATION_RE.search(clause) and _EXTRACTION_RE.search(clause)
+        for clause in _clauses(message)
     )
 
 
