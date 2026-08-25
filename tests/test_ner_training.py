@@ -218,9 +218,10 @@ def test_evaluate_dataset_report_and_cli(tmp_path, capsys):
     from src.ner.train import evaluate_model, main, train_model
 
     dataset = tmp_path / "ner.jsonl"
+    entities = [{"start": 0, "end": 12, "label": "CONDITION"}]
     rows = [
-        _ner_record("kart aidatı yok", [{"start": 0, "end": 12, "label": "CONDITION"}], split="train"),
-        _ner_record("kart aidatı yok", [{"start": 0, "end": 12, "label": "CONDITION"}], split="validation"),
+        _ner_record("kart aidatı yok", entities, split="train"),
+        _ner_record("kart aidatı yok", entities, split="validation"),
     ]
     dataset.write_text(
         "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows),

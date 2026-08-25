@@ -146,7 +146,9 @@ def test_manifest_branches_are_covered_individually(tmp_path):
     with pytest.raises(PromptArtifactError, match="split sayimlari tutarsiz"):
         load_dataset_manifest(write(bad))
 
-    bad = _manifest(**{"output.split_counts": {"test": 132, "train": 659, "validation": 143, "dev": 0}})
+    bad = _manifest(
+        **{"output.split_counts": {"test": 132, "train": 659, "validation": 143, "dev": 0}}
+    )
     with pytest.raises(PromptArtifactError, match="split anahtarlari"):
         load_dataset_manifest(write(bad))
 

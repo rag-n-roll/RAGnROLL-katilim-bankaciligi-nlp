@@ -72,8 +72,10 @@ def test_json_object_parses_fenced_embedded_and_invalid_payloads():
 
 
 def test_analyze_returns_validated_decision(service):
-    decision = service.analyze("kaç kampanya var", known_banks=[{"slug": "albaraka", "name": "Albaraka"}])
-
+    decision = service.analyze(
+        "kaç kampanya var",
+        known_banks=[{"slug": "albaraka", "name": "Albaraka"}],
+    )
     assert decision["safe"] is True
     assert decision["intent"] == "campaign_count"
     assert decision["route"] == "STRUCTURED_SQL"
