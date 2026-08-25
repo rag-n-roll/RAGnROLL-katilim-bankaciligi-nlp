@@ -253,11 +253,22 @@ def test_structured_intent_call_drives_count_and_writes_reviewable_dspy_trace(
 ):
     plan = json.dumps(
         {
-            "safe": True,
+            "action": "ANSWER",
+            "in_domain": True,
             "intent": "campaign_count",
-            "route": "STRUCTURED_SQL",
             "confidence": 0.97,
             "normalized_query": "Albaraka Türk kampanya toplamı",
+            "concepts": ["campaign"],
+            "missing_criteria": [],
+            "tool_calls": [
+                {
+                    "name": "structured_sql",
+                    "arguments": {
+                        "banks": ["albaraka-turk"],
+                        "aggregation": "COUNT",
+                    },
+                }
+            ],
             "slots": {
                 "banks": ["albaraka-turk"],
                 "metric": None,
@@ -265,6 +276,7 @@ def test_structured_intent_call_drives_count_and_writes_reviewable_dspy_trace(
                 "product_type": None,
                 "financing_type": None,
             },
+            "reason_code": "model_answer",
         },
         ensure_ascii=False,
     )
@@ -317,11 +329,19 @@ def test_structured_intent_call_drives_count_and_writes_reviewable_dspy_trace(
 def test_same_llm_is_called_once_for_plan_and_once_for_grounded_answer(tmp_path):
     plan = json.dumps(
         {
-            "safe": True,
+            "action": "ANSWER",
+            "in_domain": True,
             "intent": "campaign_query",
-            "route": "HYBRID_RAG",
             "confidence": 0.94,
             "normalized_query": "Albaraka Türk öğrenci kampanyası avantajı",
+            "concepts": ["campaign"],
+            "missing_criteria": [],
+            "tool_calls": [
+                {
+                    "name": "hybrid_rag",
+                    "arguments": {"banks": ["albaraka-turk"]},
+                }
+            ],
             "slots": {
                 "banks": ["albaraka-turk"],
                 "metric": None,
@@ -329,6 +349,7 @@ def test_same_llm_is_called_once_for_plan_and_once_for_grounded_answer(tmp_path)
                 "product_type": None,
                 "financing_type": None,
             },
+            "reason_code": "model_answer",
         },
         ensure_ascii=False,
     )

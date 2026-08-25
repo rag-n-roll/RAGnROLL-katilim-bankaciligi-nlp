@@ -72,6 +72,8 @@ def service():
 
 def test_json_object_parses_fenced_embedded_and_invalid_payloads():
     assert _json_object('```json\n{"action": "ANSWER"}\n```') == {"action": "ANSWER"}
+    assert _json_object('prefix {"action": "CLARIFY"} suffix') == {"action": "CLARIFY"}
+    assert _json_object("") is None
     assert _json_object("tamamen geçersiz") is None
     assert _json_object("[1, 2, 3]") is None
 
@@ -80,8 +82,6 @@ def test_analyze_returns_policy_decision_and_preserves_query_compatibility(servi
     decision = service.analyze(
         "kaç kampanya var", known_banks=[{"slug": "albaraka", "name": "Albaraka"}]
     )
-    assert _json_object('prefix {"action": "CLARIFY"} suffix') == {"action": "CLARIFY"}
-    assert _json_object("") is None
     assert isinstance(decision, PolicyDecision)
     assert decision.action == Action.ANSWER
     assert decision.intent == "campaign_count"
@@ -90,6 +90,10 @@ def test_analyze_returns_policy_decision_and_preserves_query_compatibility(servi
     assert decision.normalized_query == "Albaraka kampanya sayısı"
     assert decision["normalized_query"] == "Albaraka kampanya sayısı"
     assert decision["slots"]["banks"] == ["albaraka"]
+    assert decision.get("route") == "STRUCTURED_SQL"
+    assert decision.get("unknown", "fallback") == "fallback"
+    serialized = decision.to_dict()
+    assert json.loads(json.dumps(serialized))["action"] == "ANSWER"
 
 
 def test_analyze_maps_comparison_slots_into_criteria():

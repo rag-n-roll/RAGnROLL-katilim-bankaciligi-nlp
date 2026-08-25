@@ -130,7 +130,11 @@ class GroundedAssistant:
                         raw_input=message,
                         bank_catalog=known_banks,
                         deterministic_plan=plan.to_dict(),
-                        llm_decision=decision,
+                        llm_decision=(
+                            decision.to_dict()
+                            if callable(getattr(decision, "to_dict", None))
+                            else decision
+                        ),
                         selected_plan=selected.to_dict(),
                     )
                 except OSError:

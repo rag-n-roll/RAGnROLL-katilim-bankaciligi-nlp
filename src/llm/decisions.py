@@ -109,6 +109,33 @@ class PlannerDecision(PolicyDecision):
             return getattr(self, key)
         raise KeyError(key)
 
+    def get(self, key: str, default: Any = None) -> Any:
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def to_dict(self) -> dict[str, Any]:
+        def mutable(value: Any) -> Any:
+            if isinstance(value, dict) or hasattr(value, "items"):
+                return {key: mutable(item) for key, item in value.items()}
+            if isinstance(value, tuple):
+                return [mutable(item) for item in value]
+            return value
+
+        return {
+            "action": self.action.value,
+            "in_domain": self.in_domain,
+            "intent": self.intent,
+            "confidence": self.confidence,
+            "normalized_query": self.normalized_query,
+            "concepts": list(self.concepts),
+            "missing_criteria": list(self.missing_criteria),
+            "tool_calls": mutable(self.tool_calls),
+            "slots": mutable(self.slots),
+            "reason_code": self.reason_code,
+        }
+
 
 def _json_object(value: str) -> dict[str, Any] | None:
     text = str(value or "").strip()
