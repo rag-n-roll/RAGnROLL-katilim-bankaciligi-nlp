@@ -1,0 +1,55 @@
+{
+  "contract": "derived-label-prompt-dataset",
+  "family_assignment_count": 469,
+  "independent_gold": {
+    "score": null,
+    "status": "not_provided"
+  },
+  "inputs": {
+    "data/model_training_data/classifier_campaigns_review.jsonl": {
+      "line_count": 472,
+      "sha256": "b3c94347e5802a93d834b8985d6705b077353acf6ef226efa94fc5c3e41e3189"
+    },
+    "data/model_training_data/ner_dataset_approved.jsonl": {
+      "line_count": 469,
+      "sha256": "aea189a5cc9396d78c9262b3c32b1f195019d2a67f7ead6045b65a03a71186c3"
+    }
+  },
+  "invariants": {
+    "examples": 934,
+    "source_families": 469,
+    "source_family_cross_split": 0
+  },
+  "metric_contract": {
+    "automatic_references": "proxy_only",
+    "reference_kind": "derived_label_projection"
+  },
+  "output": {
+    "line_count": 934,
+    "provenance_counts": {
+      "auto": 874,
+      "human": 60
+    },
+    "sha256": "418a644bedcdf0cae7a33d2175e8c40861e420e7bd1439e17f89a6c6eb989dc9",
+    "split_counts": {
+      "test": 132,
+      "train": 659,
+      "validation": 143
+    },
+    "task_counts": {
+      "classification_summary": 465,
+      "entity_detail": 469
+    }
+  },
+  "schema_version": 1,
+  "split_policy": {
+    "assignment_sha256": "8557961d67e07d80c1d1941c072cc9ddfb18b3e2236a3399ce6b140ecd7d1618",
+    "buckets": {
+      "test": "85-99",
+      "train": "0-69",
+      "validation": "70-84"
+    },
+    "hash": "sha256",
+    "unit": "canonical_source_family"
+  }
+}

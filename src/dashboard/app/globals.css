@@ -1,23 +1,20 @@
 :root {
-  --petrol: #002739;
-  --petrol-secondary: #073d50;
+  --petrol: #06473e;
+  --petrol-secondary: #002739;
 
-  --turquoise: #002739;
-  --turquoise-light: #eef2f5;
+  --turquoise: #08766f;
+  --turquoise-light: #e4f1ec;
 
-  --yellow: #e8b84a;
-  --yellow-light: #fff6df;
+  --yellow: #a66d08;
+  --yellow-light: #fff4d6;
 
-  --sage: #002739;
-  --sage-light: #eef2f5;
+  --background: #f5f8f6;
+  --card: #ffffff;
+  --surface: #edf4ef;
+  --border: #d7e3dc;
 
-  --background: #ffffff;
-  --card: #fffdf8;
-  --surface: #f5f3ed;
-  --border: #e6e2d9;
-
-  --text-primary: #1a2a3a;
-  --text-secondary: #667584;
+  --text-primary: #17313a;
+  --text-secondary: #526660;
 }
 
 * {
@@ -35,7 +32,8 @@ body {
 body {
   background: var(--background);
   color: var(--text-primary);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
 }
 
 a {
@@ -45,6 +43,22 @@ a {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #a66d08;
+  outline-offset: 3px;
+}
+
+::selection {
+  background: #dceee6;
+  color: #043f36;
 }

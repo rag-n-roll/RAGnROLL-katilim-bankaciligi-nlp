@@ -1,321 +1,291 @@
-import fs from "node:fs";
-import path from "node:path";
-import styles from "./page.module.css";
+"use client";
+
+import { FormEvent, useEffect, useState } from "react";
 import BankLogo from "../../components/BankLogo";
-import CampaignExplorer from "./CampaignExplorer";
+import {
+  Campaign,
+  getCampaignDetail,
+  getCampaigns,
+  getFilters,
+} from "../../services/api";
+import styles from "../live.module.css";
 
-const campaigns = [
-  {
-    bank: "Kuveyt Türk",
-    initials: "KT",
-    name: "Taşıt Finansmanı Özel Oran Kampanyası",
-    type: "Finansman",
-  },
-  {
-    bank: "Albaraka Türk",
-    initials: "AT",
-    name: "Davet Et Kazan Kampanyası",
-    type: "Kart",
-    selected: true,
-  },
-  {
-    bank: "Türkiye Finans",
-    initials: "TF",
-    name: "Katılma Hesabı Hoş Geldin Kampanyası",
-    type: "Yatırım",
-  },
-  {
-    bank: "Vakıf Katılım",
-    initials: "VK",
-    name: "Otomobil Finansmanı Avantajlı Paket",
-    type: "Finansman",
-  },
-  {
-    bank: "Ziraat Katılım",
-    initials: "ZK",
-    name: "Esnek Hesap Açılış Kampanyası",
-    type: "Yatırım",
-  },
-];
+type Filters = Awaited<ReturnType<typeof getFilters>>;
 
-type ProcessedCampaign = {
-  id: string;
-  bank_name?: string;
-  title?: string;
-  summary?: string | null;
-  clean_text?: string | null;
-  start_date?: string | null;
-  end_date?: string | null;
-  structured?: {
-    product_type?: string | null;
-    profit_share_rate?: string | number | null;
-    term_months?: string | number | null;
-    fee_information?: string | null;
-  };
-};
+function displayValue(value: unknown) {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "object") return JSON.stringify(value, null, 2);
+  return String(value);
+}
 
-const canonicalBankName = (name = "") => {
-  const value = name.toLocaleLowerCase("tr-TR");
-  if (value.includes("kuveyt")) return "Kuveyt Türk";
-  if (value.includes("albaraka")) return "Albaraka Türk";
-  if (value.includes("türkiye finans")) return "Türkiye Finans";
-  if (value.includes("vakıf")) return "Vakıf Katılım";
-  if (value.includes("ziraat")) return "Ziraat Katılım";
-  if (value.includes("emlak")) return "Emlak Katılım";
-  if (value.includes("hayat")) return "Hayat Finans";
-  if (value.includes("tom")) return "TOM Katılım";
-  if (value.includes("dünya")) return "Dünya Katılım";
-  if (value.includes("adil")) return "Adil Katılım";
-  return name || "Katılım Bankası";
-};
+const PAGE_SIZES = [10, 50] as const;
 
-const campaignType = (value?: string | null) => {
-  if (value === "card") return "Kart";
-  if (value === "investment") return "Yatırım";
-  return "Finansman";
-};
+function joinCampaignFragments(left: string, right: string) {
+  if (!left) return right;
+  if (/^[,.;:!?%)}\]’']/.test(right) || /[(\[{'’]$/.test(left)) return left + right;
+  return `${left} ${right}`;
+}
 
-const processedPath = path.join(process.cwd(), "..", "..", "data", "processed", "campaigns.json");
-const processedData = JSON.parse(fs.readFileSync(processedPath, "utf8")) as { records: ProcessedCampaign[] };
-const allCampaignRows = processedData.records.map((record) => {
-  const structured = record.structured ?? {};
-  const rate = structured.profit_share_rate;
-  const term = structured.term_months;
-  return {
-    id: record.id,
-    bank: canonicalBankName(record.bank_name),
-    campaign: record.title || "Güncel Kampanya",
-    text: record.summary || record.clean_text || "Bu kampanya için ayrıntılı metin bulunmuyor.",
-    summary: record.summary || "Bu kampanya için kısa özet bulunmuyor.",
-    cleanText: record.clean_text || "Bu kampanya için temizlenmiş tam metin bulunmuyor.",
-    type: campaignType(structured.product_type),
-    rate: rate ? `%${String(rate).replace(".", ",")}` : "—",
-    term: term ? `${term} Ay` : "—",
-    cost: structured.fee_information || "—",
-    validity: [record.start_date, record.end_date].filter(Boolean).join(" – ") || "Güncel",
-  };
-});
-const totalCampaignCount = allCampaignRows.length;
-
-function getTypeClass(type: string) {
-  if (type === "Kart") return styles.cardBadge;
-  if (type === "Yatırım") return styles.investmentBadge;
-
-  return styles.financeBadge;
+function formatCampaignContent(content: string) {
+  const lines = content
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  const paragraphs: string[] = [];
+  let current = "";
+  for (const line of lines) {
+    current = joinCampaignFragments(current, line);
+    if (/[.!?]$/.test(current) || (/:$/.test(current) && current.length <= 120)) {
+      paragraphs.push(current);
+      current = "";
+    }
+  }
+  if (current) paragraphs.push(current);
+  return paragraphs;
 }
 
 export default function CampaignsPage() {
+  const [filters, setFilters] = useState<Filters | null>(null);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [selected, setSelected] = useState<Campaign | null>(null);
+  const [bank, setBank] = useState("");
+  const [product, setProduct] = useState("");
+  const [search, setSearch] = useState("");
+  const [total, setTotal] = useState(0);
+  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(10);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  async function loadCampaigns(limit = pageSize) {
+    setLoading(true);
+    setError("");
+    try {
+      const result = await getCampaigns({
+        bank_slug: bank,
+        product_type: product,
+        search: search.trim() || undefined,
+        limit,
+        offset: 0,
+      });
+      setCampaigns(result.items);
+      setTotal(result.total);
+      if (result.items[0]) {
+        setSelected(await getCampaignDetail(result.items[0].id));
+      } else {
+        setSelected(null);
+      }
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Kampanyalar yüklenemedi.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    Promise.all([getFilters(), getCampaigns({ limit: 10, offset: 0 })])
+      .then(async ([filterResult, campaignResult]) => {
+        setFilters(filterResult);
+        setCampaigns(campaignResult.items);
+        setTotal(campaignResult.total);
+        if (campaignResult.items[0]) {
+          setSelected(await getCampaignDetail(campaignResult.items[0].id));
+        }
+      })
+      .catch((reason: Error) => setError(reason.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    void loadCampaigns();
+  }
+
+  async function changePageSize(size: (typeof PAGE_SIZES)[number]) {
+    if (size === pageSize || loading) return;
+    setPageSize(size);
+    await loadCampaigns(size);
+  }
+
+  async function loadMore() {
+    if (loadingMore || campaigns.length >= total) return;
+    setLoadingMore(true);
+    setError("");
+    try {
+      const result = await getCampaigns({
+        bank_slug: bank,
+        product_type: product,
+        search: search.trim() || undefined,
+        limit: pageSize,
+        offset: campaigns.length,
+      });
+      setCampaigns((current) => [
+        ...current,
+        ...result.items.filter((item) => !current.some((row) => row.id === item.id)),
+      ]);
+      setTotal(result.total);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Diğer kampanyalar yüklenemedi.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  async function selectCampaign(campaign: Campaign) {
+    setError("");
+    try {
+      setSelected(await getCampaignDetail(campaign.id));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Kampanya detayı yüklenemedi.");
+    }
+  }
+
+  const fields = Object.entries(selected?.structured?.fields ?? {});
+
   return (
-    <main className={styles.main}>
-      <section className={styles.pageHeader}>
+    <main className={styles.main} aria-busy={loading}>
+      <header className={styles.header}>
         <div>
-          <h1 className={styles.title}>Kampanya Merkezi</h1>
-
-          <p className={styles.description}>
-            Bankaların güncel kampanyalarını, kampanya metinlerini ve çıkarılan
-            finansal bilgileri tek ekranda inceleyin.
-          </p>
+          <span className={styles.eyebrow}>Canlı kampanya kataloğu</span>
+          <h1>Kampanya merkezi</h1>
+          <p>Ham metni, yapılandırılmış alanı ve alanın kaynak kanıtını birlikte inceleyin.</p>
         </div>
+        <span className={styles.headerBadge}>{total} kayıt</span>
+      </header>
 
-        <div className={styles.headerDecoration}>
-          <span className={styles.waveOne}></span>
-          <span className={styles.waveTwo}></span>
-          <span className={styles.waveThree}></span>
-        </div>
-      </section>
+      <form className={styles.controls} onSubmit={submit} aria-label="Kampanya filtreleri">
+        <label className={styles.filterField}>
+          <span>Banka</span>
+          <select value={bank} onChange={(event) => setBank(event.target.value)}>
+            <option value="">Tüm bankalar</option>
+            {filters?.banks.map((item) => <option key={item.value} value={item.value}>{item.label} ({item.count})</option>)}
+          </select>
+        </label>
+        <label className={styles.filterField}>
+          <span>Ürün türü</span>
+          <select value={product} onChange={(event) => setProduct(event.target.value)}>
+            <option value="">Tüm ürün türleri</option>
+            {filters?.product_types.map((item) => <option key={item.value} value={item.value}>{item.label} ({item.count})</option>)}
+          </select>
+        </label>
+        <label className={styles.filterField}>
+          <span>Kampanya ara</span>
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Başlıkta ara" minLength={2} />
+        </label>
+        <button className={styles.button} disabled={loading} type="submit">Filtrele</button>
+      </form>
 
-      <CampaignExplorer rows={allCampaignRows} />
-      {/* Legacy static workspace removed; CampaignExplorer owns selection state. */}
-      {false && <section className={styles.campaignWorkspace}>
-        {/* SOL KART */}
-        <article className={styles.panel}>
-          <div className={styles.panelHeader}>
-            <h2>Banka Bazlı Tüm Kampanyalar</h2>
+      {error && <p className={styles.error} role="alert">{error}</p>}
+      {loading && <p className={styles.status} role="status">Kampanyalar yükleniyor…</p>}
+      {!loading && !error && campaigns.length === 0 && <p className={styles.status}>Filtreyle eşleşen kampanya bulunamadı.</p>}
 
-            <span className={styles.campaignCount}>{totalCampaignCount} kampanya</span>
+      <section className={styles.campaignGrid} aria-label="Kampanya sonuçları">
+        <article className={`${styles.card} ${styles.campaignListCard}`}>
+          <div className={styles.cardHeading}>
+            <div>
+              <span className={styles.eyebrow}>Sonuçlar</span>
+              <h2>Kampanyalar</h2>
+            </div>
           </div>
-
-          <div className={styles.campaignList}>
+          <div className={styles.list}>
             {campaigns.map((campaign) => (
-              <div
-                key={campaign.bank}
-                className={`${styles.campaignRow} ${
-                  campaign.selected ? styles.selectedCampaign : ""
-                }`}
+              <button
+                className={`${styles.listButton} ${selected?.id === campaign.id ? styles.selected : ""}`}
+                aria-pressed={selected?.id === campaign.id}
+                key={campaign.id}
+                onClick={() => void selectCampaign(campaign)}
+                type="button"
               >
-                <BankLogo bank={campaign.bank} size={34} />
-
-                <div className={styles.campaignInfo}>
-                  <strong>{campaign.bank}</strong>
-                  <span>{campaign.name}</span>
-                </div>
-
-                <span
-                  className={`${styles.typeBadge} ${getTypeClass(
-                    campaign.type
-                  )}`}
-                >
-                  {campaign.type}
+                <span className={styles.campaignBank}>
+                  <BankLogo bank={campaign.bank_name} decorative size={34} />
+                  <strong>{campaign.bank_name}</strong>
                 </span>
-              </div>
+                <span className={styles.campaignTitle}>{campaign.title}</span>
+              </button>
             ))}
           </div>
-
-          <a className={styles.viewAllButton} href="#all-campaigns">
-            Tümünü Görüntüle <span>›</span>
-          </a>
-        </article>
-
-        {/* ORTA KART */}
-        <article className={styles.panel}>
-          <div className={styles.contentTitle}>
-            <span className={styles.titleIcon}>▤</span>
-            <h2>Kampanya Metni</h2>
-          </div>
-
-          <div className={styles.campaignText}>
-            <p>
-              Albaraka Türk müşterilerini Albaraka Mobil uygulaması üzerinden
-              “Davet Et Kazan” kampanyasına davet ediyoruz.
-            </p>
-
-            <p>
-              Kampanya kapsamında, Albaraka Mobil’i ilk kez indiren ve davet
-              kodunuzu kullanarak müşteri olan her arkadaşınız için 100 TL
-              değerinde hediye puan kazanırsınız. Arkadaşınızın ilk harcaması
-              sonrasında puanınız hesabınıza yüklenir.
-            </p>
-
-            <p>
-              Kampanyadan yararlanmak için Albaraka Mobil uygulamasında yer alan
-              kampanya sayfasından davet kodunuzu paylaşmanız yeterlidir.
-            </p>
-
-            <p>
-              Kampanya 19 Mayıs 2024 – 30 Haziran 2024 tarihleri arasında
-              geçerlidir.
-            </p>
-
-            <p>
-              Detaylı bilgi için uygulamamızdaki kampanya sayfasını ziyaret
-              ediniz.
-            </p>
-          </div>
-
-          <div className={styles.aiNotice}>
-            <span>ⓘ</span>
-            Bu metin yapay zeka ile analiz edilerek finansal bilgiler
-            çıkarılmıştır.
-          </div>
-        </article>
-
-        {/* SAĞ KART */}
-        <article className={styles.panel}>
-          <div className={styles.contentTitle}>
-            <span className={styles.titleIcon}>✣</span>
-            <h2>Çıkarılan Bilgiler</h2>
-          </div>
-
-          <div className={styles.extractedList}>
-            <div className={styles.extractedRow}>
-              <span className={styles.extractedLabel}>🏦 Banka</span>
-              <strong>Albaraka Türk</strong>
-            </div>
-
-            <div className={styles.extractedRow}>
-              <span className={styles.extractedLabel}>▣ Ürün Türü</span>
-              <span
-                className={`${styles.typeBadge} ${styles.cardBadge}`}
-              >
-                Kart
-              </span>
-            </div>
-
-            <div className={styles.extractedRow}>
-              <span className={styles.extractedLabel}>% Kâr Payı</span>
-              <strong>%2,69</strong>
-            </div>
-
-            <div className={styles.extractedRow}>
-              <span className={styles.extractedLabel}>▣ Vade</span>
-              <strong>36 Ay</strong>
-            </div>
-
-            <div className={styles.extractedRow}>
-              <span className={styles.extractedLabel}>◉ Masraf</span>
-              <strong>0 TL</strong>
-            </div>
-
-            <div className={styles.extractedRow}>
-              <span className={styles.extractedLabel}>♙ Başvuru Koşulu</span>
-              <strong>Albaraka Mobil üzerinden ilk kez müşteri olanlar</strong>
-            </div>
-
-            <div className={styles.extractedRow}>
-              <span className={styles.extractedLabel}>▣ Geçerlilik Tarihi</span>
-              <strong>19 Mayıs 2024 – 30 Haziran 2024</strong>
-            </div>
-          </div>
-        </article>
-      </section>}
-
-      {false && <section className={styles.tableCard} id="all-campaigns">
-        <h2>Tüm Kampanyalar <span className={styles.campaignCount}>{totalCampaignCount} kayıt</span></h2>
-
-        <div className={styles.tableWrapper}>
-          <table className={styles.dataTable}>
-            <thead>
-              <tr>
-                <th>Banka</th>
-                <th>Kampanya Adı</th>
-                <th>Tür</th>
-                <th>Kâr Payı</th>
-                <th>Vade</th>
-                <th>Masraf</th>
-                <th>Geçerlilik</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {allCampaignRows.map((row) => (
-                <tr key={row.id}>
-                  <td>
-                    <div className={styles.tableBank}>
-                      <BankLogo bank={row.bank} size={30} />
-
-                      <strong>{row.bank}</strong>
-                    </div>
-                  </td>
-
-                  <td className={styles.campaignCell}>
-                    <details className={styles.campaignDisclosure}>
-                      <summary>{row.campaign}<span>Metni aç</span></summary>
-                      <div>{row.text}</div>
-                    </details>
-                  </td>
-
-                  <td>
-                    <span
-                      className={`${styles.typeBadge} ${getTypeClass(row.type)}`}
-                    >
-                      {row.type}
-                    </span>
-                  </td>
-
-                  <td>
-                    <strong>{row.rate}</strong>
-
-                  </td>
-
-                  <td>{row.term}</td>
-                  <td>{row.cost}</td>
-                  <td>{row.validity}</td>
-                </tr>
+          <footer className={styles.campaignListFooter}>
+            <div className={styles.pageSizeControl} aria-label="Bir seferde gösterilecek kampanya sayısı">
+              <span>Gösterim</span>
+              {PAGE_SIZES.map((size) => (
+                <button
+                  aria-pressed={pageSize === size}
+                  className={pageSize === size ? styles.pageSizeActive : ""}
+                  disabled={loading || loadingMore}
+                  key={size}
+                  onClick={() => void changePageSize(size)}
+                  type="button"
+                >
+                  {size}
+                </button>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </section>}
+            </div>
+            <span className={styles.shownCount}>{campaigns.length} / {total} gösteriliyor</span>
+            {campaigns.length < total && (
+              <button
+                className={styles.loadMoreButton}
+                disabled={loading || loadingMore}
+                onClick={() => void loadMore()}
+                type="button"
+              >
+                {loadingMore ? "Yükleniyor…" : `${pageSize} kampanya daha göster`}
+              </button>
+            )}
+          </footer>
+        </article>
+        <article className={`${styles.card} ${styles.campaignDetail}`} aria-live="polite">
+          {selected && (
+            <div className={styles.detailBank}>
+              <BankLogo bank={selected.bank_name} decorative size={42} />
+              <span>{selected.bank_name}</span>
+            </div>
+          )}
+          <h2>{selected?.title ?? "Kampanya detayı"}</h2>
+          {selected ? (
+            <>
+              <div className={styles.campaignCopy}>
+                {formatCampaignContent(selected.content || "Kaynak metin bulunmuyor.").map((paragraph, index) => (
+                  /:$/.test(paragraph) && paragraph.length <= 120
+                    ? <h3 key={`${index}-${paragraph}`}>{paragraph}</h3>
+                    : <p key={`${index}-${paragraph}`}>{paragraph}</p>
+                ))}
+              </div>
+              <a className={styles.source} href={selected.source_url} rel="noreferrer" target="_blank">
+                Resmî kaynağı yeni sekmede aç <span aria-hidden="true">↗</span>
+              </a>
+            </>
+          ) : <p className={styles.muted}>İncelemek için bir kampanya seçin.</p>}
+        </article>
+      </section>
+
+      {selected && (
+        <section className={`${styles.card} ${styles.contractCard}`}>
+          <div className={styles.cardHeading}>
+            <div>
+              <span className={styles.eyebrow}>İzlenebilir veri</span>
+              <h2>Alan sözleşmeleri</h2>
+            </div>
+          </div>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <caption className={styles.visuallyHidden}>{selected.title} için yapılandırılmış alanlar</caption>
+              <thead><tr><th>Alan</th><th>Değer</th><th>Durum</th><th>Güven</th><th>Kanıt</th></tr></thead>
+              <tbody>
+                {fields.map(([name, field]) => (
+                  <tr key={name}>
+                    <td><strong>{name}</strong></td>
+                    <td><pre>{displayValue(field.value)}</pre></td>
+                    <td><span className={`${styles.badge} ${field.status === "EXPLICIT" ? "" : styles.warningBadge}`}>{field.status}</span></td>
+                    <td>{Math.round(field.confidence * 100)}%</td>
+                    <td>{field.evidence?.text ?? "Kaynakta belirtilmemiş"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

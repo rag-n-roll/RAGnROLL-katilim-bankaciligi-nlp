@@ -1,151 +1,527 @@
-# RAGnROLL — Katılım Bankacılığı NLP
+# RAGnROLL — Katılım Bankacılığı Bilgi Platformu
 
-TEKNOFEST 2026 Yapay Zekâ Dil Ajanları Yarışması için katılım bankacılığı
-kampanyalarını toplayan ve Türkçe NLP işlemine hazırlayan veri hattı.
+Katılım bankalarının resmî ürün ve kampanya içeriklerini toplayan; metni
+yapılandırılmış ve kanıtlanabilir alanlara dönüştüren; açıklanabilir
+karşılaştırma ve kaynaklı soru-cevap sunan yerel çalışabilir platform.
 
-## PRD Görev Durumu — Hafta 1 (27 Temmuz - 2 Ağustos) ✅ Tamamlandı
+## Neler sunar?
 
-### Dilan Kakım — Takım Kaptanı & NLP Mühendisi
-- ✅ GitHub repository oluşturma, dizin yapısı, branch stratejisi
-- ✅ README.md, CONTRIBUTING.md, LICENSE (Apache 2.0) hazırlama
-- ✅ NLP kütüphaneleri araştırma ve karşılaştırma
-- ✅ Terminoloji sözlüğü başlatma → `data/terminology/` (10 dosya)
-- ✅ NER etiketleme şeması tasarlama → `data/terminology/entity_schema.json`
-- ✅ Haftalık toplantı takvimi oluşturma
+- BDDK kataloğu güdümlü, robots/TLS kurallarına saygılı 10 banka adaptörü
+- Ham kayıt, temiz metin, yapılandırılmış alan ve değerlendirme katmanları
+- Exact hash, near-duplicate kümeleri ve zamansal kayıt sürüm geçmişi
+- Hash ve tam bağımlılık sürümü doğrulanan sınıflandırıcı + NER danışmanlık analizi
+- Her alan için değer, durum, güven, yöntem ve karakter aralıklı kanıt
+- 12 intent, katılım finans terminolojisi ve SQL-first sorgu derleyici
+- Koşul/tanım soruları için Qwen embedding + Chroma + BM25 + yönlendirilmiş graph retrieval
+- Kaynak konumunu koruyan semantik chunking ve yalnız değişen parçaları embed eden indeksleme
+- vLLM-Metal üzerinde Gemma ile kaynak etiketli, token bazlı streaming yanıt
+- Model hatasında kesintisiz çalışan doğrulanabilir yerel fallback
+- DSPy GEPA ile ölçülebilir ve tekrar üretilebilir Türkçe istem iyileştirme
+- FastAPI sözleşmeleri ve canlı Next.js dashboard
+- Golden Set, edge-case testleri, gecikme/hata ve veri kalitesi metrikleri
 
-### Kutay Orallı — Veri Mühendisi & Backend Geliştirici
-- ✅ BDDK web sitesinden katılım bankası listesini çekme → `src/scraper/bddk.py`
-- ✅ 10 bankanın tamamı için web scraper modülleri → `src/scraper/banks/` (10 adaptör)
-- ✅ Kampanya metinlerini toplama ve JSON formatında saklama → `src/scraper/models.py`
-- ✅ Veri doğrulama ve kalite kontrol mekanizması → `src/scraper/validation.py`
-- ✅ Metin ön işleme pipeline'ı (temizleme, tokenizasyon) → `src/preprocessing/`
-- ✅ Veri seti README dokümantasyonu → `data/README.md`
+## Kurulum yolları ve önkoşullar
 
-### Elif Naz Topçu — Frontend & Arayüz Geliştirici
-- ✅ Dashboard teknoloji seçimi (Next.js) → `docs/week-1-frontend-dashboard-research.md`
-- ✅ Dashboard iskelet yapısı → `src/dashboard/` (Next.js + TypeScript)
-- ✅ Renk paleti, font, UI component kararları → `docs/dashboard-design-system.md`
-- ✅ Veri scraping'de destek (kalan 3 banka)
-- ✅ Mockup tasarımları → `docs/mockups/`
-- ✅ Sunum şablonu hazırlama
+Platformdan bağımsız tüm yerel kurulumlar Python **3.11** ve Node.js **22**
+gerektirir. Python ve Node sürümlerini kurulumdan önce doğrulayın:
 
-### Gizem Nur Yıldırım — MLOps & Chatbot Mühendisi
-- ✅ Docker altyapısı → `Dockerfile`, `docker-compose.yml` (Ollama + Chatbot servisleri)
-- ✅ CI/CD pipeline → `.github/workflows/` (lint, test)
-- ✅ Virtual environment, requirements.txt hazırlama
-- ✅ Ollama kurulumu ve lokal LLM model araştırması → Gemma2 seçildi
-- ✅ Chatbot mimari tasarımı → `docs/RAG_MIMARI_PLANI.md`
-- ✅ Pytest altyapısı ve birim testleri → `tests/` (17 test dosyası)
-
-## PRD Görev Durumu — Hafta 2 (3-9 Ağustos) 🔄 Devam Ediyor
-
-### Dilan Kakım — Takım Kaptanı & NLP Mühendisi
-- ✅ Kural tabanlı bilgi çıkarımı (regex patterns) → `src/extraction/campaign_fields.py`
-- ✅ NER eğitim verisi hazırlama (etiketleme) → `data/annotations/`
-- ⏳ NER modeli eğitimi (spaCy/HuggingFace BERT) → `src/ner/train.py` (TODO)
-- ⏳ Kampanya sınıflandırma modeli → `src/classifier/main.py` (TODO)
-- ⏳ Model değerlendirme (F1-Score, Precision, Recall)
-- ✅ Terminoloji sözlüğü tamamlama → `data/terminology/` (genişletilmiş şema + regex)
-
-### Kutay Orallı — Veri Mühendisi & Backend Geliştirici
-- ✅ Kalan banka scraper'ları tamamlama → 10/10 banka aktif
-- ✅ Sayısal değer ve para birimi normalizasyon modülü → `src/normalization/values.py`
-- ✅ Veritabanı şeması (SQLite) → `src/persistence/store.py`
-- ✅ Yapılandırılmış formata dönüştürme → `src/extraction/campaign_fields.py`
-- ✅ Ürün karşılaştırma algoritması → `src/comparison/engine.py`
-- ✅ NER etiketleme sürecine destek
-
-### Elif Naz Topçu — Frontend & Arayüz Geliştirici
-- ✅ Dashboard ana sayfa → `src/dashboard/app/page.tsx` (özet kartlar, grafikler)
-- ✅ Karşılaştırma sayfası iskeleti → `src/dashboard/app/compare/`
-- ✅ Plotly grafik prototipleri (bar chart, pie chart)
-- ✅ NER etiketleme sürecine destek
-- ✅ Dashboard-backend API bağlantısı tasarımı
-
-### Gizem Nur Yıldırım — MLOps & Chatbot Mühendisi
-- ✅ Ollama ile lokal LLM kurulumu ve model seçimi (Gemma2)
-- ✅ LangChain RAG pipeline → `src/chatbot/rag_langchain.py`
-- ✅ ChromaDB vektör veritabanı → `src/chatbot/rag.py` + `rag_langchain.py`
-- ✅ Intent detection modülü → `src/intent/intent_detector.py`
-- ✅ Docker image güncelleme (NLP bağımlılıkları)
-- ✅ NER etiketleme sürecine destek
-
-### Hafta 2 Eksikler
-- ⏳ NER model eğitimi (`src/ner/train.py` henüz başlanmadı)
-- ⏳ Kampanya sınıflandırma modeli (`src/classifier/main.py` henüz başlanmadı)
-- ⏳ Model değerlendirme metrikleri (F1-Score, Precision, Recall)
-
-## PRD Görev Durumu — Hafta 3 (10-16 Ağustos) ⬜ Başlanmadı
-
-### Dilan Kakım — Takım Kaptanı & NLP Mühendisi
-- ⬜ NLP model iyileştirme (edge case'ler, farklı ifade biçimleri)
-- ⬜ Bilgi çıkarımı doğruluğunu artırma
-- ⬜ NLP pipeline'ını dashboard API'sine entegre etme
-- ⬜ Chatbot yanıtları için doğruluk testleri
-- ⬜ Model performans raporu hazırlama
-- ⬜ Proje ilerleme takibi ve koordinasyon
-
-### Kutay Orallı — Veri Mühendisi & Backend Geliştirici
-- ⬜ REST API endpointleri geliştirme (FastAPI) → `src/api/`
-- ⬜ Dashboard için veri servisi oluşturma
-- ⬜ Karşılaştırma motoru optimizasyonu
-- ⬜ Veritabanı sorgu optimizasyonu
-- ⬜ Backend birim testleri yazma
-- ⬜ Veri güncelleme mekanizması (scraper yeniden çalıştırma)
-
-### Elif Naz Topçu — Frontend & Arayüz Geliştirici
-- ⬜ Dashboard karşılaştırma sayfası (filtreler, tablo, grafikler)
-- ⬜ Dashboard detay sayfası (banka bazlı kampanya listeleme)
-- ⬜ Chatbot UI tasarımı ve entegrasyonu
-- ⬜ Dashboard - Backend API entegrasyonu
-- ⬜ Responsive tasarım ayarları
-- ⬜ UX iyileştirmeleri ve kullanıcı akış testleri
-
-### Gizem Nur Yıldırım — MLOps & Chatbot Mühendisi
-- ⬜ Chatbot RAG pipeline tamamlama → `src/chatbot/`
-- ⬜ Intent detection modülü tamamlama → `src/intent/`
-- ⬜ Chatbot yanıt formatlama ve doğruluk iyileştirme
-- ⬜ Chatbot - Dashboard entegrasyonu
-- ⬜ Docker Compose ile tüm servisleri birleştirme
-- ⬜ Uçtan uca entegrasyon testleri
-
-### Hafta 3 Ortak Teslim Hedefleri
-- ⬜ Çalışan 3 sayfalık dashboard
-- ⬜ Çalışan chatbot (soru-cevap)
-- ⬜ Dashboard + Chatbot entegre çözüm
-- ⬜ REST API
-- ⬜ Docker Compose ile tek komutla çalışma
-
-## 1. hafta veri mühendisliği kapsamı
-
-- BDDK'nın resmî Türkçe `/Kurulus/Liste/77` sayfasından güncel katılım bankası listesi
-- BDDK kataloğundaki 10 banka için bağımsız ürün/kampanya scraper adaptörleri
-- İlk öncelik: Kuveyt Türk, Albaraka Türk ve Türkiye Finans
-- Sürümlü ortak JSON şeması ve atomik dosya yazımı
-- Kayıt, tarih, URL, tekrar ve çekme hatası kalite kontrolleri
-- Unicode/Türkçe uyumlu temizleme ve hafif tokenizasyon
-- SQLite ana kaynak, geriye uyumlu ham/işlenmiş JSON export'ları
-- Deterministik sayı, para birimi, oran ve süre normalizasyonu
-- Açıklanabilir ürün/kampanya karşılaştırması
-
-BDDK listesi Ağustos 2026 itibarıyla 10 banka içerir. Veri hattı bu katalogdaki
-hiçbir bankayı sessizce atlamaz. Adil Katılım'ın kamuya açık ürün/hizmet metni,
-Dünya Katılım, Hayat Finans ve T.O.M. Katılım dahil diğer bankaların resmî
-kampanya metinleri ortak ham şemada saklanır.
-
-## Kurulum
-
-Python 3.11 veya üstü önerilir.
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
+```text
+python --version
+python3 --version
+node --version
+npm --version
 ```
 
-## Kullanım
+Python 3.11, sabitlenmiş model artefaktlarının güvenli şekilde yüklenmesi için
+gereklidir. `python` komutu Python 3.11'i göstermiyorsa aşağıdaki platforma özel komutlarda
+`python3.11` kullanın. Node.js 22 için [Node.js indirme sayfasındaki](https://nodejs.org/en/download)
+LTS sürümünü tercih edin.
 
-BDDK kataloğundan başlayarak tüm veri hattını tek komutla çalıştırın:
+### Windows PowerShell
+
+PowerShell'de proje dizininde:
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+cd src\dashboard
+npm ci
+cd ..\..
+```
+
+`Activate.ps1` çalıştırılırken script politikası hatası alırsanız yalnızca açık
+olan PowerShell oturumu için şu komutu çalıştırıp aktivasyonu tekrarlayın:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+Politikayı değiştirmek istemiyorsanız sanal ortamı aktive etmeden doğrudan
+`.\.venv\Scripts\python.exe` ve `.\.venv\Scripts\pip.exe` yürütülebilirlerini
+kullanın. Örneğin:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn src.main:app --reload
+```
+
+### Linux
+
+Dağıtımınızın paket yöneticisiyle Python 3.11, `python3.11-venv`, Node.js 22
+ve npm'i kurduktan sonra:
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+cd src/dashboard
+npm ci
+cd ../..
+```
+
+### macOS
+
+Homebrew veya Python.org üzerinden Python 3.11'i, Node.js 22'yi ise Node.js
+LTS paketinden kurun. Ardından:
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+cd src/dashboard
+npm ci
+cd ../..
+```
+
+### Yol 1 — Baseline API ve dashboard
+
+İlk kurulum için yalnızca API ve dashboard'u çalıştırın; Python ve Node
+bağımlılıkları yukarıdaki platform bölümünde bir kez kurulmuş olmalıdır. API'yi
+bir terminalde başlatın:
+
+```bash
+python -m uvicorn src.main:app --reload
+```
+
+Windows PowerShell'de aynı komut çalışır. Dashboard için ikinci terminalde:
+
+```bash
+cd src/dashboard
+npm run dev
+```
+
+Bu baseline yolunda yerel Gemma servisi veya embedding modeli başlatmanız
+gerekmez; API'nin deterministik fallback'i kullanılabilir.
+
+### Yol 2 — Chroma ve Qwen embedding
+
+Yerel retrieval'i etkinleştirmek için API'yi durdurmadan önce aynı sanal ortamda
+işlenmiş kampanyaları ve terminolojiyi indeksleyin:
+
+```bash
+python -m scripts.ingest_chroma --batch-size 64
+```
+
+İlk çalıştırma `Qwen/Qwen3-Embedding-0.6B` modelini ve Chroma indeksini indirir;
+sonraki çalıştırmalar yalnızca değişen parçaları embed eder. API yenilemesinden
+sonra otomatik indeksleme için `RAGNROLL_CHROMA_AUTO_INDEX=true` ayarlayın.
+
+### Yol 3 — İsteğe bağlı Gemma/vLLM
+
+Bu yol baseline için zorunlu değildir. Apple Silicon üzerinde vLLM-Metal'i bir
+kez kurup OpenAI uyumlu Gemma endpoint'ini başlatın:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vllm-project/vllm-metal/main/install.sh | bash
+python -m scripts.serve_local_llm
+```
+
+Linux veya Windows'ta Gemma/vLLM kullanacaksanız, makinenize uygun ve OpenAI
+uyumlu vLLM kurulumunu ayrıca sağlayın; API adresini `RAGNROLL_LLM_BASE_URL`,
+model adını `RAGNROLL_LLM_MODEL` ile verin. Servis erişilemezse API doğrulanmış
+deterministik fallback'e döner. Model uyumluluğu ve MLX kontrol noktası hakkında
+ayrıntılar aşağıdaki mevcut Gemma bölümündedir.
+
+### Yol 4 — İsteğe bağlı GEPA prompt optimizasyonu
+
+GEPA yalnız deney ortamı içindir; baseline veya retrieval kurulumu için gerekli
+değildir:
+
+```bash
+python -m pip install -r requirements-prompt-optimization.txt
+python -m src.prompt_optimization.optimize_gepa --check
+```
+
+Gerçek deney için ayrıca çalışan OpenAI uyumlu model endpoint'i gerekir:
+
+```bash
+python -m src.prompt_optimization.optimize_gepa --runtime-dir runtime --max-metric-calls 24
+```
+
+### Docker Desktop ve Linux Docker Compose
+
+Docker kullanacaksanız Python/Node'u host'a kurmak zorunda değilsiniz. Windows ve
+macOS'ta Docker Desktop'ı başlatın; Linux'ta Docker Engine ile Compose plugin'in
+kurulu olduğunu doğrulayın:
+
+```bash
+docker version
+docker compose version
+```
+
+Windows PowerShell'de imajları oluşturup servisleri arka planda başlatın:
+
+```powershell
+docker compose up --build --detach
+Invoke-RestMethod http://localhost:8000/api/v1/health
+Invoke-RestMethod http://localhost:3000/
+```
+
+Linux'ta ve macOS'ta aynı işlemin `curl` karşılığı:
+
+```bash
+docker compose up --build --detach
+curl --fail http://localhost:8000/api/v1/health
+curl --fail http://localhost:3000/
+```
+
+Compose API, dashboard ve Chroma için gerekli servisleri başlatır. Gemma host'ta
+çalışıyorsa Compose API'si varsayılan olarak `host.docker.internal:8001` adresini
+kullanır. Snapshot, SQLite ve Chroma volume'larının davranışı için
+[operasyon rehberindeki container sözleşmesine](docs/runbook.md#container-sözleşmesi)
+bakın.
+
+## Kurulum doğrulaması ve güvenli temizlik
+
+Çalışan baseline kurulumunu aşağıdaki kesin komutlarla doğrulayın.
+
+Windows PowerShell:
+
+```powershell
+Invoke-RestMethod http://localhost:8000/api/v1/health
+Invoke-RestMethod http://localhost:3000/
+```
+
+Linux/macOS:
+
+```bash
+curl --fail http://localhost:8000/api/v1/health
+curl --fail http://localhost:3000/
+```
+
+Kod kalite doğrulaması için:
+
+```bash
+python -m pytest tests/ -q --cov=src --cov-report=term
+python -m flake8 src tests --max-line-length=100 --extend-ignore=E203 --exclude=src/dashboard/node_modules
+cd src/dashboard && npm test && npm run lint && npm run build
+cd ../..
+```
+
+Compose tanımını ve izole refresh→index smoke yolunu doğrulamak için. Temel Compose
+kullanımı host'ta Python/Node gerektirmez; aşağıdaki smoke kontrolü, JSON yanıtlarını
+ayrıştırmak için host'ta Python gerektirir.
+
+```bash
+docker compose config --quiet
+if ! COMPOSE_PROJECT_NAME=ragnroll-smoke \
+  RAGNROLL_REFRESH_DATASET=/app/bootstrap/campaigns.json \
+  RAGNROLL_INDEX_SMOKE=true \
+  RAGNROLL_EMBEDDING_WARMUP=false \
+  RAGNROLL_LLM_ENABLED=false \
+  RAGNROLL_NLP_MAX_RECORDS=1 \
+  RAGNROLL_CHROMA_COLLECTION=ragnroll_container_smoke \
+  docker compose up --build --detach; then
+  printf 'Compose smoke startup failed; refusing to probe services\n' >&2
+  exit 1
+fi
+health_attempt=1
+until curl --fail --silent --show-error http://localhost:8000/api/v1/health >/dev/null; do
+  if [ "$health_attempt" -ge 60 ]; then
+    printf 'API health check did not become ready after %s attempts\n' "$health_attempt" >&2
+    exit 1
+  fi
+  sleep 2
+  health_attempt=$((health_attempt + 1))
+done
+job_response="$(curl --fail --silent --show-error -X POST http://localhost:8000/api/v1/data-refresh \
+  -H 'content-type: application/json' \
+  -d '{"max_per_bank":1}')"
+job_id="$(printf '%s' "$job_response" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
+status=""
+enrichment_status=""
+index_status=""
+attempt=1
+while [ "$attempt" -le 60 ]; do
+  job_json="$(curl --fail --silent --show-error "http://localhost:8000/api/v1/data-refresh/$job_id")"
+  status="$(printf '%s' "$job_json" | python -c 'import json,sys; print(json.load(sys.stdin)["status"])')"
+  enrichment_status="$(printf '%s' "$job_json" | python -c 'import json,sys; print(json.load(sys.stdin)["enrichment_status"])')"
+  index_status="$(printf '%s' "$job_json" | python -c 'import json,sys; print(json.load(sys.stdin)["index_status"])')"
+  case "$status" in
+    completed|partial|failed) break ;;
+  esac
+  sleep 2
+  attempt=$((attempt + 1))
+done
+[ "$status" = "completed" ] && \
+  [ "$enrichment_status" = "completed" ] && \
+  [ "$index_status" = "completed" ] || {
+    printf 'Smoke job did not complete successfully: status=%s enrichment_status=%s index_status=%s\n' \
+      "$status" "$enrichment_status" "$index_status" >&2
+    exit 1
+  }
+```
+
+Windows PowerShell karşılığı:
+
+```powershell
+$smokeEnv = @{
+  COMPOSE_PROJECT_NAME = "ragnroll-smoke"
+  RAGNROLL_REFRESH_DATASET = "/app/bootstrap/campaigns.json"
+  RAGNROLL_INDEX_SMOKE = "true"
+  RAGNROLL_EMBEDDING_WARMUP = "false"
+  RAGNROLL_LLM_ENABLED = "false"
+  RAGNROLL_NLP_MAX_RECORDS = "1"
+  RAGNROLL_CHROMA_COLLECTION = "ragnroll_container_smoke"
+}
+$previousSmokeEnv = @{}
+try {
+  foreach ($name in $smokeEnv.Keys) {
+    $previous = Get-Item "Env:$name" -ErrorAction SilentlyContinue
+    $previousSmokeEnv[$name] = @{
+      Exists = $null -ne $previous
+      Value = if ($null -ne $previous) { $previous.Value } else { $null }
+    }
+    Set-Item "Env:$name" $smokeEnv[$name]
+  }
+  docker compose up --build --detach
+  if ($LASTEXITCODE -ne 0) {
+    throw "Compose smoke startup failed; refusing to probe services"
+  }
+  $healthReady = $false
+  for ($attempt = 1; $attempt -le 60; $attempt++) {
+    try {
+      Invoke-RestMethod "http://localhost:8000/api/v1/health" | Out-Null
+      $healthReady = $true
+      break
+    } catch {
+      if ($attempt -lt 60) { Start-Sleep -Seconds 2 }
+    }
+  }
+  if (-not $healthReady) {
+    throw "API health check did not become ready after 60 attempts"
+  }
+  $job = Invoke-RestMethod -Method Post `
+    -Uri http://localhost:8000/api/v1/data-refresh `
+    -ContentType "application/json" `
+    -Body '{"max_per_bank":1}'
+  $jobId = $job.id
+  $terminalStatuses = @("completed", "partial", "failed")
+  $state = $null
+  for ($attempt = 1; $attempt -le 60; $attempt++) {
+    $state = Invoke-RestMethod "http://localhost:8000/api/v1/data-refresh/$jobId"
+    if ($terminalStatuses -contains $state.status) { break }
+    if ($attempt -lt 60) { Start-Sleep -Seconds 2 }
+  }
+  if ($null -eq $state -or
+      $state.status -ne "completed" -or
+      $state.enrichment_status -ne "completed" -or
+      $state.index_status -ne "completed") {
+    throw "Smoke job did not complete successfully: status=$($state.status) enrichment_status=$($state.enrichment_status) index_status=$($state.index_status)"
+  }
+} finally {
+  foreach ($name in $smokeEnv.Keys) {
+    if (-not $previousSmokeEnv[$name].Exists) {
+      Remove-Item "Env:$name" -ErrorAction SilentlyContinue
+    } else {
+      Set-Item "Env:$name" $previousSmokeEnv[$name].Value
+    }
+  }
+}
+```
+
+İzole smoke işi bittikten sonra yalnızca `ragnroll-smoke` Compose projesine ait
+volume'ları kaldırın. Bu işlem normal çalışma ortamının `runtime_data` veya
+`chroma_data` volume'larını sıfırlamaz:
+
+```bash
+COMPOSE_PROJECT_NAME=ragnroll-smoke docker compose down --volumes --remove-orphans
+```
+
+Windows PowerShell'de:
+
+```powershell
+$previousComposeProjectName = Get-Item Env:COMPOSE_PROJECT_NAME -ErrorAction SilentlyContinue
+try {
+  $env:COMPOSE_PROJECT_NAME = "ragnroll-smoke"
+  docker compose down --volumes --remove-orphans
+  if ($LASTEXITCODE -ne 0) { throw "Failed to remove the smoke Compose project" }
+} finally {
+  if ($null -eq $previousComposeProjectName) {
+    Remove-Item Env:COMPOSE_PROJECT_NAME -ErrorAction SilentlyContinue
+  } else {
+    $env:COMPOSE_PROJECT_NAME = $previousComposeProjectName.Value
+  }
+}
+```
+
+Retrieval ve GEPA yollarını ayrıca doğrulayın:
+
+```bash
+python -m scripts.ingest_chroma --batch-size 64
+python -m src.prompt_optimization.optimize_gepa --check
+```
+
+Yerel servisleri ve verileri koruyarak durdurmak için:
+
+```bash
+docker compose down --remove-orphans
+```
+
+Yalnız sanal ortamı kaldırmak güvenlidir; kaynak kodu, `data/` ve Docker
+volume'larını silmez:
+
+```powershell
+Remove-Item -Recurse -Force .venv
+```
+
+```bash
+rm -rf .venv
+```
+
+## Hızlı başlangıç
+
+Python 3.11 gereklidir. Model artefaktları spaCy 3.8.15, scikit-learn 1.9.0 ve
+joblib 1.5.3 ile fail-closed çalışır; farklı sürümde deserialize edilmez.
+
+Linux/macOS'ta proje kökünde:
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m uvicorn src.main:app --reload
+```
+
+Dashboard için ayrı terminalde:
+
+```bash
+cd src/dashboard
+npm ci
+npm run dev
+```
+
+- API: `http://localhost:8000/api/v1/health`
+- OpenAPI: `http://localhost:8000/docs`
+- Dashboard: `http://localhost:3000`
+
+Linux/macOS'ta tüm platformu container ile çalıştırmak için:
+
+```bash
+docker compose up --build --detach
+curl --fail http://localhost:8000/api/v1/health
+curl --fail http://localhost:3000/
+```
+
+Windows PowerShell'de:
+
+```powershell
+docker compose up --build --detach
+Invoke-RestMethod http://localhost:8000/api/v1/health
+Invoke-RestMethod http://localhost:3000/
+```
+
+İmaj içindeki işlenmiş kampanya snapshot'ı yalnız boş `runtime_data` volume'unu
+başlatmak için kullanılır. SQLite, yenilemeyle oluşan ham/işlenmiş JSON ve kalite
+raporu `runtime_data`; Chroma koleksiyonu ise `chroma_data` volume'unda kalır.
+Container refresh/index smoke adımları ve volume sıfırlama uyarıları
+[operasyon rehberinde](docs/runbook.md#container-sözleşmesi) yer alır.
+
+### Yerel Gemma ve Chroma kurulumu
+
+Apple Silicon üzerinde vLLM'in MLX arka uçlu eklentisini bir kez kurun:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vllm-project/vllm-metal/main/install.sh | bash
+```
+
+OpenAI uyumlu servisi başlatın. İlk çalıştırmada Gemma 4 E4B'nin vLLM-Metal ile
+uyumlu 4 bit MLX kontrol noktası yerel önbelleğe indirilir; API'de
+`gemma4:e4b-mlx` adıyla sunulur:
+
+```bash
+python -m scripts.serve_local_llm
+```
+
+Ollama paketindeki ModelOpt NVFP4 tensor şeması vLLM-Metal'in MLX Gemma
+yükleyicisiyle doğrudan uyumlu değildir. Bu nedenle aynı model ailesinin MLX
+topluluk dönüşümü kullanılır; başka uyumlu bir yerel dizin `--model` ile
+verilebilir.
+
+Düzeltilmiş SQLite kampanyalarını ve terminoloji kayıtlarını Chroma'ya yükleyin.
+İlk geçişte Qwen modeli ve yeni indeks bir kez oluşturulur; sonraki çalıştırmalarda
+yalnız içerik parmak izi değişen parçalar yeniden embed edilir:
+
+```bash
+python -m scripts.ingest_chroma --batch-size 64
+```
+
+Varsayılan `Qwen/Qwen3-Embedding-0.6B` modeli, Türkçe sorguya özel İngilizce
+retrieval talimatıyla çalışır. Uzun kampanyalar yaklaşık 320 kelimelik, sınırlı
+örtüşen parçalara ayrılır. Banka, ürün ve finansman türü filtreleri vektör
+aramasından önce uygulanır; ontoloji graph'ı yalnız ilişkisel sorgularda açılır.
+
+API üzerinden başarılı veya kısmi veri yenilemesinden sonra artımlı indekslemeyi
+otomatik çalıştırmak için `RAGNROLL_CHROMA_AUTO_INDEX=true` ayarlanabilir. Compose
+kurulumunda `RAGNROLL_NLP_AUTO_ENRICH=true` ile danışmanlık analizi de açıktır;
+iş sırası scrape, zenginleştirme ve indekslemedir. Doğrudan Python çalıştırmada
+zenginleştirme varsayılan olarak kapalıdır. Elle çalıştırmak için:
+
+```bash
+python -m scripts.enrich_nlp --database data/ragnroll.sqlite3
+```
+
+Analiz `structured` alanları değiştirmez; yalnız eksik alan önerilerini üst düzey
+`nlp_analysis` altında saklar. İndeks filtreleri otoriter alanlardan gelmeye devam
+eder.
+
+Ardından API ve dashboard'u hızlı başlangıçtaki komutlarla çalıştırın. vLLM
+erişilemez, boş yanıt üretir veya geçerli kaynak etiketi vermezse kullanıcıya
+yarım model cevabı bırakılmaz; doğrulanmış deterministik yanıt otomatik gösterilir.
+
+Opsiyonel DSPy/GEPA bağımlılıklarını yalnız deney ortamına kurup önce çevrimdışı
+sözleşme kontrolünü çalıştırın:
+
+```bash
+pip install -r requirements-prompt-optimization.txt
+python -m src.prompt_optimization.optimize_gepa --check
+```
+
+Gerçek deney ayrıca çalışan OpenAI uyumlu model endpoint'i ve açık bir runtime
+dizini gerektirir:
+
+```bash
+python -m src.prompt_optimization.optimize_gepa \
+  --runtime-dir runtime \
+  --max-metric-calls 24
+```
+
+934 örneğin committed train/validation/test alanları değiştirilmez. Adaylar yalnız
+validation proxy skoruyla seçilir; test yalnız seçilen adaya uygulanır. Referanslar
+sınıflandırma/NER etiketlerinden türetildiği için bütün sonuçlar `proxy`dir;
+bağımsız gold sağlanmamıştır. Yeni bir deney sonucu bu repoda varsayılmaz veya
+raporlanmaz. Varsayılan canlı prompt değişmez; üretilen aday ancak
+`RAGNROLL_PROMPT_MODE=gepa` ve doğrulanan artifact ile açılır. Ayrıntılar için
+[prompt optimizasyon sözleşmesine](docs/prompt-optimization.md) bakın.
+
+## Veri hattı
+
+Tüm bankaları toplayıp doğrulama raporu ve SQLite ana kaynağını üretin:
 
 ```bash
 python -m src.scraper.scraper --verbose collect \
@@ -156,224 +532,58 @@ python -m src.scraper.scraper --verbose collect \
   --database data/ragnroll.sqlite3
 ```
 
-Komut BDDK kapsam raporunu, ham kayıtları, PRD alanları çıkarılmış işlenmiş
-veriyi ve banka/alan doluluk metriklerini birlikte üretir. SQLite ana kaynaktır;
-JSON çıktıları başarılı veritabanı yazımından sonra üretilir. Eksik banka, sıfır
-kayıtlı banka, ağ/ayrıştırma hatası veya doğrulama hatası varsa `2` ile çıkar.
+Tek banka hatası başarılı bankaların kayıtlarını kaybettirmez; kısmi sonuç `2`
+çıkış koduyla ve `fetch_failures` ayrıntılarıyla bildirilir. Kanonik çıktıya
+yazmadan önce URL, kayıt, tarih, banka kapsamı ve kalite kontrolleri uygulanır.
 
-BDDK listesini çekin:
-
-```bash
-python -m src.scraper.scraper banks
-```
-
-Öncelikli üç bankadan banka başına en fazla 10 kampanya çekin ve kalite
-raporunu üretin:
-
-```bash
-python -m src.scraper.scraper --verbose campaigns \
-  --banks priority \
-  --max-per-bank 10 \
-  --output outputs/smoke_campaigns.json \
-  --quality-report outputs/smoke_quality_report.json
-```
-
-Registry'deki bankaların tümünü, “Daha Fazla” ile yüklenen devam sayfaları dahil,
-yalnızca ham toplama modunda çalıştırın:
-
-```bash
-python -m src.scraper.scraper campaigns \
-  --banks all \
-  --output data/raw/campaigns.json \
-  --quality-report outputs/quality_report.json
-```
-
-`--max-per-bank` verilmediğinde mevcut tüm kampanyalar çekilir. `--banks priority`
-ile düşük `--max-per-bank` sınırı kullanan çalıştırmalar
-geçici smoke kontrolleri içindir; `outputs/smoke_*.json` dosyaları Git tarafından
-yok sayılır ve kanonik veri setinin üzerine yazmaz. Kalıcı yenilemede BDDK
-güdümlü `collect` komutu kullanılmalıdır. `campaigns` ve `preprocess` alt
-komutları tanılama ve kısmi yeniden çalıştırma için korunur.
-
-Bir bankadaki hata diğer bankaların taramasını durdurmaz; başarılı kayıtlar
-yazılır ve kısmi başarı durumunda komut `2` çıkış koduyla tamamlanır. Banka,
-aşama, URL, hata türü/mesajı, HTTP durumu ve UTC zamanı içeren ayrıntılar kalite
-raporunun `fetch_failures` alanında tutulur. Hiç kayıt alınamayan toplam
-kesintide son bilinen iyi kampanya dosyası korunur. Kampanya çıktısı ile kalite
-raporu için aynı dosya yolu verilmesi de veri kaybını önlemek üzere reddedilir.
-
-Ham metinleri temizleyip tokenize edin:
-
-```bash
-python -m src.scraper.scraper preprocess data/raw/campaigns.json \
-  --output data/processed/campaigns.json
-```
-
-Mevcut bir veri setini yeniden doğrulayın:
-
-```bash
-python -m src.scraper.scraper validate data/raw/campaigns.json \
-  --output outputs/validation_report.json
-```
-
-Bu ayrı doğrulama raporu, tarama sırasında üretilen tekrar ve `fetch_failures`
-ayrıntılarını içeren kanonik `outputs/quality_report.json` dosyasını korur.
-
-### SQLite ve karşılaştırma
-
-SQLite şemasını güvenle oluşturun:
-
-```bash
-python -m src.scraper.scraper db init --database data/ragnroll.sqlite3
-```
-
-Önceki JSON veri setini açıkça içe aktarın; komut tekrar çalıştırıldığında kayıt
-çoğaltmaz:
+Mevcut işlenmiş veri setini SQLite'a almak için:
 
 ```bash
 python -m src.scraper.scraper db import-json data/processed/campaigns.json \
   --database data/ragnroll.sqlite3
 ```
 
-SQLite'tan geriye uyumlu snapshot üretin:
+## API özeti
+
+- `POST /api/v1/extract`: kanıtlı alan sözleşmesi
+- `GET /api/v1/campaigns` ve `GET /api/v1/campaigns/{id}`: kayıt arama/detay
+- `GET /api/v1/campaigns/{id}/versions`: zamansal kaynak geçmişi
+- `POST /api/v1/compare`: açıklanabilir karşılaştırma
+- `POST /api/v1/query/compile`: intent, slot, filtre ve rota planı
+- `POST /api/v1/chat`: kanıt paketli yanıt
+- `POST /api/v1/chat/stream`: SSE ile kaynak meta verisi ve token akışı
+- `GET /api/v1/llm/status`: vLLM bağlantısı ve servis edilen model durumu
+- `GET /api/v1/dashboard/snapshot`: dashboard başlangıç verisi
+- `GET /api/v1/metrics/summary`: çalışma zamanı ve veri kalitesi özeti
+
+Ayrıntılı sözleşmeler için [API rehberine](docs/api.md) bakın.
+
+## Kalite doğrulaması
 
 ```bash
-python -m src.scraper.scraper db export-json --database data/ragnroll.sqlite3 \
-  --raw-output data/raw/campaigns.json \
-  --processed-output data/processed/campaigns.json
+python -m pytest -q
+python -m flake8 src tests --max-line-length=100 --extend-ignore=E203 \
+  --exclude=src/dashboard/node_modules
+python -m src.evaluation.golden \
+  data/model_training_data/golden_evaluation_set.jsonl
+cd src/dashboard && npm test && npm run lint && npm run build
 ```
 
-Aynı ürün türü ve para birimindeki kayıtları karşılaştırın:
+Dondurulmuş regresyon seti yalnız desteklenen alanları proxy başarı oranına dahil
+eder; ölçülmeyen referans alanlarını ayrıca görünür tutar. Bağımsız insan gold'u
+henüz sağlanmamıştır. Son doğrulama sonuçları ve sınırlar
+[değerlendirme notunda](docs/evaluation.md), dataset lineage/digest sözleşmesi ise
+[eğitim verisi notunda](docs/training-data-contract.md) açıklanır.
 
-```bash
-python -m src.scraper.scraper compare --database data/ragnroll.sqlite3 \
-  --product-type financing --currency TRY --output outputs/comparison.json
-```
+## Teknik belgeler
 
-`RAGNROLL_DB_PATH` ortam değişkeni varsayılan veritabanı yolunu değiştirir.
-Karşılaştırma currency conversion yapmaz; açıkça farklı para birimleri sonuçtan
-`currency_mismatch` gerekçesiyle elenir. Eksik alanlar sıfır kabul edilmez.
-Önceki uyumlu SQLite şemalarında eksik indeks alanları güvenle eklenir; bilinmeyen
-ve eksik zorunlu kolonlu şemalar sessiz veri kaybı yerine açık hata ile reddedilir.
+- [Mimari](docs/architecture.md)
+- [Veri sözleşmesi](docs/data-contract.md)
+- [API](docs/api.md)
+- [Değerlendirme](docs/evaluation.md)
+- [Eğitim verisi sözleşmesi](docs/training-data-contract.md)
+- [Operasyon rehberi](docs/runbook.md)
 
-Testler:
-
-```bash
-python -m pytest
-```
-
-## NLP model eğitimi ve değerlendirme
-
-Kural tabanlı + spaCy NER hibrit çıkarımı, kampanya sınıflandırması, insan
-doğrulamalı etiketleme akışı ve PRD KPI raporu için
-[`docs/week-2-nlp-models.md`](docs/week-2-nlp-models.md) dokümanını izleyin.
-Sentetik model verilerinden alınan skorlar yarışma performansı olarak
-raporlanmaz; araçlar bu raporları otomatik olarak uyarı ile işaretler.
-
-Kampanya türlerini iki aşamalı ekip onayıyla etiketlemek için:
-
-```bash
-python -m streamlit run src/annotation/app.py
-```
-
-## Çıktılar
-
-- `data/raw/participation_banks.json`: BDDK kuruluş listesi
-- `data/raw/campaigns.json`: ortak şemadaki ham kampanyalar
-- `data/processed/campaigns.json`: temiz metin, tokenlar ve PRD `structured` alanları
-- `outputs/quality_report.json`: kapsam, alan doluluğu, kayıt ve çekme hata raporu
-- `data/ragnroll.sqlite3`: bankalar, ürünler, kampanyalar ve scrape-run kayıtları
-
-Alan tanımları, kalite ölçütleri, veri kökeni ve kullanım notları için
-[`data/README.md`](data/README.md), teknik kararlar için
-[`docs/week-1-data-engineering.md`](docs/week-1-data-engineering.md) dosyasına
-bakın.
-
-## Sorumlu tarama
-
-İstemci tanımlı bir User-Agent kullanır, `robots.txt` kurallarını varsayılan
-olarak uygular, aynı alan adına istekler arasında bekler ve geçici hatalarda
-kontrollü tekrar dener. `--ignore-robots` yalnızca site sahibinden açık izin
-alındığında kullanılmalıdır. Üretilen verinin yeniden yayımlanmasından önce
-ilgili sitelerin kullanım şartları ve içerik hakları ayrıca kontrol edilmelidir.
-
-Kaynak URL'lerdeki `utm_*`, `gclid`, `fbclid` gibi izleme parametreleri kararlı
-kayıt kimliği üretilmeden önce kaldırılır. Kayıtlar kalıcı depolamadan önce
-`bank_slug + normalize edilmiş source_url` anahtarıyla tekilleştirilir;
-çıkarılan kayıtların ayrıntıları kalite raporunun `duplicates` alanına yazılır.
-
-## Proje yapısı
-
-```
-src/
-├── scraper/           # Veri toplama hattı (Kutay)
-│   ├── bddk.py        # BDDK katalog çekimi
-│   ├── banks/         # 10 banka için bağımsız adaptörler
-│   │   ├── adil_katilim.py
-│   │   ├── albaraka.py
-│   │   ├── dunya_katilim.py
-│   │   ├── emlak_katilim.py
-│   │   ├── hayat_finans.py
-│   │   ├── kuveyt_turk.py
-│   │   ├── tom_katilim.py
-│   │   ├── turkiye_finans.py
-│   │   ├── vakif_katilim.py
-│   │   └── ziraat_katilim.py
-│   ├── models.py       # Ortak Campaign/Product şeması (v1.0.0)
-│   ├── validation.py   # Veri doğrulama ve quality report
-│   ├── storage.py      # Atomik dosya yazımı
-│   ├── http.py         # Kibar HTTP (robots.txt, retry, delay)
-│   └── coverage.py     # BDDK kapsam ve doluluk metrikleri
-├── preprocessing/      # Metin temizleme ve tokenizasyon (Kutay)
-│   └── clean_text.py
-├── normalization/      # Sayı, para birimi, oran, süre normalizasyonu (Kutay)
-│   └── values.py
-├── extraction/         # PRD alan çıkarımı — regex tabanlı (Dilan)
-│   └── campaign_fields.py
-├── comparison/         # Açıklanabilir ürün karşılaştırma (Kutay)
-│   └── engine.py
-├── persistence/        # SQLite şema ve import/export (Kutay)
-│   └── store.py
-├── chatbot/            # RAG pipeline (Gizem)
-│   ├── rag.py           # ChromaDB + Ollama
-│   └── rag_langchain.py # LangChain 1.x + Ollama + Chroma
-├── intent/             # Intent detection (Gizem)
-│   └── intent_detector.py
-├── ner/                # NER model eğitimi (Dilan) — TODO
-│   └── train.py
-├── classifier/         # Kampanya sınıflandırma (Dilan) — TODO
-│   └── main.py
-├── dashboard/          # Next.js dashboard (Elif Naz)
-│   ├── app/
-│   │   ├── page.tsx     # Ana sayfa (özet kartlar, grafikler)
-│   │   ├── campaigns/   # Kampanya listesi
-│   │   ├── chatbot/     # Chatbot arayüzü
-│   │   └── compare/     # Karşılaştırma sayfası
-│   └── components/
-└── api/                # Backend API (Elif Naz) — TODO
-    └── main.py
-
-data/
-├── raw/                    # Ham JSON çıktıları
-├── processed/              # İşlenmiş JSON + structured alanlar
-├── terminology/            # Katılım bankacılığı terminoloji sözlüğü (Dilan)
-│   ├── terminology_master_phase1_phase2.json
-│   ├── entity_schema.json
-│   ├── entity_schema_extended.json
-│   ├── regex_patterns.json
-│   ├── regex_patterns_extended.json
-│   ├── relation_schema.json
-│   ├── alias_dictionary.json
-│   └── source_registry.json
-├── annotations/            # NER etiketleme verisi
-├── model_training_data/    # Model eğitim verisi
-└── ontology/               # Domain ontolojisi
-
-docs/
-├── week-1-data-engineering.md      # Hafta 1 veri tasarımı
-├── week-1-frontend-dashboard-research.md
-├── dashboard-design-system.md
-├── RAG_MIMARI_PLANI.md
-├── 2026-08-08-campaign-pipeline-hardening.md
-└── mockups/                        # Dashboard tasarım mockupları
-```
+Kaynak siteler istemci tanımlı User-Agent, hız sınırı, kontrollü retry ve
+varsayılan robots.txt uygulamasıyla taranır. `--ignore-robots` yalnız site
+sahibinden açık izin alındığında kullanılmalıdır.

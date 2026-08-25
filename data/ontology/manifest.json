@@ -1,0 +1,21 @@
+{
+  "contract": "2026.08",
+  "artifacts": [
+    {
+      "path": "data/ontology/ontology.json",
+      "sha256": "9056949c022277a672ebde1881de62c310cf7989eb75550ceedee683eafa5754"
+    },
+    {
+      "path": "data/ontology/intent_schema.json",
+      "sha256": "2012c71db2fc3a11b25f178c42b26092fe2bd05e88c72fb689daf407d164385b"
+    },
+    {
+      "path": "data/ontology/rag_chunks.jsonl",
+      "sha256": "8cf7b67e0403261524d19aa88e021041abebb9106a93926299be85af078921ae"
+    },
+    {
+      "path": "data/model_training_data/golden_evaluation_set.jsonl",
+      "sha256": "b27eeb4f80880ff304908eac19481abc0baa2858d6e910cf6e87e8a3cccb8c1b"
+    }
+  ]
+}

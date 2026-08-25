@@ -1,71 +1,110 @@
 "use client";
 
-import { useState } from "react";
-import styles from "./page.module.css";
-import { ProfitRateChart, TermChart, CostChart } from "../../components/ComparisonCharts";
-import BankLogo from "../../components/BankLogo";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { compareCampaigns, getFilters } from "../../services/api";
+import styles from "../live.module.css";
 
-const bankOptions = ["Kuveyt Türk", "Albaraka Türk", "Türkiye Finans", "Vakıf Katılım", "Ziraat Katılım", "Emlak Katılım", "Hayat Finans", "TOM Katılım", "Dünya Katılım", "Adil Katılım"];
-const productOptions = ["Taşıt Finansmanı", "Konut Finansmanı", "İhtiyaç Finansmanı", "Katılma Hesabı", "Kredi Kartı", "KOBİ Finansmanı", "Ticari Finansman"];
-const comparisonRows = [
-  { bank: "Kuveyt Türk", campaign: "Taşıt Finansmanı Özel Oran Kampanyası", rate: "%2,49", term: "24 Ay", installment: "24", cost: "0 TL", advantage: "En düşük oran", best: true },
-  { bank: "Albaraka Türk", campaign: "Avantajlı Taşıt Finansmanı", rate: "%2,69", term: "36 Ay", installment: "36", cost: "0 TL", advantage: "Masrafsız" },
-  { bank: "Türkiye Finans", campaign: "Yeni Araç Finansman Paketi", rate: "%2,79", term: "48 Ay", installment: "48", cost: "250 TL", advantage: "Uzun vade" },
-  { bank: "Vakıf Katılım", campaign: "Otomobil Finansmanı Avantajlı Paket", rate: "%2,89", term: "36 Ay", installment: "36", cost: "250 TL", advantage: "Esnek vade" },
-];
+type Comparison = Awaited<ReturnType<typeof compareCampaigns>>;
+type Filters = Awaited<ReturnType<typeof getFilters>>;
 
 export default function ComparePage() {
-  const [selectedBanks, setSelectedBanks] = useState<string[]>([]);
-  const toggleBank = (bank: string) => {
-    setSelectedBanks(current => current.includes(bank) ? current.filter(item => item !== bank) : current.length < 10 ? [...current, bank] : current);
-  };
+  const [filters, setFilters] = useState<Filters | null>(null);
+  const [product, setProduct] = useState("financing");
+  const [currency, setCurrency] = useState("TRY");
+  const [result, setResult] = useState<Comparison | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const resultRef = useRef<HTMLElement | null>(null);
 
-  return <main className={styles.main}>
-    <section className={styles.pageHeader}>
-      <div><h1 className={styles.title}>Ürün Karşılaştırma</h1><p className={styles.description}>Katılım bankalarının benzer ürünlerini tek ekranda karşılaştırın.</p></div>
-      <div className={styles.decorativeLines} aria-hidden="true"><span /><span /></div>
-    </section>
+  useEffect(() => {
+    getFilters()
+      .then((value) => {
+        setFilters(value);
+        if (value.product_types[0]) setProduct(value.product_types[0].value);
+        if (value.currencies[0]) setCurrency(value.currencies[0].value);
+      })
+      .catch((reason: Error) => setError(reason.message));
+  }, []);
 
-    <section className={styles.selectionSection} aria-label="Karşılaştırma seçenekleri">
-      <div className={styles.selectionIntro}><h2>Karşılaştırmak istediğiniz ürünü ve bankayı seçiniz.</h2></div>
-      <div className={styles.field}>
-        <span>Banka <small>{selectedBanks.length}/10</small></span>
-        <details className={styles.bankPicker}>
-          <summary>
-            {selectedBanks.length === 0 ? <span className={styles.placeholder}>Banka seçiniz</span> : <span className={styles.selectedLogos}>{selectedBanks.map(bank => <BankLogo bank={bank} size={24} key={bank} />)}<b>{selectedBanks.length} banka seçildi</b></span>}
-            <i>⌄</i>
-          </summary>
-          <div className={styles.bankOptions}>
-            {bankOptions.map(bank => {
-              const checked = selectedBanks.includes(bank);
-              const disabled = selectedBanks.length >= 10 && !checked;
-              return <label className={disabled ? styles.disabledOption : undefined} key={bank}>
-                <input type="checkbox" checked={checked} disabled={disabled} onChange={() => toggleBank(bank)} />
-                <BankLogo bank={bank} size={28} /><span>{bank}</span>
-              </label>;
-            })}
+  useEffect(() => {
+    if (result) resultRef.current?.focus();
+  }, [result]);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      setResult(await compareCampaigns({ product_type: product, currency, limit: 200 }));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Karşılaştırma yapılamadı.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main className={styles.main} aria-busy={loading}>
+      <header className={styles.header}>
+        <div>
+          <span className={styles.eyebrow}>Ölçütleri görünür karar</span>
+          <h1>Açıklanabilir karşılaştırma</h1>
+          <p>Eksik değerler sıfır sayılmaz; sıralama gerekçesi ve eksik ölçütler açıkça gösterilir.</p>
+        </div>
+      </header>
+      <form className={styles.controls} onSubmit={submit} aria-label="Karşılaştırma ölçütleri">
+        <label className={styles.filterField}>
+          <span>Ürün türü</span>
+          <select value={product} onChange={(event) => setProduct(event.target.value)} required>
+            {filters?.product_types.map((item) => <option key={item.value} value={item.value}>{item.label} ({item.count})</option>)}
+          </select>
+        </label>
+        <label className={styles.filterField}>
+          <span>Para birimi</span>
+          <select value={currency} onChange={(event) => setCurrency(event.target.value)} required>
+            {(filters?.currencies.length ? filters.currencies : [{ value: "TRY", label: "TRY", count: 0 }]).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+          </select>
+        </label>
+        <button className={styles.button} disabled={loading || !product} type="submit">{loading ? "Karşılaştırılıyor…" : "Karşılaştır"}</button>
+      </form>
+      {error && <p className={styles.error} role="alert">{error}</p>}
+      {!result && !error && <p className={styles.status}>Filtreleri seçip karşılaştırmayı başlatın.</p>}
+      {result && (
+        <section
+          className={`${styles.card} ${styles.comparisonResult}`}
+          aria-live="polite"
+          ref={resultRef}
+          tabIndex={-1}
+        >
+          <div className={styles.cardHeading}>
+            <div>
+              <span className={styles.eyebrow}>Canlı sonuç</span>
+              <h2>Karşılaştırma sonucu</h2>
+            </div>
+            <span className={styles.resultCount}>{result.included.length} uygun kayıt</span>
           </div>
-        </details>
-      </div>
-      <label className={styles.field}><span>Ürün türü</span><select defaultValue=""><option value="" disabled>Ürün türü seçiniz</option>{productOptions.map(product => <option key={product}>{product}</option>)}</select></label>
-      <button type="button" className={styles.compareButton} onClick={() => document.getElementById("comparison-results")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Karşılaştır <span>→</span></button>
-    </section>
-
-    <section className={styles.visualSection} id="comparison-results"><div className={styles.visualInner}>
-      <div className={styles.profitArea}><div className={styles.graphTitle}><h3>Kâr payı oranı</h3><p>Banka marka renkleriyle oran karşılaştırması</p></div><div className={styles.profitChart}><ProfitRateChart /></div></div>
-      <div className={styles.termCostArea}><div className={styles.graphTitle}><h3>Vade ve masraf</h3><p>Toplam vade ile ek maliyet görünümü</p></div><div className={styles.dualCharts}><div><TermChart /></div><span /><div><CostChart /></div></div></div>
-    </div></section>
-
-    <section className={styles.tableSection}>
-      <div className={styles.tableHeading}><div><h2>Karşılaştırma tablosu</h2></div><p>Seçili ürünlerin temel koşulları yan yana.</p></div>
-      <div className={styles.tableWrapper}><table className={styles.comparisonTable}>
-        <thead><tr><th>Banka</th><th>Kampanya</th><th>Kâr payı</th><th>Vade</th><th>Taksit</th><th>Masraf</th><th>Avantaj</th></tr></thead>
-        <tbody>{comparisonRows.map(row => <tr key={row.bank}>
-          <td><span className={styles.bankCell}><BankLogo bank={row.bank} size={34} /><strong>{row.bank}</strong></span></td><td>{row.campaign}</td>
-          <td><strong className={row.best ? styles.bestRate : undefined}>{row.rate}</strong></td><td>{row.term}</td><td>{row.installment}</td><td>{row.cost}</td>
-          <td><span className={row.best ? styles.goldBadge : styles.softBadge}>{row.advantage}</span></td>
-        </tr>)}</tbody>
-      </table></div>
-    </section>
-  </main>;
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <caption className={styles.visuallyHidden}>Seçilen ölçütlere göre canlı kampanya karşılaştırması</caption>
+              <thead><tr><th>Sıra</th><th>Kampanya</th><th>Avantaj skoru</th><th>Veri kapsamı</th><th>Gerekçe</th><th>Eksik ölçütler</th></tr></thead>
+              <tbody>
+                {result.included.map((item, index) => (
+                  <tr key={item.id}>
+                    <td>{index + 1}</td>
+                    <td><strong>{item.title}</strong><br /><span className={styles.muted}>{item.id}</span></td>
+                    <td>{item.advantage_score === null ? "Hesaplanamadı" : `${Math.round(item.advantage_score * 100)} / 100`}</td>
+                    <td>%{Math.round(item.comparison_confidence * 100)}</td>
+                    <td>{item.ranking_reason}</td>
+                    <td>{item.missing_fields.length ? item.missing_fields.join(", ") : "Yok"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {result.included.length === 0 && <p className={styles.muted}>Karşılaştırılabilir kayıt bulunamadı.</p>}
+          <p className={styles.comparisonNote}>{result.excluded.length} kayıt ölçüt uyuşmazlığı nedeniyle dışarıda bırakıldı.</p>
+        </section>
+      )}
+    </main>
+  );
 }

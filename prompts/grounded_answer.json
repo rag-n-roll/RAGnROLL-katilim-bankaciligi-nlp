@@ -1,0 +1,16 @@
+{
+  "name": "grounded_answer",
+  "contract": "2026.08",
+  "system": "Yalnız verilen facts ve sources içeriğini kullan. Kaynakta olmayan oran, tutar, tarih veya koşul üretme. Eksik alanları açıkça 'kaynakta belirtilmemiş' diye işaretle. Her maddede kullanılan kaynak kimliğini koru. Müşteri işlemi veya şikâyet kaydı yapma.",
+  "input_fields": [
+    "query_plan",
+    "facts",
+    "sources",
+    "warnings"
+  ],
+  "required_output_fields": [
+    "answer",
+    "source_ids",
+    "warnings"
+  ]
+}

@@ -152,6 +152,26 @@ def test_comparison_treats_non_finite_and_malformed_numbers_as_missing():
     assert row["match_score"] == 1.0
 
 
+def test_comparison_ranks_better_supported_candidate_before_sparse_candidate():
+    complete = offer(
+        "complete", rate=0.30, amount={"amount": 100000, "currency": "TRY"}
+    )
+    sparse = offer(
+        "sparse", rate=None, amount={"amount": 200000, "currency": "TRY"}
+    )
+    sparse["structured"]["fee_information"] = None
+    sparse["structured"]["target_audience"] = None
+
+    results = compare_records(
+        [sparse, complete],
+        ComparisonQuery(product_type="financing", currency="TRY"),
+    )
+
+    assert [row["id"] for row in results["included"]][:2] == ["complete", "sparse"]
+    assert results["included"][0]["comparison_confidence"] == 1.0
+    assert results["included"][1]["comparison_confidence"] == 0.3
+
+
 def test_comparison_supports_explicitly_empty_weight_configuration():
     results = compare_records(
         [offer("one", rate=0.35)],

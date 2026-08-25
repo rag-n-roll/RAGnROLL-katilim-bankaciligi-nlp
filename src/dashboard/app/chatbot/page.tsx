@@ -1,217 +1,261 @@
 "use client";
 
-import { useState } from "react";
-import styles from "./page.module.css";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import {
+  ChatGeneration,
+  ChatMeta,
+  streamChat,
+} from "../../services/api";
+import styles from "../live.module.css";
+import {
+  applyActiveChatUpdate,
+  isActiveChatRequest,
+  nextChatRequestToken,
+  resetChatSession,
+} from "./sessionGuard";
 
 const suggestions = [
-  "En yüksek kâr payı hangi bankada?",
-  "Taşıt finansmanında en uygun seçenek hangisi?",
-  "Masrafsız kart kampanyaları neler?",
-  "Yatırım kampanyalarını karşılaştır",
-  "Konut finansmanında en uzun vade hangi bankada?",
-  "Süresi yakında dolacak kampanyaları göster",
-  "Bana uygun katılma hesabını nasıl seçebilirim?",
+  "Türkiye'deki katılım bankalarını sayar mısın?",
+  "Kuveyt Türk kampanyalarında hangi avantajlar var?",
+  "Murabaha nedir?",
 ];
 
+function generationLabel(generation?: ChatGeneration) {
+  if (!generation) return "Kaynaklar hazırlanıyor";
+  return generation.mode === "llm"
+    ? "Kanıta bağlı üretim"
+    : "Güvenli doğrulanmış yanıt";
+}
+
+type Exchange = {
+  question: string;
+  answer: string;
+  meta?: ChatMeta;
+  generation?: ChatGeneration;
+  streaming: boolean;
+  error?: string;
+};
+
 export default function ChatbotPage() {
-  const [input, setInput] = useState("");
-  const [showSuggestions, setShowSuggestions] = useState(true);
-  const [sentMessages, setSentMessages] = useState<string[]>([]);
-  const sendMessage = () => {
-    const value = input.trim();
-    if (!value) return;
-    setSentMessages((messages) => [...messages, value]);
-    setInput("");
-  };
+  const [message, setMessage] = useState("");
+  const [exchanges, setExchanges] = useState<Exchange[]>([]);
+  const [loading, setLoading] = useState(false);
+  const controller = useRef<AbortController | null>(null);
+  const requestToken = useRef(0);
+  const conversationEnd = useRef<HTMLDivElement | null>(null);
+  const messageInput = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    conversationEnd.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [exchanges]);
+
+  function updateLatest(
+    activeToken: number,
+    update: (exchange: Exchange) => Exchange
+  ) {
+    setExchanges((items) =>
+      applyActiveChatUpdate(
+        requestToken.current,
+        activeToken,
+        items,
+        (currentItems: Exchange[]) => {
+          const latest = currentItems[currentItems.length - 1];
+          if (!latest) return currentItems;
+          return [...currentItems.slice(0, -1), update(latest)];
+        }
+      )
+    );
+  }
+
+  async function ask(question: string) {
+    const trimmed = question.trim();
+    if (!trimmed || loading || controller.current) return;
+    const activeToken = nextChatRequestToken(requestToken.current);
+    requestToken.current = activeToken;
+    const activeController = new AbortController();
+    controller.current = activeController;
+    setLoading(true);
+    setMessage("");
+    setExchanges((items) => [
+      ...items,
+      { question: trimmed, answer: "", streaming: true },
+    ]);
+    let completed = false;
+    try {
+      await streamChat(
+        trimmed,
+        {
+          onMeta: (meta) =>
+            updateLatest(activeToken, (item) => ({ ...item, meta })),
+          onDelta: (text) =>
+            updateLatest(activeToken, (item) => ({
+              ...item,
+              answer: item.answer + text,
+            })),
+          onReplace: (text) =>
+            updateLatest(activeToken, (item) => ({ ...item, answer: text })),
+          onDone: (generation) => {
+            if (!isActiveChatRequest(requestToken.current, activeToken)) return;
+            completed = true;
+            updateLatest(activeToken, (item) => ({
+              ...item,
+              generation,
+              streaming: false,
+            }));
+          },
+        },
+        activeController.signal
+      );
+    } catch (reason) {
+      const stopped = reason instanceof DOMException && reason.name === "AbortError";
+      const error = stopped
+        ? "Yanıt akışı kullanıcı tarafından durduruldu."
+        : reason instanceof Error
+          ? reason.message
+          : "Yanıt üretilemedi.";
+      if (!completed) {
+        if (isActiveChatRequest(requestToken.current, activeToken)) {
+          updateLatest(activeToken, (item) => ({
+            ...item,
+            answer: "",
+            generation: undefined,
+            streaming: false,
+            error,
+          }));
+        }
+      }
+    } finally {
+      if (isActiveChatRequest(requestToken.current, activeToken)) {
+        setLoading(false);
+        controller.current = null;
+      }
+    }
+  }
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    void ask(message);
+  }
+
+  function stop() {
+    controller.current?.abort();
+  }
+
+  function resetConversation() {
+    const resetState = resetChatSession(requestToken.current);
+    const activeController = controller.current;
+    requestToken.current = resetState.requestToken;
+    controller.current = null;
+    activeController?.abort();
+    setExchanges(resetState.exchanges);
+    setMessage(resetState.message);
+    setLoading(resetState.loading);
+    if (resetState.focusInput) {
+      requestAnimationFrame(() => messageInput.current?.focus());
+    }
+  }
 
   return (
-    <main className={styles.main}>
-      <section className={styles.assistantLayout}>
-        <section className={styles.pageHeader}>
-          <span className={styles.headerAiIcon}>✦</span>
-          <div className={styles.headerCopy}><h1>Pusula AI</h1><p>Katılım bankacılığında akıllı karar asistanınız</p></div>
-        </section>
-        {/* SOL: CHAT */}
-        <section className={styles.chatPanel}>
-          <div className={styles.messages}>
-            <div className={styles.userRow}>
-              <div className={styles.userBubble}>
-                <p>Taşıt finansmanında en uygun seçenek hangisi?</p>
-
-                <div className={styles.messageMeta}>
-                  10:28 <span>✓✓</span>
+    <main className={styles.main} aria-busy={loading}>
+      <header className={styles.header}>
+        <div>
+          <span className={styles.eyebrow}>Kaynakla sınırlandırılmış üretim</span>
+          <h1>Kanıta dayalı asistan</h1>
+          <p>Doğrulanmış kampanya verileri ve bilgi tabanı üzerinden kanıta bağlı yanıtlar sunar.</p>
+        </div>
+        <div className={styles.chatHeaderActions}>
+          <button
+            aria-label="Yeni sohbet başlat"
+            className={styles.resetChatButton}
+            onClick={resetConversation}
+            type="button"
+          >
+            Yeni sohbet
+          </button>
+          <span className={styles.liveStatus}><span /> Kanıta bağlı</span>
+        </div>
+      </header>
+      <section className={styles.chatLayout}>
+        <article className={`${styles.card} ${styles.chat}`}>
+          <div
+            className={styles.transcript}
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions text"
+            aria-busy={loading}
+          >
+            {exchanges.length === 0 && (
+              <div className={styles.chatWelcome}>
+                <span className={styles.assistantMark}>RnR</span>
+                <h2>Size nasıl yardımcı olabilirim?</h2>
+                <p>Finansman oranlarını karşılaştırabilir, kampanya koşullarını inceleyebilir veya katılım bankacılığı terimlerini sorabilirsiniz.</p>
+              </div>
+            )}
+            {exchanges.map((exchange, index) => (
+              <div className={styles.exchange} key={`${exchange.question}-${index}`}>
+                <div className={`${styles.message} ${styles.userMessage}`}>{exchange.question}</div>
+                <div className={`${styles.message} ${styles.assistantMessage}`}>
+                  <div className={styles.answerHeader}>
+                    <span className={styles.assistantMark}>RnR</span>
+                    <div>
+                      <strong>RAGnROLL Asistan</strong>
+                      <small>
+                        {generationLabel(exchange.generation)}
+                      </small>
+                    </div>
+                  </div>
+                  {!exchange.answer && exchange.streaming && (
+                    <span className={styles.typing} aria-label="Yanıt hazırlanıyor"><i /><i /><i /></span>
+                  )}
+                  {exchange.error && <span className={styles.inlineError} role="alert">{exchange.error}</span>}
+                  {exchange.answer && (
+                    <>
+                      <p className={styles.answerText}>{exchange.answer}<span className={exchange.streaming ? styles.cursor : undefined} /></p>
+                      {exchange.meta && (
+                        <div className={styles.answerMeta}>
+                          <span className={styles.badge}>{exchange.meta.plan.route}</span>
+                          <span className={styles.confidence}>Güven %{Math.round(exchange.meta.confidence * 100)}</span>
+                        </div>
+                      )}
+                      {exchange.meta?.warnings.map((warning) => <span className={`${styles.badge} ${styles.warningBadge}`} key={warning}>{warning}</span>)}
+                      {!!exchange.meta?.sources.length && (
+                        <details className={styles.sources}>
+                          <summary>{exchange.meta.sources.length} kanıt kaynağını görüntüle</summary>
+                          <div className={styles.sourceGrid}>
+                            {exchange.meta.sources.map((source, sourceIndex) => source.source_url ? (
+                              <a className={styles.sourceCard} href={source.source_url} key={`${source.source_url}-${sourceIndex}`} rel="noreferrer" target="_blank"><span>K{sourceIndex + 1}</span><div><strong>{source.bank_name || source.title || source.campaign_id}</strong><small>Resmî kaynağı aç ↗</small></div></a>
+                            ) : (
+                              <div className={styles.sourceCard} key={`${source.term_id}-${sourceIndex}`}><span>K{sourceIndex + 1}</span><div><strong>{source.title || source.term_id}</strong><small>Yerel terminoloji kaydı</small></div></div>
+                            ))}
+                          </div>
+                        </details>
+                      )}
+                    </>
+                  )}
                 </div>
-              </div>
-            </div>
-
-            <div className={styles.botRow}>
-              <div className={styles.botAvatar}>✦</div>
-
-              <div className={styles.botBubble}>
-                <p>
-                  Taşıt finansmanı için güncel en uygun seçenekler şunlardır:
-                </p>
-
-                <ul>
-                  <li>
-                    Vade 24 aya kadar: <strong>%2,49 kâr payı oranı</strong>
-                  </li>
-                  <li>
-                    Vade 36 aya kadar: <strong>%2,69 kâr payı oranı</strong>
-                  </li>
-                  <li>
-                    Vade 48 aya kadar: <strong>%2,79 kâr payı oranı</strong>
-                  </li>
-                </ul>
-
-                <p>
-                  Detaylı karşılaştırma için Karşılaştırma sayfasını
-                  inceleyebilirsiniz.
-                </p>
-
-                <div className={styles.botTime}>10:28</div>
-              </div>
-            </div>
-
-            <div className={styles.userRow}>
-              <div className={styles.userBubble}>
-                <p>Masrafsız kart kampanyaları neler?</p>
-
-                <div className={styles.messageMeta}>
-                  10:31 <span>✓✓</span>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.botRow}>
-              <div className={styles.botAvatar}>✦</div>
-
-              <div className={styles.botBubble}>
-                <p>Masrafsız kart kampanyalarımız:</p>
-
-                <ul>
-                  <li>
-                    <strong>Aidatsız Klasik Kart</strong> – Yıllık aidat yok
-                  </li>
-
-                  <li>
-                    <strong>Genç Kart</strong> – Tüm harcamalarda masraf yok
-                  </li>
-
-                  <li>
-                    <strong>Sanal Kart</strong> – Online alışverişlerde masrafsız
-                    kullanım
-                  </li>
-                </ul>
-
-                <p>
-                  Tüm kart kampanyaları için Kampanyalar sayfasında
-                  inceleyebilirsiniz.
-                </p>
-
-                <div className={styles.botTime}>10:31</div>
-              </div>
-            </div>
-            {sentMessages.map((message, index) => (
-              <div className={styles.liveMessageGroup} key={`${message}-${index}`}>
-                <div className={styles.userRow}><div className={styles.userBubble}><p>{message}</p><div className={styles.messageMeta}>Şimdi <span>✓✓</span></div></div></div>
-                <div className={styles.botRow}><div className={styles.botAvatar}>✦</div><div className={styles.botBubble}><p>Sorunuzu aldım. Pusula AI mevcut katılım bankacılığı verileri üzerinden seçenekleri değerlendiriyor.</p><p>Daha ayrıntılı sonuç için banka veya ürün türünü de belirtebilirsiniz.</p><div className={styles.botTime}>Şimdi</div></div></div>
               </div>
             ))}
+            <div ref={conversationEnd} />
           </div>
-
-          <div className={styles.inputArea}>
-            <button type="button" aria-label="Hazır soruları aç veya kapat" className={styles.plusButton} onClick={() => setShowSuggestions((shown) => !shown)}>＋</button>
-
-            <div className={styles.inputWrapper}>
-              <input value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") sendMessage(); }} type="text" placeholder="Sorunuzu yazın..." />
-
-              <button type="button" aria-label="Mesajı gönder" onClick={sendMessage} className={styles.sendButton}>➤</button>
-            </div>
+          <form className={styles.chatControls} onSubmit={submit}>
+            <label className={styles.visuallyHidden} htmlFor="chat-message">Sorunuz</label>
+            <textarea className={styles.chatInput} id="chat-message" maxLength={4000} minLength={1} onChange={(event) => setMessage(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); if (!loading) void ask(message); } }} placeholder="Katılım bankacılığı hakkında sorunuzu yazın…" ref={messageInput} rows={2} value={message} />
+            {loading ? (
+              <button className={styles.stopButton} onClick={stop} type="button">Durdur</button>
+            ) : (
+              <button className={styles.sendButton} disabled={!message.trim()} type="submit" aria-label="Gönder">↑</button>
+            )}
+          </form>
+          <p className={styles.disclaimer}>Yanıtlar bilgilendirme amaçlıdır; güncel koşulları bankanın resmî kanalından doğrulayın.</p>
+        </article>
+        <aside className={`${styles.card} ${styles.suggestionPanel}`}>
+          <span className={styles.eyebrow}>Başlangıç önerileri</span>
+          <h2>Ne sorabilirsiniz?</h2>
+          <div className={styles.list}>
+            {suggestions.map((question) => <button className={styles.listButton} disabled={loading} key={question} onClick={() => void ask(question)} type="button">{question}</button>)}
           </div>
-
-          <div className={styles.disclaimer}>
-            🔒 Yanıtlar bilgilendirme amaçlıdır. Detaylı bilgi için lütfen
-            bankanızla iletişime geçiniz.
-          </div>
-          <div className={styles.assistantBenefits}>
-            <div><span>✦</span><strong>7/24 Akıllı Destek</strong><small>İhtiyacınız olduğunda yanınızda</small></div>
-            <div><span>✓</span><strong>Güvenilir ve Güncel Bilgi</strong><small>Veriye dayalı anlaşılır yanıtlar</small></div>
-            <div><span>⌁</span><strong>Size Özel Öneriler</strong><small>Tercihlerinize uygun seçenekler</small></div>
-          </div>
-        </section>
-
-        <aside className={styles.aiSideRail}>
-          <section className={styles.aiMarkCard}>
-            <div className={styles.aiMarkOrbit}><span>✦</span><i>AI</i></div>
-            <h2>Pusula AI</h2>
-            <p>Finansal kararlarınız için akıllı yol arkadaşınız.</p>
-          </section>
-        {showSuggestions && <section className={styles.quickQuestions}>
-          <div className={styles.quickQuestionsTitle}><span>✦</span><strong>Hazır Sorular</strong></div>
-          <div className={styles.quickQuestionList}>{suggestions.map((question) => (
-            <button key={question} type="button" onClick={() => setInput(question)}>{question}<span>›</span></button>
-          ))}</div>
-        </section>}
+          <div className={styles.safetyNote}><strong>Kanıt koruması</strong><p>Üretim servisine ulaşılamazsa veya kaynak dışı yanıt oluşursa doğrulanmış yerel cevap otomatik gösterilir.</p></div>
         </aside>
-
-        {false && <aside className={styles.rightColumn}>
-          <section className={styles.infoCard}>
-            <div className={styles.infoHeading}>
-              <div className={styles.bigSparkle}>✦</div>
-
-              <div>
-                <h2>AI Asistan</h2>
-                <span>Yapay Zekâ Destekli</span>
-              </div>
-            </div>
-
-            <div className={styles.infoContent}>
-              <div>
-                <p>
-                  Katılım Bankacılığı ürünleri hakkında sorularınızı yanıtlar,
-                  en uygun seçenekleri bulmanıza yardımcı olur.
-                </p>
-
-                <ul className={styles.features}>
-                  <li>💬 7/24 Akıllı Destek</li>
-                  <li>🛡 Güvenilir ve Güncel Bilgi</li>
-                  <li>⚙ Size Özel Öneriler</li>
-                </ul>
-              </div>
-
-              <div className={styles.robotVisual}>
-                <div className={styles.robotHead}>
-                  <div className={styles.robotFace}>
-                    <span></span>
-                    <span></span>
-                  </div>
-                </div>
-
-                <div className={styles.robotBody}></div>
-              </div>
-            </div>
-          </section>
-
-          <section className={styles.questionsCard}>
-            <div className={styles.questionsTitle}>
-              <span>✦</span>
-              <h2>Hazır Sorular</h2>
-            </div>
-
-            <div className={styles.questionList}>
-              {suggestions.map((question) => (
-                <button key={question} className={styles.questionButton}>
-                  <span className={styles.questionIcon}>▢</span>
-
-                  <span>{question}</span>
-
-                  <strong>›</strong>
-                </button>
-              ))}
-            </div>
-          </section>
-        </aside>}
       </section>
     </main>
   );

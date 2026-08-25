@@ -14,16 +14,17 @@
 }
 
 .logo img {
-  width: 82%;
-  height: 82%;
+  display: block;
+  max-width: 82%;
+  max-height: 82%;
+  width: auto;
+  height: auto;
   object-fit: contain;
 }
 
 .fallback {
-  width: 36px;
-  height: 36px;
   color: #fff;
-  background: #0d2a4a;
+  background: var(--bank-color, #365f74);
   font-size: 10px;
   font-weight: 800;
 }

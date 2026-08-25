@@ -12,23 +12,42 @@ Python 3.11.9 kullanmanız gerekiyor.
 4. Bağımlılıkları kurun:
    pip install -r requirements.txt
 
-## Ollama Kurulumu
-1. Model cmd'den indirin: ollama pull gemma4:e4b
-2. Sunucuyu başlatın (ayrı bir terminalde açık kalmalı): ollama serve(ollama arka planda açık olsa da olur)
+Kampanya sınıflandırıcı ve NER artefaktları yalnız requirements dosyasındaki tam
+spaCy, scikit-learn ve joblib sürümleriyle yüklenir. Hash veya sürüm farkında
+çalışma zamanı modeli deserialize etmeden durur.
 
-## Embedding Verisi (chroma_db)
-Hazır embed edilmiş veri (1712 doküman) burada: https://drive.google.com/file/d/1-zaOWe9jHeeFECAcIRVdqWP0piRV42_T/view?usp=drive_link
-İndirip zip'i açın, `chroma_db` klasörünü proje kök dizinine (data klasörüyle
-aynı seviyeye) koyun. Bu sayede embedding'i sıfırdan yapmanıza gerek kalmaz
-(RAM yoğun bir işlem, 1-2 saat sürebilir).
+## Yerel Model Servisi
+
+Apple Silicon üzerinde Gemma cevap yazım modeli vLLM-Metal ile çalışır:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vllm-project/vllm-metal/main/install.sh | bash
+python -m scripts.serve_local_llm
+```
+
+## Embedding İndeksi
+
+Qwen embedding modeli ve Chroma indeksi ilk çalıştırmada bir kez hazırlanır:
+
+```bash
+python -m scripts.ingest_chroma --batch-size 64
+```
+
+Sonraki çalıştırmalarda yalnız değişen kampanya veya terminoloji parçaları embed
+edilir. Uzun kayıtlar kaynak konumunu koruyan semantik parçalara ayrılır; silinen
+kayıtların eski parçaları indeksten temizlenir.
 
 ## Çalıştırma
-Proje kök dizininde:
-python -m src.chatbot.rag_langchain
+Proje kök dizininde API'yi başlatın:
 
-İlk çalıştırmada Qwen3-Embedding modeli otomatik iner (~1-2GB).
-"Chatbot hazır" yazısını görünce kullanıma hazırdır.
+```bash
+python -m uvicorn src.main:app --reload
+```
+
+Dashboard için ayrı terminalde `src/dashboard` dizininde `npm run dev` çalıştırın.
+İlk indekslemede Qwen3-Embedding modeli otomatik iner.
 
 ## Bilinen Durum
-CPU'da (GPU desteklenmiyorsa) cevap süresi 50-100sn arası sürebilir.
-GPU'lu makinede çok daha hızlı olması beklenir.
+Embedding cihazı otomatik seçilir. Apple Silicon üzerinde gerekirse
+`RAGNROLL_EMBEDDING_DEVICE=mps` ayarlanabilir. vLLM veya Chroma erişilemezse
+uygulama kaynaklı yerel fallback yanıtıyla çalışmaya devam eder.

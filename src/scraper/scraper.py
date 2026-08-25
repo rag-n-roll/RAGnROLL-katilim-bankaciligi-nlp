@@ -159,7 +159,17 @@ def run_db_init(args: argparse.Namespace) -> int:
 def run_db_import(args: argparse.Namespace) -> int:
     with args.input.open(encoding="utf-8") as stream:
         payload = json.load(stream)
-    count = CampaignStore(args.database).import_dataset(payload)
+    store = CampaignStore(args.database)
+    count = store.import_dataset(payload)
+    raw_output = getattr(args, "raw_output", None)
+    processed_output = getattr(args, "processed_output", None)
+    if raw_output is not None or processed_output is not None:
+        if raw_output is None or processed_output is None:
+            raise ValueError("raw-output ve processed-output birlikte verilmelidir")
+        _require_distinct_paths(raw_output, processed_output)
+        raw, processed = store.export_datasets()
+        write_json(raw_output, raw)
+        write_json(processed_output, processed)
     print(f"{count} kayıt SQLite'a içe aktarıldı: {args.database}")
     return 0
 
@@ -434,6 +444,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     db_import.add_argument("input", type=Path)
     db_import.add_argument("--database", type=Path, default=DEFAULT_DATABASE_PATH)
+    db_import.add_argument("--raw-output", type=Path)
+    db_import.add_argument("--processed-output", type=Path)
     db_import.set_defaults(handler=run_db_import)
     db_export = database_subparsers.add_parser(
         "export-json", help="SQLite verisini JSON'a aktar"

@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import subprocess
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -107,6 +108,9 @@ def test_comparison_empty_iterable_has_a_complete_deterministic_contract():
 def test_refresh_manager_success_records_output_command_and_releases_slot(
     tmp_path, monkeypatch
 ):
+    runtime_root = tmp_path / "runtime"
+    monkeypatch.setenv("RAGNROLL_RUNTIME_ROOT", str(runtime_root))
+    monkeypatch.delenv("RAGNROLL_REFRESH_DATASET", raising=False)
     manager = RefreshManager()
     first = manager.create(7)
     calls = []
@@ -124,13 +128,22 @@ def test_refresh_manager_success_records_output_command_and_releases_slot(
     assert status["return_code"] == 0
     assert status["message"] == "3 kayıt güncellendi"
     command, kwargs = calls[0]
-    assert command[-5:] == [
+    assert command[:5] == [
+        sys.executable,
+        "-m",
+        "src.scraper.scraper",
+        "--verbose",
         "collect",
-        "--max-per-bank",
-        "7",
-        "--database",
-        str(database),
     ]
+    options = dict(zip(command[5::2], command[6::2]))
+    assert options == {
+        "--max-per-bank": "7",
+        "--database": str(database),
+        "--banks-output": str(runtime_root / "data/raw/participation_banks.json"),
+        "--raw-output": str(runtime_root / "data/raw/campaigns.json"),
+        "--processed-output": str(runtime_root / "data/processed/campaigns.json"),
+        "--quality-report": str(runtime_root / "outputs/quality_report.json"),
+    }
     assert kwargs == {
         "cwd": PROJECT_ROOT,
         "capture_output": True,
@@ -140,6 +153,46 @@ def test_refresh_manager_success_records_output_command_and_releases_slot(
     }
     assert status["created_at"] <= status["started_at"] <= status["completed_at"]
     assert manager.create(1) is not None
+
+
+def test_refresh_manager_supports_offline_container_refresh_and_index_smoke(
+    tmp_path, monkeypatch
+):
+    runtime_root = tmp_path / "runtime"
+    dataset = tmp_path / "bootstrap.json"
+    dataset.write_text('{"records": []}', encoding="utf-8")
+    monkeypatch.setenv("RAGNROLL_RUNTIME_ROOT", str(runtime_root))
+    monkeypatch.setenv("RAGNROLL_REFRESH_DATASET", str(dataset))
+    monkeypatch.setenv("RAGNROLL_INDEX_SMOKE", "true")
+    calls = []
+
+    def successful_run(command, **kwargs):
+        calls.append(command)
+        if "scripts.ingest_chroma" in command:
+            return SimpleNamespace(
+                returncode=0,
+                stdout='{"embedded": 1, "smoke": true}\n',
+                stderr="",
+            )
+        return SimpleNamespace(returncode=0, stdout="snapshot içe aktarıldı\n", stderr="")
+
+    manager = RefreshManager(runner=successful_run, auto_index=True)
+    job = manager.create(1)
+    database = tmp_path / "runtime.sqlite3"
+    manager.run(job["id"], database)
+
+    assert calls[0][:6] == [
+        sys.executable,
+        "-m",
+        "src.scraper.scraper",
+        "db",
+        "import-json",
+        str(dataset),
+    ]
+    assert "--raw-output" in calls[0]
+    assert "--processed-output" in calls[0]
+    assert calls[1][-1] == "--smoke"
+    assert manager.get(job["id"])["index_status"] == "completed"
 
 
 def test_refresh_manager_maps_cli_partial_status_and_keeps_both_output_streams(
@@ -166,6 +219,51 @@ def test_refresh_manager_maps_cli_partial_status_and_keeps_both_output_streams(
     assert status["output_truncated"] is False
 
 
+def test_refresh_manager_runs_incremental_index_after_successful_update(tmp_path):
+    calls = []
+
+    def successful_run(command, **kwargs):
+        calls.append(command)
+        if "scripts.ingest_chroma" in command:
+            return SimpleNamespace(
+                returncode=0,
+                stdout='{"embedded": 1, "unchanged": 1711}\n',
+                stderr="",
+            )
+        return SimpleNamespace(returncode=0, stdout="1 kayıt güncellendi\n", stderr="")
+
+    manager = RefreshManager(runner=successful_run, auto_index=True)
+    job = manager.create(1)
+    database = tmp_path / "refresh.sqlite3"
+    manager.run(job["id"], database)
+
+    status = manager.get(job["id"])
+    assert len(calls) == 2
+    assert "scripts.ingest_chroma" in calls[1]
+    assert status["status"] == "completed"
+    assert status["index_status"] == "completed"
+    assert status["index_return_code"] == 0
+    assert '"embedded": 1' in status["index_message"]
+
+
+def test_refresh_manager_skips_index_when_scrape_fails(tmp_path):
+    calls = []
+
+    def failed_run(command, **kwargs):
+        calls.append(command)
+        return SimpleNamespace(returncode=1, stdout="", stderr="kaynak hatası")
+
+    manager = RefreshManager(runner=failed_run, auto_index=True)
+    job = manager.create(1)
+    manager.run(job["id"], tmp_path / "refresh.sqlite3")
+
+    status = manager.get(job["id"])
+    assert len(calls) == 1
+    assert status["status"] == "failed"
+    assert status["index_status"] == "skipped"
+    assert "çalıştırılmadı" in status["index_message"]
+
+
 def test_refresh_manager_timeout_is_failed_and_releases_the_active_slot(tmp_path):
     def timed_out(command, **kwargs):
         raise subprocess.TimeoutExpired(
@@ -187,6 +285,113 @@ def test_refresh_manager_timeout_is_failed_and_releases_the_active_slot(tmp_path
     assert status["message"].endswith("12 saniye sonra zaman aşımına uğradı")
     assert status["completed_at"] is not None
     assert manager.create(1) is not None
+
+
+def test_refresh_manager_marks_index_failure_as_partial(tmp_path):
+    def run_with_index_failure(command, **kwargs):
+        if "scripts.ingest_chroma" in command:
+            raise RuntimeError("model belleği kullanılamadı")
+        return SimpleNamespace(returncode=0, stdout="1 kayıt güncellendi", stderr="")
+
+    manager = RefreshManager(runner=run_with_index_failure, auto_index=True)
+    job = manager.create(1)
+    manager.run(job["id"], tmp_path / "refresh.sqlite3")
+
+    status = manager.get(job["id"])
+    assert status["status"] == "partial"
+    assert status["index_status"] == "failed"
+    assert "model belleği kullanılamadı" in status["index_message"]
+
+
+def test_refresh_manager_runs_enrichment_before_incremental_index(tmp_path):
+    calls = []
+
+    def successful_pipeline(command, **kwargs):
+        calls.append(command)
+        if "scripts.enrich_nlp" in command:
+            return SimpleNamespace(
+                returncode=0,
+                stdout='{"status":"completed","changed":1}',
+                stderr="",
+            )
+        if "scripts.ingest_chroma" in command:
+            return SimpleNamespace(
+                returncode=0,
+                stdout='{"embedded":1}',
+                stderr="",
+            )
+        return SimpleNamespace(returncode=0, stdout="1 kayıt güncellendi", stderr="")
+
+    manager = RefreshManager(
+        runner=successful_pipeline,
+        auto_enrich=True,
+        auto_index=True,
+    )
+    job = manager.create(1)
+    manager.run(job["id"], tmp_path / "ordered.sqlite3")
+
+    assert [
+        "scrape"
+        if "src.scraper.scraper" in command
+        else "enrich"
+        if "scripts.enrich_nlp" in command
+        else "index"
+        for command in calls
+    ] == ["scrape", "enrich", "index"]
+    status = manager.get(job["id"])
+    assert status["status"] == "completed"
+    assert status["enrichment_status"] == "completed"
+    assert status["index_status"] == "completed"
+
+
+def test_enrichment_failure_is_partial_but_index_still_runs(tmp_path):
+    calls = []
+
+    def enrichment_failure(command, **kwargs):
+        calls.append(command)
+        if "scripts.enrich_nlp" in command:
+            return SimpleNamespace(returncode=1, stdout="", stderr="manifest uyuşmuyor")
+        if "scripts.ingest_chroma" in command:
+            return SimpleNamespace(returncode=0, stdout='{"embedded":0}', stderr="")
+        return SimpleNamespace(returncode=0, stdout="scrape tamamlandı", stderr="")
+
+    manager = RefreshManager(
+        runner=enrichment_failure,
+        auto_enrich=True,
+        auto_index=True,
+    )
+    job = manager.create(1)
+    manager.run(job["id"], tmp_path / "enrichment-failure.sqlite3")
+
+    status = manager.get(job["id"])
+    assert len(calls) == 3
+    assert status["status"] == "partial"
+    assert status["enrichment_status"] == "failed"
+    assert status["enrichment_return_code"] == 1
+    assert status["index_status"] == "completed"
+    assert "manifest uyuşmuyor" in status["message"]
+
+
+def test_scrape_failure_skips_both_enrichment_and_index(tmp_path):
+    calls = []
+
+    def scrape_failure(command, **kwargs):
+        calls.append(command)
+        return SimpleNamespace(returncode=1, stdout="", stderr="kaynak hatası")
+
+    manager = RefreshManager(
+        runner=scrape_failure,
+        auto_enrich=True,
+        auto_index=True,
+    )
+    job = manager.create(1)
+    manager.run(job["id"], tmp_path / "scrape-failure.sqlite3")
+
+    status = manager.get(job["id"])
+    assert len(calls) == 1
+    assert status["status"] == "failed"
+    assert status["enrichment_status"] == "skipped"
+    assert status["index_status"] == "skipped"
 
 
 def test_refresh_manager_bounds_reported_subprocess_output(tmp_path):

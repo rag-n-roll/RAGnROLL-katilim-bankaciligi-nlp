@@ -120,7 +120,9 @@ python -m src.classifier.multilabel train \
 ```
 
 Çıktıdaki `.metrics.json` ana ürün kategorisi Accuracy değerini; her çok etiketli
-boyut için micro/macro F1 ve subset accuracy değerlerini içerir. Bağımsız test:
+boyut için micro/macro F1 ve subset accuracy değerlerini içerir. Aşağıdaki komut
+yalnız veri gerçekten bağımsız insan holdout'u olarak hazırlandığında bağımsız test
+sayılabilir:
 
 ```bash
 python -m src.classifier.multilabel evaluate \
