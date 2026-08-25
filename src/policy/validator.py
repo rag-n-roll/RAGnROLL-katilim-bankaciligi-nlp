@@ -19,16 +19,6 @@ class PolicyValidator:
                     "kampanyalar hakkında yardımcı olabilirim."
                 ),
             )
-        if decision.intent == "product_comparison":
-            missing = tuple(decision.criteria.missing())
-            if missing:
-                return replace(
-                    decision,
-                    action=Action.CLARIFY,
-                    missing_criteria=missing,
-                    tool_calls=(),
-                    reason_code="missing_comparison_criteria",
-                )
         if any(
             not valid_tool_call(decision.intent, call, allowed_banks=allowed_banks)
             for call in decision.tool_calls
@@ -39,6 +29,19 @@ class PolicyValidator:
                 tool_calls=(),
                 reason_code="invalid_tool_plan",
             )
+        # Clarification must never weaken an explicit terminal safety action.
+        if decision.action in {Action.REFUSE, Action.REDIRECT}:
+            return replace(decision, tool_calls=())
+        if decision.intent == "product_comparison":
+            missing = tuple(decision.criteria.missing())
+            if missing:
+                return replace(
+                    decision,
+                    action=Action.CLARIFY,
+                    missing_criteria=missing,
+                    tool_calls=(),
+                    reason_code="missing_comparison_criteria",
+                )
         if decision.action != Action.ANSWER:
             return replace(decision, tool_calls=())
         return decision

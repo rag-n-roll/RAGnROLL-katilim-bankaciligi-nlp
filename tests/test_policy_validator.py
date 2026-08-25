@@ -49,21 +49,32 @@ def test_declared_clarification_gets_deterministic_missing_comparison_criteria()
     assert validated.reason_code == "missing_comparison_criteria"
 
 
-@pytest.mark.parametrize("action", [Action.REFUSE, Action.REDIRECT])
-def test_missing_comparison_criteria_overrides_declared_terminal_action(action):
+@pytest.mark.parametrize(
+    ("action", "tool_calls"),
+    [
+        (Action.REFUSE, ()),
+        (
+            Action.REDIRECT,
+            ({"name": "comparison", "arguments": {}},),
+        ),
+    ],
+)
+def test_missing_comparison_criteria_does_not_weaken_terminal_action(
+    action, tool_calls
+):
     decision = PolicyDecision(
         action=action,
         in_domain=True,
         intent="product_comparison",
         confidence=0.7,
         reason_code="model_terminal",
-        tool_calls=({"name": "comparison", "arguments": {}},),
+        tool_calls=tool_calls,
     )
     validated = PolicyValidator().validate(decision)
-    assert validated.action == Action.CLARIFY
-    assert validated.missing_criteria == ("term_months", "amount", "fee_priority")
+    assert validated.action == action
+    assert validated.missing_criteria == ()
     assert validated.tool_calls == ()
-    assert validated.reason_code == "missing_comparison_criteria"
+    assert validated.reason_code == "model_terminal"
 
 
 def test_unknown_tool_is_removed_and_refused():
@@ -96,7 +107,7 @@ def test_non_answer_actions_never_retain_tools(action):
     assert validated.tool_calls == ()
 
 
-@pytest.mark.parametrize("action", [Action.REDIRECT, Action.CLARIFY])
+@pytest.mark.parametrize("action", [Action.REFUSE, Action.REDIRECT, Action.CLARIFY])
 def test_invalid_tool_plan_overrides_non_answer_action(action):
     decision = PolicyDecision(
         action=action,
