@@ -8,22 +8,30 @@ _CARD_RE = re.compile(r"(?<!\d)(?:\d[ -]?){15,19}(?!\d)")
 _TCKN_RE = re.compile(r"(?<!\d)\d{11}(?!\d)")
 _INTERNAL_INFORMATION_RE = re.compile(
     r"\b(?:"
-    r"(?:sistem|system|gelistirici|developer)\s+(?:prompt\w*|talimat\w*)"
+    r"(?:sistem|system|gelistirici|developer)\s+(?:prompt\w*|talimat\w*|instruction\w*)"
     r"|(?:gizli|sakli|hidden)\s+(?:"
-    r"politika\w*|talimat\w*|prompt\w*|anahtar\w*|kimlik bilg\w*|credential\w*|secret\w*"
+    r"politika\w*|polic\w*|talimat\w*|instruction\w*|prompt\w*"
+    r"|anahtar\w*|kimlik bilg\w*|credential\w*|secret\w*"
     r")"
     r"|api\s+(?:key\w*|anahtar\w*)"
     r"|(?:credential|secret)\w*"
     r")\b"
 )
 _EXTRACTION_RE = re.compile(
-    r"\b(?:goster\w*|acikla\w*|paylas\w*|yazdir\w*|ver\w*|ifsa\w*|cikar\w*)\b"
+    r"\b(?:goster\w*|acikla\w*|paylas\w*|yazdir\w*|ver\w*|ifsa\w*|cikar\w*"
+    r"|show\w*|reveal\w*|print\w*|expose\w*|repeat\w*)\b"
 )
-_TRANSACTION_CONCEPT_RE = re.compile(
-    r"\b(?:havale\w*|eft\w*|para transfer\w*|sikayet\w*|basvuru\w*|finansman\w*)\b"
+_TRANSFER_CONCEPT_RE = re.compile(r"\b(?:havale\w*|eft\w*|para transfer\w*)\b")
+_TRANSFER_ACTION_RE = re.compile(
+    r"\b(?:yap\w*|gonder\w*|aktar\w*|gerceklestir\w*)\b"
 )
-_TRANSACTION_ACTION_RE = re.compile(
-    r"\b(?:yap\w*|gonder\w*|aktar\w*|gerceklestir\w*|olustur\w*|basvur\w*|istiyorum)\b"
+_COMPLAINT_CONCEPT_RE = re.compile(r"\bsikayet\w*\b")
+_COMPLAINT_ACTION_RE = re.compile(
+    r"\b(?:olustur\w*|kaydet\w*|ac(?:mak|in(?:iz)?)?|ilet(?:mek|in(?:iz)?)?)\b"
+)
+_APPLICATION_CONCEPT_RE = re.compile(r"\b(?:basvuru\w*|finansman\w*)\b")
+_APPLICATION_ACTION_RE = re.compile(
+    r"\b(?:basvur(?:mak|mayi|uyorum|urum|alim|un(?:uz)?|acag\w*|abilir\w*)?|yap\w*)\b"
 )
 
 
@@ -34,9 +42,14 @@ def _normalize(message: str) -> str:
 
 def _is_transaction_request(message: str) -> bool:
     normalized = _normalize(message)
-    return bool(
-        _TRANSACTION_CONCEPT_RE.search(normalized)
-        and _TRANSACTION_ACTION_RE.search(normalized)
+    intent_patterns = (
+        (_TRANSFER_CONCEPT_RE, _TRANSFER_ACTION_RE),
+        (_COMPLAINT_CONCEPT_RE, _COMPLAINT_ACTION_RE),
+        (_APPLICATION_CONCEPT_RE, _APPLICATION_ACTION_RE),
+    )
+    return any(
+        concept.search(normalized) and action.search(normalized)
+        for concept, action in intent_patterns
     )
 
 
