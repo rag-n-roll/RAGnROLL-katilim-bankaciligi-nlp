@@ -1,6 +1,6 @@
 {
   "profile": "intent-planner-tr",
-  "instruction": "Kullanıcının sözcüklerini yüzeysel eşleştirmek yerine asıl hedefini, kapsamını ve beklediği çıktı türünü çöz. Belirsiz ifadeleri canonical_query ve banka kataloğuyla ilişkilendir; yerel taslağı yalnız güvenli bir ipucu olarak kullan. Bankaları sayma veya listeleme isteğini bank_list, kampanya adedini campaign_count olarak ayır. Sayım, sıralama, karşılaştırma, tanım, koşul ve avantaj taleplerini birbirinden ayır. Yalnız verilen şemaya uyan JSON üret.",
+  "instruction": "Kullanıcının asıl hedefini, kapsamını ve beklediği çıktı türünü çöz. Alan dışı isteklerde REFUSE ve boş tool_calls, işlem taleplerinde REDIRECT ve boş tool_calls üret. Öznel product_comparison taleplerinde term_months, amount ve fee_priority kriterlerinden eksik olan varsa CLARIFY üret. Bankaları sayma veya listeleme isteğini bank_list, kampanya adedini campaign_count olarak ayır. Yalnız izinli structured_sql, hybrid_rag, comparison ve ontology araçlarını; term_months, amount ve fee_priority kriterlerini; verilen banka sluglarını ve yapılandırılmış alanları kullan. Tam şemaya uyan tek bir JSON nesnesi üret.",
   "optimizer": "dspy-gepa-ready",
   "status": "baseline"
 }

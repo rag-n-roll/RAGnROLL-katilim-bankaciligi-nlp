@@ -6,10 +6,12 @@ import json
 import os
 from pathlib import Path
 import re
-from dataclasses import replace
+from dataclasses import dataclass, field, replace
+from math import isfinite
 from typing import Any
 
 from src.llm.client import LLMSettings, LLMUnavailableError, OpenAICompatibleLLM
+from src.policy import Action, ComparisonCriteria, PolicyDecision
 
 
 ALLOWED_ROUTES = frozenset({"STRUCTURED_SQL", "HYBRID_RAG", "SAFE_REDIRECT"})
@@ -54,11 +56,58 @@ UNSAFE_INTENTS = frozenset({"complaint_support", "transaction_howto"})
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_INTENT_PROMPT = PROJECT_ROOT / "configs" / "prompts" / "intent_prompt.json"
 _DECISION_KEYS = frozenset(
-    {"safe", "intent", "route", "confidence", "normalized_query", "slots"}
+    {
+        "action",
+        "in_domain",
+        "intent",
+        "confidence",
+        "normalized_query",
+        "concepts",
+        "missing_criteria",
+        "tool_calls",
+        "slots",
+        "reason_code",
+    }
 )
+ALLOWED_ACTIONS = frozenset(Action)
+ALLOWED_TOOLS = frozenset({"structured_sql", "hybrid_rag", "comparison", "ontology"})
+ALLOWED_CRITERIA = frozenset({"term_months", "amount", "fee_priority"})
 _SLOT_KEYS = frozenset(
-    {"banks", "metric", "aggregation", "product_type", "financing_type"}
+    {
+        "banks",
+        "metric",
+        "aggregation",
+        "product_type",
+        "financing_type",
+        *ALLOWED_CRITERIA,
+    }
 )
+_TOOL_CALL_KEYS = frozenset({"name", "arguments"})
+_TOOL_ARGUMENT_KEYS = _SLOT_KEYS
+
+
+@dataclass(frozen=True, slots=True)
+class PlannerDecision(PolicyDecision):
+    """Policy decision carrying temporary mapping compatibility for old callers."""
+
+    normalized_query: str = ""
+    slots: dict[str, Any] = field(default_factory=dict)
+
+    def __getitem__(self, key: str) -> Any:
+        if key == "safe":
+            return self.action not in {Action.REFUSE, Action.REDIRECT}
+        if key == "route":
+            if self.action == Action.REDIRECT:
+                return "SAFE_REDIRECT"
+            names = [call.get("name") for call in self.tool_calls]
+            return "STRUCTURED_SQL" if "structured_sql" in names else "HYBRID_RAG"
+        if key == "normalized_query":
+            return self.normalized_query
+        if key == "slots":
+            return self.slots
+        if hasattr(self, key):
+            return getattr(self, key)
+        raise KeyError(key)
 
 
 def _json_object(value: str) -> dict[str, Any] | None:
@@ -102,11 +151,15 @@ class EvrenDecisionService:
         prompt_path: str | Path | None = None,
     ) -> None:
         base = LLMSettings.evren_from_env()
-        self.planner = planner or router or OpenAICompatibleLLM(
-            replace(
-                base,
-                model=os.getenv("EVREN_ROUTER_MODEL", "router").strip(),
-                max_tokens=420,
+        self.planner = (
+            planner
+            or router
+            or OpenAICompatibleLLM(
+                replace(
+                    base,
+                    model=os.getenv("EVREN_ROUTER_MODEL", "router").strip(),
+                    max_tokens=420,
+                )
             )
         )
         # Eski kurucu sözleşmesi korunur; canlı akış güvenliği aynı plan çağrısındadır.
@@ -137,34 +190,55 @@ class EvrenDecisionService:
     @staticmethod
     def _validate(
         payload: dict[str, Any] | None, *, allowed_banks: set[str]
-    ) -> dict[str, Any] | None:
+    ) -> PlannerDecision | None:
         if not payload or set(payload) != _DECISION_KEYS:
             return None
-        safe = payload.get("safe")
+        action = payload.get("action")
+        in_domain = payload.get("in_domain")
         intent = payload.get("intent")
-        route = payload.get("route")
         confidence = payload.get("confidence")
         normalized_query = payload.get("normalized_query")
+        concepts = payload.get("concepts")
+        missing_criteria = payload.get("missing_criteria")
+        tool_calls = payload.get("tool_calls")
         slots = payload.get("slots")
-        if not isinstance(safe, bool):
+        reason_code = payload.get("reason_code")
+        if not isinstance(action, str) or action not in ALLOWED_ACTIONS:
+            return None
+        if not isinstance(in_domain, bool):
             return None
         if not isinstance(intent, str) or intent not in ALLOWED_INTENTS:
             return None
-        if not isinstance(route, str) or route not in ALLOWED_ROUTES:
-            return None
         if isinstance(confidence, bool) or not isinstance(confidence, (int, float)):
             return None
-        if not 0 <= float(confidence) <= 1:
+        if not isfinite(float(confidence)) or not 0 <= float(confidence) <= 1:
             return None
         if not isinstance(normalized_query, str) or not normalized_query.strip():
             return None
-        if len(normalized_query) > 2000 or not isinstance(slots, dict):
+        if len(normalized_query) > 2000:
+            return None
+        if not isinstance(concepts, list) or not all(
+            isinstance(item, str) and item.strip() for item in concepts
+        ):
+            return None
+        if not isinstance(missing_criteria, list) or not all(
+            isinstance(item, str) and item in ALLOWED_CRITERIA
+            for item in missing_criteria
+        ):
+            return None
+        if len(set(missing_criteria)) != len(missing_criteria):
+            return None
+        if not isinstance(reason_code, str) or not reason_code.strip():
+            return None
+        if not isinstance(tool_calls, list) or not isinstance(slots, dict):
             return None
         if not set(slots).issubset(_SLOT_KEYS):
             return None
 
         banks = slots.get("banks", [])
-        if not isinstance(banks, list) or not all(isinstance(item, str) for item in banks):
+        if not isinstance(banks, list) or not all(
+            isinstance(item, str) for item in banks
+        ):
             return None
         if any(bank not in allowed_banks for bank in banks):
             return None
@@ -176,28 +250,110 @@ class EvrenDecisionService:
         )
         if "" in {metric, aggregation, product_type, financing_type}:
             return None
-        if intent in {"bank_list", "campaign_count"} and aggregation != "COUNT":
+
+        term_months = slots.get("term_months")
+        amount = slots.get("amount")
+        fee_priority = slots.get("fee_priority")
+        if (
+            (
+                term_months is not None
+                and (
+                    isinstance(term_months, bool)
+                    or not isinstance(term_months, int)
+                    or term_months <= 0
+                )
+            )
+            or (
+                amount is not None
+                and (
+                    isinstance(amount, bool)
+                    or not isinstance(amount, (int, float))
+                    or not isfinite(float(amount))
+                    or amount < 0
+                )
+            )
+            or (fee_priority is not None and not isinstance(fee_priority, bool))
+        ):
             return None
-        if safe is (intent in UNSAFE_INTENTS):
-            return None
-        if (route == "SAFE_REDIRECT") is safe:
-            return None
-        if safe and (route == "STRUCTURED_SQL") != (intent in STRUCTURED_INTENTS):
-            return None
-        return {
-            "safe": safe,
-            "intent": intent,
-            "route": route,
-            "confidence": float(confidence),
-            "normalized_query": " ".join(normalized_query.split()),
-            "slots": {
-                "banks": list(dict.fromkeys(banks)),
-                "metric": metric,
-                "aggregation": aggregation,
-                "product_type": product_type,
-                "financing_type": financing_type,
-            },
+
+        validated_calls = []
+        for call in tool_calls:
+            if not isinstance(call, dict) or set(call) != _TOOL_CALL_KEYS:
+                return None
+            name = call.get("name")
+            arguments = call.get("arguments")
+            if name not in ALLOWED_TOOLS or not isinstance(arguments, dict):
+                return None
+            if not set(arguments).issubset(_TOOL_ARGUMENT_KEYS):
+                return None
+            argument_banks = arguments.get("banks", [])
+            if not isinstance(argument_banks, list) or not all(
+                isinstance(bank, str) and bank in allowed_banks
+                for bank in argument_banks
+            ):
+                return None
+            for key, value in arguments.items():
+                if key == "banks":
+                    continue
+                if key == "metric" and _optional_enum(value, ALLOWED_METRICS) == "":
+                    return None
+                if (
+                    key == "aggregation"
+                    and _optional_enum(value, ALLOWED_AGGREGATIONS) == ""
+                ):
+                    return None
+                if (
+                    key == "product_type"
+                    and _optional_enum(value, ALLOWED_PRODUCT_TYPES) == ""
+                ):
+                    return None
+                if (
+                    key == "financing_type"
+                    and _optional_enum(value, ALLOWED_FINANCING_TYPES) == ""
+                ):
+                    return None
+                if key == "term_months" and (
+                    isinstance(value, bool) or not isinstance(value, int) or value <= 0
+                ):
+                    return None
+                if key == "amount" and (
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not isfinite(float(value))
+                    or value < 0
+                ):
+                    return None
+                if key == "fee_priority" and not isinstance(value, bool):
+                    return None
+            validated_calls.append({"name": name, "arguments": arguments})
+
+        normalized_slots = {
+            "banks": list(dict.fromkeys(banks)),
+            "metric": metric,
+            "aggregation": aggregation,
+            "product_type": product_type,
+            "financing_type": financing_type,
+            "term_months": term_months,
+            "amount": float(amount) if amount is not None else None,
+            "fee_priority": fee_priority,
         }
+        return PlannerDecision(
+            action=Action(action),
+            in_domain=in_domain,
+            intent=intent,
+            confidence=float(confidence),
+            reason_code=reason_code.strip(),
+            concepts=tuple(dict.fromkeys(item.strip() for item in concepts)),
+            missing_criteria=tuple(missing_criteria),
+            tool_calls=tuple(validated_calls),
+            criteria=ComparisonCriteria(
+                term_months=term_months,
+                amount=float(amount) if amount is not None else None,
+                fee_priority=fee_priority,
+            ),
+            normalized_query=" ".join(normalized_query.split()),
+            slots=normalized_slots,
+        )
 
     def _candidate_payloads(self, *, system: str, user: str):
         candidate_factory = getattr(self.planner, "stream_chat_candidates", None)
@@ -222,7 +378,7 @@ class EvrenDecisionService:
         canonical_query: str | None = None,
         deterministic_plan: dict[str, Any] | None = None,
         known_banks: list[dict[str, Any]] | None = None,
-    ) -> dict[str, Any] | None:
+    ) -> PolicyDecision | None:
         """Ham girdiyi tek model çağrısında güvenli yürütme planına dönüştürür."""
 
         if not self.enabled:
@@ -236,20 +392,20 @@ class EvrenDecisionService:
         system = (
             "Türkçe katılım bankacılığı asistanı için niyet planlayıcısısın. "
             f"Görev talimatı: {self.instruction} "
-            "Kullanıcıya cevap verme; yalnız geçerli JSON üret. Güvenlik, niyet, "
-            "rota ve slotları birlikte çöz. Yerel taslak yalnız ipucudur. Banka "
-            "slotlarında sadece katalogdaki slug değerlerini kullan. İşlem yapma, "
-            "şikâyet kaydı, kişisel veri sızdırma veya zararlı taleplerde safe=false "
-            "ve SAFE_REDIRECT seç. Sayımda intent=campaign_count, "
-            "route=STRUCTURED_SQL ve aggregation=COUNT kullan. Banka listesi veya "
-            "banka sayısı sorularında intent=bank_list, route=STRUCTURED_SQL ve "
-            "aggregation=COUNT kullan; bunu kampanya sayımıyla karıştırma. Şema tam olarak: "
-            '{"safe":boolean,"intent":"allowlisted intent","route":'
-            '"STRUCTURED_SQL|HYBRID_RAG|SAFE_REDIRECT","confidence":0..1,'
-            '"normalized_query":"arama için açık Türkçe sorgu","slots":'
-            '{"banks":[],"metric":null,"aggregation":null,'
-            '"product_type":null,"financing_type":null}}. '
-            f"İzinli intentler: {sorted(ALLOWED_INTENTS)}."
+            "Kullanıcıya cevap verme; yalnız geçerli JSON üret. Alan dışı istekte "
+            "action=REFUSE ve tool_calls=[]; işlem talebinde action=REDIRECT ve "
+            "tool_calls=[] kullan. Öznel product_comparison için term_months, amount "
+            "ve fee_priority eksikse action=CLARIFY kullan. Yalnız izinli araçları, "
+            "kriterleri ve yapılandırılmış alanları kullan; banka alanlarında yalnız "
+            "katalog slug değerlerini kullan. Şema tam olarak: "
+            '{"action":"ANSWER|CLARIFY|REFUSE|REDIRECT","in_domain":boolean,'
+            '"intent":"allowlisted intent","confidence":0..1,'
+            '"normalized_query":"açık Türkçe sorgu","concepts":[],'
+            '"missing_criteria":[],"tool_calls":[{"name":"allowed tool",'
+            '"arguments":{}}],"slots":{},"reason_code":"non-empty code"}. '
+            f"İzinli intentler: {sorted(ALLOWED_INTENTS)}. "
+            f"İzinli araçlar: {sorted(ALLOWED_TOOLS)}. "
+            f"İzinli kriterler: {sorted(ALLOWED_CRITERIA)}."
         )
         user = json.dumps(
             {
@@ -289,7 +445,11 @@ class EvrenDecisionService:
             value = payload.get("safe") if payload else None
             return value if isinstance(value, bool) else None
         decision = self.analyze(message)
-        return decision.get("safe") if decision else None
+        return (
+            decision.action not in {Action.REFUSE, Action.REDIRECT}
+            if decision
+            else None
+        )
 
     def route(self, message: str) -> str | None:
         if self.guard is not None:
@@ -305,7 +465,7 @@ class EvrenDecisionService:
             route = payload.get("route") if payload else None
             return str(route) if route in ALLOWED_ROUTES else None
         decision = self.analyze(message)
-        return str(decision["route"]) if decision else None
+        return str(decision["route"]) if isinstance(decision, PlannerDecision) else None
 
     def status(self) -> dict[str, Any]:
         status = getattr(self.planner, "status", None)
