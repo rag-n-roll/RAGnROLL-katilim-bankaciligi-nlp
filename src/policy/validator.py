@@ -1,13 +1,13 @@
 from dataclasses import replace
 
 from src.policy.contracts import Action, PolicyDecision
-
-
-ALLOWED_TOOLS = {"structured_sql", "hybrid_rag", "comparison", "ontology"}
+from src.policy.tool_policy import valid_tool_call
 
 
 class PolicyValidator:
-    def validate(self, decision: PolicyDecision) -> PolicyDecision:
+    def validate(
+        self, decision: PolicyDecision, *, allowed_banks: set[str] | None = None
+    ) -> PolicyDecision:
         if not decision.in_domain:
             return replace(
                 decision,
@@ -19,7 +19,10 @@ class PolicyValidator:
                     "kampanyalar hakkında yardımcı olabilirim."
                 ),
             )
-        if decision.intent == "product_comparison":
+        if decision.intent == "product_comparison" and decision.action in {
+            Action.ANSWER,
+            Action.CLARIFY,
+        }:
             missing = tuple(decision.criteria.missing())
             if missing:
                 return replace(
@@ -29,7 +32,12 @@ class PolicyValidator:
                     tool_calls=(),
                     reason_code="missing_comparison_criteria",
                 )
-        if any(call.get("name") not in ALLOWED_TOOLS for call in decision.tool_calls):
+        if decision.action != Action.ANSWER:
+            return replace(decision, tool_calls=())
+        if any(
+            not valid_tool_call(decision.intent, call, allowed_banks=allowed_banks)
+            for call in decision.tool_calls
+        ):
             return replace(
                 decision,
                 action=Action.REFUSE,

@@ -1,4 +1,5 @@
 import json
+from types import MappingProxyType
 
 import pytest
 
@@ -72,10 +73,23 @@ def service():
 
 def test_json_object_parses_fenced_embedded_and_invalid_payloads():
     assert _json_object('```json\n{"action": "ANSWER"}\n```') == {"action": "ANSWER"}
-    assert _json_object('prefix {"action": "CLARIFY"} suffix') == {"action": "CLARIFY"}
+    assert _json_object('{"action": "CLARIFY"}') == {"action": "CLARIFY"}
     assert _json_object("") is None
     assert _json_object("tamamen geçersiz") is None
     assert _json_object("[1, 2, 3]") is None
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        'prefix {"action": "ANSWER"}',
+        '{"action": "ANSWER"} suffix',
+        '{"action": "ANSWER"}{"action": "REFUSE"}',
+        '```\n{"action": "ANSWER"}\n```',
+    ],
+)
+def test_json_object_rejects_surrounding_text_and_multiple_objects(raw):
+    assert _json_object(raw) is None
 
 
 def test_analyze_returns_policy_decision_and_preserves_query_compatibility(service):
@@ -89,7 +103,7 @@ def test_analyze_returns_policy_decision_and_preserves_query_compatibility(servi
     assert decision.concepts == ("campaign",)
     assert decision.normalized_query == "Albaraka kampanya sayısı"
     assert decision["normalized_query"] == "Albaraka kampanya sayısı"
-    assert decision["slots"]["banks"] == ["albaraka"]
+    assert decision["slots"]["banks"] == ("albaraka",)
     assert decision.get("route") == "STRUCTURED_SQL"
     assert decision.get("unknown", "fallback") == "fallback"
     serialized = decision.to_dict()
@@ -127,6 +141,49 @@ def test_analyze_maps_comparison_slots_into_criteria():
     assert decision.criteria == ComparisonCriteria(
         term_months=24, amount=750000.0, fee_priority=True
     )
+
+
+def test_analyze_recursively_freezes_slots_and_returns_mutable_copies():
+    slots = {"banks": ["albaraka"], "aggregation": "COUNT"}
+    payload = json.loads(valid_decision())
+    payload["slots"] = slots
+    decision = EvrenDecisionService._validate(payload, allowed_banks={"albaraka"})
+
+    slots["banks"].append("later")
+    assert isinstance(decision.slots, MappingProxyType)
+    assert decision.slots["banks"] == ("albaraka",)
+    with pytest.raises(TypeError):
+        decision.slots["aggregation"] = "MAX"
+    with pytest.raises(AttributeError):
+        decision.slots["banks"].append("later")
+
+    mutable = decision.to_dict()
+    mutable["slots"]["banks"].append("copy-only")
+    assert decision.slots["banks"] == ("albaraka",)
+
+
+@pytest.mark.parametrize("action", ["REFUSE", "REDIRECT", "CLARIFY"])
+def test_analyze_removes_tools_from_non_answer_actions(action):
+    raw = valid_decision(action=action)
+    decision = EvrenDecisionService(router=FakePlanner([raw])).analyze(
+        "soru", known_banks=[{"slug": "albaraka", "name": "A"}]
+    )
+    assert decision.action == Action(action)
+    assert decision.tool_calls == ()
+    assert decision.get("safe") is (action == "CLARIFY")
+    assert decision.get("route") == ("SAFE_REDIRECT" if action == "REDIRECT" else None)
+
+
+def test_analyze_normalizes_out_of_domain_answer_before_compatibility_access():
+    raw = valid_decision(in_domain=False)
+    decision = EvrenDecisionService(router=FakePlanner([raw])).analyze(
+        "hava nasıl", known_banks=[{"slug": "albaraka", "name": "A"}]
+    )
+    assert decision.action == Action.REFUSE
+    assert decision.tool_calls == ()
+    assert decision.reason_code == "out_of_domain"
+    assert decision.get("safe") is False
+    assert decision.get("route") is None
 
 
 def _payload(**overrides):

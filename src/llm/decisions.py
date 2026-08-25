@@ -6,42 +6,28 @@ import json
 import os
 from pathlib import Path
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from math import isfinite
 from typing import Any
 
 from src.llm.client import LLMSettings, LLMUnavailableError, OpenAICompatibleLLM
 from src.policy import Action, ComparisonCriteria, PolicyDecision
+from src.policy.contracts import JsonValue, _freeze
+from src.policy.tool_policy import (
+    ALLOWED_AGGREGATIONS,
+    ALLOWED_CRITERIA,
+    ALLOWED_FINANCING_TYPES,
+    ALLOWED_INTENTS,
+    ALLOWED_METRICS,
+    ALLOWED_PRODUCT_TYPES,
+    ALLOWED_TOOLS,
+    valid_tool_call,
+)
+from src.policy.validator import PolicyValidator
 
 
 ALLOWED_ROUTES = frozenset({"STRUCTURED_SQL", "HYBRID_RAG", "SAFE_REDIRECT"})
-ALLOWED_INTENTS = frozenset(
-    {
-        "application_requirements",
-        "bank_list",
-        "campaign_count",
-        "campaign_query",
-        "complaint_support",
-        "definition",
-        "maturity_query",
-        "product_comparison",
-        "product_search",
-        "rate_query",
-        "relationship_query",
-        "trade_finance_query",
-        "agriculture_finance_query",
-        "investment_query",
-        "transaction_howto",
-    }
-)
-ALLOWED_METRICS = frozenset({"PROFIT_RATE", "MATURITY", "FEE", "REWARD_AMOUNT"})
-ALLOWED_AGGREGATIONS = frozenset({"MIN", "MAX", "COUNT"})
-ALLOWED_PRODUCT_TYPES = frozenset(
-    {"account", "card", "financing", "investment", "payment", "insurance"}
-)
-ALLOWED_FINANCING_TYPES = frozenset(
-    {"housing", "vehicle", "consumer", "commercial", "agriculture"}
-)
 STRUCTURED_INTENTS = frozenset(
     {
         "campaign_count",
@@ -70,8 +56,6 @@ _DECISION_KEYS = frozenset(
     }
 )
 ALLOWED_ACTIONS = frozenset(Action)
-ALLOWED_TOOLS = frozenset({"structured_sql", "hybrid_rag", "comparison", "ontology"})
-ALLOWED_CRITERIA = frozenset({"term_months", "amount", "fee_priority"})
 _SLOT_KEYS = frozenset(
     {
         "banks",
@@ -82,8 +66,6 @@ _SLOT_KEYS = frozenset(
         *ALLOWED_CRITERIA,
     }
 )
-_TOOL_CALL_KEYS = frozenset({"name", "arguments"})
-_TOOL_ARGUMENT_KEYS = _SLOT_KEYS
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,7 +73,13 @@ class PlannerDecision(PolicyDecision):
     """Policy decision carrying temporary mapping compatibility for old callers."""
 
     normalized_query: str = ""
-    slots: dict[str, Any] = field(default_factory=dict)
+    slots: Mapping[str, JsonValue] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        super(PlannerDecision, self).__post_init__()
+        frozen_slots = _freeze(self.slots)
+        assert isinstance(frozen_slots, Mapping)
+        object.__setattr__(self, "slots", frozen_slots)
 
     def __getitem__(self, key: str) -> Any:
         if key == "safe":
@@ -99,6 +87,8 @@ class PlannerDecision(PolicyDecision):
         if key == "route":
             if self.action == Action.REDIRECT:
                 return "SAFE_REDIRECT"
+            if self.action != Action.ANSWER:
+                return None
             names = [call.get("name") for call in self.tool_calls]
             return "STRUCTURED_SQL" if "structured_sql" in names else "HYBRID_RAG"
         if key == "normalized_query":
@@ -117,7 +107,7 @@ class PlannerDecision(PolicyDecision):
 
     def to_dict(self) -> dict[str, Any]:
         def mutable(value: Any) -> Any:
-            if isinstance(value, dict) or hasattr(value, "items"):
+            if isinstance(value, Mapping):
                 return {key: mutable(item) for key, item in value.items()}
             if isinstance(value, tuple):
                 return [mutable(item) for item in value]
@@ -139,24 +129,13 @@ class PlannerDecision(PolicyDecision):
 
 def _json_object(value: str) -> dict[str, Any] | None:
     text = str(value or "").strip()
-    fenced = re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", text, flags=re.DOTALL)
+    fenced = re.fullmatch(r"```json\s*(.*?)\s*```", text, flags=re.DOTALL)
     if fenced:
         text = fenced.group(1)
     try:
         parsed = json.loads(text)
     except json.JSONDecodeError:
-        decoder = json.JSONDecoder()
-        parsed = None
-        for start, character in enumerate(text):
-            if character != "{":
-                continue
-            try:
-                candidate, _ = decoder.raw_decode(text[start:])
-            except json.JSONDecodeError:
-                continue
-            if isinstance(candidate, dict):
-                parsed = candidate
-                break
+        return None
     return parsed if isinstance(parsed, dict) else None
 
 
@@ -305,54 +284,11 @@ class EvrenDecisionService:
 
         validated_calls = []
         for call in tool_calls:
-            if not isinstance(call, dict) or set(call) != _TOOL_CALL_KEYS:
-                return None
-            name = call.get("name")
-            arguments = call.get("arguments")
-            if name not in ALLOWED_TOOLS or not isinstance(arguments, dict):
-                return None
-            if not set(arguments).issubset(_TOOL_ARGUMENT_KEYS):
-                return None
-            argument_banks = arguments.get("banks", [])
-            if not isinstance(argument_banks, list) or not all(
-                isinstance(bank, str) and bank in allowed_banks
-                for bank in argument_banks
+            if not isinstance(call, dict) or not valid_tool_call(
+                intent, call, allowed_banks=allowed_banks
             ):
                 return None
-            for key, value in arguments.items():
-                if key == "banks":
-                    continue
-                if key == "metric" and _optional_enum(value, ALLOWED_METRICS) == "":
-                    return None
-                if (
-                    key == "aggregation"
-                    and _optional_enum(value, ALLOWED_AGGREGATIONS) == ""
-                ):
-                    return None
-                if (
-                    key == "product_type"
-                    and _optional_enum(value, ALLOWED_PRODUCT_TYPES) == ""
-                ):
-                    return None
-                if (
-                    key == "financing_type"
-                    and _optional_enum(value, ALLOWED_FINANCING_TYPES) == ""
-                ):
-                    return None
-                if key == "term_months" and (
-                    isinstance(value, bool) or not isinstance(value, int) or value <= 0
-                ):
-                    return None
-                if key == "amount" and (
-                    isinstance(value, bool)
-                    or not isinstance(value, (int, float))
-                    or not isfinite(float(value))
-                    or value < 0
-                ):
-                    return None
-                if key == "fee_priority" and not isinstance(value, bool):
-                    return None
-            validated_calls.append({"name": name, "arguments": arguments})
+            validated_calls.append(call)
 
         normalized_slots = {
             "banks": list(dict.fromkeys(banks)),
@@ -364,7 +300,7 @@ class EvrenDecisionService:
             "amount": float(amount) if amount is not None else None,
             "fee_priority": fee_priority,
         }
-        return PlannerDecision(
+        decision = PlannerDecision(
             action=Action(action),
             in_domain=in_domain,
             intent=intent,
@@ -381,6 +317,7 @@ class EvrenDecisionService:
             normalized_query=" ".join(normalized_query.split()),
             slots=normalized_slots,
         )
+        return PolicyValidator().validate(decision, allowed_banks=allowed_banks)
 
     def _candidate_payloads(self, *, system: str, user: str):
         candidate_factory = getattr(self.planner, "stream_chat_candidates", None)
