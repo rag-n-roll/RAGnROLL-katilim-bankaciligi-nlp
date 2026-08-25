@@ -1,5 +1,7 @@
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
+from types import MappingProxyType
 from typing import Any
 
 
@@ -25,6 +27,14 @@ class ComparisonCriteria:
         return [name for name, value in values.items() if value is None]
 
 
+def _freeze(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return MappingProxyType({key: _freeze(item) for key, item in value.items()})
+    if isinstance(value, (list, tuple)):
+        return tuple(_freeze(item) for item in value)
+    return value
+
+
 @dataclass(frozen=True, slots=True)
 class PolicyDecision:
     action: Action
@@ -34,6 +44,9 @@ class PolicyDecision:
     reason_code: str
     concepts: tuple[str, ...] = ()
     missing_criteria: tuple[str, ...] = ()
-    tool_calls: tuple[dict[str, Any], ...] = ()
+    tool_calls: tuple[Mapping[str, Any], ...] = ()
     safe_message: str = ""
     criteria: ComparisonCriteria = field(default_factory=ComparisonCriteria)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "tool_calls", tuple(_freeze(call) for call in self.tool_calls))

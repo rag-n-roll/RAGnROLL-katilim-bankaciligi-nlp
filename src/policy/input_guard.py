@@ -1,18 +1,51 @@
 import re
+import unicodedata
 
 from src.policy.contracts import Action, PolicyDecision
 
 _IBAN_RE = re.compile(r"\bTR\d{24}\b", re.IGNORECASE)
 _CARD_RE = re.compile(r"(?<!\d)(?:\d[ -]?){15,19}(?!\d)")
 _TCKN_RE = re.compile(r"(?<!\d)\d{11}(?!\d)")
-_SECRET_RE = re.compile(
-    r"\b(?:sistem promptu|system prompt|gizli anahtar|api key)\b",
-    re.IGNORECASE,
+_INTERNAL_INFORMATION_RE = re.compile(
+    r"\b(?:"
+    r"(?:sistem|system|gelistirici|developer)\s+(?:prompt\w*|talimat\w*)"
+    r"|(?:gizli|sakli|hidden)\s+(?:"
+    r"politika\w*|talimat\w*|prompt\w*|anahtar\w*|kimlik bilg\w*|credential\w*|secret\w*"
+    r")"
+    r"|api\s+(?:key\w*|anahtar\w*)"
+    r"|(?:credential|secret)\w*"
+    r")\b"
 )
-_TRANSACTION_RE = re.compile(
-    r"\b(?:havale|eft|para transferi|şikâyet kaydı|başvuru yap)\b",
-    re.IGNORECASE,
+_EXTRACTION_RE = re.compile(
+    r"\b(?:goster\w*|acikla\w*|paylas\w*|yazdir\w*|ver\w*|ifsa\w*|cikar\w*)\b"
 )
+_TRANSACTION_CONCEPT_RE = re.compile(
+    r"\b(?:havale\w*|eft\w*|para transfer\w*|sikayet\w*|basvuru\w*|finansman\w*)\b"
+)
+_TRANSACTION_ACTION_RE = re.compile(
+    r"\b(?:yap\w*|gonder\w*|aktar\w*|gerceklestir\w*|olustur\w*|basvur\w*|istiyorum)\b"
+)
+
+
+def _normalize(message: str) -> str:
+    folded = unicodedata.normalize("NFKD", message.casefold().replace("ı", "i"))
+    return "".join(character for character in folded if not unicodedata.combining(character))
+
+
+def _is_transaction_request(message: str) -> bool:
+    normalized = _normalize(message)
+    return bool(
+        _TRANSACTION_CONCEPT_RE.search(normalized)
+        and _TRANSACTION_ACTION_RE.search(normalized)
+    )
+
+
+def _is_internal_information_request(message: str) -> bool:
+    normalized = _normalize(message)
+    return bool(
+        _INTERNAL_INFORMATION_RE.search(normalized)
+        and _EXTRACTION_RE.search(normalized)
+    )
 
 
 class InputGuard:
@@ -26,7 +59,7 @@ class InputGuard:
                 reason_code="sensitive_financial_identifier",
                 safe_message="Güvenliğiniz için hesap veya kart bilgisi paylaşmayın.",
             )
-        if _SECRET_RE.search(message):
+        if _is_internal_information_request(message):
             return PolicyDecision(
                 action=Action.REFUSE,
                 in_domain=False,
@@ -35,7 +68,7 @@ class InputGuard:
                 reason_code="internal_information_request",
                 safe_message="Bu iç bilgiyi paylaşamam; katılım bankacılığı sorularında yardımcı olabilirim.",
             )
-        if _TRANSACTION_RE.search(message):
+        if _is_transaction_request(message):
             return PolicyDecision(
                 action=Action.REDIRECT,
                 in_domain=True,
