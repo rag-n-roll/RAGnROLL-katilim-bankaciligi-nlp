@@ -44,7 +44,10 @@ def _clauses(message: str) -> tuple[str, ...]:
     normalized = _normalize(message)
     return tuple(
         clause.strip()
-        for clause in re.split(r"[.!?;:\n]+", normalized)
+        for clause in re.split(
+            r"[.!?;,\n]+|\b(?:ve|ama|fakat|ancak|and|but)\b",
+            normalized,
+        )
         if clause.strip()
     )
 
