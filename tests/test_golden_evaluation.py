@@ -55,3 +55,55 @@ def test_jsonl_loader_reports_line_number_for_invalid_input(tmp_path):
 
     with pytest.raises(ValueError, match="satırı: 2"):
         load_jsonl(path)
+
+
+def _run_cli(argv):
+    import sys
+
+    from src.evaluation.golden import main
+
+    original = sys.argv
+    sys.argv = argv
+    try:
+        return main()
+    finally:
+        sys.argv = original
+
+
+def test_cli_writes_evaluation_report(tmp_path, capsys):
+    dataset = tmp_path / "golden.jsonl"
+    rows = [
+        {
+            "id": "g1",
+            "task": "intent_classification",
+            "input": "kaç kampanya var",
+            "gold": {"intent": "campaign_count"},
+        },
+        {
+            "id": "g2",
+            "task": "field_extraction",
+            "input": "%2,50 kâr payı ile 12 ay vadeli finansman",
+            "gold": {"profit_rate": "%2,50", "maturity": "12 ay"},
+        },
+    ]
+    dataset.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+    output = tmp_path / "out" / "report.json"
+
+    _run_cli(["golden.py", str(dataset), "--output", str(output)])
+
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["intent"]["exact_match"] == 1.0
+    assert report["supported_extraction_fields"]["total"] == 2
+    assert json.loads(capsys.readouterr().out) == report
+
+
+def test_jsonl_loader_rejects_non_object_lines(tmp_path):
+    from src.evaluation.golden import load_jsonl
+
+    path = tmp_path / "bad.jsonl"
+    path.write_text('"metin"\n', encoding="utf-8")
+    with pytest.raises(ValueError, match="nesne olmalıdır"):
+        load_jsonl(path)

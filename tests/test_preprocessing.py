@@ -1,3 +1,4 @@
+import json
 from src.preprocessing.clean_text import (
     clean_text,
     normalize_link_text,
@@ -55,3 +56,53 @@ def test_preprocess_record_adds_structured_prd_fields():
     assert result["structured"]["profit_share_rate"] == 0.0189
     assert result["structured"]["term_months"] == 120
     assert result["structured"]["campaign_end_date"] == "2026-12-31"
+
+
+def test_preprocess_dataset_requires_records_list():
+    import pytest
+
+    from src.preprocessing.clean_text import preprocess_dataset
+
+    with pytest.raises(ValueError, match="records"):
+        preprocess_dataset({"kayitlar": []})
+
+
+def _run_cli(argv):
+    import sys
+
+    from src.preprocessing.clean_text import main
+
+    original = sys.argv
+    sys.argv = argv
+    try:
+        return main()
+    finally:
+        sys.argv = original
+
+
+def test_cli_preprocesses_json_payload_atomically(tmp_path, capsys):
+    payload = {
+        "records": [
+            {
+                "id": "1",
+                "title": "Kampanya",
+                "content": "<p>%2,50&nbsp;kâr payı</p>",
+                "source_url": "https://ornek.example/k",
+            }
+        ]
+    }
+    source = tmp_path / "payload.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+    output = tmp_path / "out" / "processed.json"
+
+    exit_code = _run_cli(["clean_text.py", str(source), str(output)])
+
+    assert exit_code == 0
+    processed = json.loads(output.read_text(encoding="utf-8"))
+    assert processed["record_count"] == 1
+    assert "preprocessed_at" in processed
+    record = processed["records"][0]
+    assert record["token_count"] > 0
+    assert record["canonical_url"] == "https://ornek.example/k"
+    assert "1 kayit yazildi" in capsys.readouterr().out
+    assert not output.with_suffix(".json.tmp").exists()
