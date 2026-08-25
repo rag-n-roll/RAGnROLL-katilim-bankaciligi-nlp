@@ -19,10 +19,7 @@ class PolicyValidator:
                     "kampanyalar hakkında yardımcı olabilirim."
                 ),
             )
-        if decision.intent == "product_comparison" and decision.action in {
-            Action.ANSWER,
-            Action.CLARIFY,
-        }:
+        if decision.intent == "product_comparison":
             missing = tuple(decision.criteria.missing())
             if missing:
                 return replace(
@@ -32,8 +29,6 @@ class PolicyValidator:
                     tool_calls=(),
                     reason_code="missing_comparison_criteria",
                 )
-        if decision.action != Action.ANSWER:
-            return replace(decision, tool_calls=())
         if any(
             not valid_tool_call(decision.intent, call, allowed_banks=allowed_banks)
             for call in decision.tool_calls
@@ -44,4 +39,6 @@ class PolicyValidator:
                 tool_calls=(),
                 reason_code="invalid_tool_plan",
             )
+        if decision.action != Action.ANSWER:
+            return replace(decision, tool_calls=())
         return decision
