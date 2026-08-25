@@ -68,3 +68,46 @@ def test_compiler_safely_redirects_complaints_and_rejects_empty_queries():
     assert plan.warnings
     with pytest.raises(ValueError, match="boş olamaz"):
         compiler.compile("   ")
+
+
+def test_compiler_fails_closed_for_unmatched_out_of_domain_query():
+    plan = DomainQueryCompiler().compile("İstanbul'da hava durumu nasıl?")
+
+    assert plan.intent == "unknown"
+    assert plan.route == "SAFE_REDIRECT"
+    assert plan.confidence == 0.0
+
+
+@pytest.mark.parametrize(
+    "query",
+    (
+        "Konut finansmanı için seçenekler neler?",
+        "Bana bir finansman bul",
+    ),
+)
+def test_product_discovery_uses_hybrid_rag(query):
+    plan = DomainQueryCompiler().compile(query)
+
+    assert plan.intent == "product_search"
+    assert plan.route == "HYBRID_RAG"
+
+
+def test_metric_bound_comparison_keeps_structured_sql():
+    plan = DomainQueryCompiler().compile(
+        "Konut finansmanında en düşük kâr payı hangisi?"
+    )
+
+    assert plan.route == "STRUCTURED_SQL"
+    assert plan.slots["metric"] == "PROFIT_RATE"
+    assert plan.slots["aggregation"] == "MIN"
+
+
+def test_product_search_keeps_confidence_evidence_separate_from_base_score():
+    plan = DomainQueryCompiler().compile("Konut finansmanı için seçenekler neler?")
+
+    assert plan.confidence == 0.55
+    assert plan.confidence_components["product"] == {
+        "product_type": "financing",
+        "financing_type": "housing",
+    }
+    assert plan.confidence_components["filters"]["active_only"] is True

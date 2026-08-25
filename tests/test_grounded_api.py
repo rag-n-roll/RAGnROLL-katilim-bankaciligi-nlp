@@ -133,6 +133,34 @@ def test_transactional_request_is_redirected_without_fake_sources(tmp_path):
     assert payload["sources"] == []
 
 
+def test_out_of_domain_chat_is_redirected_without_irrelevant_retrieval(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat", json={"message": "İstanbul'da hava durumu nasıl?"}
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["plan"]["intent"] == "unknown"
+    assert payload["plan"]["route"] == "SAFE_REDIRECT"
+    assert payload["facts"] == []
+    assert payload["sources"] == []
+
+
+def test_product_discovery_chat_uses_hybrid_rag(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat",
+            json={"message": "Konut finansmanı için seçenekler neler?"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["plan"]["intent"] == "product_search"
+    assert payload["plan"]["route"] == "HYBRID_RAG"
+    assert payload["sources"]
+
+
 def test_metrics_and_record_versions_are_exposed(tmp_path):
     with _client(tmp_path) as client:
         client.post("/api/v1/query/compile", json={"query": "Murabaha nedir?"})

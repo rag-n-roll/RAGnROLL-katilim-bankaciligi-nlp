@@ -40,6 +40,7 @@ class QueryPlan:
     filters: dict[str, Any]
     terminology_rewrites: list[dict[str, Any]] = field(default_factory=list)
     confidence: float = 0.0
+    confidence_components: dict[str, Any] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -55,6 +56,7 @@ class DomainQueryCompiler:
             (PROJECT_ROOT / "configs" / "query_rules.json").read_text(encoding="utf-8")
         )
         self.product_terms = rules["product_terms"]
+        self.product_search_patterns = tuple(rules["product_search_patterns"])
         self.structured_intents = set(rules["structured_intents"])
         self.blocked_intents = set(rules["blocked_transaction_intents"])
 
@@ -126,6 +128,11 @@ class DomainQueryCompiler:
             )
         ):
             return "application_requirements", 0.97
+        if any(
+            self._normalized(pattern) in normalized
+            for pattern in self.product_search_patterns
+        ):
+            return "product_search", 0.55
         priorities = (
             "application_requirements",
             "trade_finance_query",
@@ -135,7 +142,6 @@ class DomainQueryCompiler:
             "maturity_query",
             "campaign_query",
             "transaction_howto",
-            "product_search",
             "definition",
         )
         scored: list[tuple[int, int, str]] = []
@@ -147,7 +153,25 @@ class DomainQueryCompiler:
         if scored:
             score, _, intent = max(scored)
             return intent, min(0.98, 0.78 + score * 0.08)
-        return "product_search", 0.55
+        if bank_count or self.terminology.find_terms(query, limit=1):
+            return "product_search", 0.55
+        return "unknown", 0.0
+
+    @staticmethod
+    def _route_for(
+        intent: str, metric: str | None, aggregation: str | None
+    ) -> str:
+        if intent in {"complaint_support", "transaction_howto", "unknown"}:
+            return "SAFE_REDIRECT"
+        if intent in {"bank_list", "campaign_count", "rate_query", "maturity_query"}:
+            return "STRUCTURED_SQL"
+        if (
+            intent == "product_comparison"
+            and metric
+            and aggregation in {"MIN", "MAX"}
+        ):
+            return "STRUCTURED_SQL"
+        return "HYBRID_RAG"
 
     def _banks(
         self, query: str, known_banks: Iterable[dict[str, str]] | None
@@ -230,13 +254,9 @@ class DomainQueryCompiler:
             if value not in (None, [], "")
         }
         warnings: list[str] = []
+        route = self._route_for(intent, metric, aggregation)
         if intent in self.blocked_intents:
-            route = "SAFE_REDIRECT"
             warnings.append("Sistem müşteri işlemi veya şikâyet kaydı gerçekleştirmez")
-        elif intent in self.structured_intents:
-            route = "STRUCTURED_SQL"
-        else:
-            route = "HYBRID_RAG"
         if intent == "product_comparison" and len(banks) < 2:
             warnings.append("Karşılaştırma için banka filtresi belirtilmedi")
         rewrites.extend(self.terminology.find_terms(canonical, limit=5))
@@ -250,6 +270,15 @@ class DomainQueryCompiler:
                 for item in rewrites
             }.values()
         )
+        confidence_components = {
+            "product": {
+                key: slots[key]
+                for key in ("product_type", "financing_type")
+                if slots.get(key) is not None
+            },
+            "terminology": unique_rewrites,
+            "filters": dict(filters),
+        }
         return QueryPlan(
             original_query=original,
             canonical_query=canonical,
@@ -259,5 +288,6 @@ class DomainQueryCompiler:
             filters=filters,
             terminology_rewrites=unique_rewrites,
             confidence=confidence,
+            confidence_components=confidence_components,
             warnings=warnings,
         )

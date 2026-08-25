@@ -19,12 +19,18 @@
     "katılma hesabı": {"product_type": "investment"}
   },
   "structured_intents": [
-    "product_search",
-    "product_comparison",
     "bank_list",
     "campaign_count",
     "rate_query",
     "maturity_query"
+  ],
+  "product_search_patterns": [
+    "hangi finansman",
+    "hangi ürün",
+    "uygun ürün",
+    "ne kullanabilirim",
+    "seçenekler",
+    "finansman bul"
   ],
   "blocked_transaction_intents": ["complaint_support"]
 }
