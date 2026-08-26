@@ -3,6 +3,7 @@
 from dataclasses import replace
 import re
 from typing import Any
+import unicodedata
 
 from src.normalization import normalize_money
 from src.normalization.values import parse_number
@@ -14,15 +15,28 @@ _MONEY_RE = re.compile(
     r"(?<!\d)(\d[\d.,]*)\s*(bin|milyon)?\s*(?:(?:TL|TRY)\b|₺)",
     re.IGNORECASE,
 )
-_FEE_NEGATIVE_RE = re.compile(
-    r"masraf(?:\s+benim)?\s+(?:önemli|onemli|önceliğim|onceligim)\s+değil",
-    re.IGNORECASE,
-)
 _FEE_POSITIVE_RE = re.compile(
-    r"(?:masraf\s+(?:öncelikli|oncelikli|önemli|onemli)|"
-    r"(?:düşük|dusuk|az)\s+masraf)",
+    r"(?:masraf\s+(?:oncelikli|onemli)|(?:dusuk|az)\s+masraf)",
     re.IGNORECASE,
 )
+_FEE_NEGATION_RE = re.compile(
+    r"(?:"
+    r"masraf\s+(?:oncelikli|onemli)(?:\s+olmasin)?\s+(?:degil|olmasin)"
+    r"|masraf\s+onceligim\s+degil"
+    r"|(?:dusuk|az)\s+masraf\s+(?:istemiyorum|onceligim\s+degil)"
+    r"|az\s+masraf\s+onceligim\s+degil"
+    r")",
+    re.IGNORECASE,
+)
+
+
+def _ascii_turkish(value: str) -> str:
+    translated = value.casefold().translate(str.maketrans({"ı": "i"}))
+    return "".join(
+        character
+        for character in unicodedata.normalize("NFKD", translated)
+        if not unicodedata.combining(character)
+    )
 
 
 def extract_comparison_criteria(message: str) -> dict[str, Any]:
@@ -49,10 +63,15 @@ def extract_comparison_criteria(message: str) -> dict[str, Any]:
         if amount is not None and 0 < amount <= 1_000_000_000:
             updates["amount"] = amount
 
-    if _FEE_NEGATIVE_RE.search(message):
-        updates["fee_priority"] = False
-    elif _FEE_POSITIVE_RE.search(message):
-        updates["fee_priority"] = True
+    normalized = _ascii_turkish(message)
+    fee_clauses = re.split(r"[;,.!?]+", normalized)
+    for clause in fee_clauses:
+        if _FEE_NEGATION_RE.search(clause):
+            updates["fee_priority"] = False
+            break
+        if _FEE_POSITIVE_RE.search(clause):
+            updates["fee_priority"] = True
+            break
     return updates
 
 

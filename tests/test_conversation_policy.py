@@ -40,3 +40,20 @@ def test_extracts_lira_symbol_amount_and_explicit_non_priority():
         "amount": 500_000,
         "fee_priority": False,
     }
+
+
+def test_fee_priority_negation_variants_are_false():
+    for message in (
+        "masraf öncelikli değil",
+        "masraf onemli degil",
+        "masraf önemli olmasın",
+        "düşük masraf istemiyorum",
+        "az masraf önceliğim değil",
+    ):
+        assert extract_comparison_criteria(message) == {"fee_priority": False}
+
+
+def test_unrelated_negation_does_not_invert_positive_fee_clause():
+    assert extract_comparison_criteria(
+        "Uzun vade önemli değil; masraf öncelikli."
+    )["fee_priority"] is True

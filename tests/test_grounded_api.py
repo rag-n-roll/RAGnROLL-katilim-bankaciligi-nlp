@@ -207,6 +207,50 @@ def test_subjective_comparison_is_clarified_then_resumed_from_client_state(tmp_p
     assert resumed["answer"] == resumed["answer_display"]
 
 
+def test_initial_comparison_retains_explicit_criteria_and_only_asks_for_fee(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat",
+            json={
+                "message": (
+                    "Konut finansmanlarından hangisi daha avantajlı? "
+                    "24 ay, 750.000 TL"
+                )
+            },
+        )
+
+    payload = response.json()
+    assert payload["action"] == "CLARIFY"
+    assert payload["missing_criteria"] == ["fee_priority"]
+    assert payload["conversation_state"]["criteria"] == {
+        "term_months": 24,
+        "amount": 750_000,
+        "fee_priority": None,
+    }
+
+
+def test_initial_complete_comparison_executes_even_when_fee_metric_is_detected(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat",
+            json={
+                "message": (
+                    "Konut finansmanlarından hangisi daha avantajlı? "
+                    "24 ay, 750.000 TL; masraf öncelikli"
+                )
+            },
+        )
+
+    payload = response.json()
+    assert payload["action"] == "ANSWER"
+    assert payload["missing_criteria"] == []
+    assert payload["plan"]["intent"] == "product_comparison"
+    assert payload["plan"]["slots"]["metric"] == "FEE"
+    assert payload["plan"]["slots"]["term_months"] == 24
+    assert payload["plan"]["slots"]["amount"] == 750_000
+    assert payload["plan"]["slots"]["fee_priority"] is True
+
+
 def test_partial_follow_ups_round_trip_remaining_criteria_without_server_state(tmp_path):
     question = (
         "Albaraka Türk ile Kuveyt Türk konut finansmanlarından hangisi daha avantajlı?"

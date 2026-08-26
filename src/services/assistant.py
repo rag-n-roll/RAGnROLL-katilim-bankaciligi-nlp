@@ -1089,16 +1089,24 @@ class GroundedAssistant:
             pending_plan = self.compiler.compile(
                 message, known_banks=self.store.bank_summary()
             )
+            criteria = merge_criteria(
+                ComparisonCriteria(), extract_comparison_criteria(message)
+            )
             subjective_comparison = (
                 pending_plan.intent == "product_comparison"
-                and pending_plan.slots.get("metric") is None
+                and (
+                    pending_plan.slots.get("metric") is None
+                    or "avantaj" in pending_plan.canonical_query.casefold()
+                )
             )
-            if subjective_comparison:
+            if subjective_comparison and criteria.missing():
                 return self._clarification_answer(
                     message=message,
                     plan=pending_plan,
-                    criteria=ComparisonCriteria(),
+                    criteria=criteria,
                 )
+            if not subjective_comparison:
+                criteria = None
 
         response: dict[str, Any] = {}
         answer_parts: list[str] = []
