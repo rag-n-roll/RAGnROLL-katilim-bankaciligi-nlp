@@ -10,7 +10,7 @@ from src.preprocessing.clean_text import preprocess_record
 from src.scraper.models import Campaign
 from src.services import GroundedAssistant
 from src.services.orchestration import ToolOrchestrator
-from src.policy import Action, PolicyDecision
+from src.policy import Action, ComparisonCriteria, PolicyDecision
 
 
 class FakeLLM:
@@ -67,14 +67,64 @@ def test_tool_orchestrator_rejects_unvalidated_or_unlisted_tool_calls():
     )
 
     assert orchestrator.execute(
-        invalid, tool_name="structured_sql", operation=lambda: calls.append("sql")
+        invalid,
+        expected_call={"name": "structured_sql", "arguments": {}},
+        operation=lambda call: calls.append(call),
     ) is None
     assert orchestrator.execute(
-        valid_but_unlisted,
-        tool_name="structured_sql",
-        operation=lambda: calls.append("sql"),
+        orchestrator.validate(valid_but_unlisted),
+        expected_call={"name": "structured_sql", "arguments": {}},
+        operation=lambda call: calls.append(call),
     ) is None
     assert calls == []
+
+
+@pytest.mark.parametrize(
+    ("authorized", "expected"),
+    (
+        (
+            {"banks": ["ornek-katilim"]},
+            {"banks": ["diger-katilim"]},
+        ),
+        (
+            {"metric": "PROFIT_RATE"},
+            {"metric": "MATURITY"},
+        ),
+        (
+            {"aggregation": "MIN"},
+            {"aggregation": "MAX"},
+        ),
+        (
+            {"term_months": 12, "amount": 100_000, "fee_priority": True},
+            {"term_months": 24, "amount": 100_000, "fee_priority": True},
+        ),
+    ),
+)
+def test_tool_orchestrator_rejects_argument_mismatch(authorized, expected):
+    tool = "comparison" if "term_months" in authorized else "structured_sql"
+    intent = "product_comparison" if tool == "comparison" else "rate_query"
+    decision = PolicyDecision(
+        action=Action.ANSWER,
+        in_domain=True,
+        intent=intent,
+        confidence=0.8,
+        reason_code="validated_plan",
+        criteria=(
+            ComparisonCriteria(12, 100_000, True)
+            if tool == "comparison"
+            else ComparisonCriteria()
+        ),
+        tool_calls=({"name": tool, "arguments": authorized},),
+    )
+
+    orchestrator = ToolOrchestrator(
+        allowed_banks={"ornek-katilim", "diger-katilim"}
+    )
+    assert orchestrator.execute(
+        orchestrator.validate(decision),
+        expected_call={"name": tool, "arguments": expected},
+        operation=lambda call: pytest.fail(f"mismatched call executed: {call}"),
+    ) is None
 
 
 def test_assistant_does_not_dispatch_a_tool_unlisted_by_validated_policy(tmp_path):
@@ -114,6 +164,65 @@ def test_assistant_does_not_dispatch_a_tool_unlisted_by_validated_policy(tmp_pat
     assert result["sources"] == []
     assert result["confidence"] == 0.0
     assert "Araç çağrısı politika tarafından engellendi" in result["warnings"]
+
+
+@pytest.mark.parametrize("action", (Action.REFUSE, Action.REDIRECT, Action.CLARIFY))
+def test_terminal_policy_action_is_preserved_without_execution(tmp_path, action):
+    criteria = ComparisonCriteria(term_months=24)
+    decision = PlannerDecision(
+        action=action,
+        in_domain=True,
+        intent="product_comparison" if action == Action.CLARIFY else "campaign_query",
+        confidence=0.81,
+        reason_code=f"terminal_{action.value.casefold()}",
+        normalized_query="doğrulanmış karar",
+        slots={"banks": []},
+        missing_criteria=("amount", "fee_priority") if action == Action.CLARIFY else (),
+        safe_message=(
+            f"{action.value} için güvenli politika mesajı."
+            if action in {Action.REFUSE, Action.REDIRECT}
+            else ""
+        ),
+        criteria=criteria,
+    )
+
+    class Decisions:
+        def analyze(self, *args, **kwargs):
+            del args, kwargs
+            return decision
+
+    class MustNotRunRetriever:
+        last_backend = "unused"
+
+        def retrieve(self, *args, **kwargs):
+            del args, kwargs
+            raise AssertionError("terminal policy must not retrieve")
+
+    llm = FakeLLM(["must not run"])
+    assistant = GroundedAssistant(
+        _store(tmp_path), llm=llm, decisions=Decisions(), chroma_enabled=False
+    )
+    assistant.retriever = MustNotRunRetriever()
+    assistant._structured_answer = lambda plan: pytest.fail(
+        f"terminal policy executed SQL for {plan.intent}"
+    )
+
+    result = assistant.answer("Kampanyaları göster")
+
+    assert result["action"] == action.value
+    assert result["sources"] == []
+    assert result["facts"] == []
+    assert llm.calls == []
+    if action == Action.CLARIFY:
+        assert result["missing_criteria"] == ["amount", "fee_priority"]
+        assert result["conversation_state"]["criteria"] == {
+            "term_months": 24,
+            "amount": None,
+            "fee_priority": None,
+        }
+    else:
+        assert result["answer"] == decision.safe_message
+        assert result["conversation_state"] is None
 
 
 def _structured_row(identifier, field_name, value, evidence):
@@ -736,12 +845,24 @@ def test_duplicate_campaign_chunks_are_deduplicated_before_answer_and_prompt(tmp
                         "campaign_id": "same-campaign",
                         "title": title,
                         "bank_name": "Albaraka Türk",
+                        "graph_relations": [
+                            {
+                                "source_term": title,
+                                "relation": "RELATED_TO",
+                                "target_term": relation_target,
+                            }
+                        ],
                     },
                 }
-                for index, score, evidence in (
-                    (1, 0.41, "İlk düşük skorlu bölüm."),
-                    (2, 0.93, "Masrafsız bankacılık avantajları sunulur."),
-                    (3, 0.72, "Diğer düşük skorlu bölüm."),
+                for index, score, evidence, relation_target in (
+                    (1, 0.41, "İlk düşük skorlu bölüm.", "Atılan İlişki"),
+                    (
+                        2,
+                        0.93,
+                        "Masrafsız bankacılık avantajları sunulur.",
+                        "Kazanan İlişki",
+                    ),
+                    (3, 0.72, "Diğer düşük skorlu bölüm.", "Diğer Atılan İlişki"),
                 )
             ]
 
@@ -754,7 +875,10 @@ def test_duplicate_campaign_chunks_are_deduplicated_before_answer_and_prompt(tmp
         "same-campaign"
     ]
     assert grounded["sources"][0]["retrieval_score"] == 0.93
+    assert grounded["sources"][0]["relations"][0]["target_term"] == "Kazanan İlişki"
     assert grounded["answer"].count(title) == 1
+    assert "Kazanan İlişki" in grounded["answer"]
+    assert "Atılan İlişki" not in grounded["answer"]
     assert result["answer"].count(title) == 1
     assert result["sources"] == grounded["sources"]
     assert len(llm.calls) == 1

@@ -31,7 +31,7 @@ from src.services.orchestration import ToolOrchestrator
 
 def _source_value(source: dict[str, Any], key: str) -> Any:
     value = source.get(key)
-    if value not in (None, ""):
+    if value is not None and (not isinstance(value, str) or value.strip()):
         return value
     metadata = source.get("metadata")
     return metadata.get(key) if isinstance(metadata, dict) else None
@@ -226,13 +226,38 @@ class GroundedAssistant:
         """Adapt a trusted compiler plan to the same validated tool contract."""
 
         if plan.route == "SAFE_REDIRECT":
+            action = Action.REFUSE if plan.intent == "unknown" else Action.REDIRECT
             return PolicyDecision(
-                action=Action.REDIRECT,
+                action=action,
                 in_domain=True,
                 intent=plan.intent,
                 confidence=plan.confidence,
                 reason_code="deterministic_safe_redirect",
+                safe_message=(
+                    "Yalnız katılım bankacılığı, finansman, kart, hesap ve "
+                    "kampanyalar hakkında yardımcı olabilirim."
+                    if action == Action.REFUSE
+                    else "Bu sistem müşteri işlemi gerçekleştirmez. Lütfen ilgili "
+                    "bankanın resmî destek kanalını kullanın."
+                ),
             )
+        tool_call, effective_criteria = GroundedAssistant._tool_call_for_plan(
+            plan, criteria=criteria
+        )
+        return PolicyDecision(
+            action=Action.ANSWER,
+            in_domain=True,
+            intent=plan.intent,
+            confidence=plan.confidence,
+            reason_code="deterministic_compiler_plan",
+            criteria=effective_criteria,
+            tool_calls=(tool_call,),
+        )
+
+    @staticmethod
+    def _tool_call_for_plan(
+        plan: QueryPlan, *, criteria: ComparisonCriteria | None = None
+    ) -> tuple[dict[str, Any], ComparisonCriteria]:
         tool_name = (
             "comparison"
             if plan.intent == "product_comparison"
@@ -275,15 +300,7 @@ class GroundedAssistant:
             }.items()
             if value not in (None, [], "")
         }
-        return PolicyDecision(
-            action=Action.ANSWER,
-            in_domain=True,
-            intent=plan.intent,
-            confidence=plan.confidence,
-            reason_code="deterministic_compiler_plan",
-            criteria=effective_criteria,
-            tool_calls=({"name": tool_name, "arguments": arguments},),
-        )
+        return {"name": tool_name, "arguments": arguments}, effective_criteria
 
     def _merge_llm_plan(
         self, plan: QueryPlan, decision: dict[str, Any]
@@ -741,10 +758,6 @@ class GroundedAssistant:
             elif section == "structured_fields":
                 char_start = None
                 char_end = None
-            for relation in metadata.get("graph_relations") or []:
-                sentence = self._relation_sentence(relation)
-                if sentence and sentence not in relation_sentences:
-                    relation_sentences.append(sentence)
             sources.append(
                 {
                     "campaign_id": _source_value(document, "campaign_id") or None,
@@ -764,6 +777,13 @@ class GroundedAssistant:
                 }
             )
         sources = deduplicate_sources(sources)
+        for source in sources:
+            if source.get("campaign_id"):
+                continue
+            for relation in source.get("relations") or []:
+                sentence = self._relation_sentence(relation)
+                if sentence and sentence not in relation_sentences:
+                    relation_sentences.append(sentence)
         excerpts = [
             str(source.get("evidence", {}).get("text") or "")
             for source in sources
@@ -775,6 +795,15 @@ class GroundedAssistant:
             bank = str(source.get("bank_name") or "").strip()
             title = str(source.get("title") or "Kampanya").strip()
             label = f"{bank} — {title}" if bank else title
+            relation_details = []
+            for relation in source.get("relations") or []:
+                sentence = self._relation_sentence(relation)
+                if sentence:
+                    relation_details.append(
+                        sentence.removeprefix(f"{title}, ")
+                    )
+            if relation_details:
+                label += f" — {relation_details[0]}"
             line = f"- {label} [K{index}]"
             if line not in campaign_lines:
                 campaign_lines.append(line)
@@ -826,36 +855,41 @@ class GroundedAssistant:
                 if str(bank.get("slug") or "")
             }
         )
-        if plan.route == "SAFE_REDIRECT":
+        validated_plan = orchestrator.validate(decision)
+        validated_decision = validated_plan.decision
+        if validated_decision.action == Action.CLARIFY:
+            return self._clarification_answer(
+                message=message,
+                plan=plan,
+                criteria=validated_decision.criteria,
+            )
+        if validated_decision.action in {Action.REFUSE, Action.REDIRECT}:
             result = {
-                "answer": (
-                    "Bu sistem müşteri işlemi veya şikâyet kaydı gerçekleştirmez. "
-                    "Lütfen ilgili bankanın resmî destek kanalını kullanın."
+                "answer": validated_decision.safe_message or (
+                    "Bu istek politika tarafından güvenli biçimde durduruldu."
                 ),
+                "action": validated_decision.action.value,
+                "policy_reason_code": validated_decision.reason_code,
+                "missing_criteria": [],
+                "conversation_state": None,
                 "facts": [],
                 "sources": [],
-                "confidence": plan.confidence,
+                "confidence": validated_decision.confidence,
                 "warnings": plan.warnings,
             }
-        elif plan.route == "STRUCTURED_SQL":
-            result = orchestrator.execute(
-                decision,
-                tool_name=(
-                    "comparison"
-                    if plan.intent == "product_comparison"
-                    else "structured_sql"
-                ),
-                operation=lambda: self._structured_answer(plan),
-            )
         else:
+            effective_criteria = criteria or validated_decision.criteria
+            expected_call, _ = self._tool_call_for_plan(
+                plan, criteria=effective_criteria
+            )
+            if plan.route == "STRUCTURED_SQL":
+                operation = lambda _call: self._structured_answer(plan)
+            else:
+                operation = lambda _call: self._hybrid_answer(plan, limit=limit)
             result = orchestrator.execute(
-                decision,
-                tool_name=(
-                    "comparison"
-                    if plan.intent == "product_comparison"
-                    else "hybrid_rag"
-                ),
-                operation=lambda: self._hybrid_answer(plan, limit=limit),
+                validated_plan,
+                expected_call=expected_call,
+                operation=operation,
             )
         if result is None:
             result = {
@@ -865,7 +899,13 @@ class GroundedAssistant:
                 "confidence": 0.0,
                 "warnings": [*plan.warnings, "Araç çağrısı politika tarafından engellendi"],
             }
-        return {**result, "plan": plan.to_dict()}
+        return {
+            "action": "ANSWER",
+            "missing_criteria": [],
+            "conversation_state": None,
+            **result,
+            "plan": plan.to_dict(),
+        }
 
     @staticmethod
     def _claim_signatures(text: str) -> set[tuple[str, str, str]]:
@@ -1052,8 +1092,13 @@ class GroundedAssistant:
             yield {"event": "meta", "data": metadata}
 
             fallback_reason = None
-            if route == "SAFE_REDIRECT":
-                fallback_reason = "safe_redirect"
+            if grounded.get("action") != "ANSWER":
+                fallback_reason = (
+                    "safe_redirect"
+                    if grounded.get("policy_reason_code")
+                    == "deterministic_safe_redirect"
+                    else f"policy_{str(grounded.get('action')).casefold()}"
+                )
             elif grounded["plan"]["intent"] == "bank_list":
                 fallback_reason = "deterministic_bank_list"
             elif grounded["plan"]["intent"] == "campaign_count":
@@ -1291,15 +1336,15 @@ class GroundedAssistant:
             )
         answer_display = "".join(answer_parts).strip()
         plan = response.get("plan", {})
-        action = "ANSWER"
-        if plan.get("route") == "SAFE_REDIRECT":
+        action = str(response.get("action") or "ANSWER")
+        if "action" not in response and plan.get("route") == "SAFE_REDIRECT":
             action = "REFUSE" if plan.get("intent") == "unknown" else "REDIRECT"
         return {
             **response,
             "answer": answer_display,
             "answer_display": answer_display,
             "action": action,
-            "missing_criteria": [],
-            "conversation_state": None,
+            "missing_criteria": response.get("missing_criteria", []),
+            "conversation_state": response.get("conversation_state"),
             "generation": generation,
         }

@@ -1,10 +1,14 @@
 from fastapi.testclient import TestClient
+import pytest
 
 from src.api.main import create_app
+from src.llm.decisions import PlannerDecision
 from src.main import app as integrated_app
 from src.persistence import CampaignStore
+from src.policy import Action, ComparisonCriteria
 from src.preprocessing.clean_text import preprocess_record
 from src.scraper.models import Campaign
+from src.services import GroundedAssistant
 
 
 def _campaign(identifier, bank_slug, bank_name, rate):
@@ -33,6 +37,61 @@ def _client(tmp_path):
         run_status="success",
     )
     return TestClient(create_app(database_path=database))
+
+
+@pytest.mark.parametrize("action", (Action.REFUSE, Action.REDIRECT, Action.CLARIFY))
+def test_api_preserves_validated_terminal_policy_action(tmp_path, action):
+    database = tmp_path / f"terminal-{action.value}.sqlite3"
+    store = CampaignStore(database)
+    decision = PlannerDecision(
+        action=action,
+        in_domain=True,
+        intent="product_comparison" if action == Action.CLARIFY else "campaign_query",
+        confidence=0.8,
+        reason_code=f"terminal_{action.value.casefold()}",
+        normalized_query="doğrulanmış karar",
+        slots={"banks": []},
+        missing_criteria=("amount", "fee_priority") if action == Action.CLARIFY else (),
+        safe_message=f"{action.value} güvenli mesajı.",
+        criteria=ComparisonCriteria(term_months=24),
+    )
+
+    class Decisions:
+        def analyze(self, *args, **kwargs):
+            del args, kwargs
+            return decision
+
+    class NoLLM:
+        enabled = True
+        model = "must-not-run"
+
+        def stream_chat(self, **kwargs):
+            del kwargs
+            raise AssertionError("terminal policy must not call LLM")
+
+        def status(self):
+            return {"available": True, "model": self.model}
+
+    app = create_app(database_path=database, chroma_enabled=False)
+    app.state.grounded_assistant = GroundedAssistant(
+        store,
+        llm=NoLLM(),
+        decisions=Decisions(),
+        chroma_enabled=False,
+    )
+
+    with TestClient(app) as client:
+        response = client.post("/api/v1/chat", json={"message": "Kampanyaları göster"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["action"] == action.value
+    assert payload["sources"] == []
+    if action == Action.CLARIFY:
+        assert payload["missing_criteria"] == ["amount", "fee_priority"]
+        assert payload["conversation_state"]["criteria"]["term_months"] == 24
+    else:
+        assert payload["answer"] == decision.safe_message
 
 
 def test_extraction_endpoint_returns_traceable_field_contracts(tmp_path):

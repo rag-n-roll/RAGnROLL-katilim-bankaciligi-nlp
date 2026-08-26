@@ -216,3 +216,26 @@ def test_stable_source_identity_reads_nested_ids_and_keeps_best_score_stably():
     assert stable_source_key(sources[0]) == "campaign_id:campaign-1"
     assert stable_source_key(sources[-1]) == "term_id:TRM0001"
     assert deduplicate_sources(sources) == [sources[1], sources[-1]]
+
+
+def test_whitespace_top_level_identity_does_not_mask_nested_metadata_identity():
+    first = {
+        "campaign_id": "   ",
+        "metadata": {"campaign_id": "campaign-1"},
+        "retrieval_score": 0.4,
+    }
+    winner = {
+        "campaign_id": "campaign-1",
+        "retrieval_score": 0.8,
+    }
+
+    assert stable_source_key(first) == "campaign_id:campaign-1"
+    assert deduplicate_sources([first, winner]) == [winner]
+
+
+def test_non_finite_or_invalid_scores_never_beat_a_finite_score():
+    finite = {"campaign_id": "same", "retrieval_score": 0.5}
+    invalid = {"campaign_id": "same", "retrieval_score": "not-a-number"}
+    nan = {"campaign_id": "same", "retrieval_score": float("nan")}
+
+    assert deduplicate_sources([invalid, nan, finite]) == [finite]
