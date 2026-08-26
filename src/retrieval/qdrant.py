@@ -11,7 +11,7 @@ from uuid import NAMESPACE_URL, uuid5
 
 from src.persistence import CampaignStore
 from src.providers import CircuitBreaker, CircuitOpenError
-from src.retrieval.documents import INDEX_SCHEMA, campaign_documents, terminology_documents
+from src.retrieval.documents import INDEX_SCHEMA, campaign_documents, pdf_evidence_documents, terminology_documents
 from src.retrieval.evren import EvrenEmbeddingProvider
 
 
@@ -273,6 +273,7 @@ class EvrenQdrantIndexer:
             for document in campaign_documents(record)
         ]
         documents.extend(terminology_documents())
+        documents.extend(pdf_evidence_documents())
         documents = [item for item in documents if item[0] and item[1].strip()]
         existing: dict[str, tuple[Any, str]] = {}
         offset = None

@@ -16,6 +16,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 INDEX_SCHEMA = "semantic-sections-1"
 DEFAULT_CHUNK_WORDS = 320
 DEFAULT_CHUNK_OVERLAP_WORDS = 40
+PDF_EVIDENCE_PATH = PROJECT_ROOT / "data" / "source_documents" / "pdf_evidence.jsonl"
 
 IndexDocument = tuple[str, str, dict[str, Any]]
 RETRIEVAL_ENTITY_ALLOWLIST = frozenset(
@@ -365,4 +366,55 @@ def terminology_documents(path: Path | None = None) -> list[IndexDocument]:
             },
         )
         documents.append((f"term:{chunk_id}", text, metadata))
+    return documents
+
+
+def pdf_evidence_documents(path: Path | None = None) -> list[IndexDocument]:
+    """Sayfa numarası taşıyan kullanıcı PDF kanıtlarını indeks belgelerine dönüştürür.
+
+    Dosya mevcut değilse temiz kurulumlarda geriye dönük uyumluluk için boş liste döner.
+    """
+    source = path or PDF_EVIDENCE_PATH
+    if not source.is_file():
+        return []
+    documents: list[IndexDocument] = []
+    for line in source.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        quote = str(row.get("quote") or "").strip()
+        document_id = str(row.get("document_id") or "").strip()
+        if not quote or not document_id:
+            continue
+        page = int(row.get("page") or 0)
+        topic = str(row.get("topic") or "").strip()
+        quote_hash = str(row.get("quote_hash") or _digest(document_id, page, quote))
+        metadata = _metadata_with_hash(
+            quote,
+            {
+                "source_type": "pdf_evidence",
+                "campaign_id": "",
+                "term_id": "",
+                "bank_slug": "",
+                "bank_name": "",
+                "product_type": "",
+                "financing_type": "",
+                "title": f"{document_id} s. {page}",
+                "source_url": str(row.get("source_url") or ""),
+                "scraped_at": str(row.get("extracted_at") or ""),
+                "content_hash": quote_hash,
+                "index_schema": INDEX_SCHEMA,
+                "section": topic or "pdf",
+                "chunk_index": 0,
+                "char_start": 0,
+                "char_end": len(quote),
+                "document_id": document_id,
+                "page": page,
+                "topic": topic,
+                "quote_hash": quote_hash,
+                "local_path": str(row.get("local_path") or ""),
+            },
+        )
+        identifier = f"pdf:{document_id}:{page}:{quote_hash[:12]}"
+        documents.append((identifier, quote, metadata))
     return documents

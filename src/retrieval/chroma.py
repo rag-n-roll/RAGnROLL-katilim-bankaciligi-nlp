@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from src.persistence import CampaignStore
-from src.retrieval.documents import INDEX_SCHEMA, campaign_documents, terminology_documents
+from src.retrieval.documents import INDEX_SCHEMA, campaign_documents, pdf_evidence_documents, terminology_documents
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -247,6 +247,7 @@ class ChromaIndexer:
             for document in campaign_documents(record)
         ]
         documents.extend(terminology_documents())
+        documents.extend(pdf_evidence_documents())
         documents = [item for item in documents if item[0] and item[1].strip()]
         expected_ids = {item[0] for item in documents}
         existing = collection.get(include=["metadatas"])
