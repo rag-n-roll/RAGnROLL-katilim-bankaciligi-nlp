@@ -257,6 +257,70 @@ def test_legacy_structured_suggestion_cannot_bypass_compiler_route_policy(
     assert plan.route == "HYBRID_RAG"
 
 
+@pytest.mark.parametrize(
+    ("intent", "metric", "aggregation"),
+    (
+        ("product_comparison", "FEE", "MIN"),
+        ("campaign_count", None, "COUNT"),
+        ("bank_list", None, None),
+    ),
+)
+def test_llm_intent_cannot_manufacture_trusted_sql_domain(
+    tmp_path, intent, metric, aggregation
+):
+    assistant = GroundedAssistant(_store(tmp_path), chroma_enabled=False)
+    untrusted = assistant.compiler.compile("İstanbul'da hava nasıl?")
+
+    selected = assistant._merge_llm_plan(
+        untrusted,
+        {
+            "intent": intent,
+            "route": "STRUCTURED_SQL",
+            "confidence": 0.99,
+            "normalized_query": "uydurulmuş plan",
+            "slots": {
+                "banks": [],
+                "metric": metric,
+                "aggregation": aggregation,
+                "product_type": None,
+                "financing_type": None,
+            },
+        },
+    )
+
+    assert selected.route == "SAFE_REDIRECT"
+    assert selected.confidence_components["trusted_domain"] is False
+    assert selected.confidence_components["trusted_domain_sources"] == []
+
+
+def test_llm_merge_retains_deterministic_lexical_domain_for_sql(tmp_path):
+    assistant = GroundedAssistant(_store(tmp_path), chroma_enabled=False)
+    trusted = assistant.compiler.compile("Katılım bankalarını listele")
+
+    selected = assistant._merge_llm_plan(
+        trusted,
+        {
+            "intent": "bank_list",
+            "route": "STRUCTURED_SQL",
+            "confidence": 0.91,
+            "normalized_query": "katılım bankaları",
+            "slots": {
+                "banks": [],
+                "metric": None,
+                "aggregation": None,
+                "product_type": None,
+                "financing_type": None,
+            },
+        },
+    )
+
+    assert selected.route == "STRUCTURED_SQL"
+    assert selected.confidence_components["trusted_domain"] is True
+    assert "participation_bank_phrase" in selected.confidence_components[
+        "trusted_domain_sources"
+    ]
+
+
 def test_structured_extrema_scans_beyond_first_hundred_rows(tmp_path):
     records = [
         Campaign(

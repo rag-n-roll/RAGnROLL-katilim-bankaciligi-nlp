@@ -270,36 +270,30 @@ class DomainQueryCompiler:
     def route_for(
         intent: str,
         slots: dict[str, Any],
-        terminology_matches: Iterable[dict[str, Any]] = (),
+        *,
+        trusted_domain: bool,
     ) -> str:
         metric = slots.get("metric")
         aggregation = slots.get("aggregation")
-        has_domain_terminology = any(
-            str(item.get("entity") or "") not in GENERIC_ONTOLOGY_ENTITIES
-            for item in terminology_matches
-        )
-        has_domain = bool(
-            slots.get("banks")
-            or slots.get("product_type")
-            or slots.get("financing_type")
-            or has_domain_terminology
-            or intent == "campaign_count"
-            or metric == "REWARD_AMOUNT"
-        )
         if intent in {"complaint_support", "transaction_howto", "unknown"}:
             return "SAFE_REDIRECT"
-        if intent == "bank_list":
+        if intent == "bank_list" and trusted_domain:
             return "STRUCTURED_SQL"
-        if intent == "campaign_count" and aggregation == "COUNT" and has_domain:
+        if (
+            intent == "campaign_count"
+            and aggregation == "COUNT"
+            and trusted_domain
+        ):
             return "STRUCTURED_SQL"
-        if intent == "rate_query" and metric == "PROFIT_RATE" and has_domain:
+        if intent == "rate_query" and metric == "PROFIT_RATE" and trusted_domain:
             return "STRUCTURED_SQL"
-        if intent == "maturity_query" and metric == "MATURITY" and has_domain:
+        if intent == "maturity_query" and metric == "MATURITY" and trusted_domain:
             return "STRUCTURED_SQL"
         if (
             intent == "product_comparison"
             and metric
             and aggregation in {"MIN", "MAX"}
+            and trusted_domain
         ):
             return "STRUCTURED_SQL"
         return "HYBRID_RAG"
@@ -366,9 +360,13 @@ class DomainQueryCompiler:
         terminology_matches: Iterable[dict[str, Any]],
         *,
         source: str,
+        trusted_domain_sources: Iterable[str] = (),
     ) -> dict[str, Any]:
+        trusted_sources = sorted(set(trusted_domain_sources))
         return {
             "source": source,
+            "trusted_domain": bool(trusted_sources),
+            "trusted_domain_sources": trusted_sources,
             "product": {
                 key: slots[key]
                 for key in ("product_type", "financing_type")
@@ -377,6 +375,30 @@ class DomainQueryCompiler:
             "terminology": list(terminology_matches),
             "filters": dict(filters),
         }
+
+    def _trusted_domain_sources(
+        self,
+        query: str,
+        slots: dict[str, Any],
+        terminology_matches: Iterable[dict[str, Any]],
+    ) -> list[str]:
+        sources: list[str] = []
+        if slots.get("product_type") or slots.get("financing_type"):
+            sources.append("product_term")
+        if slots.get("banks"):
+            sources.append("bank_alias")
+        if any(
+            str(item.get("entity") or "") not in GENERIC_ONTOLOGY_ENTITIES
+            for item in terminology_matches
+        ):
+            sources.append("domain_terminology")
+        if self._contains_nominal_phrase(query, "katılım banka"):
+            sources.append("participation_bank_phrase")
+        if self._contains_nominal_phrase(query, "kampanya"):
+            sources.append("campaign_phrase")
+        if slots.get("metric") == "REWARD_AMOUNT":
+            sources.append("reward_metric_phrase")
+        return sorted(set(sources))
 
     def compile(
         self,
@@ -413,8 +435,13 @@ class DomainQueryCompiler:
             }.items()
             if value not in (None, [], "")
         }
+        trusted_domain_sources = self._trusted_domain_sources(
+            canonical, slots, terminology_matches
+        )
         warnings: list[str] = []
-        route = self.route_for(intent, slots, terminology_matches)
+        route = self.route_for(
+            intent, slots, trusted_domain=bool(trusted_domain_sources)
+        )
         if intent in self.blocked_intents:
             warnings.append("Sistem müşteri işlemi veya şikâyet kaydı gerçekleştirmez")
         if intent == "product_comparison" and len(banks) < 2:
@@ -431,7 +458,11 @@ class DomainQueryCompiler:
             }.values()
         )
         confidence_components = self.confidence_evidence(
-            slots, filters, unique_rewrites, source="deterministic"
+            slots,
+            filters,
+            unique_rewrites,
+            source="deterministic",
+            trusted_domain_sources=trusted_domain_sources,
         )
         return QueryPlan(
             original_query=original,

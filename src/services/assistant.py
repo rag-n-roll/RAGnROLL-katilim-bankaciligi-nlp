@@ -151,8 +151,11 @@ class GroundedAssistant:
             warnings.append("EVREN güvenlik sinyali güvenli yönlendirme önerdi")
             return replace(plan, route="SAFE_REDIRECT", warnings=warnings)
         if advised_route == "STRUCTURED_SQL":
+            trusted_domain = bool(
+                plan.confidence_components.get("trusted_domain", False)
+            )
             eligible_route = self.compiler.route_for(
-                plan.intent, plan.slots, plan.terminology_rewrites
+                plan.intent, plan.slots, trusted_domain=trusted_domain
             )
             if eligible_route == "STRUCTURED_SQL":
                 return replace(plan, route="STRUCTURED_SQL")
@@ -205,14 +208,26 @@ class GroundedAssistant:
             }.items()
             if value not in (None, [], "")
         }
-        eligible_route = self.compiler.route_for(intent, slots)
+        trusted_sources = list(
+            plan.confidence_components.get("trusted_domain_sources") or ()
+        )
+        trusted_domain = bool(trusted_sources)
+        eligible_route = self.compiler.route_for(
+            intent, slots, trusted_domain=trusted_domain
+        )
+        if not trusted_domain and plan.route == "SAFE_REDIRECT":
+            eligible_route = "SAFE_REDIRECT"
         route = (
             "STRUCTURED_SQL"
             if advised_route == "STRUCTURED_SQL" and eligible_route == "STRUCTURED_SQL"
-            else "HYBRID_RAG"
+            else eligible_route
         )
         confidence_components = self.compiler.confidence_evidence(
-            slots, filters, (), source="llm_plan"
+            slots,
+            filters,
+            (),
+            source="llm_plan",
+            trusted_domain_sources=trusted_sources,
         )
         return replace(
             plan,
