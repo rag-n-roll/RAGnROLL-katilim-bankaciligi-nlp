@@ -47,6 +47,31 @@ BANK_ALIASES = {
 }
 
 
+def _answer_confidence(
+    *, typed: int, evidenced: int, candidates: int
+) -> tuple[float, dict[str, float]]:
+    """Score answer verifiability independently from route selection."""
+
+    if candidates <= 0:
+        return 0.0, {
+            "typed_field": 0.0,
+            "evidence_coverage": 0.0,
+            "candidate_coverage": 0.0,
+        }
+    typed_score = min(1.0, typed / candidates)
+    evidence_score = min(1.0, evidenced / candidates)
+    candidate_score = min(1.0, candidates / 5)
+    score = round(
+        0.45 * typed_score + 0.45 * evidence_score + 0.10 * candidate_score,
+        4,
+    )
+    return score, {
+        "typed_field": typed_score,
+        "evidence_coverage": evidence_score,
+        "candidate_coverage": candidate_score,
+    }
+
+
 @dataclass(frozen=True, slots=True)
 class QueryPlan:
     original_query: str

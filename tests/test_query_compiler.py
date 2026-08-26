@@ -1,6 +1,29 @@
 import pytest
 
 from src.query import DomainQueryCompiler
+from src.query.compiler import _answer_confidence
+
+
+def test_answer_confidence_weights_verified_candidate_evidence():
+    score, components = _answer_confidence(typed=2, evidenced=1, candidates=2)
+
+    assert score == 0.715
+    assert components == {
+        "typed_field": 1.0,
+        "evidence_coverage": 0.5,
+        "candidate_coverage": 0.4,
+    }
+
+
+def test_answer_confidence_is_zero_without_candidates():
+    assert _answer_confidence(typed=3, evidenced=3, candidates=0) == (
+        0.0,
+        {
+            "typed_field": 0.0,
+            "evidence_coverage": 0.0,
+            "candidate_coverage": 0.0,
+        },
+    )
 
 
 def test_compiler_routes_exact_financing_question_to_structured_query():

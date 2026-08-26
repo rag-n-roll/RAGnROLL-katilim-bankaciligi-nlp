@@ -262,6 +262,32 @@ def _store(tmp_path):
     return store
 
 
+def test_structured_confidence_uses_typed_evidence_and_coverage(tmp_path):
+    assistant = GroundedAssistant(
+        _store(tmp_path), llm=FakeLLM(), chroma_enabled=False
+    )
+
+    result = assistant._grounded_result(
+        "Konut finansmanında oran kaç?", limit=5
+    )
+
+    assert result["plan"]["confidence"] != result["answer_confidence"]
+    assert result["confidence_components"]["typed_field"] == 1.0
+    assert result["confidence_components"]["evidence_coverage"] == 1.0
+
+
+def test_missing_metric_evidence_cannot_report_high_answer_confidence(tmp_path):
+    assistant = GroundedAssistant(
+        StructuredStore(tmp_path / "x.sqlite3", []),
+        llm=FakeLLM(),
+        chroma_enabled=False,
+    )
+
+    result = assistant._grounded_result("En düşük oran hangisi?", limit=5)
+
+    assert result["answer_confidence"] == 0.0
+
+
 def test_openai_compatible_client_parses_streaming_sse():
     body = "".join(
         (

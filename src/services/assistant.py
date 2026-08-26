@@ -24,6 +24,7 @@ from src.policy import Action, ComparisonCriteria, PolicyDecision
 from src.preprocessing.clean_text import tokenize_turkish
 from src.prompt_optimization import IntentTraceRecorder
 from src.query import DomainQueryCompiler, QueryPlan
+from src.query.compiler import _answer_confidence
 from src.retrieval import HybridRetriever
 from src.services.conversation import extract_comparison_criteria, merge_criteria
 from src.services.orchestration import ToolOrchestrator
@@ -590,15 +591,31 @@ class GroundedAssistant:
                 ]
         return result
 
+    @staticmethod
+    def _source_has_evidence(source: dict[str, Any]) -> bool:
+        evidence = source.get("evidence")
+        text = evidence.get("text") if isinstance(evidence, dict) else evidence
+        if not str(text or "").strip():
+            return False
+        return bool(
+            str(source.get("campaign_id") or source.get("term_id") or "").strip()
+            or str(source.get("document_id") or source.get("source_url") or "").strip()
+        )
+
     def _structured_answer(self, plan: QueryPlan) -> dict[str, Any]:
         metric = plan.slots.get("metric")
         aggregation = plan.slots.get("aggregation")
         if plan.intent == "bank_list":
             banks = self.store.bank_summary()
             names = [str(bank.get("name") or bank.get("slug") or "") for bank in banks]
+            names = [name for name in names if name.strip()]
             answer = f"Kayıtlarda {len(names)} katılım bankası bulunuyor:"
             if names:
                 answer += "\n" + "\n".join(f"- {name}" for name in names)
+            answer_confidence = 0.99 if names else 0.0
+            _, confidence_components = _answer_confidence(
+                typed=len(names), evidenced=len(names), candidates=len(names)
+            )
             return {
                 "answer": answer,
                 "facts": [
@@ -609,7 +626,9 @@ class GroundedAssistant:
                     }
                 ],
                 "sources": [],
-                "confidence": 0.99,
+                "confidence": answer_confidence,
+                "answer_confidence": answer_confidence,
+                "confidence_components": confidence_components,
                 "warnings": plan.warnings,
             }
         query_filters = {
@@ -635,6 +654,16 @@ class GroundedAssistant:
                 subject = "Seçili bankalar için"
             else:
                 subject = "Kayıtlarda"
+            sources = deduplicate_sources(
+                [self._source(row, None) for row in rows[:5]]
+            )
+            verified = bool(sources) and isinstance(total, int) and total > 0
+            answer_confidence = 0.99 if verified else 0.0
+            _, confidence_components = _answer_confidence(
+                typed=len(sources) if verified else 0,
+                evidenced=len(sources) if verified else 0,
+                candidates=len(sources) if verified else 0,
+            )
             return {
                 "answer": f"{subject} doğrulanmış {total} kampanya bulundu.",
                 "facts": [
@@ -645,8 +674,10 @@ class GroundedAssistant:
                     }
                 ],
                 # Sayım SQL'de yapılıyor; bu örnekler sonucu denetlemeyi kolaylaştırır.
-                "sources": [self._source(row, None) for row in rows[:5]],
-                "confidence": 0.99,
+                "sources": sources,
+                "confidence": answer_confidence,
+                "answer_confidence": answer_confidence,
+                "confidence_components": confidence_components,
                 "warnings": plan.warnings,
             }
         if aggregation in {"MIN", "MAX"} and total > len(rows):
@@ -662,6 +693,9 @@ class GroundedAssistant:
         else:
             candidates = self._balanced_candidates(rows, plan)
         if not candidates:
+            answer_confidence, confidence_components = _answer_confidence(
+                typed=0, evidenced=0, candidates=0
+            )
             return {
                 "answer": (
                     "Bu sorgu için yapılandırılmış kayıtlarda "
@@ -669,15 +703,29 @@ class GroundedAssistant:
                 ),
                 "facts": [],
                 "sources": [],
-                "confidence": 0.0,
+                "confidence": answer_confidence,
+                "answer_confidence": answer_confidence,
+                "confidence_components": confidence_components,
                 "warnings": [
                     *plan.warnings,
                     *comparison_warnings,
                     "Kaynakta doğrulanabilir aday bulunamadı",
                 ],
             }
+        selected_rows = []
+        seen_candidates: set[str] = set()
+        for row in candidates:
+            candidate_key = str(row.get("id") or "").strip()
+            if not candidate_key:
+                candidate_key = stable_source_key(self._source(row, metric))
+            if candidate_key in seen_candidates:
+                continue
+            seen_candidates.add(candidate_key)
+            selected_rows.append(row)
+            if len(selected_rows) == 5:
+                break
         facts = []
-        for row in candidates[:5]:
+        for row in selected_rows:
             value = self._metric_value(row, metric)
             facts.append(
                 {
@@ -704,11 +752,25 @@ class GroundedAssistant:
                 else:
                     detail = str(value)
             lines.append(f"{fact['bank_name']} - {fact['title']}: {detail}")
+        sources = deduplicate_sources(
+            [self._source(row, metric) for row in selected_rows]
+        )
+        typed = sum(
+            self._comparison_value(row, metric) is not None for row in selected_rows
+        )
+        evidenced = sum(self._source_has_evidence(source) for source in sources)
+        answer_confidence, confidence_components = _answer_confidence(
+            typed=typed,
+            evidenced=evidenced,
+            candidates=len(facts),
+        )
         return {
             "answer": "\n".join(lines),
             "facts": facts,
-            "sources": [self._source(row, metric) for row in candidates[:5]],
-            "confidence": min(0.98, plan.confidence),
+            "sources": sources,
+            "confidence": answer_confidence,
+            "answer_confidence": answer_confidence,
+            "confidence_components": confidence_components,
             "warnings": [*plan.warnings, *comparison_warnings],
         }
 
@@ -735,11 +797,16 @@ class GroundedAssistant:
             if exact_documents:
                 documents = exact_documents
         if not documents:
+            answer_confidence, confidence_components = _answer_confidence(
+                typed=0, evidenced=0, candidates=0
+            )
             return {
                 "answer": "Bu bilgi sağlanan resmî içerik ve terminoloji kayıtlarında bulunamadı.",
                 "facts": [],
                 "sources": [],
-                "confidence": 0.0,
+                "confidence": answer_confidence,
+                "answer_confidence": answer_confidence,
+                "confidence_components": confidence_components,
                 "warnings": [*plan.warnings, "Retrieval sonucu bulunamadı"],
             }
         excerpts = []
@@ -825,11 +892,17 @@ class GroundedAssistant:
             answer = "\n".join(relation_sentences[:5]) + "\n\n" + answer
         if plan.intent == "definition" and excerpts:
             answer = excerpts[0].split(" Ana kategori:", 1)[0].strip()
+        evidenced = sum(self._source_has_evidence(source) for source in sources)
+        answer_confidence, confidence_components = _answer_confidence(
+            typed=0, evidenced=evidenced, candidates=len(sources)
+        )
         return {
             "answer": answer,
             "facts": [],
             "sources": sources,
-            "confidence": min(0.92, plan.confidence),
+            "confidence": answer_confidence,
+            "answer_confidence": answer_confidence,
+            "confidence_components": confidence_components,
             "warnings": plan.warnings,
         }
 
@@ -907,6 +980,13 @@ class GroundedAssistant:
                 "confidence": 0.0,
                 "warnings": [*plan.warnings, "Araç çağrısı politika tarafından engellendi"],
             }
+        if validated_decision.action != Action.ANSWER or "answer_confidence" not in result:
+            answer_confidence, confidence_components = _answer_confidence(
+                typed=0, evidenced=0, candidates=0
+            )
+            result["confidence"] = answer_confidence
+            result["answer_confidence"] = answer_confidence
+            result["confidence_components"] = confidence_components
         return {
             "action": "ANSWER",
             "missing_criteria": [],
@@ -1259,7 +1339,13 @@ class GroundedAssistant:
             },
             "facts": [],
             "sources": [],
-            "confidence": plan.confidence,
+            "confidence": 0.0,
+            "answer_confidence": 0.0,
+            "confidence_components": {
+                "typed_field": 0.0,
+                "evidence_coverage": 0.0,
+                "candidate_coverage": 0.0,
+            },
             "warnings": plan.warnings,
             "plan": plan.to_dict(),
             "generation": {

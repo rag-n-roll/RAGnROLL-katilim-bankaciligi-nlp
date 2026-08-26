@@ -72,6 +72,8 @@ class GroundedChatResponse(ContractResponse):
     facts: list[dict[str, Any]]
     sources: list[dict[str, Any]]
     confidence: float = Field(ge=0, le=1)
+    answer_confidence: float = Field(ge=0, le=1)
+    confidence_components: dict[str, float]
     warnings: list[str]
     plan: dict[str, Any]
     generation: dict[str, Any]
