@@ -132,7 +132,7 @@ def test_tool_orchestrator_rejects_argument_mismatch(authorized, expected):
     ) is None
 
 
-def test_assistant_does_not_dispatch_a_tool_unlisted_by_validated_policy(tmp_path):
+def test_assistant_canonicalizes_allowed_ontology_tool_to_guarded_hybrid(tmp_path):
     decision = PlannerDecision(
         action=Action.ANSWER,
         in_domain=True,
@@ -149,35 +149,26 @@ def test_assistant_does_not_dispatch_a_tool_unlisted_by_validated_policy(tmp_pat
             del args, kwargs
             return decision
 
-    class MustNotRunRetriever:
-        last_backend = "unused"
-
-        def retrieve(self, *args, **kwargs):
-            del args, kwargs
-            raise AssertionError("unlisted hybrid_rag must not execute")
-
     assistant = GroundedAssistant(
         _store(tmp_path),
         llm=FakeLLM(),
         decisions=Decisions(),
         chroma_enabled=False,
     )
-    assistant.retriever = MustNotRunRetriever()
 
     result = assistant._grounded_result("Murabaha nedir?", limit=5)
 
-    assert result["sources"] == []
-    assert result["confidence"] == 0.0
-    assert "Araç çağrısı politika tarafından engellendi" in result["warnings"]
+    assert result["sources"][0]["term_id"] == "TRM0462"
+    assert "Araç çağrısı politika tarafından engellendi" not in result["warnings"]
 
 
 @pytest.mark.parametrize("action", (Action.REFUSE, Action.REDIRECT, Action.CLARIFY))
-def test_terminal_policy_action_is_preserved_without_execution(tmp_path, action):
+def test_model_terminal_action_cannot_override_trusted_definition(tmp_path, action):
     criteria = ComparisonCriteria(term_months=24)
     decision = PlannerDecision(
         action=action,
         in_domain=True,
-        intent="product_comparison" if action == Action.CLARIFY else "campaign_query",
+        intent="campaign_query",
         confidence=0.81,
         reason_code=f"terminal_{action.value.casefold()}",
         normalized_query="doğrulanmış karar",
@@ -196,38 +187,108 @@ def test_terminal_policy_action_is_preserved_without_execution(tmp_path, action)
             del args, kwargs
             return decision
 
-    class MustNotRunRetriever:
-        last_backend = "unused"
-
-        def retrieve(self, *args, **kwargs):
-            del args, kwargs
-            raise AssertionError("terminal policy must not retrieve")
-
-    llm = FakeLLM(["must not run"])
+    llm = FakeLLM()
     assistant = GroundedAssistant(
         _store(tmp_path), llm=llm, decisions=Decisions(), chroma_enabled=False
     )
-    assistant.retriever = MustNotRunRetriever()
-    assistant._structured_answer = lambda plan: pytest.fail(
-        f"terminal policy executed SQL for {plan.intent}"
+    plan = assistant.compile("Murabaha nedir?")
+
+    assert plan.intent == "definition"
+    assert plan.route == "HYBRID_RAG"
+    assert any("terminal" in warning.casefold() for warning in plan.warnings)
+
+
+def test_conflicting_model_intent_cannot_replace_concrete_definition(tmp_path):
+    decision = PlannerDecision(
+        action=Action.ANSWER,
+        in_domain=True,
+        intent="campaign_query",
+        confidence=0.99,
+        reason_code="wrong_but_confident",
+        normalized_query="kampanyaları göster",
+        slots={"banks": [], "product_type": "card"},
+        tool_calls=({"name": "hybrid_rag", "arguments": {}},),
     )
 
-    result = assistant.answer("Kampanyaları göster")
+    class Decisions:
+        def analyze(self, *args, **kwargs):
+            del args, kwargs
+            return decision
 
-    assert result["action"] == action.value
-    assert result["sources"] == []
-    assert result["facts"] == []
-    assert llm.calls == []
-    if action == Action.CLARIFY:
-        assert result["missing_criteria"] == ["amount", "fee_priority"]
-        assert result["conversation_state"]["criteria"] == {
-            "term_months": 24,
-            "amount": None,
-            "fee_priority": None,
-        }
-    else:
-        assert result["answer"] == decision.safe_message
-        assert result["conversation_state"] is None
+    assistant = GroundedAssistant(
+        _store(tmp_path), llm=FakeLLM(), decisions=Decisions(), chroma_enabled=False
+    )
+
+    plan = assistant.compile("Murabaha nedir?")
+
+    assert plan.intent == "definition"
+    assert plan.slots.get("product_type") is None
+    assert any("intent" in warning.casefold() for warning in plan.warnings)
+
+
+def test_complete_follow_up_criteria_override_stale_llm_clarification(tmp_path):
+    decision = PlannerDecision(
+        action=Action.CLARIFY,
+        in_domain=True,
+        intent="product_comparison",
+        confidence=0.9,
+        reason_code="model_missing_criteria",
+        normalized_query="En uygun taşıt finansmanı hangisi?",
+        slots={"banks": [], "product_type": "financing", "financing_type": "vehicle"},
+        missing_criteria=("term_months", "amount", "fee_priority"),
+    )
+
+    class Decisions:
+        def analyze(self, *args, **kwargs):
+            del args, kwargs
+            return decision
+
+    class VehicleRetriever:
+        last_backend = "test"
+
+        def retrieve(self, query, *, filters, limit):
+            del query, filters, limit
+            return [
+                {
+                    "text": "Araç finansmanı için doğrulanmış seçenek.",
+                    "score": 1.0,
+                    "retrieval_method": "test",
+                    "metadata": {
+                        "campaign_id": "vehicle",
+                        "bank_name": "Örnek Katılım",
+                        "title": "Araç Finansmanı",
+                    },
+                },
+                {
+                    "text": (
+                        "Umre ziyareti için doğrulanmış finansman seçeneği. "
+                        "Kampanyaya araç kiralama dahil değildir."
+                    ),
+                    "score": 0.9,
+                    "retrieval_method": "test",
+                    "metadata": {
+                        "campaign_id": "wrong-metadata-label",
+                        "bank_name": "Örnek Katılım",
+                        "title": "Umre Finansmanı",
+                        "financing_type": "vehicle",
+                    },
+                },
+            ]
+
+    assistant = GroundedAssistant(
+        _store(tmp_path), llm=FakeLLM(), decisions=Decisions(), chroma_enabled=False
+    )
+    assistant.retriever = VehicleRetriever()
+
+    result = assistant._grounded_result(
+        "En uygun taşıt finansmanı hangisi?",
+        limit=5,
+        criteria=ComparisonCriteria(36, 500_000, True),
+    )
+
+    assert result["action"] == "ANSWER"
+    assert result["missing_criteria"] == []
+    assert [source["campaign_id"] for source in result["sources"]] == ["vehicle"]
 
 
 def _structured_row(identifier, field_name, value, evidence):
@@ -405,7 +466,7 @@ def test_campaign_count_uses_exact_structured_total_without_raw_rag_fallback(tmp
     assert llm.calls == []
 
 
-def test_llm_slot_merge_replaces_deterministic_confidence_evidence(tmp_path):
+def test_llm_slot_merge_cannot_replace_explicit_deterministic_product_slots(tmp_path):
     assistant = GroundedAssistant(_store(tmp_path), chroma_enabled=False)
     deterministic = assistant.compiler.compile("Konut finansmanı seçenekleri")
 
@@ -426,17 +487,63 @@ def test_llm_slot_merge_replaces_deterministic_confidence_evidence(tmp_path):
         },
     )
 
-    assert selected.slots["financing_type"] == "vehicle"
-    assert selected.filters["financing_type"] == "vehicle"
+    assert selected.slots["financing_type"] == "housing"
+    assert selected.filters["financing_type"] == "housing"
+    assert selected.canonical_query == deterministic.canonical_query
     assert selected.confidence == 0.91
     assert selected.confidence_components["source"] == "llm_plan"
     assert selected.confidence_components["product"] == {
         "product_type": "financing",
-        "financing_type": "vehicle",
+        "financing_type": "housing",
     }
     assert selected.confidence_components["filters"] == selected.filters
-    assert selected.confidence_components["terminology"] == []
-    assert selected.terminology_rewrites == []
+    assert (
+        selected.confidence_components["terminology"]
+        == deterministic.terminology_rewrites
+    )
+    assert selected.terminology_rewrites == deterministic.terminology_rewrites
+
+
+def test_llm_plan_cannot_inject_bank_filters_or_remove_exact_ontology_match(tmp_path):
+    store = _store(tmp_path)
+    all_banks = [bank["slug"] for bank in store.bank_summary()]
+    decision = PlannerDecision(
+        action=Action.ANSWER,
+        in_domain=True,
+        intent="definition",
+        confidence=0.98,
+        reason_code="model_definition",
+        normalized_query="Murabaha nedir?",
+        slots={"banks": all_banks},
+        tool_calls=(
+            {"name": "hybrid_rag", "arguments": {"banks": all_banks}},
+        ),
+    )
+
+    class Decisions:
+        def analyze(self, *args, **kwargs):
+            del args, kwargs
+            return decision
+
+    assistant = GroundedAssistant(
+        store,
+        llm=FakeLLM(["Murabaha vadeli satış akdidir [K1]."]),
+        decisions=Decisions(),
+        chroma_enabled=False,
+    )
+
+    selected, sanitized = assistant._compile_with_policy("Murabaha nedir?")
+    result = assistant.answer("Murabaha nedir?")
+
+    assert selected.slots["banks"] == []
+    assert selected.filters.get("bank_slugs") is None
+    assert any(
+        item.get("term_id") == "TRM0462"
+        for item in selected.terminology_rewrites
+    )
+    assert sanitized is not None
+    assert tuple(sanitized.tool_calls[0]["arguments"].get("banks", ())) == ()
+    assert result["sources"][0]["term_id"] == "TRM0462"
 
 
 @pytest.mark.parametrize(
@@ -699,6 +806,96 @@ def test_numeric_claim_must_be_supported_by_the_cited_source():
     )
 
 
+def test_high_risk_qualitative_finance_term_must_exist_in_cited_evidence():
+    sources = [
+        {
+            "evidence": {
+                "text": "Katılım Esasları faizsiz finans prensipleri ve uyum kurallarıdır."
+            }
+        }
+    ]
+
+    assert not GroundedAssistant._valid_llm_answer(
+        "Bu yaklaşımda riba kavramından kaçınılır [K1].",
+        sources=sources,
+    )
+    assert not GroundedAssistant._valid_llm_answer(
+        "Bu seçenek diğerlerinden daha avantajlıdır [K1].",
+        sources=sources,
+    )
+    assert GroundedAssistant._valid_llm_answer(
+        "Katılım Esasları faizsiz finans prensiplerine dayanır [K1].",
+        sources=sources,
+    )
+
+
+def test_measurable_context_only_allows_metric_scoped_relative_claim():
+    sources = [
+        {
+            "campaign_id": "housing-low",
+            "evidence": {"text": "%1,89 kâr payı"},
+        }
+    ]
+    context = {
+        "plan": {
+            "intent": "product_comparison",
+            "slots": {"metric": "PROFIT_RATE", "aggregation": "MIN"},
+        },
+        "facts": [
+            {
+                "campaign_id": "housing-low",
+                "metric": "PROFIT_RATE",
+                "value": 0.0189,
+            }
+        ],
+    }
+
+    assert GroundedAssistant._valid_llm_answer(
+        "Bu seçenek kâr payı oranı açısından daha avantajlıdır [K1].",
+        sources=sources,
+        context=context,
+    )
+    assert not GroundedAssistant._valid_llm_answer(
+        "Bu en iyi bankadır [K1].", sources=sources, context=context
+    )
+    assert not GroundedAssistant._valid_llm_answer(
+        "Bu seçenek kesinlikle önerilir [K1].", sources=sources, context=context
+    )
+    assert not GroundedAssistant._valid_llm_answer(
+        "Bu seçenek vade açısından daha avantajlıdır [K1].",
+        sources=sources,
+        context=context,
+    )
+
+
+def test_metric_scoped_relative_claim_requires_matching_fact_metric():
+    sources = [
+        {
+            "campaign_id": "housing-low",
+            "evidence": {"text": "%1,89 kâr payı"},
+        }
+    ]
+    context = {
+        "plan": {
+            "intent": "product_comparison",
+            "slots": {"metric": "PROFIT_RATE", "aggregation": "MIN"},
+        },
+        "facts": [
+            {
+                "campaign_id": "housing-low",
+                "metric": "MATURITY",
+                "value": 24,
+            }
+        ],
+    }
+
+    assert not GroundedAssistant._valid_llm_answer(
+        "Bu seçenek oran açısından daha avantajlıdır [K1].",
+        sources=sources,
+        context=context,
+    )
+
+
 def test_ordered_list_markers_are_not_treated_as_financial_claims():
     sources = [
         {"evidence": {"text": "2.000 TL iade sunulur"}},
@@ -743,6 +940,57 @@ def test_safe_redirect_never_calls_language_model(tmp_path):
     assert result["sources"] == []
 
 
+def test_cancellation_request_never_calls_retrieval_or_language_model(tmp_path):
+    llm = FakeLLM(["Çağrılmamalı [K1]"])
+    assistant = GroundedAssistant(
+        _store(tmp_path), llm=llm, chroma_enabled=False
+    )
+
+    class MustNotRetrieve:
+        last_backend = "unused"
+
+        def retrieve(self, *args, **kwargs):
+            del args, kwargs
+            raise AssertionError("transaction cancellation must not retrieve")
+
+    assistant.retriever = MustNotRetrieve()
+    result = assistant.answer("Kredi kartı başvurumu iptal edin")
+
+    assert result["action"] == "REDIRECT"
+    assert result["sources"] == []
+    assert llm.calls == []
+
+
+def test_objective_extrema_ignores_model_clarification(tmp_path):
+    decision = PlannerDecision(
+        action=Action.CLARIFY,
+        in_domain=True,
+        intent="product_comparison",
+        confidence=0.8,
+        reason_code="unnecessary_clarification",
+        normalized_query="en düşük kâr payı",
+        slots={"banks": [], "metric": "PROFIT_RATE", "aggregation": "MIN"},
+        missing_criteria=("term_months", "amount", "fee_priority"),
+        criteria=ComparisonCriteria(),
+    )
+
+    class Decisions:
+        def analyze(self, *args, **kwargs):
+            del args, kwargs
+            return decision
+
+    result = GroundedAssistant(
+        _store(tmp_path),
+        llm=FakeLLM(),
+        decisions=Decisions(),
+        chroma_enabled=False,
+    ).answer("Konut finansmanında en düşük kâr payı hangisi?")
+
+    assert result["action"] == "ANSWER"
+    assert result["missing_criteria"] == []
+    assert result["plan"]["slots"]["aggregation"] == "MIN"
+
+
 def test_definition_keeps_only_exact_terminology_source(tmp_path):
     llm = FakeLLM(["Murabaha vadeli bir satış akdidir [K1]."])
     assistant = GroundedAssistant(
@@ -778,6 +1026,43 @@ def test_definition_keeps_only_exact_terminology_source(tmp_path):
     grounded = assistant._grounded_result("Murabaha nedir?", limit=5)
     assert grounded["answer"].endswith("satış akdidir.")
     assert "Muhabir Banka" not in grounded["answer"]
+
+
+def test_definition_does_not_apply_product_slots_to_terminology_retrieval(tmp_path):
+    assistant = GroundedAssistant(
+        _store(tmp_path), llm=FakeLLM(), chroma_enabled=False
+    )
+
+    class CapturingRetriever:
+        last_backend = "chroma+semantic"
+
+        def retrieve(self, query, *, filters, limit):
+            del query, limit
+            assert filters == {
+                "intent": "definition",
+                "source_types": ["terminology"],
+            }
+            return [
+                {
+                    "text": "Katılım Esasları: Faizsiz finans prensipleri.",
+                    "score": 1.0,
+                    "retrieval_method": "chroma+semantic",
+                    "metadata": {
+                        "term_id": "TRM0463",
+                        "title": "Katılım Esasları",
+                        "section": "terminology",
+                    },
+                }
+            ]
+
+    assistant.retriever = CapturingRetriever()
+
+    result = assistant._grounded_result(
+        "Konut finansmanında katılım bankacılığı ilkeleri nelerdir?",
+        limit=5,
+    )
+
+    assert [source["term_id"] for source in result["sources"]] == ["TRM0463"]
 
 
 def test_chunk_evidence_keeps_bounded_source_offsets(tmp_path):
@@ -972,7 +1257,10 @@ def test_llm_answer_gets_bounded_turkish_orthography_polish(tmp_path):
 
 
 def test_llm_answer_markdown_is_normalized_for_plain_text_chat_ui():
-    answer = "*   **Avantaj:** %10 indirim [K1].\n\n*Not: Koşulları doğrulayın.*"
+    answer = (
+        "*   **Avantaj:** %10 indirim [K1].,,,,\n\n"
+        "*Not: Koşulları doğrulayın.*"
+    )
 
     assert GroundedAssistant._polish_llm_answer(answer) == (
         "• Avantaj: %10 indirim [K1].\n\nNot: Koşulları doğrulayın."
@@ -1045,7 +1333,7 @@ def test_llm_status_contract_uses_configured_assistant(tmp_path):
 
 def test_presentation_removes_internal_citations_and_deduplicates_badges():
     presented = present_answer(
-        "Masrafsız kart seçeneği sunulur [K1].",
+        "Masrafsız kart seçeneği sunulur [K1, K2, K4, K5].",
         sources=[
             {"campaign_id": "same", "title": "Masraflara Son!"},
             {"campaign_id": "same", "title": "Masraflara Son!"},

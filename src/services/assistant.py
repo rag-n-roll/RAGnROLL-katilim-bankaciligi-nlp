@@ -16,6 +16,7 @@ from src.llm import (
     build_llm_from_env,
 )
 from src.llm.client import LLMUnavailableError
+from src.llm.judging import SemanticJudge
 from src.normalization import normalize_duration, normalize_money, normalize_rate
 from src.normalization.values import parse_number
 from src.observability import EventRecorder
@@ -28,6 +29,7 @@ from src.policy import (
     PolicyDecision,
     present_answer,
 )
+from src.policy.tool_policy import ALLOWED_BANKS
 from src.preprocessing.clean_text import tokenize_turkish
 from src.prompt_optimization import IntentTraceRecorder
 from src.query import DomainQueryCompiler, QueryPlan
@@ -83,7 +85,28 @@ def deduplicate_sources(sources: list[dict[str, Any]]) -> list[dict[str, Any]]:
         normalized = dict(source)
         normalized["retrieval_score"] = rank[1] if rank[0] else 0.0
         deduplicated.append(normalized)
-    return deduplicated
+
+    # Aynı kampanya scraper/ingest turlarında farklı teknik kimliklerle gelebilir.
+    # Kullanıcı açısından banka + normalize başlık aynı kaynak rozetidir.
+    semantic_winners: dict[str, tuple[int, dict[str, Any]]] = {}
+    for index, source in enumerate(deduplicated):
+        campaign_id = str(_source_value(source, "campaign_id") or "").strip()
+        bank = " ".join(str(_source_value(source, "bank_name") or "").split())
+        title = " ".join(str(_source_value(source, "title") or "").split())
+        semantic_key = (
+            f"campaign:{bank.casefold()}:{title.casefold()}"
+            if campaign_id and bank and title
+            else stable_source_key(source)
+        )
+        current = semantic_winners.get(semantic_key)
+        if current is None:
+            semantic_winners[semantic_key] = (index, source)
+        elif source["retrieval_score"] > current[1]["retrieval_score"]:
+            semantic_winners[semantic_key] = (current[0], source)
+    return [
+        source
+        for _, source in sorted(semantic_winners.values(), key=lambda item: item[0])
+    ]
 
 
 def _finite(value: Any) -> float | None:
@@ -114,6 +137,61 @@ _FEE_FREE_CLAIM_RE = re.compile(
     r"ücret\s+yok|ucret\s+yok|masraf\s+yok)\b",
     re.IGNORECASE,
 )
+_FEE_FREE_QUERY_RE = re.compile(
+    r"\b(?:masrafs[ıi]z|masraf(?:s[ıi]z)?\s+(?:kart|hesap|bankac[ıi]l[ıi]k)|"
+    r"aidats[ıi]z|ücretsiz\s+(?:kart|hesap|bankac[ıi]l[ıi]k))\b",
+    re.IGNORECASE,
+)
+_FEE_FREE_EVIDENCE_RE = re.compile(
+    r"\b(?:masrafs[ıi]z|masraflara\s+son|masraf\s+yok|aidats[ıi]z|"
+    r"kart\s+(?:aidat[ıi]|ücreti)\s+yok|"
+    r"ücretsiz\s+(?:kart|hesap|bankac[ıi]l[ıi]k))\b",
+    re.IGNORECASE,
+)
+_FINANCING_EVIDENCE_PATTERNS = {
+    "housing": re.compile(r"\b(?:konut|ev\s+al[ıi]m|mortgage)\w*\b", re.IGNORECASE),
+    "vehicle": re.compile(
+        r"\b(?:"
+        r"(?:taş[ıi]t|araç|otomobil|motosiklet|togg|otomotiv)\w*"
+        r"(?:\s+\w+){0,2}\s+finansman\w*|"
+        r"finansman\w*(?:\s+\w+){0,2}\s+"
+        r"(?:taş[ıi]t|araç|otomobil|motosiklet|togg|otomotiv)\w*"
+        r")\b",
+        re.IGNORECASE,
+    ),
+    "consumer": re.compile(r"\b(?:ihtiyaç|tüketici)\s+finansman\w*\b", re.IGNORECASE),
+    "commercial": re.compile(
+        r"\b(?:ticari|işletme|kobi)\s+finansman\w*\b", re.IGNORECASE
+    ),
+    "agriculture": re.compile(
+        r"\b(?:tar[ıi]m|ziraat|çiftçi)\s+finansman\w*\b", re.IGNORECASE
+    ),
+}
+_QUALITATIVE_FINANCE_CLAIM_RE = re.compile(
+    r"\b(?:riba|garar|meysir|şeriat|helal|haram|güvenli|"
+    r"risk\s+paylaş\w*|varlığa\s+dayalı|kâr[-\s]+zarar\s+ortaklığ\w*|"
+    r"en\s+iyi|en\s+uygun|en\s+avantajl\w*|daha\s+avantajl\w*|"
+    r"tercih\s+edil\w*|öne\s+çık\w*|kesinlikle\s+öneril\w*|"
+    r"garanti\w*)\b",
+    re.IGNORECASE,
+)
+_ABSOLUTE_ADVICE_CLAIM_RE = re.compile(
+    r"(?:en\s+iyi|en\s+uygun|en\s+avantajl\w*|"
+    r"tercih\s+edil\w*|kesinlikle\s+öneril\w*)",
+    re.IGNORECASE,
+)
+_RELATIVE_COMPARISON_CLAIM_RE = re.compile(
+    r"(?:daha\s+avantajl\w*|öne\s+çık\w*)",
+    re.IGNORECASE,
+)
+_METRIC_CLAIM_PATTERNS = {
+    "PROFIT_RATE": re.compile(r"\b(?:k[âa]r\s+pay[ıi]|oran)\w*\b", re.IGNORECASE),
+    "MATURITY": re.compile(r"\b(?:vade|vadeli|ay)\b", re.IGNORECASE),
+    "FEE": re.compile(r"\b(?:masraf|ücret|aidat|maliyet)\w*\b", re.IGNORECASE),
+    "REWARD_AMOUNT": re.compile(
+        r"\b(?:ödül|puan|iade|kazanç)\w*\b", re.IGNORECASE
+    ),
+}
 _ORDERED_LIST_MARKER_RE = re.compile(r"(?m)^\s*\d{1,2}[.)]\s+")
 
 
@@ -169,7 +247,14 @@ class GroundedAssistant:
             self.compiler.terminology,
             chroma_enabled=chroma_enabled,
         )
-        self.output_gate = output_gate or OutputGate(judge=judge)
+        if output_gate is not None:
+            self.output_gate = output_gate
+        else:
+            semantic_judge = judge
+            if semantic_judge is None and llm is None:
+                # Judge çağrısı cevap üreticisinin sağlayıcı metadata'sını ezmesin.
+                semantic_judge = SemanticJudge(build_llm_from_env())
+            self.output_gate = OutputGate(judge=semantic_judge)
         self.input_guard = input_guard or InputGuard()
 
     def compile(self, message: str) -> QueryPlan:
@@ -206,16 +291,76 @@ class GroundedAssistant:
         )
         if callable(analyzer):
             if isinstance(decision, PolicyDecision):
-                selected = self._merge_llm_plan(plan, decision)
+                llm_decision = decision
+                clarification_allowed = (
+                    decision.action == Action.CLARIFY
+                    and decision.intent == plan.intent == "product_comparison"
+                    and plan.slots.get("aggregation") not in {"MIN", "MAX"}
+                    and bool(decision.criteria.missing())
+                )
+                terminal_override = decision.action in {
+                    Action.REFUSE,
+                    Action.REDIRECT,
+                } or (decision.action == Action.CLARIFY and not clarification_allowed)
+                if terminal_override:
+                    selected = replace(
+                        plan,
+                        warnings=[
+                            *plan.warnings,
+                            "LLM terminal politika önerisi güvenilir yerel planla "
+                            "çeliştiği için yok sayıldı",
+                        ],
+                    )
+                    decision = None
+                else:
+                    selected = self._merge_llm_plan(plan, decision)
+                if decision is not None and decision.action == Action.ANSWER:
+                    tool_call, effective_criteria = self._tool_call_for_plan(
+                        selected, criteria=decision.criteria
+                    )
+                    model_calls = tuple(decision.tool_calls)
+                    # Yalnız model ile deterministik plan aynı aracı seçtiyse
+                    # argümanları güvenli plandan yeniden kur. Bilinmeyen veya
+                    # rota ile uyuşmayan araç adını sessizce yetkilendirme.
+                    equivalent_ontology_call = (
+                        selected.intent in {"definition", "relationship_query"}
+                        and len(model_calls) == 1
+                        and model_calls[0].get("name") == "ontology"
+                        and tool_call["name"] == "hybrid_rag"
+                    )
+                    if (
+                        len(model_calls) == 1
+                        and model_calls[0].get("name") == tool_call["name"]
+                    ) or equivalent_ontology_call:
+                        updates: dict[str, Any] = {
+                            "intent": selected.intent,
+                            "criteria": effective_criteria,
+                            "tool_calls": (tool_call,),
+                        }
+                        if hasattr(decision, "normalized_query"):
+                            updates["normalized_query"] = selected.canonical_query
+                        if hasattr(decision, "slots"):
+                            updates["slots"] = selected.slots
+                        decision = replace(decision, **updates)
+                    else:
+                        selected = replace(
+                            plan,
+                            warnings=[
+                                *plan.warnings,
+                                "LLM araç planı yerel sözleşmeyle uyuşmadı; "
+                                "güvenilir yerel plan kullanıldı",
+                            ],
+                        )
+                        decision = None
                 try:
                     self.intent_trace.record(
                         raw_input=message,
                         bank_catalog=known_banks,
                         deterministic_plan=plan.to_dict(),
                         llm_decision=(
-                            decision.to_dict()
-                            if callable(getattr(decision, "to_dict", None))
-                            else decision
+                            llm_decision.to_dict()
+                            if callable(getattr(llm_decision, "to_dict", None))
+                            else llm_decision
                         ),
                         selected_plan=selected.to_dict(),
                     )
@@ -341,27 +486,39 @@ class GroundedAssistant:
         if decision.get("safe") is False or decision.get("route") == "SAFE_REDIRECT":
             return replace(
                 plan,
-                intent=str(decision["intent"]),
-                route="SAFE_REDIRECT",
-                confidence=float(decision["confidence"]),
-                warnings=[*plan.warnings, "LLM güvenlik planı güvenli yönlendirme önerdi"],
+                warnings=[
+                    *plan.warnings,
+                    "LLM güvenlik planı güvenilir yerel planla çeliştiği için yok sayıldı",
+                ],
             )
 
-        intent = str(decision["intent"])
+        proposed_intent = str(decision["intent"])
+        allowed_intent_upgrades = {("campaign_query", "campaign_count")}
+        if (
+            proposed_intent != plan.intent
+            and (plan.intent, proposed_intent) not in allowed_intent_upgrades
+        ):
+            return replace(
+                plan,
+                warnings=[
+                    *plan.warnings,
+                    "LLM intent önerisi güvenilir yerel planla çeliştiği için yok sayıldı",
+                ],
+            )
+        intent = proposed_intent
         advised_route = str(decision["route"])
         decision_slots = decision.get("slots") or {}
         slots = dict(plan.slots)
-        for key in (
-            "banks",
-            "metric",
-            "aggregation",
-            "product_type",
-            "financing_type",
-        ):
+        # Banka filtresi yalnız kullanıcının metninden deterministik olarak
+        # çıkarılabilir; model yeni banka ekleyerek kapsamı genişletemez.
+        slots["banks"] = list(plan.slots.get("banks") or [])
+        for key in ("metric", "aggregation", "product_type", "financing_type"):
+            if plan.slots.get(key) not in (None, [], ""):
+                continue
             value = decision_slots.get(key)
             if value not in (None, [], ""):
                 slots[key] = value
-            elif key in {"metric", "aggregation", "product_type", "financing_type"}:
+            else:
                 slots[key] = None
         filters = {
             key: value
@@ -390,18 +547,24 @@ class GroundedAssistant:
         confidence_components = self.compiler.confidence_evidence(
             slots,
             filters,
-            (),
+            plan.terminology_rewrites,
             source="llm_plan",
             trusted_domain_sources=trusted_sources,
         )
+        normalized_query = str(decision.get("normalized_query") or "").strip()
+        canonical_query = (
+            normalized_query
+            if route == "STRUCTURED_SQL" and normalized_query
+            else plan.canonical_query
+        )
         return replace(
             plan,
-            canonical_query=str(decision["normalized_query"]),
+            canonical_query=canonical_query,
             intent=intent,
             route=route,
             slots=slots,
             filters=filters,
-            terminology_rewrites=[],
+            terminology_rewrites=plan.terminology_rewrites,
             confidence=float(decision["confidence"]),
             confidence_components=confidence_components,
         )
@@ -799,11 +962,64 @@ class GroundedAssistant:
     def _hybrid_answer(self, plan: QueryPlan, *, limit: int) -> dict[str, Any]:
         filters = dict(plan.filters)
         filters["intent"] = plan.intent
-        if plan.intent == "definition" and plan.terminology_rewrites:
-            filters["source_types"] = ["terminology"]
+        if plan.intent == "definition":
+            # Ürün/finansman slotları tanım ontolojisinin metadata alanları
+            # değildir. Bu filtreleri taşımak geçerli terimleri Chroma'da sıfırlar.
+            filters = {
+                "intent": plan.intent,
+                "source_types": ["terminology"],
+            }
+        elif plan.intent in {
+            "application_requirements",
+            "campaign_query",
+            "product_comparison",
+            "product_search",
+        }:
+            filters["source_types"] = ["campaign"]
         documents = self.retriever.retrieve(
             plan.canonical_query, filters=filters, limit=limit
         )
+        financing_type = str(plan.slots.get("financing_type") or "")
+        financing_pattern = _FINANCING_EVIDENCE_PATTERNS.get(financing_type)
+        if financing_pattern and plan.intent in {
+            "application_requirements",
+            "campaign_query",
+            "product_comparison",
+            "product_search",
+        }:
+            # NLP/uzak indeks metadata etiketi aday üretir; kullanıcıya sunulması
+            # için finansman türü başlık veya getirilen kanıtta açıkça geçmelidir.
+            documents = [
+                document
+                for document in documents
+                if financing_pattern.search(
+                    "\n".join(
+                        (
+                            str(document.get("metadata", {}).get("title") or ""),
+                            str(document.get("text") or ""),
+                        )
+                    )
+                )
+            ]
+        if (
+            plan.intent == "product_search"
+            and _FEE_FREE_QUERY_RE.search(plan.original_query)
+        ):
+            # "Masrafsız" bir seçim ölçütüdür; yalnız kart kategorisine yakın
+            # adaylar yeterli değildir. Açık masraf/aidat kanıtı olmayan kampanya
+            # modele ve kullanıcıya seçenek olarak sunulmaz.
+            documents = [
+                document
+                for document in documents
+                if _FEE_FREE_EVIDENCE_RE.search(
+                    "\n".join(
+                        (
+                            str(document.get("metadata", {}).get("title") or ""),
+                            str(document.get("text") or ""),
+                        )
+                    )
+                )
+            ]
         if plan.intent == "definition" and plan.terminology_rewrites:
             exact_term_ids = {
                 str(item.get("term_id"))
@@ -852,6 +1068,13 @@ class GroundedAssistant:
                     "\nYapılandırılmış alanlar:", 1
                 )[0][:360]
                 char_end = min(int(char_end), len(evidence_text))
+            elif section == "terminology":
+                # Ontolojiye ait dahili sınıflandırma alanları yanıt kanıtı değildir.
+                # Modele yalnızca terim ve doğrulanmış tanımı vererek Entity/Ana
+                # kategori dökümünün kullanıcı yanıtına sızmasını engelle.
+                evidence_text = excerpt.split(" Ana kategori:", 1)[0]
+                char_start = None
+                char_end = None
             elif section == "structured_fields":
                 char_start = None
                 char_end = None
@@ -905,9 +1128,21 @@ class GroundedAssistant:
             if line not in campaign_lines:
                 campaign_lines.append(line)
         if campaign_lines:
-            answer = "İlgili doğrulanmış kampanya kayıtları:\n" + "\n".join(
-                campaign_lines[:5]
-            )
+            if (
+                plan.intent == "product_comparison"
+                and plan.slots.get("aggregation") not in {"MIN", "MAX"}
+            ):
+                answer = (
+                    "Belirttiğiniz vade, tutar ve masraf önceliğine göre tek bir "
+                    "seçeneği en uygun olarak doğrulayamıyorum; kayıtlarda tarafsız "
+                    "bir toplam maliyet karşılaştırması için yeterli ölçülebilir veri yok.\n"
+                    "İncelenebilecek doğrulanmış seçenekler:\n"
+                    + "\n".join(campaign_lines[:5])
+                )
+            else:
+                answer = "İlgili doğrulanmış kampanya kayıtları:\n" + "\n".join(
+                    campaign_lines[:5]
+                )
         else:
             answer = "\n\n".join(excerpts[:3])
         if relation_sentences:
@@ -948,11 +1183,32 @@ class GroundedAssistant:
                     "fee_priority": criteria.fee_priority,
                 },
             )
+            if (
+                policy_decision is not None
+                and policy_decision.in_domain
+                and policy_decision.intent == "product_comparison"
+                and policy_decision.action in {Action.ANSWER, Action.CLARIFY}
+                and not criteria.missing()
+            ):
+                # Takip mesajından deterministik olarak çıkarılmış tam kriterler,
+                # planlayıcının yalnız özgün soruyu görüp verdiği eski CLARIFY
+                # kararından daha güvenilirdir. Terminal safety kararları korunur.
+                tool_call, effective_criteria = self._tool_call_for_plan(
+                    plan, criteria=criteria
+                )
+                policy_decision = replace(
+                    policy_decision,
+                    action=Action.ANSWER,
+                    criteria=effective_criteria,
+                    missing_criteria=(),
+                    tool_calls=(tool_call,),
+                    reason_code="comparison_criteria_satisfied",
+                )
         decision = policy_decision or self._local_policy_decision(
             plan, criteria=criteria
         )
         orchestrator = ToolOrchestrator(
-            allowed_banks={
+            allowed_banks=set(ALLOWED_BANKS) | {
                 str(bank.get("slug") or "")
                 for bank in self.store.bank_summary()
                 if str(bank.get("slug") or "")
@@ -1073,8 +1329,58 @@ class GroundedAssistant:
         return signatures
 
     @classmethod
+    def _comparison_claim_supported(
+        cls,
+        *,
+        context: dict[str, Any] | None,
+        sources: list[dict[str, Any]],
+        citations: set[int],
+        segment: str,
+    ) -> bool:
+        safe_context = context if isinstance(context, dict) else {}
+        plan = safe_context.get("plan")
+        plan = plan if isinstance(plan, dict) else {}
+        slots = plan.get("slots")
+        slots = slots if isinstance(slots, dict) else {}
+        facts = safe_context.get("facts")
+        facts = facts if isinstance(facts, list) else []
+        plan_metric = str(slots.get("metric") or "")
+        metric_pattern = _METRIC_CLAIM_PATTERNS.get(plan_metric)
+        fact_campaign_ids = {
+            str(fact.get("campaign_id") or "").strip()
+            for fact in facts
+            if isinstance(fact, dict)
+            and str(fact.get("campaign_id") or "").strip()
+            and fact.get("value") is not None
+            and fact.get("metric") == plan_metric
+        }
+        cited_campaign_ids = {
+            str(_source_value(sources[citation - 1], "campaign_id") or "").strip()
+            for citation in citations
+            if 1 <= citation <= len(sources)
+        }
+        objective = slots.get("aggregation") in {"MIN", "MAX"}
+        complete_preferences = all(
+            slots.get(key) is not None
+            for key in ("term_months", "amount", "fee_priority")
+        )
+        return (
+            plan.get("intent") == "product_comparison"
+            and (objective or complete_preferences)
+            and metric_pattern is not None
+            and bool(metric_pattern.search(segment))
+            and bool(_RELATIVE_COMPARISON_CLAIM_RE.search(segment))
+            and bool(cited_campaign_ids)
+            and cited_campaign_ids.issubset(fact_campaign_ids)
+        )
+
+    @classmethod
     def _valid_llm_answer(
-        cls, answer: str, *, sources: list[dict[str, Any]]
+        cls,
+        answer: str,
+        *,
+        sources: list[dict[str, Any]],
+        context: dict[str, Any] | None = None,
     ) -> bool:
         normalized = answer.strip()
         if len(normalized) < 12 or "<think>" in normalized.casefold():
@@ -1086,6 +1392,7 @@ class GroundedAssistant:
             return False
 
         source_signatures = []
+        source_texts = []
         for source in sources:
             evidence = source.get("evidence")
             evidence_text = (
@@ -1097,6 +1404,7 @@ class GroundedAssistant:
                     str(evidence_text or ""),
                 )
             )
+            source_texts.append(supported_text.casefold())
             source_signatures.append(cls._claim_signatures(supported_text))
 
         claim_text = _ORDERED_LIST_MARKER_RE.sub("", normalized)
@@ -1110,8 +1418,14 @@ class GroundedAssistant:
             else:
                 segments.extend(re.split(r"(?<=[.!?])\s+", stripped))
         for segment in segments:
+            if _ABSOLUTE_ADVICE_CLAIM_RE.search(segment):
+                return False
             claims = cls._claim_signatures(segment)
-            if not claims:
+            qualitative_claims = {
+                match.group(0).casefold()
+                for match in _QUALITATIVE_FINANCE_CLAIM_RE.finditer(segment)
+            }
+            if not claims and not qualitative_claims:
                 continue
             segment_citations = {
                 int(value) for value in _CITATION_RE.findall(segment)
@@ -1123,11 +1437,33 @@ class GroundedAssistant:
                 supported.update(source_signatures[citation - 1])
             if not claims.issubset(supported):
                 return False
+            qualitative_support = "\n".join(
+                source_texts[citation - 1] for citation in segment_citations
+            )
+            comparison_supported = cls._comparison_claim_supported(
+                context=context,
+                sources=sources,
+                citations=segment_citations,
+                segment=segment,
+            )
+            if any(
+                term not in qualitative_support
+                and not (
+                    comparison_supported
+                    and _RELATIVE_COMPARISON_CLAIM_RE.fullmatch(term)
+                )
+                for term in qualitative_claims
+            ):
+                return False
         return True
 
     @classmethod
     def _sanitize_llm_answer(
-        cls, answer: str, *, sources: list[dict[str, Any]]
+        cls,
+        answer: str,
+        *,
+        sources: list[dict[str, Any]],
+        context: dict[str, Any] | None = None,
     ) -> str | None:
         """Yalnız kanıtlanmayan sayısal iddia taşıyan liste satırlarını çıkarır."""
 
@@ -1160,7 +1496,9 @@ class GroundedAssistant:
                 continue
             kept.append(line)
         sanitized = "\n".join(kept).strip()
-        if not removed or not cls._valid_llm_answer(sanitized, sources=sources):
+        if not removed or not cls._valid_llm_answer(
+            sanitized, sources=sources, context=context
+        ):
             return None
         return sanitized
 
@@ -1178,19 +1516,42 @@ class GroundedAssistant:
         polished = re.sub(r"(?m)^\s*\*\s+", "• ", polished)
         polished = polished.replace("**", "")
         polished = re.sub(r"\*([^*\n]+)\*", r"\1", polished)
+        polished = re.sub(r"([:;,.!?])(?:\s*[,;:.!?])+", r"\1", polished)
         return polished
 
     def _generation(
         self, *, mode: str, fallback_reason: str | None = None
     ) -> dict[str, Any]:
         metadata_factory = getattr(self.llm, "generation_metadata", None)
-        provider_metadata = metadata_factory() if callable(metadata_factory) else {}
+        llm_attempted = mode == "llm" or fallback_reason in {
+            "llm_output_rejected",
+            "llm_unavailable",
+        }
+        provider_metadata = (
+            metadata_factory()
+            if llm_attempted and callable(metadata_factory)
+            else {}
+        )
+        if fallback_reason in {
+            "safe_redirect",
+            "policy_redirect",
+            "policy_refuse",
+            "policy_clarify",
+        }:
+            retrieval_backend = "not_run"
+        elif fallback_reason in {
+            "deterministic_bank_list",
+            "deterministic_count",
+        }:
+            retrieval_backend = "structured_sql"
+        else:
+            retrieval_backend = getattr(self.retriever, "last_backend", "bm25")
         return {
             "mode": mode,
             "model": self.llm.model if mode == "llm" else None,
             "fallback_reason": fallback_reason,
             "prompt": self.prompt_builder.metadata(),
-            "retrieval_backend": getattr(self.retriever, "last_backend", "bm25"),
+            "retrieval_backend": retrieval_backend,
             **provider_metadata,
         }
 
@@ -1207,6 +1568,7 @@ class GroundedAssistant:
         success = True
         route = "UNKNOWN"
         mode = "fallback"
+        fallback_reason: str | None = None
         try:
             grounded = self._grounded_result(message, limit=limit, criteria=criteria)
             route = str(grounded["plan"]["route"])
@@ -1214,7 +1576,6 @@ class GroundedAssistant:
             metadata = {key: value for key, value in grounded.items() if key != "answer"}
             yield {"event": "meta", "data": metadata}
 
-            fallback_reason = None
             if grounded.get("action") != "ANSWER":
                 fallback_reason = (
                     "safe_redirect"
@@ -1254,43 +1615,94 @@ class GroundedAssistant:
             )
             candidate_factory = getattr(self.llm, "stream_chat_candidates", None)
             if callable(candidate_factory):
-                rejected = False
-                for chunks, candidate_metadata in candidate_factory(
-                    system_prompt=system_prompt,
-                    user_prompt=user_prompt,
-                ):
-                    generated = "".join(chunks).strip()
-                    sanitized = None
-                    valid = (
-                        candidate_metadata.get("finish_reason") != "length"
-                        and self._valid_llm_answer(
-                            generated, sources=grounded["sources"]
-                        )
+                def accepted_candidate(
+                    prompt: str, *, repair: bool = False
+                ) -> tuple[str | None, bool]:
+                    rejected_in_pass = False
+                    selected_factory = (
+                        getattr(self.llm, "stream_chat_repair_candidates", None)
+                        if repair
+                        else candidate_factory
                     )
-                    if not valid and candidate_metadata.get("finish_reason") != "length":
-                        sanitized = self._sanitize_llm_answer(
-                            generated, sources=grounded["sources"]
+                    if not callable(selected_factory):
+                        selected_factory = candidate_factory
+                    for chunks, candidate_metadata in selected_factory(
+                        system_prompt=system_prompt,
+                        user_prompt=prompt,
+                    ):
+                        generated = "".join(chunks).strip()
+                        sanitized = None
+                        valid = (
+                            candidate_metadata.get("finish_reason") != "length"
+                            and self._valid_llm_answer(
+                                generated,
+                                sources=grounded["sources"],
+                                context={
+                                    "plan": grounded["plan"],
+                                    "facts": grounded["facts"],
+                                },
+                            )
                         )
-                        valid = sanitized is not None
-                    if valid:
-                        candidate_text = sanitized or generated
-                        gate_verdict = self.output_gate.validate(
-                            candidate_text,
-                            sources=grounded["sources"],
-                            question=message,
-                        )
-                        if not gate_verdict.valid:
-                            valid = False
-                    if not valid:
-                        rejected = True
-                        self.llm.reject_candidate(candidate_metadata)
-                        continue
-                    if sanitized is not None:
-                        candidate_metadata["validation"] = "unsupported_lines_removed"
-                    self.llm.accept_candidate(candidate_metadata)
-                    polished = self._polish_llm_answer(sanitized or generated)
-                    presented = present_answer(polished, sources=grounded["sources"])
-                    yield {"event": "delta", "data": {"text": presented.answer_display}}
+                        if (
+                            not valid
+                            and candidate_metadata.get("finish_reason") != "length"
+                        ):
+                            sanitized = self._sanitize_llm_answer(
+                                generated,
+                                sources=grounded["sources"],
+                                context={
+                                    "plan": grounded["plan"],
+                                    "facts": grounded["facts"],
+                                },
+                            )
+                            valid = sanitized is not None
+                        if valid:
+                            candidate_text = sanitized or generated
+                            gate_verdict = self.output_gate.validate(
+                                candidate_text,
+                                sources=grounded["sources"],
+                                question=message,
+                                context={
+                                    "plan": grounded["plan"],
+                                    "facts": grounded["facts"],
+                                },
+                            )
+                            if not gate_verdict.valid:
+                                valid = False
+                        if not valid:
+                            rejected_in_pass = True
+                            self.llm.reject_candidate(candidate_metadata)
+                            continue
+                        if sanitized is not None:
+                            candidate_metadata["validation"] = (
+                                "unsupported_lines_removed"
+                            )
+                        self.llm.accept_candidate(candidate_metadata)
+                        return self._polish_llm_answer(
+                            sanitized or generated
+                        ), rejected_in_pass
+                    return None, rejected_in_pass
+
+                accepted, rejected = accepted_candidate(user_prompt)
+                if accepted is None and rejected:
+                    repair_user_prompt = (
+                        f"{user_prompt}\n\n"
+                        "Önceki yanıt doğrulama veya tekrar denetiminden geçemedi. "
+                        "Lütfen KANIT PAKETİ'ne tam olarak sadık kalarak, "
+                        "tekrarsız ve tarafsız biçimde yanıtı yeniden üret."
+                    )
+                    accepted, repair_rejected = accepted_candidate(
+                        repair_user_prompt, repair=True
+                    )
+                    rejected = rejected or repair_rejected
+                if accepted is not None:
+                    presented = present_answer(
+                        accepted, sources=grounded["sources"]
+                    )
+                    yield {
+                        "event": "delta",
+                        "data": {"text": presented.answer_display},
+                    }
                     mode = "llm"
                     yield {"event": "done", "data": self._generation(mode="llm")}
                     return
@@ -1319,11 +1731,21 @@ class GroundedAssistant:
                 generated = "".join(chunks).strip()
                 sanitized = None
                 valid = self._valid_llm_answer(
-                    generated, sources=grounded["sources"]
+                    generated,
+                    sources=grounded["sources"],
+                    context={
+                        "plan": grounded["plan"],
+                        "facts": grounded["facts"],
+                    },
                 )
                 if not valid:
                     sanitized = self._sanitize_llm_answer(
-                        generated, sources=grounded["sources"]
+                        generated,
+                        sources=grounded["sources"],
+                        context={
+                            "plan": grounded["plan"],
+                            "facts": grounded["facts"],
+                        },
                     )
                     valid = sanitized is not None
                 if valid:
@@ -1332,6 +1754,10 @@ class GroundedAssistant:
                         candidate_text,
                         sources=grounded["sources"],
                         question=message,
+                        context={
+                            "plan": grounded["plan"],
+                            "facts": grounded["facts"],
+                        },
                     )
                     if not gate_verdict.valid:
                         valid = False
@@ -1353,11 +1779,21 @@ class GroundedAssistant:
                         repaired = "".join(repair_chunks).strip()
                         repaired_sanitized = None
                         repaired_valid = self._valid_llm_answer(
-                            repaired, sources=grounded["sources"]
+                            repaired,
+                            sources=grounded["sources"],
+                            context={
+                                "plan": grounded["plan"],
+                                "facts": grounded["facts"],
+                            },
                         )
                         if not repaired_valid:
                             repaired_sanitized = self._sanitize_llm_answer(
-                                repaired, sources=grounded["sources"]
+                                repaired,
+                                sources=grounded["sources"],
+                                context={
+                                    "plan": grounded["plan"],
+                                    "facts": grounded["facts"],
+                                },
                             )
                             repaired_valid = repaired_sanitized is not None
                         if repaired_valid:
@@ -1366,6 +1802,10 @@ class GroundedAssistant:
                                 repaired_candidate,
                                 sources=grounded["sources"],
                                 question=message,
+                                context={
+                                    "plan": grounded["plan"],
+                                    "facts": grounded["facts"],
+                                },
                             )
                             if repaired_verdict.valid:
                                 valid = True
@@ -1406,18 +1846,21 @@ class GroundedAssistant:
             success = False
             raise
         finally:
-            metadata_factory = getattr(self.llm, "generation_metadata", None)
-            provider_metadata = metadata_factory() if callable(metadata_factory) else {}
+            request_metadata = self._generation(
+                mode=mode,
+                fallback_reason=fallback_reason,
+            )
             self.recorder.record(
                 "answer_generated",
                 latency_ms=(perf_counter() - started) * 1000,
                 success=success,
                 route=route,
                 generation_mode=mode,
-                provider=provider_metadata.get("provider"),
-                requested_model=provider_metadata.get("requested_model"),
-                circuit_state=provider_metadata.get("circuit_state"),
-                retrieval_backend=getattr(self.retriever, "last_backend", "bm25"),
+                fallback_reason=fallback_reason,
+                provider=request_metadata.get("provider"),
+                requested_model=request_metadata.get("requested_model"),
+                circuit_state=request_metadata.get("circuit_state"),
+                retrieval_backend=request_metadata.get("retrieval_backend"),
             )
 
     @staticmethod

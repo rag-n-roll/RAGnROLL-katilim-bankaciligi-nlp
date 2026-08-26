@@ -119,10 +119,44 @@ def test_input_guard_leaves_informational_transaction_questions_for_planner(mess
         "Şikayetimi kaydet",
         "Konut finansmanına başvurmak istiyorum",
         "EFT nasıl yapılır?",
+        "Kredi kartı başvurumu iptal edin",
+        "Kartımı kapatın",
+        "Hesabımı dondurun",
+        "Finansman başvurumu geri çekmek istiyorum",
     ],
 )
 def test_input_guard_redirects_transaction_execution_and_how_to_requests(message):
     decision = InputGuard().inspect(message)
+    assert decision is not None
+    assert decision.action == Action.REDIRECT
+    assert decision.reason_code == "transaction_execution"
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Kartımı kapatmanın sonuçları nelerdir?",
+        "Hesabı dondurmak ne demek?",
+        "Finansman başvurusunu geri çekme koşulları nelerdir?",
+        "Kart limiti artırma şartları nelerdir?",
+        "Kart şifresi değiştirme hakkında bilgi verir misiniz?",
+    ],
+)
+def test_input_guard_does_not_redirect_informational_mutation_questions(message):
+    assert InputGuard().inspect(message) is None
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Kart limitimi artırın",
+        "Kart şifremi değiştirin",
+        "Yeni kart gönderin",
+    ],
+)
+def test_input_guard_redirects_account_mutation_commands(message):
+    decision = InputGuard().inspect(message)
+
     assert decision is not None
     assert decision.action == Action.REDIRECT
     assert decision.reason_code == "transaction_execution"

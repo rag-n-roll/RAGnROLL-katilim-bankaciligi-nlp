@@ -11,7 +11,15 @@ class FakeJudge:
     def __init__(self, *, valid: bool, reason_code: str):
         self._verdict = OutputVerdict(valid=valid, reason_code=reason_code)
 
-    def evaluate(self, *, question: str, answer: str, sources: list[dict]) -> OutputVerdict:
+    def evaluate(
+        self,
+        *,
+        question: str,
+        answer: str,
+        sources: list[dict],
+        context: dict | None = None,
+    ) -> OutputVerdict:
+        del context
         return self._verdict
 
 
@@ -103,7 +111,7 @@ def test_semantic_judge_unavailable_when_no_llm():
         answer="Cevap",
         sources=[],
     )
-    assert verdict.valid is True
+    assert verdict.valid is False
     assert verdict.reason_code == "judge_unavailable"
 
 
@@ -112,11 +120,26 @@ def test_semantic_judge_parses_valid_json_verdict():
     judge = SemanticJudge(llm=llm)
     verdict = judge.evaluate(
         question="Soru",
-        answer="En avantajlı konut kredisi!",
+        answer="Konut finansmanı açıklaması.",
         sources=[],
     )
     assert verdict.valid is False
     assert verdict.reason_code == "unsupported_claim"
+
+
+def test_semantic_judge_accepts_a_json_code_fence_without_extra_text():
+    llm = FakeJudgeLLM(
+        ['```json\n{"valid": true, "reason_code": "passed"}\n```']
+    )
+
+    verdict = SemanticJudge(llm=llm).evaluate(
+        question="Murabaha nedir?",
+        answer="Murabaha vadeli satış akdidir.",
+        sources=[{"evidence": {"text": "Murabaha vadeli satış akdidir."}}],
+    )
+
+    assert verdict.valid is True
+    assert verdict.reason_code == "passed"
 
 
 def test_semantic_judge_handles_llm_malformed_json_gracefully():
@@ -127,5 +150,123 @@ def test_semantic_judge_handles_llm_malformed_json_gracefully():
         answer="Cevap",
         sources=[],
     )
+    assert verdict.valid is False
+    assert verdict.reason_code == "judge_invalid_output"
+
+
+def test_semantic_judge_rejects_wrong_json_types_and_unknown_reason_codes():
+    llm = FakeJudgeLLM(
+        [
+            json.dumps({"valid": "false", "reason_code": "passed"}),
+            json.dumps({"valid": True, "reason_code": "anything_goes"}),
+        ]
+    )
+
+    verdict = SemanticJudge(llm=llm).evaluate(
+        question="Soru",
+        answer="Cevap",
+        sources=[],
+    )
+
+    assert verdict.valid is False
+    assert verdict.reason_code == "judge_invalid_output"
+
+
+def test_semantic_judge_rejects_unqualified_superlative_without_calling_llm():
+    llm = FakeJudgeLLM(
+        [json.dumps({"valid": True, "reason_code": "passed"})]
+    )
+
+    verdict = SemanticJudge(llm=llm).evaluate(
+        question="Hangi kartlar var?",
+        answer="Bu kesinlikle en iyi karttır.",
+        sources=[{"evidence": {"text": "Kart kampanyası"}}],
+    )
+
+    assert verdict.valid is False
+    assert verdict.reason_code == "unsupported_qualitative_claim"
+    assert llm.calls == []
+
+
+def test_semantic_judge_rejects_unsupported_relative_recommendation():
+    llm = FakeJudgeLLM(
+        [json.dumps({"valid": True, "reason_code": "passed"})]
+    )
+
+    verdict = SemanticJudge(llm=llm).evaluate(
+        question="Hangisi daha avantajlı?",
+        answer="Bu ürün daha avantajlı ve tercih edilebilir.",
+        sources=[{"evidence": {"text": "Araç finansmanı seçeneği"}}],
+    )
+
+    assert verdict.valid is False
+    assert verdict.reason_code == "unsupported_qualitative_claim"
+    assert llm.calls == []
+
+
+def test_semantic_judge_allows_evidence_backed_comparison_context():
+    llm = FakeJudgeLLM(
+        [json.dumps({"valid": True, "reason_code": "passed"})]
+    )
+    context = {
+        "plan": {
+            "intent": "product_comparison",
+            "slots": {
+                "aggregation": "MIN",
+                "metric": "PROFIT_RATE",
+                "term_months": None,
+                "amount": None,
+                "fee_priority": None,
+            },
+        },
+        "facts": [
+            {
+                "campaign_id": "housing-low",
+                "metric": "PROFIT_RATE",
+                "value": 0.0189,
+            }
+        ],
+    }
+
+    verdict = SemanticJudge(llm=llm).evaluate(
+        question="En düşük kâr payı hangi seçenekte?",
+        answer="Bu seçenek oran açısından diğerlerinden daha avantajlıdır.",
+        sources=[{"campaign_id": "housing-low", "evidence": {"text": "%1,89"}}],
+        context=context,
+    )
+
     assert verdict.valid is True
-    assert verdict.reason_code == "judge_fallback"
+    assert verdict.reason_code == "passed"
+    assert len(llm.calls) == 1
+    sent_context = json.loads(llm.calls[0][1])["context"]
+    assert sent_context == context
+
+
+def test_semantic_judge_rejects_absolute_advice_even_with_metric_context():
+    llm = FakeJudgeLLM(
+        [json.dumps({"valid": True, "reason_code": "passed"})]
+    )
+    context = {
+        "plan": {
+            "intent": "product_comparison",
+            "slots": {"aggregation": "MIN", "metric": "PROFIT_RATE"},
+        },
+        "facts": [
+            {
+                "campaign_id": "housing-low",
+                "metric": "PROFIT_RATE",
+                "value": 0.0189,
+            }
+        ],
+    }
+
+    verdict = SemanticJudge(llm=llm).evaluate(
+        question="En düşük kâr payı hangi seçenekte?",
+        answer="Bu kesinlikle en iyi bankadır.",
+        sources=[{"campaign_id": "housing-low", "evidence": {"text": "%1,89"}}],
+        context=context,
+    )
+
+    assert verdict.valid is False
+    assert verdict.reason_code == "unsupported_qualitative_claim"
+    assert llm.calls == []

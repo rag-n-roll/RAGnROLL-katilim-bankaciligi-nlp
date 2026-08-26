@@ -141,9 +141,11 @@ def test_default_prompt_keeps_committed_live_behavior(monkeypatch):
 
     assert system_prompt == committed_system
     assert user_prompt.startswith(
-        "OPTİMİZE EDİLMİŞ GÖREV TALİMATI:\n"
+        "GÖREV TALİMATI:\n"
         + committed_profile["instruction"]
     )
+    assert committed_profile["status"] == "baseline"
+    assert committed_profile["optimizer"] == "dspy-gepa-ready"
     assert builder.metadata() == {
         "profile": committed_profile["profile"],
         "optimizer": committed_profile["optimizer"],

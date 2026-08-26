@@ -71,6 +71,6 @@ class PresentedAnswer:
 def present_answer(
     answer: str, *, sources: list[dict[str, Any]]
 ) -> PresentedAnswer:
-    display = re.sub(r"\s*\[K\d+\]", "", answer)
+    display = re.sub(r"\s*\[K\d+(?:\s*,\s*K?\d+)*\]", "", answer)
     display = re.sub(r"[ \t]+([.,;:!?])", r"\1", display).strip()
     return PresentedAnswer(display, deduplicate_sources(sources))

@@ -202,7 +202,14 @@ class DomainQueryCompiler:
             return "product_comparison", 0.99
         definition_requested = any(
             self._contains_phrase(normalized, term)
-            for term in ("nedir", "ne demek", "ne anlama geliyor", "açıklar mısın")
+            for term in (
+                "nedir",
+                "ne demek",
+                "ne anlama geliyor",
+                "açıklar mısın",
+                "ilkeleri nelerdir",
+                "esasları nelerdir",
+            )
         )
         if definition_requested:
             return ("definition", 0.98) if has_domain else ("unknown", 0.0)
@@ -378,7 +385,7 @@ class DomainQueryCompiler:
             return "PROFIT_RATE", aggregation
         if "vade" in normalized or "kaç ay" in normalized:
             return "MATURITY", "MAX" if "uzun" in normalized else None
-        if "masraf" in normalized or "ücret" in normalized:
+        if "masraf" in normalized or "ücret" in normalized or "aidat" in normalized:
             return "FEE", "MIN" if "düşük" in normalized or "az" in normalized else None
         if "ödül" in normalized or "puan" in normalized:
             return "REWARD_AMOUNT", "MAX" if "yüksek" in normalized else None

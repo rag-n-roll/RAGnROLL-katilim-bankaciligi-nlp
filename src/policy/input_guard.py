@@ -33,6 +33,20 @@ _APPLICATION_CONCEPT_RE = re.compile(r"\b(?:basvuru\w*|finansman\w*)\b")
 _APPLICATION_ACTION_RE = re.compile(
     r"\b(?:basvur(?:mak|mayi|uyorum|urum|alim|un(?:uz)?|acag\w*|abilir\w*)?|yap\w*)\b"
 )
+_ACCOUNT_PRODUCT_CONCEPT_RE = re.compile(
+    r"\b(?:kart\w*|hesap\w*|hesab\w*|basvuru\w*|finansman\w*|"
+    r"limit\w*|sifre\w*)\b"
+)
+_CANCELLATION_ACTION_RE = re.compile(
+    r"\b(?:"
+    r"iptal\s+e(?:t|din|der\s+misiniz)"
+    r"|(?:kapat|dondur|artir|degistir|gonder|yenile)(?:in|iniz|un|unuz)?"
+    r"|geri\s+cek(?:in|iniz)?"
+    r"|(?:iptal\s+etmek|kapatmak|dondurmak|artirmak|degistirmek|"
+    r"gondermek|yenilemek|geri\s+cekmek)\s+"
+    r"ist(?:iyorum|iyoruz|erim)"
+    r")\b"
+)
 
 
 def _normalize(message: str) -> str:
@@ -57,6 +71,7 @@ def _is_transaction_request(message: str) -> bool:
         (_TRANSFER_CONCEPT_RE, _TRANSFER_ACTION_RE),
         (_COMPLAINT_CONCEPT_RE, _COMPLAINT_ACTION_RE),
         (_APPLICATION_CONCEPT_RE, _APPLICATION_ACTION_RE),
+        (_ACCOUNT_PRODUCT_CONCEPT_RE, _CANCELLATION_ACTION_RE),
     )
     return any(
         concept.search(clause) and action.search(clause)

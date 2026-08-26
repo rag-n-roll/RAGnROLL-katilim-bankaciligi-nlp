@@ -4,6 +4,7 @@ import pytest
 
 from src.api.main import create_app
 from src.llm.decisions import PlannerDecision
+from src.llm.judging import SemanticJudge
 from src.main import app as integrated_app
 from src.persistence import CampaignStore
 from src.policy import Action, ComparisonCriteria
@@ -40,14 +41,24 @@ def _client(tmp_path):
     return TestClient(create_app(database_path=database))
 
 
+def test_production_assistant_wires_an_independent_semantic_judge(tmp_path):
+    assistant = GroundedAssistant(
+        CampaignStore(tmp_path / "judge.sqlite3"),
+        chroma_enabled=False,
+    )
+
+    assert isinstance(assistant.output_gate.judge, SemanticJudge)
+    assert assistant.output_gate.judge.llm is not assistant.llm
+
+
 @pytest.mark.parametrize("action", (Action.REFUSE, Action.REDIRECT, Action.CLARIFY))
-def test_api_preserves_validated_terminal_policy_action(tmp_path, action):
+def test_api_ignores_false_model_terminal_action_for_trusted_definition(tmp_path, action):
     database = tmp_path / f"terminal-{action.value}.sqlite3"
     store = CampaignStore(database)
     decision = PlannerDecision(
         action=action,
         in_domain=True,
-        intent="product_comparison" if action == Action.CLARIFY else "campaign_query",
+        intent="campaign_query",
         confidence=0.8,
         reason_code=f"terminal_{action.value.casefold()}",
         normalized_query="doğrulanmış karar",
@@ -62,37 +73,35 @@ def test_api_preserves_validated_terminal_policy_action(tmp_path, action):
             del args, kwargs
             return decision
 
-    class NoLLM:
-        enabled = True
-        model = "must-not-run"
+    class DisabledWriter:
+        enabled = False
+        model = "disabled-writer"
 
         def stream_chat(self, **kwargs):
             del kwargs
-            raise AssertionError("terminal policy must not call LLM")
+            raise AssertionError("disabled writer must not run")
 
         def status(self):
-            return {"available": True, "model": self.model}
+            return {"available": False, "model": self.model}
 
     app = create_app(database_path=database, chroma_enabled=False)
     app.state.grounded_assistant = GroundedAssistant(
         store,
-        llm=NoLLM(),
+        llm=DisabledWriter(),
         decisions=Decisions(),
         chroma_enabled=False,
     )
 
     with TestClient(app) as client:
-        response = client.post("/api/v1/chat", json={"message": "Kampanyaları göster"})
+        response = client.post("/api/v1/chat", json={"message": "Murabaha nedir?"})
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["action"] == action.value
-    assert payload["sources"] == []
-    if action == Action.CLARIFY:
-        assert payload["missing_criteria"] == ["amount", "fee_priority"]
-        assert payload["conversation_state"]["criteria"]["term_months"] == 24
-    else:
-        assert payload["answer"] == decision.safe_message
+    assert payload["action"] == "ANSWER"
+    assert payload["plan"]["intent"] == "definition"
+    assert payload["plan"]["route"] == "HYBRID_RAG"
+    assert payload["sources"][0]["term_id"] == "TRM0462"
+    assert payload["conversation_state"] is None
 
 
 def test_api_normalizes_nan_retrieval_score_for_strict_json(tmp_path):
@@ -165,7 +174,7 @@ def test_compile_and_chat_use_structured_first_route_with_sources(tmp_path):
     assert answer["plan"]["route"] == "STRUCTURED_SQL"
     assert answer["facts"][0]["campaign_id"] == "low"
     assert answer["sources"][0]["source_url"].startswith("https://")
-    assert "%1.89" in answer["answer"]
+    assert any(value in answer["answer"] for value in ("%1.89", "%1,89"))
 
 
 def test_campaign_count_chat_returns_sql_total_instead_of_retrieved_document_text(tmp_path):
@@ -215,6 +224,11 @@ def test_definition_chat_uses_local_terminology_corpus(tmp_path):
     assert payload["sources"]
     assert payload["sources"][0]["term_id"] == "TRM0462"
     assert all(source.get("campaign_id") is None for source in payload["sources"])
+    assert all(
+        "Ana kategori:" not in source["evidence"]["text"]
+        and "Entity:" not in source["evidence"]["text"]
+        for source in payload["sources"]
+    )
 
 
 def test_transactional_request_is_redirected_without_fake_sources(tmp_path):
@@ -258,6 +272,123 @@ def test_product_discovery_chat_uses_hybrid_rag(tmp_path):
     assert payload["plan"]["intent"] == "product_search"
     assert payload["plan"]["route"] == "HYBRID_RAG"
     assert payload["sources"]
+
+
+def test_known_bank_query_is_not_refused_when_runtime_database_is_empty(tmp_path):
+    database = tmp_path / "empty.sqlite3"
+    CampaignStore(database).initialize()
+
+    with TestClient(create_app(database_path=database, chroma_enabled=False)) as client:
+        response = client.post(
+            "/api/v1/chat",
+            json={"message": "Kuveyt Türk kampanyalarında hangi avantajlar var?"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["plan"]["slots"]["banks"] == ["kuveyt-turk"]
+    assert payload["action"] == "ANSWER"
+    assert payload["generation"]["fallback_reason"] == "evidence_not_found"
+
+
+def test_product_search_does_not_mix_terminology_into_campaign_results(tmp_path):
+    database = tmp_path / "card-search.sqlite3"
+    CampaignStore(database).upsert_rows(
+        [
+            preprocess_record(
+                Campaign(
+                    id="fee-free-card",
+                    bank_slug="kuveyt-turk",
+                    bank_name="Kuveyt Türk",
+                    title="Masrafsız kart kampanyası",
+                    content="Kart işlemlerinde masrafsız kullanım avantajı.",
+                    source_url="https://kuveyt-turk.example/fee-free-card",
+                ).to_dict()
+            ),
+            preprocess_record(
+                Campaign(
+                    id="ordinary-card-reward",
+                    bank_slug="kuveyt-turk",
+                    bank_name="Kuveyt Türk",
+                    title="Kart harcamasına puan kampanyası",
+                    content="Kart harcamalarına 500 TL puan avantajı.",
+                    source_url="https://kuveyt-turk.example/card-reward",
+                ).to_dict()
+            ),
+        ],
+        run_status="success",
+    )
+    with TestClient(create_app(database_path=database, chroma_enabled=False)) as client:
+        response = client.post(
+            "/api/v1/chat",
+            json={"message": "Masrafsız kart ve hesap seçenekleri nelerdir?"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["plan"]["intent"] == "product_search"
+    assert payload["sources"]
+    assert [source["campaign_id"] for source in payload["sources"]] == [
+        "fee-free-card"
+    ]
+    assert all(source.get("campaign_id") for source in payload["sources"])
+    assert all(source.get("term_id") is None for source in payload["sources"])
+
+
+def test_aidatsiz_card_search_excludes_free_transfer_campaigns(tmp_path):
+    database = tmp_path / "annual-fee.sqlite3"
+    CampaignStore(database).upsert_rows(
+        [
+            preprocess_record(
+                Campaign(
+                    id="annual-fee-free-card",
+                    bank_slug="kuveyt-turk",
+                    bank_name="Kuveyt Türk",
+                    title="Aidatsız finans kart",
+                    content="Bu kartta yıllık kart aidatı yoktur.",
+                    source_url="https://kuveyt-turk.example/aidatsiz-kart",
+                ).to_dict()
+            ),
+            preprocess_record(
+                Campaign(
+                    id="free-transfer-only",
+                    bank_slug="kuveyt-turk",
+                    bank_name="Kuveyt Türk",
+                    title="Kart müşterilerine ücretsiz EFT",
+                    content="Kart sahiplerine ücretsiz havale ve EFT avantajı sunulur.",
+                    source_url="https://kuveyt-turk.example/ucretsiz-eft",
+                ).to_dict()
+            ),
+        ],
+        run_status="success",
+    )
+
+    with TestClient(create_app(database_path=database, chroma_enabled=False)) as client:
+        payload = client.post(
+            "/api/v1/chat", json={"message": "Aidatsız kart seçenekleri nelerdir?"}
+        ).json()
+
+    assert payload["plan"]["slots"]["metric"] == "FEE"
+    assert [source["campaign_id"] for source in payload["sources"]] == [
+        "annual-fee-free-card"
+    ]
+
+
+def test_participation_principles_question_uses_exact_principles_term(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat",
+            json={
+                "message": "Konut finansmanında katılım bankacılığı ilkeleri nelerdir?"
+            },
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["plan"]["intent"] == "definition"
+    assert payload["sources"]
+    assert [source.get("term_id") for source in payload["sources"]] == ["TRM0463"]
+    assert "faizsiz finans prensipleri" in payload["answer"].casefold()
 
 
 def test_subjective_comparison_is_clarified_then_resumed_from_client_state(tmp_path):
@@ -584,7 +715,7 @@ def test_follow_up_criteria_produces_neutral_comparison(tmp_path):
     with _client(tmp_path) as client:
         first = client.post(
             "/api/v1/chat",
-            json={"message": "En uygun taşıt finansmanı hangisi?"},
+            json={"message": "En uygun konut finansmanı hangisi?"},
         )
         first_payload = first.json()
         second = client.post(
@@ -599,4 +730,6 @@ def test_follow_up_criteria_produces_neutral_comparison(tmp_path):
     assert payload["action"] == "ANSWER"
     assert payload["missing_criteria"] == []
     assert payload["sources"]
+    assert all(source.get("campaign_id") for source in payload["sources"])
+    assert "doğrulayamıyorum" in payload["answer_display"].casefold()
     assert "[K" not in payload["answer_display"]

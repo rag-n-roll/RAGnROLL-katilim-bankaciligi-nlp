@@ -26,13 +26,21 @@ class OutputGate:
         self.judge = judge
 
     def validate(
-        self, answer: str, *, sources: list[dict[str, Any]], question: str = ""
+        self,
+        answer: str,
+        *,
+        sources: list[dict[str, Any]],
+        question: str = "",
+        context: dict[str, Any] | None = None,
     ) -> OutputVerdict:
         fingerprints = _fingerprints(answer)
         if len(fingerprints) != len(set(fingerprints)):
             return OutputVerdict(False, "repeated_content")
         if self.judge is not None:
             return self.judge.evaluate(
-                question=question, answer=answer, sources=sources
+                question=question,
+                answer=answer,
+                sources=sources,
+                context=context,
             )
         return OutputVerdict(True, "deterministic_checks_passed")

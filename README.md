@@ -152,7 +152,7 @@ kullanın. Örneğin:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m uvicorn src.main:app --reload
+.\.venv\Scripts\python.exe -m uvicorn src.main:app --reload --env-file .env
 ```
 
 ### Linux
@@ -189,10 +189,13 @@ cd ../..
 
 İlk kurulum için yalnızca API ve dashboard'u çalıştırın; Python ve Node
 bağımlılıkları yukarıdaki platform bölümünde bir kez kurulmuş olmalıdır. API'yi
-bir terminalde başlatın:
+bir terminalde başlatın. `.env` içindeki EVREN, Chroma veya yerel model ayarlarının
+uygulanması için dosyayı açıkça Uvicorn'a verin. `.env` henüz yoksa önce
+`.env.example` dosyasını `.env` adıyla kopyalayın; mevcut `.env` dosyanızın
+üzerine yazmayın:
 
 ```bash
-python -m uvicorn src.main:app --reload
+python -m uvicorn src.main:app --reload --env-file .env
 ```
 
 Windows PowerShell'de aynı komut çalışır. Dashboard için ikinci terminalde:

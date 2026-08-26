@@ -67,6 +67,25 @@ def test_compiler_links_domain_definition_to_ontology():
 
 
 @pytest.mark.parametrize(
+    "query",
+    (
+        "Katılım bankacılığı nedir?",
+        "Konut finansmanında katılım bankacılığı ilkeleri nelerdir?",
+    ),
+)
+def test_compiler_recognizes_foundational_participation_banking_questions(query):
+    plan = DomainQueryCompiler().compile(query)
+
+    assert plan.intent == "definition"
+    assert plan.route == "HYBRID_RAG"
+    assert plan.confidence_components["trusted_domain"] is True
+    assert any(
+        item.get("term_id") == "TRM0463"
+        for item in plan.terminology_rewrites
+    )
+
+
+@pytest.mark.parametrize(
     ("query", "intent"),
     (
         ("Konut finansmanı hangi teminatları gerektirir?", "application_requirements"),
@@ -123,6 +142,14 @@ def test_metric_bound_comparison_keeps_structured_sql():
     assert plan.route == "STRUCTURED_SQL"
     assert plan.slots["metric"] == "PROFIT_RATE"
     assert plan.slots["aggregation"] == "MIN"
+
+
+def test_aidatsiz_product_query_is_typed_as_fee_metric():
+    plan = DomainQueryCompiler().compile("Aidatsız kart seçenekleri nelerdir?")
+
+    assert plan.intent == "product_search"
+    assert plan.route == "HYBRID_RAG"
+    assert plan.slots["metric"] == "FEE"
 
 
 def test_product_search_keeps_confidence_evidence_separate_from_base_score():

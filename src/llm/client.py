@@ -75,6 +75,25 @@ class LLMSettings:
             ),
         )
 
+    @classmethod
+    def ollama_from_env(cls) -> "LLMSettings":
+        configured = os.getenv("RAGNROLL_OLLAMA_ENABLED", "true").strip().casefold()
+        return cls(
+            enabled=configured not in FALSE_VALUES,
+            base_url=os.getenv(
+                "RAGNROLL_OLLAMA_BASE_URL", "http://127.0.0.1:11434/v1"
+            ).rstrip("/"),
+            model=os.getenv("RAGNROLL_OLLAMA_MODEL", "gemma3:4b").strip(),
+            api_key=os.getenv("RAGNROLL_OLLAMA_API_KEY", "OLLAMA").strip()
+            or "OLLAMA",
+            connect_timeout=float(os.getenv("RAGNROLL_OLLAMA_CONNECT_TIMEOUT", "2")),
+            read_timeout=float(os.getenv("RAGNROLL_OLLAMA_READ_TIMEOUT", "180")),
+            max_tokens=int(os.getenv("RAGNROLL_OLLAMA_MAX_TOKENS", "900")),
+            temperature=float(os.getenv("RAGNROLL_OLLAMA_TEMPERATURE", "0.05")),
+            provider="ollama",
+            strict_model=True,
+        )
+
 
 class OpenAICompatibleLLM:
     """OpenAI Chat Completions SSE akışını sağlayıcıdan bağımsız tüketir."""
@@ -331,8 +350,33 @@ class ProviderLLMChain:
     def stream_chat_candidates(
         self, *, system_prompt: str, user_prompt: str
     ) -> Iterator[tuple[list[str], dict[str, Any]]]:
-        self._attempts = []
-        self._selected = {}
+        yield from self._stream_chat_candidates(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            reset_attempts=True,
+        )
+
+    def stream_chat_repair_candidates(
+        self, *, system_prompt: str, user_prompt: str
+    ) -> Iterator[tuple[list[str], dict[str, Any]]]:
+        """Run one repair pass while retaining the original attempt audit trail."""
+
+        yield from self._stream_chat_candidates(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            reset_attempts=False,
+        )
+
+    def _stream_chat_candidates(
+        self,
+        *,
+        system_prompt: str,
+        user_prompt: str,
+        reset_attempts: bool,
+    ) -> Iterator[tuple[list[str], dict[str, Any]]]:
+        if reset_attempts:
+            self._attempts = []
+            self._selected = {}
         for provider in self.providers:
             if not provider.enabled:
                 continue
@@ -399,7 +443,8 @@ def build_llm_from_env() -> ProviderLLMChain:
     order = [
         value.strip().casefold()
         for value in os.getenv(
-            "RAGNROLL_GENERATION_PROVIDER_ORDER", "evren,local,deterministic"
+            "RAGNROLL_GENERATION_PROVIDER_ORDER",
+            "evren,local,ollama,deterministic",
         ).split(",")
         if value.strip()
     ]
@@ -409,4 +454,6 @@ def build_llm_from_env() -> ProviderLLMChain:
             providers.append(OpenAICompatibleLLM(LLMSettings.evren_from_env()))
         elif name == "local":
             providers.append(OpenAICompatibleLLM(LLMSettings.from_env()))
+        elif name == "ollama":
+            providers.append(OpenAICompatibleLLM(LLMSettings.ollama_from_env()))
     return ProviderLLMChain(providers)

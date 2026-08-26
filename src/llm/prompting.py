@@ -122,7 +122,7 @@ class GroundedPromptBuilder:
             "sources": evidence,
             "verified_fallback_answer": fallback_answer,
         }
-        instruction_heading = "OPTİMİZE EDİLMİŞ GÖREV TALİMATI:"
+        instruction_heading = "GÖREV TALİMATI:"
         if self.mode == "gepa":
             instruction_heading = (
                 "DOĞRULANMIŞ GEPA ADAY TALİMATI "

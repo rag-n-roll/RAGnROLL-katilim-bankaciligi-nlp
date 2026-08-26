@@ -233,6 +233,25 @@ def test_whitespace_top_level_identity_does_not_mask_nested_metadata_identity():
     assert deduplicate_sources([first, winner]) == [winner]
 
 
+def test_dedup_collapses_same_bank_and_title_across_scraper_ids():
+    older = {
+        "campaign_id": "old-id",
+        "bank_name": "Örnek Katılım",
+        "title": "Masraflara Son!",
+        "retrieval_score": 0.4,
+    }
+    winner = {
+        "campaign_id": "new-id",
+        "bank_name": "Örnek Katılım",
+        "title": "  Masraflara   Son! ",
+        "retrieval_score": 0.9,
+    }
+
+    assert deduplicate_sources([older, winner]) == [
+        {**winner, "retrieval_score": 0.9}
+    ]
+
+
 def test_non_finite_or_invalid_scores_never_beat_a_finite_score():
     finite = {"campaign_id": "same", "retrieval_score": 0.5}
     invalid = {"campaign_id": "same", "retrieval_score": "not-a-number"}
