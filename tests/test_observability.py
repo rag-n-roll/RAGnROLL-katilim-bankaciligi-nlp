@@ -33,6 +33,7 @@ def test_event_recorder_capacity_discards_oldest_event():
     assert recorder.summary()["event_count"] == 1
     assert set(recorder.summary()["events"]) == {"new"}
 
+
 def test_event_summary_tracks_extended_dimensions():
     recorder = EventRecorder()
     recorder.record(

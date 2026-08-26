@@ -15,7 +15,7 @@ from src.preprocessing.clean_text import turkish_lower
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 NOMINAL_PLURAL = r"(?:lar|ler)?"
-NOMINAL_POSSESSIVE = r"(?:ım|im|um|üm|ımız|imiz|umuz|ümüz|ı|i|u|ü)?"
+NOMINAL_POSSESSIVE = r"(?:ım|im|um|üm|ımız|imiz|umuz|ümüz|ı|i|u|ü|sı|si|su|sü)?"
 NOMINAL_CASE = (
     r"(?:a|e|da|de|ta|te|dan|den|tan|ten|ın|in|un|ün|"
     r"nı|ni|nu|nü|nın|nin|nun|nün|ndan|nden|la|le|yla|yle|"
@@ -162,12 +162,12 @@ class DomainQueryCompiler:
             or metric == "REWARD_AMOUNT"
         )
         if any(
-            self._contains_phrase(normalized, term)
+            term in normalized
             for term in ("şikâyet", "şikayet", "itiraz")
         ):
             return "complaint_support", 0.99
         if self._contains_nominal_phrase(normalized, "katılım banka") and any(
-            self._contains_phrase(normalized, term)
+            term in normalized
             for term in (
                 "kaç",
                 "sayısı",
@@ -194,6 +194,9 @@ class DomainQueryCompiler:
                 "arasındaki fark",
                 "en düşük",
                 "en yüksek",
+                "en uygun",
+                "en avantajlı",
+                "hangisi",
             )
         ):
             return "product_comparison", 0.99
@@ -236,6 +239,8 @@ class DomainQueryCompiler:
                 "hangi koşul",
                 "hangi şart",
                 "neleri gerektir",
+                "evrak",
+                "belge",
             )
         ):
             return "application_requirements", 0.97

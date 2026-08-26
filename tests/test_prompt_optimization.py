@@ -492,9 +492,8 @@ def test_prod_requirements_and_docker_exclude_optional_optimizer_stack():
 
 
 def test_legacy_twelve_example_proxy_and_import_surface_remain_available():
+    dspy = pytest.importorskip("dspy")
     from src.prompting import grounded_answer_metric
-    import dspy
-
     dataset = PROJECT_ROOT / "data/model_training_data/assistant_prompt_examples.jsonl"
     rows = [json.loads(line) for line in dataset.read_text(encoding="utf-8").splitlines()]
     example = dspy.Example(**rows[0]).with_inputs("question", "evidence", "fallback")

@@ -90,7 +90,10 @@ class InputGuard:
                 intent="internal_information",
                 confidence=1.0,
                 reason_code="internal_information_request",
-                safe_message="Bu iç bilgiyi paylaşamam; katılım bankacılığı sorularında yardımcı olabilirim.",
+                safe_message=(
+                    "Bu iç bilgiyi paylaşamam; katılım bankacılığı "
+                    "sorularında yardımcı olabilirim."
+                ),
             )
         if _is_transaction_request(message):
             return PolicyDecision(
@@ -99,6 +102,9 @@ class InputGuard:
                 intent="transaction_execution",
                 confidence=1.0,
                 reason_code="transaction_execution",
-                safe_message="Bu işlemi gerçekleştiremiyorum; lütfen bankanızın resmî kanalını kullanın.",
+                safe_message=(
+                    "Bu işlemi gerçekleştiremiyorum; lütfen bankanızın "
+                    "resmî kanalını kullanın."
+                ),
             )
         return None

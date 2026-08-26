@@ -23,10 +23,9 @@ from src.persistence import CampaignStore
 from src.policy import (
     Action,
     ComparisonCriteria,
+    InputGuard,
     OutputGate,
-    OutputVerdict,
     PolicyDecision,
-    PresentedAnswer,
     present_answer,
 )
 from src.preprocessing.clean_text import tokenize_turkish
@@ -152,6 +151,7 @@ class GroundedAssistant:
         chroma_enabled: bool | None = None,
         output_gate: OutputGate | None = None,
         judge: Any | None = None,
+        input_guard: InputGuard | None = None,
     ) -> None:
         self.store = store
         self.compiler = compiler or DomainQueryCompiler()
@@ -170,6 +170,8 @@ class GroundedAssistant:
             chroma_enabled=chroma_enabled,
         )
         self.output_gate = output_gate or OutputGate(judge=judge)
+        self.input_guard = input_guard or InputGuard()
+
     def compile(self, message: str) -> QueryPlan:
         plan, _ = self._compile_with_policy(message)
         return plan
@@ -177,6 +179,16 @@ class GroundedAssistant:
     def _compile_with_policy(
         self, message: str
     ) -> tuple[QueryPlan, PolicyDecision | None]:
+        input_decision = self.input_guard.inspect(message)
+        if input_decision is not None:
+            plan = self.compiler.compile(message, known_banks=self.store.bank_summary())
+            safe_plan = replace(
+                plan,
+                route="SAFE_REDIRECT",
+                intent=input_decision.intent,
+                warnings=list(plan.warnings) + [input_decision.reason_code],
+            )
+            return safe_plan, input_decision
         known_banks = self.store.bank_summary()
         plan = self.compiler.compile(message, known_banks=known_banks)
         if plan.route == "SAFE_REDIRECT":
@@ -974,9 +986,11 @@ class GroundedAssistant:
                 plan, criteria=effective_criteria
             )
             if plan.route == "STRUCTURED_SQL":
-                operation = lambda _call: self._structured_answer(plan)
+                def operation(_call: Any) -> dict[str, Any]:
+                    return self._structured_answer(plan)
             else:
-                operation = lambda _call: self._hybrid_answer(plan, limit=limit)
+                def operation(_call: Any) -> dict[str, Any]:
+                    return self._hybrid_answer(plan, limit=limit)
             result = orchestrator.execute(
                 validated_plan,
                 expected_call=expected_call,

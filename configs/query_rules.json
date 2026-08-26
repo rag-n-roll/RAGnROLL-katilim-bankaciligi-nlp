@@ -5,7 +5,10 @@
     "faiz oranı": "kâr payı oranı",
     "kredi": "finansman",
     "ev kredisi": "konut finansmanı",
-    "araç kredisi": "taşıt finansmanı"
+    "araç kredisi": "taşıt finansmanı",
+    "mudarebe": "mudârebe",
+    "mudaraba": "mudârebe",
+    "icâre": "icare"
   },
   "product_terms": {
     "ev": {"product_type": "financing", "financing_type": "housing"},

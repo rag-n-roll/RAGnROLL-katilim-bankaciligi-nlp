@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import TypeVar
 
 from src.policy import Action, PolicyDecision
-from src.policy.presentation import deduplicate_sources, stable_source_key
 from src.policy.validator import PolicyValidator
 
 

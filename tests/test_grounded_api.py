@@ -547,3 +547,56 @@ def test_fee_free_card_campaigns_are_unique_and_citation_free(tmp_path):
         assert payload["answer"] == payload["answer_display"]
         campaign_ids = [s.get("campaign_id") for s in payload["sources"] if s.get("campaign_id")]
         assert len(campaign_ids) == len(set(campaign_ids))
+
+
+def test_weather_question_refuses_without_tool_calls(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat", json={"message": "İstanbul'da hava durumu nasıl?"}
+        )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["plan"]["intent"] == "unknown"
+    assert payload["plan"]["route"] == "SAFE_REDIRECT"
+    assert payload["action"] == "REFUSE"
+    assert payload["facts"] == []
+    assert payload["sources"] == []
+
+
+def test_suitable_vehicle_financing_requires_criteria(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat",
+            json={"message": "En uygun taşıt finansmanı hangisi?"},
+        )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["action"] == "CLARIFY"
+    assert "term_months" in payload["missing_criteria"]
+    assert "amount" in payload["missing_criteria"]
+    assert "fee_priority" in payload["missing_criteria"]
+    assert payload["facts"] == []
+    assert payload["sources"] == []
+    assert "vade" in payload["answer_display"].casefold()
+
+
+def test_follow_up_criteria_produces_neutral_comparison(tmp_path):
+    with _client(tmp_path) as client:
+        first = client.post(
+            "/api/v1/chat",
+            json={"message": "En uygun taşıt finansmanı hangisi?"},
+        )
+        first_payload = first.json()
+        second = client.post(
+            "/api/v1/chat",
+            json={
+                "message": "36 ay, 500.000 TL; masraf öncelikli.",
+                "conversation_state": first_payload["conversation_state"],
+            },
+        )
+    assert second.status_code == 200
+    payload = second.json()
+    assert payload["action"] == "ANSWER"
+    assert payload["missing_criteria"] == []
+    assert payload["sources"]
+    assert "[K" not in payload["answer_display"]

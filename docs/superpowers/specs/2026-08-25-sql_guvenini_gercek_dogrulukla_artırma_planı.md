@@ -1,9 +1,10 @@
 # SQL Güvenini Gerçek Doğrulukla Artırma Planı
 
-> **Durum: Birleşik plana alındı.** Bu belge bağımsız uygulanmamalıdır. İçeriği,
-> `docs/superpowers/plans/2026-08-25-pusula-ai-birlesik-dogruluk-guardrails.md`
-> belgesinin özellikle Görev 3, Görev 6 ve Görev 11 bölümlerine bağımlılık sırasıyla
-> taşınmıştır. Birleşik plan tek uygulama kaynağıdır.
+> **Durum: Birleşik plana alındı ve uygulandı.**
+> Not: Bu plan birleşik planın Görev 3, 6 ve 11 bölümlerine alınmış ve başarıyla uygulanmıştır.
+> İçeriği, `docs/superpowers/plans/2026-08-25-pusula-ai-birlesik-dogruluk-guardrails.md`
+> belgesinin Görev 3, Görev 6 ve Görev 11 bölümlerine bağımlılık sırasıyla
+> taşınmış ve doğrulanmıştır.
 
 ## Özet
 

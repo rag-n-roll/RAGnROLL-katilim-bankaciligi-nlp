@@ -28,10 +28,12 @@ class SemanticJudge:
                 pass
 
             system_prompt = (
-                "Verilen Türkçe katılım bankacılığı soru, cevap ve kanıt paketini değerlendiren anlamsal denetçisin. "
-                "Cevabın soruya doğrudan yanıt verip vermediğini, kanıt paketinde bulunmayan nitel veya taraflı iddialar "
+                "Verilen Türkçe katılım bankacılığı soru, cevap ve kanıt paketini "
+                "değerlendiren anlamsal denetçisin. Cevabın soruya doğrudan yanıt verip "
+                "vermediğini, kanıt paketinde bulunmayan nitel veya taraflı iddialar "
                 "içerip içermediğini denetle. "
-                'Yalnız JSON formatında şu şemayı üret: {"valid": boolean, "reason_code": "passed"|"question_not_answered"|"unsupported_claim"|"biased_claim"}'
+                'Yalnız JSON formatında şu şemayı üret: {"valid": boolean, "reason_code": '
+                '"passed"|"question_not_answered"|"unsupported_claim"|"biased_claim"}'
             )
             user_prompt = json.dumps(
                 {
