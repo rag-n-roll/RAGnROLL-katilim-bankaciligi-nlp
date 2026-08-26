@@ -70,6 +70,10 @@ class EventRecorder:
                 "retrieval_backend",
                 "generation_mode",
                 "fallback_reason",
+                "action",
+                "reason_code",
+                "deduplicated_count",
+                "evidence_coverage",
             ):
                 counts = Counter(
                     str(item[field])

@@ -32,3 +32,20 @@ def test_event_recorder_capacity_discards_oldest_event():
 
     assert recorder.summary()["event_count"] == 1
     assert set(recorder.summary()["events"]) == {"new"}
+
+def test_event_summary_tracks_extended_dimensions():
+    recorder = EventRecorder()
+    recorder.record(
+        "guardrail",
+        latency_ms=12.5,
+        action="BLOCK",
+        reason_code="PROMPT_INJECTION",
+        deduplicated_count=3,
+        evidence_coverage=0.85,
+    )
+
+    dimensions = recorder.summary()["events"]["guardrail"]["dimensions"]
+    assert dimensions["action"] == {"BLOCK": 1}
+    assert dimensions["reason_code"] == {"PROMPT_INJECTION": 1}
+    assert dimensions["deduplicated_count"] == {"3": 1}
+    assert dimensions["evidence_coverage"] == {"0.85": 1}

@@ -4,5 +4,8 @@
   "minimum_backend_line_coverage": 0.7,
   "minimum_evidence_coverage": 0.7,
   "maximum_query_error_rate": 0.01,
-  "maximum_p95_latency_ms": 2000
+  "maximum_p95_latency_ms": 2000,
+  "minimum_route_accuracy": 0.85,
+  "minimum_sql_precision": 0.85,
+  "maximum_routing_ece": 0.15
 }
