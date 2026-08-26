@@ -191,6 +191,52 @@
   box-shadow: 0 3px 9px rgba(15, 54, 68, 0.03);
 }
 
+.thinkingPanel {
+  margin-bottom: 10px;
+  border: 1px solid #dbe9e3;
+  border-radius: 9px;
+  background: #f7fbf9;
+  color: #35645a;
+  font-size: 11px;
+}
+
+.thinkingPanel summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 600;
+}
+
+.thinkingPanel summary::-webkit-details-marker {
+  display: none;
+}
+
+.thinkingPanel summary::after {
+  content: "⌄";
+  margin-left: auto;
+  font-size: 13px;
+}
+
+.thinkingPanel[open] summary::after {
+  content: "⌃";
+}
+
+.thinkingIcon {
+  color: #b77a08;
+}
+
+.thinkingPanel ul {
+  margin: 0;
+  padding: 0 12px 8px 27px;
+}
+
+.thinkingPanel li {
+  padding: 2px 0;
+}
+
 .botBubble p {
   margin: 0 0 9px;
 }

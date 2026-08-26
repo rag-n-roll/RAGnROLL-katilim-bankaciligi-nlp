@@ -147,3 +147,11 @@ test("chatbot yerel finansal cevap veya sahte geçmiş içermez", async () => {
   assert.doesNotMatch(chatbot, /%2,49|%2,69|120 aya varan/);
   assert.match(chatbot, /Bağlantı kurulamadı/);
 });
+
+test("chatbot güvenli düşünme özeti ve akış göstergesi sunar", async () => {
+  const chatbot = await source("app/chatbot/page.tsx");
+  assert.match(chatbot, /<details/);
+  assert.match(chatbot, /Yanıt hazırlanıyor/);
+  assert.match(chatbot, /Kanıtlar kontrol ediliyor/);
+  assert.doesNotMatch(chatbot, /raw.*reasoning|chain.?of.?thought/i);
+});

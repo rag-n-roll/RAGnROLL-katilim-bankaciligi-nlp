@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import replace
 from hashlib import sha256
 from math import isfinite
-import re
 from time import perf_counter
+import re
 from typing import Any, Iterator
 
 from src.llm import (
@@ -32,6 +32,13 @@ from src.policy import (
 from src.policy.tool_policy import ALLOWED_BANKS
 from src.preprocessing.clean_text import tokenize_turkish
 from src.prompt_optimization import IntentTraceRecorder
+
+
+def _safe_stream_chunks(text: str, *, chunk_size: int = 28) -> Iterator[str]:
+    """Doğrulanmış metni küçük parçalar halinde aktarır; ham düşünceyi hiç açmaz."""
+    clean = str(text or "")
+    for start in range(0, len(clean), chunk_size):
+        yield clean[start : start + chunk_size]
 from src.query import DomainQueryCompiler, QueryPlan
 from src.query.compiler import _answer_confidence
 from src.retrieval import HybridRetriever
@@ -1597,7 +1604,8 @@ class GroundedAssistant:
                 presented_fallback = present_answer(
                     fallback_answer, sources=grounded["sources"]
                 )
-                yield {"event": "delta", "data": {"text": presented_fallback.answer_display}}
+                for text_chunk in _safe_stream_chunks(presented_fallback.answer_display):
+                    yield {"event": "delta", "data": {"text": text_chunk}}
                 yield {
                     "event": "done",
                     "data": self._generation(
@@ -1699,10 +1707,8 @@ class GroundedAssistant:
                     presented = present_answer(
                         accepted, sources=grounded["sources"]
                     )
-                    yield {
-                        "event": "delta",
-                        "data": {"text": presented.answer_display},
-                    }
+                    for text_chunk in _safe_stream_chunks(presented.answer_display):
+                        yield {"event": "delta", "data": {"text": text_chunk}}
                     mode = "llm"
                     yield {"event": "done", "data": self._generation(mode="llm")}
                     return
@@ -1712,7 +1718,8 @@ class GroundedAssistant:
                 presented_fallback = present_answer(
                     fallback_answer, sources=grounded["sources"]
                 )
-                yield {"event": "delta", "data": {"text": presented_fallback.answer_display}}
+                for text_chunk in _safe_stream_chunks(presented_fallback.answer_display):
+                    yield {"event": "delta", "data": {"text": text_chunk}}
                 yield {
                     "event": "done",
                     "data": self._generation(
@@ -1818,7 +1825,8 @@ class GroundedAssistant:
                     presented_fallback = present_answer(
                         fallback_answer, sources=grounded["sources"]
                     )
-                    yield {"event": "delta", "data": {"text": presented_fallback.answer_display}}
+                    for text_chunk in _safe_stream_chunks(presented_fallback.answer_display):
+                        yield {"event": "delta", "data": {"text": text_chunk}}
                     yield {
                         "event": "done",
                         "data": self._generation(
@@ -1828,14 +1836,16 @@ class GroundedAssistant:
                     return
                 polished = self._polish_llm_answer(sanitized or generated)
                 presented = present_answer(polished, sources=grounded["sources"])
-                yield {"event": "delta", "data": {"text": presented.answer_display}}
+                for text_chunk in _safe_stream_chunks(presented.answer_display):
+                    yield {"event": "delta", "data": {"text": text_chunk}}
                 mode = "llm"
                 yield {"event": "done", "data": self._generation(mode="llm")}
             except LLMUnavailableError:
                 presented_fallback = present_answer(
                     fallback_answer, sources=grounded["sources"]
                 )
-                yield {"event": "delta", "data": {"text": presented_fallback.answer_display}}
+                for text_chunk in _safe_stream_chunks(presented_fallback.answer_display):
+                    yield {"event": "delta", "data": {"text": text_chunk}}
                 yield {
                     "event": "done",
                     "data": self._generation(

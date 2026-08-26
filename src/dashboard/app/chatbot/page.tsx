@@ -27,6 +27,7 @@ type MessageExchange = {
   error?: string;
   time?: string;
   sources?: ChatSource[];
+  thinkingSteps?: string[];
 };
 
 const SUGGESTIONS = [
@@ -113,6 +114,7 @@ export default function ChatbotPage() {
       answer: "",
       streaming: true,
       time: timeString,
+      thinkingSteps: ["İstek sınıflandırıldı"],
     };
 
     setExchanges((prev) => [...prev, newExchange]);
@@ -132,7 +134,15 @@ export default function ChatbotPage() {
               applyActiveChatUpdate(currentTokenRef.current, token, curr, (items: MessageExchange[]) => {
                 return items.map((item, idx) =>
                   idx === items.length - 1
-                    ? { ...item, meta, sources: meta.sources }
+                    ? {
+                        ...item,
+                        meta,
+                        sources: meta.sources,
+                        thinkingSteps: [
+                          "İstek sınıflandırıldı",
+                          "Kanıtlar kontrol ediliyor",
+                        ],
+                      }
                     : item
                 );
               })
@@ -184,7 +194,16 @@ export default function ChatbotPage() {
               applyActiveChatUpdate(currentTokenRef.current, token, curr, (items: MessageExchange[]) => {
                 return items.map((item, idx) =>
                   idx === items.length - 1
-                    ? { ...item, streaming: false, generation }
+                    ? {
+                        ...item,
+                        streaming: false,
+                        generation,
+                        thinkingSteps: [
+                          "İstek sınıflandırıldı",
+                          "Kanıtlar kontrol edildi",
+                          "Yanıt güvenlik kontrolünden geçti",
+                        ],
+                      }
                     : item
                 );
               })
@@ -262,6 +281,19 @@ export default function ChatbotPage() {
                     ✦
                   </div>
                   <div className={styles.botBubble}>
+                    {exchange.thinkingSteps && (
+                      <details className={styles.thinkingPanel} open={exchange.streaming}>
+                        <summary>
+                          <span className={styles.thinkingIcon} aria-hidden="true">✦</span>
+                          Yanıt hazırlanıyor
+                        </summary>
+                        <ul>
+                          {exchange.thinkingSteps.map((step) => (
+                            <li key={step}>{step}</li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
                     {exchange.error ? (
                       <p style={{ color: "#b91c1c" }}>{exchange.error}</p>
                     ) : (
