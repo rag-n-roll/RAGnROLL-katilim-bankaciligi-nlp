@@ -100,6 +100,14 @@
   line-height: 1.14;
 }
 
+.selectionIntro p {
+  max-width: 430px;
+  margin-top: 12px;
+  color: #5f7772;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .field {
   position: relative;
   display: grid;
@@ -152,6 +160,72 @@
 
 .field select:focus {
   border-color: #d6a22d;
+}
+
+.numberField {
+  height: 66px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  border-bottom: 2px solid #b9cbc5;
+  transition: border-color 0.2s;
+}
+
+.numberField:focus-within {
+  border-color: #d6a22d;
+}
+
+.numberField input {
+  min-width: 0;
+  height: 62px;
+  padding: 0 12px 0 18px;
+  color: #25424b;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.numberField b {
+  padding-right: 14px;
+  color: #b17b18;
+  font-size: 12px;
+}
+
+.priorityToggle {
+  min-height: 66px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 10px 14px;
+  color: #244c46;
+  background: #f2f8f4;
+  border: 1px solid #cfe0d7;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.priorityToggle input {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 auto;
+  accent-color: #c58a1d;
+}
+
+.priorityToggle span {
+  display: grid;
+  gap: 4px;
+}
+
+.priorityToggle b {
+  font-size: 13px;
+}
+
+.priorityToggle small {
+  color: #6d827d;
+  font-size: 10px;
+  line-height: 1.35;
 }
 
 .bankPicker {
@@ -284,6 +358,96 @@
   transform: translateX(4px);
 }
 
+.compareButton:disabled {
+  cursor: progress;
+  filter: saturate(0.6);
+  opacity: 0.72;
+  transform: none;
+}
+
+.formNotice {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 16px;
+  color: #5f3c13;
+  background: #fff7e0;
+  border-left: 3px solid #d6a22d;
+  font-size: 12px;
+}
+
+.formNotice button {
+  padding: 8px 12px;
+  color: #075244;
+  background: transparent;
+  border: 1px solid #9ab8ae;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.resultsState {
+  width: min(1320px, calc(100% - 96px));
+  scroll-margin-top: 80px;
+  margin: 0 auto 28px;
+}
+
+.emptyState,
+.coverageStrip {
+  min-height: 96px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 24px;
+  background: #f4f9f6;
+  border-top: 1px solid #c7dbd2;
+  border-bottom: 1px solid #c7dbd2;
+}
+
+.emptyState > span {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #76530e;
+  background: #f4d77e;
+  border-radius: 50%;
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.emptyState h2 {
+  color: #073f38;
+  font-family: var(--font-serif);
+  font-size: 21px;
+}
+
+.emptyState p {
+  margin-top: 4px;
+  color: #647a75;
+  font-size: 12px;
+}
+
+.coverageStrip {
+  justify-content: space-between;
+  color: #57716a;
+  font-size: 12px;
+}
+
+.coverageStrip strong {
+  color: #075244;
+  font-family: var(--font-serif);
+  font-size: 20px;
+}
+
+.coverageStrip time {
+  color: #8c6a23;
+  font-size: 11px;
+}
+
 .visualSection {
   scroll-margin-top: 80px;
   margin-top: 0;
@@ -345,6 +509,14 @@
 .profitChart {
   height: 330px;
   margin-top: 2px;
+}
+
+.chartEmpty {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  color: #667b76;
+  font-size: 13px;
 }
 
 .dualCharts {
@@ -474,6 +646,62 @@
   color: #073f38;
 }
 
+.bankCell > span {
+  display: grid;
+  gap: 4px;
+}
+
+.bankCell small,
+.statusMessage {
+  display: block;
+  color: #738680;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.statusMessage {
+  max-width: 300px;
+  margin-top: 7px;
+  white-space: normal;
+}
+
+.sourceLink {
+  display: inline-flex;
+  margin-top: 8px;
+  color: #087c69;
+  font-size: 11px;
+  font-weight: 850;
+  text-decoration: none;
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.sourceLink:hover {
+  color: #b17b18;
+  transform: translateX(3px);
+}
+
+.unavailableRow {
+  color: #6c7c78;
+  background: #fafbf9;
+}
+
+.disclaimer {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+  padding: 14px 16px;
+  color: #60736f;
+  background: #f4f8f5;
+  border-left: 3px solid #d6a22d;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.disclaimer span {
+  color: #b17b18;
+  font-weight: 900;
+}
+
 .bestRate {
   color: #087c69;
   font-size: 16px;
@@ -524,6 +752,10 @@
 }
 
 @media (max-width: 700px) {
+  .main + :global(a[aria-label^="Pusula AI"]) {
+    display: none;
+  }
+
   .pageHeader {
     padding: 20px 16px;
   }
@@ -538,7 +770,8 @@
 
   .selectionSection,
   .visualInner,
-  .tableSection {
+  .tableSection,
+  .resultsState {
     width: calc(100% - 32px);
   }
 
@@ -563,5 +796,15 @@
     align-items: flex-start;
     flex-direction: column;
     gap: 12px;
+  }
+
+  .formNotice,
+  .coverageStrip {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
+
+  .coverageStrip {
+    flex-direction: column;
   }
 }

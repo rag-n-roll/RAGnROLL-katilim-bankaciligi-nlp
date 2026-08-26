@@ -3,7 +3,36 @@ import math
 import pytest
 
 from src.policy import Action, ComparisonCriteria, PolicyDecision
+from src.policy.tool_policy import valid_tool_call
 from src.policy.validator import PolicyValidator
+
+
+def test_financing_quote_requires_complete_bounded_arguments():
+    valid = {
+        "name": "financing_quote",
+        "arguments": {
+            "financing_type": "vehicle",
+            "amount": 150_000,
+            "term_months": 24,
+            "fee_priority": True,
+        },
+    }
+
+    assert valid_tool_call("product_comparison", valid)
+    for missing in ("financing_type", "amount", "term_months", "fee_priority"):
+        incomplete = {
+            "name": "financing_quote",
+            "arguments": {
+                key: value for key, value in valid["arguments"].items() if key != missing
+            },
+        }
+        assert not valid_tool_call("product_comparison", incomplete)
+
+    invalid_type = {
+        **valid,
+        "arguments": {**valid["arguments"], "financing_type": "agriculture"},
+    }
+    assert not valid_tool_call("product_comparison", invalid_type)
 
 
 def test_out_of_domain_decision_cannot_call_tools():

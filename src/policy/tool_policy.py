@@ -25,7 +25,9 @@ ALLOWED_INTENTS = frozenset(
     }
 )
 ALLOWED_BANKS = frozenset(BANK_NAME_TO_SLUG.values())
-ALLOWED_TOOLS = frozenset({"structured_sql", "hybrid_rag", "comparison", "ontology"})
+ALLOWED_TOOLS = frozenset(
+    {"structured_sql", "hybrid_rag", "comparison", "ontology", "financing_quote"}
+)
 ALLOWED_CRITERIA = frozenset({"term_months", "amount", "fee_priority"})
 ALLOWED_METRICS = frozenset({"PROFIT_RATE", "MATURITY", "FEE", "REWARD_AMOUNT"})
 ALLOWED_AGGREGATIONS = frozenset({"MIN", "MAX", "COUNT"})
@@ -44,7 +46,9 @@ INTENT_TOOLS = {
     "complaint_support": frozenset(),
     "definition": frozenset({"hybrid_rag", "ontology"}),
     "maturity_query": frozenset({"structured_sql"}),
-    "product_comparison": frozenset({"structured_sql", "comparison"}),
+    "product_comparison": frozenset(
+        {"structured_sql", "comparison", "financing_quote"}
+    ),
     "product_search": frozenset({"structured_sql", "hybrid_rag"}),
     "rate_query": frozenset({"structured_sql"}),
     "relationship_query": frozenset({"hybrid_rag", "ontology"}),
@@ -70,6 +74,9 @@ TOOL_ARGUMENTS = {
     ),
     "hybrid_rag": frozenset(_COMMON_FILTERS),
     "comparison": frozenset({*_COMMON_FILTERS, *ALLOWED_CRITERIA}),
+    "financing_quote": frozenset(
+        {"banks", "financing_type", "term_months", "amount", "fee_priority"}
+    ),
     "ontology": frozenset(),
 }
 
@@ -127,6 +134,29 @@ def valid_tool_call(
         return False
     if not set(arguments).issubset(TOOL_ARGUMENTS[name]):
         return False
+    if name == "financing_quote":
+        required = {"financing_type", "term_months", "amount", "fee_priority"}
+        if not required.issubset(arguments):
+            return False
+        if arguments.get("financing_type") not in {
+            "consumer",
+            "vehicle",
+            "housing",
+            "commercial",
+        }:
+            return False
+        term_months = arguments.get("term_months")
+        amount = arguments.get("amount")
+        if (
+            isinstance(term_months, bool)
+            or not isinstance(term_months, int)
+            or not 1 <= term_months <= 240
+            or isinstance(amount, bool)
+            or not isinstance(amount, (int, float))
+            or not isfinite(float(amount))
+            or not 0 < float(amount) <= 100_000_000
+        ):
+            return False
     return _valid_arguments(
         arguments,
         allowed_banks=set(ALLOWED_BANKS if allowed_banks is None else allowed_banks),

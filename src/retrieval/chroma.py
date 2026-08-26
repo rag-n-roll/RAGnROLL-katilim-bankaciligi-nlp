@@ -249,6 +249,12 @@ class ChromaIndexer:
         documents.extend(terminology_documents())
         documents.extend(pdf_evidence_documents())
         documents = [item for item in documents if item[0] and item[1].strip()]
+        source_counts = {
+            source_type: sum(
+                item[2].get("source_type") == source_type for item in documents
+            )
+            for source_type in ("campaign", "terminology", "pdf_evidence")
+        }
         expected_ids = {item[0] for item in documents}
         existing = collection.get(include=["metadatas"])
         existing_hashes = {
@@ -283,10 +289,10 @@ class ChromaIndexer:
         )
         collection.modify(metadata=metadata)
         return {
-            "campaigns": sum(item[2]["source_type"] == "campaign" for item in documents),
-            "terminology": sum(
-                item[2]["source_type"] == "terminology" for item in documents
-            ),
+            "campaigns": source_counts["campaign"],
+            "terminology": source_counts["terminology"],
+            "pdf_evidence": source_counts["pdf_evidence"],
+            "source_counts": source_counts,
             "total": collection.count(),
             "embedded": len(changed),
             "unchanged": len(documents) - len(changed),

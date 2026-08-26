@@ -16,7 +16,10 @@ _MONEY_RE = re.compile(
     re.IGNORECASE,
 )
 _FEE_POSITIVE_RE = re.compile(
-    r"(?:masraf\s+(?:oncelikli|onemli)|(?:dusuk|az)\s+masraf)",
+    r"(?:"
+    r"masraf\s+(?:oncelikli|onemli|oncelig(?:iyle|im(?:\s+var)?|ine\s+gore))"
+    r"|(?:dusuk|az)\s+masraf"
+    r")",
     re.IGNORECASE,
 )
 _FEE_NEGATION_RE = re.compile(

@@ -182,7 +182,7 @@ class EvrenQdrantRetriever:
             for point in response.points:
                 payload = dict(point.payload or {})
                 text = str(payload.pop("document_text", ""))
-                document_id = str(payload.pop("document_id", point.id))
+                document_id = str(payload.get("document_id") or point.id)
                 items.append(
                     {
                         "id": document_id,
@@ -275,6 +275,12 @@ class EvrenQdrantIndexer:
         documents.extend(terminology_documents())
         documents.extend(pdf_evidence_documents())
         documents = [item for item in documents if item[0] and item[1].strip()]
+        source_counts = {
+            source_type: sum(
+                item[2].get("source_type") == source_type for item in documents
+            )
+            for source_type in ("campaign", "terminology", "pdf_evidence")
+        }
         existing: dict[str, tuple[Any, str]] = {}
         offset = None
         while True:
@@ -342,6 +348,7 @@ class EvrenQdrantIndexer:
         return {
             "status": "ready",
             "total": len(documents),
+            "source_counts": source_counts,
             "embedded": len(changed),
             "unchanged": len(documents) - len(changed),
             "stale_deleted": len(stale),

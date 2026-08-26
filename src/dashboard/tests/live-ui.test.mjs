@@ -8,6 +8,71 @@ async function source(path) {
   return readFile(new URL(path, dashboardRoot), "utf8");
 }
 
+test("geliştirme sunucusu 127.0.0.1 istemcisini hydrate eder", async () => {
+  const nextConfig = await source("next.config.ts");
+
+  assert.match(nextConfig, /allowedDevOrigins:\s*\[\s*["']127\.0\.0\.1["']\s*\]/);
+});
+
+test("financing api istemcisi kaynaklı kampanya ve teklif sözleşmesini taşır", async () => {
+  const api = await source("services/api.ts");
+
+  assert.match(api, /export function getFinancingCampaigns|export async function getFinancingCampaigns/);
+  assert.match(api, /export function getFinancingQuotes|export async function getFinancingQuotes/);
+  assert.match(api, /\/financing-campaigns\?catalog_only=true/);
+  assert.match(api, /\/financing-quotes/);
+  assert.match(api, /source_url\?: string \| null/);
+  assert.match(api, /retrieved_at\?: string \| null/);
+});
+
+test("chat kaynak sözleşmesi PDF belge ve sayfa kaynağını kullanıcıya taşır", async () => {
+  const [api, chatbot] = await Promise.all([
+    source("services/api.ts"),
+    source("app/chatbot/page.tsx"),
+  ]);
+
+  for (const field of ["document_id", "page_start", "page_end", "publisher"]) {
+    assert.match(api, new RegExp(`${field}\\?:`));
+  }
+  assert.match(chatbot, /page_start/);
+  assert.match(chatbot, /page_end/);
+  assert.match(chatbot, /Kaynaklar:/);
+  assert.doesNotMatch(chatbot, /Kaynak Kampanyalar:/);
+});
+
+test("karşılaştırma sayfası yalnız kaynaklı finansman tekliflerini kullanır", async () => {
+  const compare = await source("app/compare/page.tsx");
+
+  assert.doesNotMatch(compare, /BANK_RATE_BASE|DEFAULT_TABLE_ROWS/);
+  assert.doesNotMatch(compare, /Fallback calculated rows|Backend offline: compute/);
+  assert.doesNotMatch(compare, /compareCampaigns/);
+  assert.match(compare, /getFinancingCampaigns/);
+  assert.match(compare, /getFinancingQuotes/);
+  assert.match(compare, /financingAmount/);
+  assert.match(compare, /termMonths/);
+  assert.match(compare, /feePriority/);
+  assert.match(compare, /source_url/);
+  assert.match(compare, /Doğrulanmış teklif bulunamadı/);
+  assert.match(compare, /Resmî kaynak.*→/);
+});
+
+test("karşılaştırma grafikleri kaynak dışı varsayılan finansal değer üretmez", async () => {
+  const charts = await source("components/ComparisonCharts.tsx");
+
+  assert.doesNotMatch(charts, /DEFAULT_(BANKS|PROFIT_RATES|TERMS|COSTS)/);
+  assert.doesNotMatch(charts, /\? i\.rate : 2\.5|\? i\.term : 24|\? i\.cost : 0/);
+  assert.match(charts, /return null/);
+});
+
+test("mobil karşılaştırmada yüzen AI düğmesi ana eylemi kapatmaz", async () => {
+  const styles = await source("app/compare/page.module.css");
+
+  assert.match(
+    styles,
+    /\.main\s*\+\s*:global\(a\[aria-label\^=["']Pusula AI["']\]\)\s*\{[^}]*display:\s*none/s
+  );
+});
+
 test("sayfalar canlı API sözleşmelerini korur", async () => {
   const [home, campaigns, compare, chatbot] = await Promise.all([
     source("app/page.tsx"),
@@ -18,11 +83,24 @@ test("sayfalar canlı API sözleşmelerini korur", async () => {
 
   assert.match(home, /getDashboardSnapshot/);
   assert.match(campaigns, /getCampaigns/);
-  assert.match(compare, /compareCampaigns/);
+  assert.match(compare, /getFinancingQuotes/);
   assert.match(chatbot, /streamChat/);
   for (const handler of ["onMeta", "onDelta", "onReplace", "onDone"]) {
     assert.match(chatbot, new RegExp(`${handler}:`));
   }
+});
+
+test("chatbot karşılaştırma kriterlerini sonraki SSE isteğine taşır", async () => {
+  const [chatbot, api] = await Promise.all([
+    source("app/chatbot/page.tsx"),
+    source("services/api.ts"),
+  ]);
+
+  assert.match(api, /export type ChatConversationState/);
+  assert.match(api, /conversation_state:\s*conversationState/);
+  assert.match(chatbot, /setConversationState\(meta\.conversation_state \?\? null\)/);
+  assert.match(chatbot, /setConversationState\(null\)/);
+  assert.match(chatbot, /conversationState,\s*controller\.signal/);
 });
 
 test("sohbet abort ve eksik EOF durumunda doğrulanmamış cevabı temizler", async () => {
@@ -146,6 +224,18 @@ test("chatbot yerel finansal cevap veya sahte geçmiş içermez", async () => {
   assert.doesNotMatch(chatbot, /INITIAL_EXCHANGES|FALLBACK_ANSWERS|getFallbackAnswer/);
   assert.doesNotMatch(chatbot, /%2,49|%2,69|120 aya varan/);
   assert.match(chatbot, /Bağlantı kurulamadı/);
+});
+
+test("ana sayfa backend yokken sahte finansal sayı veya kampanya üretmez", async () => {
+  const home = await source("app/page.tsx");
+  const campaigns = await source("app/campaigns/page.tsx");
+  const distribution = await source("components/CampaignDistributionChart.tsx");
+
+  assert.doesNotMatch(home, /FALLBACK_CAMPAIGNS|FALLBACK_LEGEND/);
+  assert.doesNotMatch(home, /\|\|\s*471|%18,4/);
+  assert.doesNotMatch(distribution, /DEFAULT_BANKS|DEFAULT_VALUES/);
+  assert.doesNotMatch(campaigns, /FALLBACK_STATIC_ROWS|%2,49|20 Mayıs 2024/);
+  assert.match(home, /Doğrulanmış güncel veri alınamadı/);
 });
 
 test("chatbot güvenli düşünme özeti ve akış göstergesi sunar", async () => {

@@ -9,6 +9,8 @@ from math import sqrt
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 from src.persistence import CampaignStore
 from src.retrieval import (
     ChromaIndexer,
@@ -36,7 +38,20 @@ class SmokeEmbeddingProvider:
         return self._embed(str(text))
 
 
+def required_evren_exit_code(*, required: bool, status: str) -> int:
+    """Zorunlu uzak indeks hazır değilse sessiz başarıyı engelle."""
+
+    return 2 if required and status != "ready" else 0
+
+
+def load_runtime_env(path: str | Path = ".env") -> bool:
+    """CLI çalıştırmalarında proje `.env` dosyasını güvenli biçimde yükle."""
+
+    return bool(load_dotenv(dotenv_path=path, override=False))
+
+
 def main() -> int:
+    load_runtime_env()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--database", default=os.getenv("RAGNROLL_DB_PATH", "data/ragnroll.sqlite3")
@@ -57,7 +72,7 @@ def main() -> int:
     parser.add_argument(
         "--require-evren",
         action="store_true",
-        help="EVREN yapılandırılmışsa uzak indeks başarısızlığında çıkış kodu 2 döndür",
+        help="EVREN uzak indeksi hazır değilse çıkış kodu 2 döndür",
     )
     args = parser.parse_args()
     if args.smoke and args.embedding_model:
@@ -74,7 +89,6 @@ def main() -> int:
     ).build(batch_size=args.batch_size)
     result["smoke"] = args.smoke
     evren_retriever = EvrenQdrantRetriever()
-    evren_failure = False
     if args.smoke:
         result["evren"] = {"status": "skipped", "reason": "smoke_mode"}
     elif not evren_retriever.enabled:
@@ -85,13 +99,15 @@ def main() -> int:
                 store, retriever=evren_retriever
             ).build(batch_size=args.batch_size)
         except Exception as exc:
-            evren_failure = True
             result["evren"] = {
                 "status": "failed",
                 "reason": type(exc).__name__,
             }
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 2 if args.require_evren and evren_failure else 0
+    return required_evren_exit_code(
+        required=args.require_evren,
+        status=str(result["evren"].get("status", "failed")),
+    )
 
 
 if __name__ == "__main__":

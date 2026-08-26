@@ -115,6 +115,7 @@ def build_financing_quotes(
     term_months: int,
     official_quotes: dict[str, dict[str, Any]] | None = None,
     eligible_bank_slugs: set[str] | None = None,
+    fee_priority: bool = False,
     now: datetime | None = None,
 ) -> dict[str, Any]:
     """On bankanın tümünü koruyarak uygun kaynaklı oranlardan teklif üretir."""
@@ -188,13 +189,24 @@ def build_financing_quotes(
             }
         )
 
-    quotes.sort(
-        key=lambda item: (
-            item["status"] != "available",
-            item.get("monthly_installment", float("inf")),
-            item["bank_name"],
+    if fee_priority:
+        quotes.sort(
+            key=lambda item: (
+                item["status"] != "available",
+                _number(item.get("fees_total")) is None,
+                _number(item.get("fees_total")) or 0.0,
+                _number(item.get("total_repayment")) or float("inf"),
+                item["bank_name"],
+            )
         )
-    )
+    else:
+        quotes.sort(
+            key=lambda item: (
+                item["status"] != "available",
+                item.get("monthly_installment", float("inf")),
+                item["bank_name"],
+            )
+        )
     available = sum(item["status"] == "available" for item in quotes)
     return {
         "generated_at": generated_at.isoformat(),
@@ -210,5 +222,4 @@ def build_financing_quotes(
             "Vergi, fon, sigorta ve tahsis ücretleri yalnızca resmî kaynakta yayımlandığı ölçüde dahil edilir."
         ),
     }
-
 

@@ -24,6 +24,16 @@ def test_extracts_explicit_turkish_comparison_criteria():
     }
 
 
+def test_extracts_fee_priority_in_instrumental_form():
+    assert extract_comparison_criteria(
+        "50.000 TL tutarda 12 ay vadeli, masraf önceliğiyle karşılaştır"
+    ) == {
+        "term_months": 12,
+        "amount": 50_000,
+        "fee_priority": True,
+    }
+
+
 def test_fee_priority_negation_wins_over_positive_word():
     assert extract_comparison_criteria("Masraf önemli değil") == {
         "fee_priority": False

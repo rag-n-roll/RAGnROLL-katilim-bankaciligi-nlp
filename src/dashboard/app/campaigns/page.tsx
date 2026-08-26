@@ -45,74 +45,6 @@ const mapCampaignType = (value?: string | null) => {
   return "Finansman";
 };
 
-const FALLBACK_STATIC_ROWS: CampaignRowItem[] = [
-  {
-    id: "kt-1",
-    bank: "Kuveyt Türk",
-    campaign: "Taşıt Finansmanı Özel Oran Kampanyası",
-    text: "Kuveyt Türk taşıt finansmanında avantajlı kâr payı oranları ile yeni araç sahibi olun.",
-    summary: "24 aya varan vadelerle avantajlı taşıt finansmanı imkânı.",
-    cleanText: "Kuveyt Türk taşıt finansmanında avantajlı kâr payı oranları ile hayalinizdeki araca sahip olma fırsatı.",
-    type: "Finansman",
-    rate: "%2,49",
-    term: "24 Ay",
-    cost: "0 TL",
-    validity: "20 Mayıs 2024 – 30 Haziran 2024",
-  },
-  {
-    id: "at-1",
-    bank: "Albaraka Türk",
-    campaign: "Davet Et Kazan Kampanyası",
-    text: "Albaraka Mobil üzerinden arkadaşını davet eden müşterilerimize özel hediye puanlar.",
-    summary: "Arkadaşını davet et, harcama yaptıkça puan kazan.",
-    cleanText: "Albaraka Türk müşterilerini Albaraka Mobil uygulaması üzerinden Davet Et Kazan kampanyasına davet ediyoruz.",
-    type: "Kart",
-    rate: "%2,69",
-    term: "36 Ay",
-    cost: "0 TL",
-    validity: "19 Mayıs 2024 – 30 Haziran 2024",
-  },
-  {
-    id: "tf-1",
-    bank: "Türkiye Finans",
-    campaign: "Katılma Hesabı Hoş Geldin Kampanyası",
-    text: "Yeni açılan katılma hesaplarında yüksek getiri paylaşımı fırsatı.",
-    summary: "Katılma hesaplarında ilk müşterilere özel kâr payı paylaşım oranları.",
-    cleanText: "Türkiye Finans Katılma Hesabı Hoş Geldin Kampanyası ile birikimlerinizi güvenle değerlendirin.",
-    type: "Yatırım",
-    rate: "%2,79",
-    term: "48 Ay",
-    cost: "250 TL",
-    validity: "18 Mayıs 2024 – 31 Temmuz 2024",
-  },
-  {
-    id: "vk-1",
-    bank: "Vakıf Katılım",
-    campaign: "Avantajlı Konut Finansmanı Kampanyası",
-    text: "Ev sahibi olmak isteyen müşterilere özel esnek ödeme planlı finansman.",
-    summary: "Vakıf Katılım ile uygun kâr payı ve uzun vadeli konut finansmanı.",
-    cleanText: "Avantajlı Konut Finansmanı Kampanyası kapsamında esnek geri ödeme seçenekleri sunulmaktadır.",
-    type: "Finansman",
-    rate: "%2,89",
-    term: "36 Ay",
-    cost: "250 TL",
-    validity: "17 Mayıs 2024 – 31 Aralık 2024",
-  },
-  {
-    id: "zk-1",
-    bank: "Ziraat Katılım",
-    campaign: "Bankkart Alışverişe Ekstra Kazanç",
-    text: "Bankkart ile anlaşmalı üye işyerlerinde yapacağınız harcamalarda ekstra puan.",
-    summary: "Ziraat Katılım Bankkart ile harcadıkça kazandıran kampanya.",
-    cleanText: "Bankkart ile yapacağınız market ve akaryakıt alışverişlerinde ekstra puan kazanma fırsatı.",
-    type: "Kart",
-    rate: "%2,95",
-    term: "24 Ay",
-    cost: "150 TL",
-    validity: "16 Mayıs 2024 – 15 Temmuz 2024",
-  },
-];
-
 function loadLocalProcessedCampaigns(): CampaignRowItem[] {
   try {
     const candidatePath = path.resolve(process.cwd(), "..", "..", "data", "processed", "campaigns.json");
@@ -142,9 +74,9 @@ function loadLocalProcessedCampaigns(): CampaignRowItem[] {
       }
     }
   } catch {
-    // Dosya okunamadıysa fallback kullanılır
+    // Doğrulanmamış statik kampanya üretme; görünür boş durum gösterilir.
   }
-  return FALLBACK_STATIC_ROWS;
+  return [];
 }
 
 export default async function CampaignsPage() {

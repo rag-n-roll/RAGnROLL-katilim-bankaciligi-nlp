@@ -113,6 +113,7 @@ class FinancingQuoteRequest(ApiModel):
     amount: float = Field(gt=0, le=100_000_000)
     term_months: int = Field(ge=1, le=240)
     currency: Literal["TRY"] = "TRY"
+    fee_priority: bool = False
     turkiye_finans_credit_id: int | None = Field(default=None, gt=0)
 
 

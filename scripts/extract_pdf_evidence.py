@@ -9,7 +9,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.ingestion.pdf_evidence import extract_pdf_document
+from src.ingestion.pdf_evidence import RapidOcrFallback, extract_pdf_document
 from src.ingestion.pdf_registry import PdfSourceRegistry
 from src.ingestion.pdf_sources import build_pdf_manifest
 
@@ -27,6 +27,7 @@ def main() -> int:
     parser.add_argument("--max-pages", type=int)
     parser.add_argument("--max-tokens", type=int, default=450)
     parser.add_argument("--overlap-tokens", type=int, default=50)
+    parser.add_argument("--disable-ocr", action="store_true")
     args = parser.parse_args()
 
     registry = PdfSourceRegistry.from_path(args.registry)
@@ -34,12 +35,14 @@ def main() -> int:
     manifest = build_pdf_manifest(args.pdf, registry=registry)
     chunks: list[dict] = []
     reports: list[dict] = []
+    ocr_fallback = None if args.disable_ocr else RapidOcrFallback()
     for source in verified:
         result = extract_pdf_document(
             source,
             max_tokens=args.max_tokens,
             overlap_tokens=args.overlap_tokens,
             max_pages=args.max_pages,
+            ocr_fallback=ocr_fallback,
         )
         chunks.extend(result.chunks)
         expected_pages = next(
@@ -58,14 +61,15 @@ def main() -> int:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     manifest_path = args.output.with_suffix(".manifest.json")
     report_path = args.report or args.output.with_name("pdf_extraction_report.json")
-    manifest_path.write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    args.output.write_text(
-        "".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in chunks),
-        encoding="utf-8",
-    )
+    with manifest_path.open("w", encoding="utf-8", newline="\n") as stream:
+        stream.write(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
+    with args.output.open("w", encoding="utf-8", newline="\n") as stream:
+        stream.write(
+            "".join(
+                json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
+                for row in chunks
+            )
+        )
     report_payload = {
         "schema_version": 1,
         "documents": reports,
@@ -75,14 +79,14 @@ def main() -> int:
             "attempted_pages": sum(item["attempted"] for item in reports),
             "extracted_pages": sum(item["extracted"] for item in reports),
             "empty_pages": sum(item["empty"] for item in reports),
+            "low_quality_pages": sum(item["low_quality"] for item in reports),
+            "ocr_recovered_pages": sum(item["ocr_recovered"] for item in reports),
             "failed_pages": sum(item["failed"] for item in reports),
             "chunks": len(chunks),
         },
     }
-    report_path.write_text(
-        json.dumps(report_payload, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    with report_path.open("w", encoding="utf-8", newline="\n") as stream:
+        stream.write(json.dumps(report_payload, ensure_ascii=False, indent=2) + "\n")
     print(json.dumps(report_payload["totals"], ensure_ascii=False))
     return 0 if all(item["complete"] for item in reports) else 2
 

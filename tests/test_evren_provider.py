@@ -763,7 +763,21 @@ class FakeEvrenEmbedding:
 
 def test_qdrant_index_is_incremental_and_retrievable(tmp_path, monkeypatch):
     monkeypatch.setattr("src.retrieval.qdrant.terminology_documents", lambda: [])
-    monkeypatch.setattr("src.retrieval.qdrant.pdf_evidence_documents", lambda: [])
+    pdf_documents = [
+        (
+            "pdf:verified:1",
+            "Kâr payı havuzu katılma hesaplarından oluşur.",
+            {
+                "source_type": "pdf_evidence",
+                "index_hash": "pdf-hash-1",
+                "source_url": "https://tkbb.org.tr/ornek.pdf",
+                "ontology_term_ids": "TRM0452,TRM0385",
+            },
+        )
+    ]
+    monkeypatch.setattr(
+        "src.retrieval.qdrant.pdf_evidence_documents", lambda: pdf_documents
+    )
     store = CampaignStore(tmp_path / "campaigns.sqlite3")
     row = Campaign(
         id="housing",
@@ -794,12 +808,22 @@ def test_qdrant_index_is_incremental_and_retrievable(tmp_path, monkeypatch):
     results = retriever.retrieve(
         "konut", filters={"bank_slugs": ["ornek"]}, limit=3
     )
+    pdf_results = retriever.retrieve(
+        "havuzu", filters={"source_types": ["pdf_evidence"]}, limit=3
+    )
 
-    assert first["embedded"] == 1
+    assert first["source_counts"] == {
+        "campaign": 1,
+        "terminology": 0,
+        "pdf_evidence": 1,
+    }
+    assert first["embedded"] == 2
     assert second["embedded"] == 0
-    assert second["unchanged"] == 1
+    assert second["unchanged"] == 2
     assert results[0]["metadata"]["campaign_id"] == "housing"
     assert results[0]["retrieval_method"] == "evren-qdrant+bge-m3-embed"
+    assert pdf_results[0]["metadata"]["document_id"] == "pdf:verified:1"
+    assert pdf_results[0]["metadata"]["ontology_term_ids"] == "TRM0452,TRM0385"
 
 
 class SlowLocalLLM(StaticProvider):

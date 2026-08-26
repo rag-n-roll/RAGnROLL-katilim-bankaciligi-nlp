@@ -194,6 +194,7 @@
 .chartContent { min-height:500px; display:grid; grid-template-columns:420px minmax(0,1fr); align-items:start; gap:48px; padding-top:12px; }
 .chartVisualColumn { display:flex; flex-direction:column; align-items:center; }
 .chartArea { width:430px; height:330px; align-self:flex-start; }
+.emptyData { min-height:120px; display:grid; place-items:center; padding:24px; color:var(--muted); background:#f4f8f5; border:1px dashed #b8cec4; border-radius:12px; font-size:12px; text-align:center; }
 .legend { width:calc(100% - 12px); display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:repeat(5,64px); grid-auto-flow:column; align-self:start; justify-self:center; margin-top:42px; transform:none; }
 .legendRow { min-width:0; display:grid; grid-template-columns:44px minmax(112px,1fr) 34px 38px; align-items:center; gap:10px; padding:8px 15px; border-right:1px solid #edf1f2; border-bottom:1px solid #e7edef; font-size:15.5px; transition:background .18s ease,border-color .18s ease,transform .18s ease; }
 .legendRow:hover { background:#f2faf7; border-color:rgba(18,184,176,.28); transform:translateX(3px); }
@@ -220,6 +221,7 @@
 .campaignHeading p { margin-top:8px; color:var(--muted); font-size:12px; }
 .campaignHeading a { display:flex; gap:9px; color:var(--ink2); font-size:12px; font-weight:800; }
 .campaignList { margin-top:28px; border-top:1px solid rgba(0,39,57,.72); }
+.campaignList > .emptyData { margin-top:20px; }
 .campaignRow { position:relative; min-height:94px; display:grid; grid-template-columns:40px 160px minmax(330px,1fr) 120px 140px 34px; align-items:center; gap:14px; border-bottom:1px solid rgba(0,39,57,.26); transition:padding .18s ease,background .18s ease; }
 .campaignRow::after { content:""; position:absolute; left:0; bottom:-1px; width:72px; height:1px; background:linear-gradient(90deg,#002739,transparent); }
 .campaignRow:last-child { border-bottom:0; }

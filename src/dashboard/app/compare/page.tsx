@@ -1,238 +1,223 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./page.module.css";
 import {
+  CostChart,
   ProfitRateChart,
   TermChart,
-  CostChart,
   type ComparisonChartItem,
 } from "../../components/ComparisonCharts";
 import BankLogo from "../../components/BankLogo";
-import { compareCampaigns } from "../../services/api";
+import {
+  getFinancingCampaigns,
+  getFinancingQuotes,
+  type FinancingCampaign,
+  type FinancingQuote,
+  type FinancingQuoteResponse,
+  type FinancingType,
+} from "../../services/api";
 
-const ALL_BANKS = [
-  "Kuveyt Türk",
-  "Albaraka Türk",
-  "Türkiye Finans",
-  "Vakıf Katılım",
-  "Ziraat Katılım",
-  "Emlak Katılım",
-  "Hayat Finans",
-  "TOM Katılım",
-  "Dünya Katılım",
-  "Adil Katılım",
+const BANKS = [
+  { slug: "kuveyt-turk", name: "Kuveyt Türk" },
+  { slug: "albaraka-turk", name: "Albaraka Türk" },
+  { slug: "turkiye-finans", name: "Türkiye Finans" },
+  { slug: "vakif-katilim", name: "Vakıf Katılım" },
+  { slug: "ziraat-katilim", name: "Ziraat Katılım" },
+  { slug: "emlak-katilim", name: "Emlak Katılım" },
+  { slug: "hayat-finans", name: "Hayat Finans" },
+  { slug: "tom-katilim", name: "TOM Katılım" },
+  { slug: "dunya-katilim", name: "Dünya Katılım" },
+  { slug: "adil-katilim", name: "Adil Katılım" },
+] as const;
+
+const FINANCING_TYPES: Array<{ value: FinancingType; label: string }> = [
+  { value: "vehicle", label: "Taşıt finansmanı" },
+  { value: "housing", label: "Konut finansmanı" },
+  { value: "consumer", label: "İhtiyaç finansmanı" },
+  { value: "commercial", label: "Ticari finansman" },
 ];
 
-const PRODUCT_OPTIONS = [
-  "Taşıt Finansmanı",
-  "Konut Finansmanı",
-  "İhtiyaç Finansmanı",
-  "Katılma Hesabı",
-  "Kredi Kartı",
-  "KOBİ Finansmanı",
-  "Ticari Finansman",
-];
+const money = new Intl.NumberFormat("tr-TR", {
+  style: "currency",
+  currency: "TRY",
+  maximumFractionDigits: 2,
+});
 
-type TableRow = {
-  bank: string;
-  campaign: string;
-  rate: string;
-  term: string;
-  installment: string;
-  cost: string;
-  advantage: string;
-  best?: boolean;
-};
+const number = new Intl.NumberFormat("tr-TR", {
+  maximumFractionDigits: 2,
+});
 
-const DEFAULT_TABLE_ROWS: TableRow[] = [
-  {
-    bank: "Kuveyt Türk",
-    campaign: "Taşıt Finansmanı Özel Oran Kampanyası",
-    rate: "%2,49",
-    term: "24 Ay",
-    installment: "24",
-    cost: "0 TL",
-    advantage: "En düşük oran",
-    best: true,
-  },
-  {
-    bank: "Albaraka Türk",
-    campaign: "Avantajlı Taşıt Finansmanı",
-    rate: "%2,69",
-    term: "36 Ay",
-    installment: "36",
-    cost: "0 TL",
-    advantage: "Masrafsız",
-  },
-  {
-    bank: "Türkiye Finans",
-    campaign: "Yeni Araç Finansman Paketi",
-    rate: "%2,79",
-    term: "48 Ay",
-    installment: "48",
-    cost: "250 TL",
-    advantage: "Uzun vade",
-  },
-  {
-    bank: "Vakıf Katılım",
-    campaign: "Otomobil Finansmanı Avantajlı Paket",
-    rate: "%2,89",
-    term: "36 Ay",
-    installment: "36",
-    cost: "250 TL",
-    advantage: "Esnek vade",
-  },
-];
+function shortBankName(value: string) {
+  return value
+    .replace(" KATILIM BANKASI A.Ş.", "")
+    .replace(" BANKASI A.Ş.", "")
+    .replace(" KATILIM BANKASI A.Ş", "")
+    .trim();
+}
 
-const BANK_RATE_BASE: Record<string, { rate: number; term: number; cost: number; advantage: string }> = {
-  "Kuveyt Türk": { rate: 2.49, term: 24, cost: 0, advantage: "En düşük oran" },
-  "Albaraka Türk": { rate: 2.69, term: 36, cost: 0, advantage: "Masrafsız" },
-  "Türkiye Finans": { rate: 2.79, term: 48, cost: 250, advantage: "Uzun vade" },
-  "Vakıf Katılım": { rate: 2.89, term: 36, cost: 250, advantage: "Esnek vade" },
-  "Ziraat Katılım": { rate: 2.95, term: 24, cost: 150, advantage: "Geniş şube ağı" },
-  "Emlak Katılım": { rate: 3.05, term: 48, cost: 200, advantage: "Özel kâr payı" },
-  "Hayat Finans": { rate: 3.12, term: 36, cost: 100, advantage: "Tamamen dijital" },
-  "TOM Katılım": { rate: 3.20, term: 24, cost: 0, advantage: "Mobil avantaj" },
-  "Dünya Katılım": { rate: 3.28, term: 48, cost: 180, advantage: "Hızlı onay" },
-  "Adil Katılım": { rate: 3.36, term: 36, cost: 120, advantage: "Bireysel destek" },
-};
-
-function mapProductTypeToApi(label: string): string {
-  const lower = label.toLowerCase();
-  if (lower.includes("taşıt") || lower.includes("araba")) return "vehicle";
-  if (lower.includes("konut") || lower.includes("ev")) return "housing";
-  if (lower.includes("ihtiyaç")) return "consumer";
-  if (lower.includes("katılma") || lower.includes("hesap")) return "deposit";
-  if (lower.includes("kart")) return "credit_card";
-  return "financing";
+function quoteStatus(quote: FinancingQuote) {
+  if (
+    quote.status === "available" &&
+    quote.calculation_origin !== "last_verified_official_rate"
+  ) {
+    return "Doğrulanmış teklif";
+  }
+  if (quote.calculation_origin === "last_verified_official_rate") {
+    return "Son doğrulanmış oran";
+  }
+  return "Karşılaştırılabilir teklif yok";
 }
 
 export default function ComparePage() {
-  const [selectedBanks, setSelectedBanks] = useState<string[]>([
-    "Kuveyt Türk",
-    "Albaraka Türk",
-    "Türkiye Finans",
-    "Vakıf Katılım",
-  ]);
-  const [selectedProduct, setSelectedProduct] = useState<string>("Taşıt Finansmanı");
-  const [tableRows, setTableRows] = useState<TableRow[]>(DEFAULT_TABLE_ROWS);
+  const [selectedBanks, setSelectedBanks] = useState<string[]>(
+    BANKS.map((bank) => bank.slug)
+  );
+  const [financingType, setFinancingType] =
+    useState<FinancingType>("vehicle");
+  const [campaigns, setCampaigns] = useState<FinancingCampaign[]>([]);
+  const [campaignKey, setCampaignKey] = useState("");
+  const [campaignsLoading, setCampaignsLoading] = useState(true);
+  const [campaignError, setCampaignError] = useState("");
+  const [financingAmount, setFinancingAmount] = useState(150_000);
+  const [termMonths, setTermMonths] = useState(24);
+  const [feePriority, setFeePriority] = useState(true);
+  const [result, setResult] = useState<FinancingQuoteResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const toggleBank = (bank: string) => {
+  useEffect(() => {
+    let active = true;
+    getFinancingCampaigns()
+      .then((response) => {
+        if (!active) return;
+        setCampaigns(response.campaigns);
+        setCampaignError("");
+      })
+      .catch(() => {
+        if (active) {
+          setCampaignError(
+            "Kampanya kataloğu alınamadı; finansman türüyle karşılaştırabilirsiniz."
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setCampaignsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const matchingCampaigns = useMemo(
+    () =>
+      campaigns.filter(
+        (campaign) => campaign.financing_type === financingType
+      ),
+    [campaigns, financingType]
+  );
+
+  const toggleBank = (slug: string) => {
     setSelectedBanks((current) =>
-      current.includes(bank)
-        ? current.filter((item) => item !== bank)
-        : current.length < 10
-          ? [...current, bank]
-          : current
+      current.includes(slug)
+        ? current.filter((item) => item !== slug)
+        : [...current, slug]
     );
+    setResult(null);
   };
 
   const handleCompare = async () => {
+    if (
+      !Number.isFinite(financingAmount) ||
+      financingAmount <= 0 ||
+      !Number.isInteger(termMonths) ||
+      termMonths < 1 ||
+      termMonths > 240
+    ) {
+      setError("Geçerli bir finansman tutarı ve 1–240 ay arası vade girin.");
+      setResult(null);
+      return;
+    }
+    if (selectedBanks.length === 0) {
+      setError("Karşılaştırmak için en az bir banka seçin.");
+      setResult(null);
+      return;
+    }
+
     setLoading(true);
-    const effectiveBanks = selectedBanks.length > 0 ? selectedBanks : ALL_BANKS;
-    const mappedType = mapProductTypeToApi(selectedProduct);
-
+    setError("");
     try {
-      const apiResponse = await compareCampaigns({
-        product_type: mappedType,
-        limit: 10,
+      const response = await getFinancingQuotes({
+        financing_type: campaignKey ? undefined : financingType,
+        campaign_key: campaignKey || undefined,
+        amount: financingAmount,
+        term_months: termMonths,
+        fee_priority: feePriority,
       });
-
-      if (apiResponse && apiResponse.included && apiResponse.included.length > 0) {
-        const generatedRows: TableRow[] = apiResponse.included.map((item, index) => {
-          const bankName = effectiveBanks[index % effectiveBanks.length];
-          const base = BANK_RATE_BASE[bankName] ?? {
-            rate: 2.75,
-            term: 36,
-            cost: 0,
-            advantage: "Avantajlı",
-          };
-          return {
-            bank: bankName,
-            campaign: item.title,
-            rate: `%${base.rate.toFixed(2).replace(".", ",")}`,
-            term: `${base.term} Ay`,
-            installment: `${base.term}`,
-            cost: `${base.cost} TL`,
-            advantage: item.ranking_reason || base.advantage,
-            best: index === 0,
-          };
-        });
-        setTableRows(generatedRows);
-      } else {
-        // Fallback calculated rows
-        const fallbackRows: TableRow[] = effectiveBanks.map((bank, index) => {
-          const base = BANK_RATE_BASE[bank] ?? {
-            rate: 2.75,
-            term: 36,
-            cost: 0,
-            advantage: "Avantajlı",
-          };
-          return {
-            bank,
-            campaign: `${bank} ${selectedProduct} Fırsatı`,
-            rate: `%${base.rate.toFixed(2).replace(".", ",")}`,
-            term: `${base.term} Ay`,
-            installment: `${base.term}`,
-            cost: `${base.cost} TL`,
-            advantage: base.advantage,
-            best: index === 0,
-          };
-        });
-        setTableRows(fallbackRows);
-      }
-    } catch {
-      // Backend offline: compute dynamic comparison rows
-      const fallbackRows: TableRow[] = effectiveBanks.map((bank, index) => {
-        const base = BANK_RATE_BASE[bank] ?? {
-          rate: 2.75,
-          term: 36,
-          cost: 0,
-          advantage: "Avantajlı",
-        };
-        return {
-          bank,
-          campaign: `${bank} ${selectedProduct} Fırsatı`,
-          rate: `%${base.rate.toFixed(2).replace(".", ",")}`,
-          term: `${base.term} Ay`,
-          installment: `${base.term}`,
-          cost: `${base.cost} TL`,
-          advantage: base.advantage,
-          best: index === 0,
-        };
+      setResult(response);
+      requestAnimationFrame(() => {
+        document
+          .getElementById("comparison-results")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
-      setTableRows(fallbackRows);
+    } catch (caught) {
+      setResult(null);
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Doğrulanmış teklifler şu anda alınamadı."
+      );
     } finally {
       setLoading(false);
-      document.getElementById("comparison-results")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
     }
   };
 
-  const chartItems: ComparisonChartItem[] = useMemo(() => {
-    const activeBanks = selectedBanks.length > 0 ? selectedBanks : ALL_BANKS;
-    return activeBanks.map((bank) => {
-      const base = BANK_RATE_BASE[bank] ?? { rate: 2.75, term: 36, cost: 0 };
-      return {
-        bank,
-        rate: base.rate,
-        term: base.term,
-        cost: base.cost,
-      };
-    });
-  }, [selectedBanks]);
+  const displayedQuotes = useMemo(
+    () =>
+      (result?.quotes ?? []).filter((quote) =>
+        selectedBanks.includes(quote.bank_slug)
+      ),
+    [result, selectedBanks]
+  );
+
+  const availableQuotes = displayedQuotes.filter(
+    (quote) =>
+      quote.status === "available" &&
+      quote.calculation_origin !== "last_verified_official_rate" &&
+      typeof quote.monthly_installment === "number" &&
+      typeof quote.total_repayment === "number"
+  );
+
+  const rateChartItems: ComparisonChartItem[] = availableQuotes
+    .filter((quote) => typeof quote.monthly_profit_rate === "number")
+    .map((quote) => ({
+      bank: shortBankName(quote.bank_name),
+      rate: quote.monthly_profit_rate,
+    }));
+
+  const termChartItems: ComparisonChartItem[] = availableQuotes.map(
+    (quote) => ({
+      bank: shortBankName(quote.bank_name),
+      term: termMonths,
+    })
+  );
+
+  const costChartItems: ComparisonChartItem[] = availableQuotes
+    .filter((quote) => typeof quote.fees_total === "number")
+    .map((quote) => ({
+      bank: shortBankName(quote.bank_name),
+      cost: quote.fees_total,
+    }));
+
+  const leadingSlug = availableQuotes[0]?.bank_slug;
 
   return (
     <main className={styles.main}>
       <section className={styles.pageHeader}>
         <div>
-          <h1 className={styles.title}>Ürün Karşılaştırma</h1>
+          <h1 className={styles.title}>Finansman Karşılaştırma</h1>
           <p className={styles.description}>
-            Katılım bankalarının benzer ürünlerini tek ekranda karşılaştırın.
+            Katılım bankalarının kaynaklı tekliflerini aynı tutar ve vadede inceleyin.
           </p>
         </div>
         <div className={styles.decorativeLines} aria-hidden="true">
@@ -243,66 +228,144 @@ export default function ComparePage() {
 
       <section
         className={styles.selectionSection}
-        aria-label="Karşılaştırma seçenekleri"
+        aria-label="Finansman karşılaştırma seçenekleri"
       >
         <div className={styles.selectionIntro}>
-          <h2>Karşılaştırmak istediğiniz ürünü ve bankayı seçiniz.</h2>
+          <h2>Tutarı, vadeyi ve önceliğinizi belirleyin.</h2>
+          <p>Sonuçlar yalnız resmî banka kaynaklarıyla doğrulanabilen verilerden oluşur.</p>
         </div>
 
         <div className={styles.field}>
           <span>
-            Banka <small>{selectedBanks.length}/10</small>
+            Bankalar <small>{selectedBanks.length}/10</small>
           </span>
           <details className={styles.bankPicker}>
             <summary>
-              {selectedBanks.length === 0 ? (
-                <span className={styles.placeholder}>Banka seçiniz</span>
-              ) : (
-                <span className={styles.selectedLogos}>
-                  {selectedBanks.slice(0, 4).map((bank) => (
-                    <BankLogo bank={bank} size={24} key={bank} />
+              <span className={styles.selectedLogos}>
+                {BANKS.filter((bank) => selectedBanks.includes(bank.slug))
+                  .slice(0, 4)
+                  .map((bank) => (
+                    <BankLogo bank={bank.name} size={24} key={bank.slug} />
                   ))}
-                  <b>{selectedBanks.length} banka seçildi</b>
-                </span>
-              )}
+                <b>
+                  {selectedBanks.length
+                    ? selectedBanks.length + " banka seçildi"
+                    : "Banka seçiniz"}
+                </b>
+              </span>
               <i>⌄</i>
             </summary>
             <div className={styles.bankOptions}>
-              {ALL_BANKS.map((bank) => {
-                const checked = selectedBanks.includes(bank);
-                const disabled = selectedBanks.length >= 10 && !checked;
-                return (
-                  <label
-                    className={disabled ? styles.disabledOption : undefined}
-                    key={bank}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      disabled={disabled}
-                      onChange={() => toggleBank(bank)}
-                    />
-                    <BankLogo bank={bank} size={28} />
-                    <span>{bank}</span>
-                  </label>
-                );
-              })}
+              {BANKS.map((bank) => (
+                <label key={bank.slug}>
+                  <input
+                    type="checkbox"
+                    checked={selectedBanks.includes(bank.slug)}
+                    onChange={() => toggleBank(bank.slug)}
+                  />
+                  <BankLogo bank={bank.name} size={28} />
+                  <span>{bank.name}</span>
+                </label>
+              ))}
             </div>
           </details>
         </div>
 
         <label className={styles.field}>
-          <span>Ürün türü</span>
+          <span>Finansman türü</span>
           <select
-            value={selectedProduct}
-            onChange={(e) => setSelectedProduct(e.target.value)}
+            value={financingType}
+            onChange={(event) => {
+              setFinancingType(event.target.value as FinancingType);
+              setCampaignKey("");
+              setResult(null);
+            }}
           >
-            {PRODUCT_OPTIONS.map((product) => (
-              <option key={product} value={product}>
-                {product}
+            {FINANCING_TYPES.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
               </option>
             ))}
           </select>
+        </label>
+
+        <label className={styles.field}>
+          <span>
+            Kampanya <small>isteğe bağlı</small>
+          </span>
+          <select
+            value={campaignKey}
+            disabled={campaignsLoading}
+            onChange={(event) => {
+              setCampaignKey(event.target.value);
+              setResult(null);
+            }}
+          >
+            <option value="">
+              {campaignsLoading
+                ? "Kampanyalar yükleniyor…"
+                : "Tüm uygun banka ürünleri"}
+            </option>
+            {matchingCampaigns.map((campaign) => (
+              <option key={campaign.campaign_key} value={campaign.campaign_key}>
+                {campaign.display_name} · {campaign.bank_products.length} banka
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className={styles.field}>
+          <span>Finansman tutarı</span>
+          <div className={styles.numberField}>
+            <input
+              aria-label="Finansman tutarı"
+              inputMode="numeric"
+              min={1_000}
+              max={100_000_000}
+              step={1_000}
+              type="number"
+              value={financingAmount}
+              onChange={(event) => {
+                setFinancingAmount(Number(event.target.value));
+                setResult(null);
+              }}
+            />
+            <b>TL</b>
+          </div>
+        </label>
+
+        <label className={styles.field}>
+          <span>Vade</span>
+          <div className={styles.numberField}>
+            <input
+              aria-label="Vade"
+              inputMode="numeric"
+              min={1}
+              max={240}
+              type="number"
+              value={termMonths}
+              onChange={(event) => {
+                setTermMonths(Number(event.target.value));
+                setResult(null);
+              }}
+            />
+            <b>Ay</b>
+          </div>
+        </label>
+
+        <label className={styles.priorityToggle}>
+          <input
+            type="checkbox"
+            checked={feePriority}
+            onChange={(event) => {
+              setFeePriority(event.target.checked);
+              setResult(null);
+            }}
+          />
+          <span>
+            <b>Masraf önceliğim var</b>
+            <small>Bilinen düşük masraflı teklifler önce gösterilir.</small>
+          </span>
         </label>
 
         <button
@@ -311,89 +374,197 @@ export default function ComparePage() {
           onClick={handleCompare}
           disabled={loading}
         >
-          {loading ? "Analiz Ediliyor..." : "Karşılaştır"} <span>→</span>
+          {loading ? "Kaynaklar kontrol ediliyor…" : "Teklifleri karşılaştır"}
+          <span>→</span>
         </button>
+
+        {(error || campaignError) && (
+          <div className={styles.formNotice} role={error ? "alert" : "status"}>
+            <strong>{error ? "Doğrulanmış teklifler alınamadı" : "Katalog bilgisi"}</strong>
+            <span>{error || campaignError}</span>
+            {error && (
+              <button type="button" onClick={handleCompare}>
+                Yeniden dene →
+              </button>
+            )}
+          </div>
+        )}
       </section>
 
-      <section className={styles.visualSection} id="comparison-results">
-        <div className={styles.visualInner}>
-          <div className={styles.profitArea}>
-            <div className={styles.graphTitle}>
-              <h3>Kâr payı oranı</h3>
-              <p>Banka marka renkleriyle oran karşılaştırması</p>
-            </div>
-            <div className={styles.profitChart}>
-              <ProfitRateChart items={chartItems} />
-            </div>
-          </div>
-
-          <div className={styles.termCostArea}>
-            <div className={styles.graphTitle}>
-              <h3>Vade ve masraf</h3>
-              <p>Toplam vade ile ek maliyet görünümü</p>
-            </div>
-            <div className={styles.dualCharts}>
-              <div>
-                <TermChart items={chartItems} />
-              </div>
-              <span />
-              <div>
-                <CostChart items={chartItems} />
-              </div>
+      <section
+        className={styles.resultsState}
+        id="comparison-results"
+        aria-live="polite"
+      >
+        {!result ? (
+          <div className={styles.emptyState}>
+            <span aria-hidden="true">↗</span>
+            <div>
+              <h2>Karşılaştırmaya hazır</h2>
+              <p>Bilgileri girip teklifleri karşılaştırın; çevrimdışı finansal satır üretilmez.</p>
             </div>
           </div>
-        </div>
+        ) : availableQuotes.length === 0 ? (
+          <div className={styles.emptyState}>
+            <span aria-hidden="true">i</span>
+            <div>
+              <h2>Doğrulanmış teklif bulunamadı</h2>
+              <p>Seçilen tutar, vade ve bankalar için resmî kaynağı olan karşılaştırılabilir sonuç yok.</p>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.coverageStrip}>
+            <strong>{availableQuotes.length} doğrulanmış teklif</strong>
+            <span>
+              {displayedQuotes.length} banka sonucu · öncelik: {feePriority ? "masraf" : "aylık taksit"}
+            </span>
+            <time dateTime={result.generated_at}>
+              {new Date(result.generated_at).toLocaleString("tr-TR")}
+            </time>
+          </div>
+        )}
       </section>
 
-      <section className={styles.tableSection}>
-        <div className={styles.tableHeading}>
-          <div>
-            <h2>Karşılaştırma tablosu</h2>
+      {result && availableQuotes.length > 0 && (
+        <section className={styles.visualSection}>
+          <div className={styles.visualInner}>
+            <div className={styles.profitArea}>
+              <div className={styles.graphTitle}>
+                <h3>Kâr payı oranı</h3>
+                <p>Yalnız sayısal oranı doğrulanan canlı teklifler</p>
+              </div>
+              {rateChartItems.length ? (
+                <div className={styles.profitChart}>
+                  <ProfitRateChart items={rateChartItems} />
+                </div>
+              ) : (
+                <p className={styles.chartEmpty}>Doğrulanmış oran verisi yok.</p>
+              )}
+            </div>
+
+            <div className={styles.termCostArea}>
+              <div className={styles.graphTitle}>
+                <h3>Vade ve masraf</h3>
+                <p>Seçilen ortak vade ve yalnız yayımlanmış masraf bilgileri</p>
+              </div>
+              <div className={styles.dualCharts}>
+                <div>
+                  <TermChart items={termChartItems} />
+                </div>
+                <span />
+                <div>
+                  {costChartItems.length ? (
+                    <CostChart items={costChartItems} />
+                  ) : (
+                    <p className={styles.chartEmpty}>Doğrulanmış masraf verisi yok.</p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-          <p>Seçili ürünlerin temel koşulları yan yana.</p>
-        </div>
-        <div className={styles.tableWrapper}>
-          <table className={styles.comparisonTable}>
-            <thead>
-              <tr>
-                <th>Banka</th>
-                <th>Kampanya</th>
-                <th>Kâr payı</th>
-                <th>Vade</th>
-                <th>Taksit</th>
-                <th>Masraf</th>
-                <th>Avantaj</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tableRows.map((row) => (
-                <tr key={`${row.bank}-${row.campaign}`}>
-                  <td>
-                    <span className={styles.bankCell}>
-                      <BankLogo bank={row.bank} size={34} />
-                      <strong>{row.bank}</strong>
-                    </span>
-                  </td>
-                  <td>{row.campaign}</td>
-                  <td>
-                    <strong className={row.best ? styles.bestRate : undefined}>
-                      {row.rate}
-                    </strong>
-                  </td>
-                  <td>{row.term}</td>
-                  <td>{row.installment}</td>
-                  <td>{row.cost}</td>
-                  <td>
-                    <span className={row.best ? styles.goldBadge : styles.softBadge}>
-                      {row.advantage}
-                    </span>
-                  </td>
+        </section>
+      )}
+
+      {result && (
+        <section className={styles.tableSection}>
+          <div className={styles.tableHeading}>
+            <div>
+              <h2>Kaynaklı teklif tablosu</h2>
+            </div>
+            <p>Eksik bankalar gizlenmez; neden karşılaştırılamadıkları gösterilir.</p>
+          </div>
+          <div className={styles.tableWrapper}>
+            <table className={styles.comparisonTable}>
+              <thead>
+                <tr>
+                  <th>Banka / ürün</th>
+                  <th>Kâr payı</th>
+                  <th>Aylık taksit</th>
+                  <th>Toplam ödeme</th>
+                  <th>Masraf</th>
+                  <th>Durum / kaynak</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+              </thead>
+              <tbody>
+                {displayedQuotes.map((quote) => (
+                  <tr
+                    key={quote.bank_slug}
+                    className={
+                      quote.status === "available"
+                        ? undefined
+                        : styles.unavailableRow
+                    }
+                  >
+                    <td>
+                      <span className={styles.bankCell}>
+                        <BankLogo bank={quote.bank_name} size={34} />
+                        <span>
+                          <strong>{shortBankName(quote.bank_name)}</strong>
+                          <small>{quote.product_name || "Finansman verisi"}</small>
+                        </span>
+                      </span>
+                    </td>
+                    <td>
+                      <strong
+                        className={
+                          quote.bank_slug === leadingSlug
+                            ? styles.bestRate
+                            : undefined
+                        }
+                      >
+                        {typeof quote.monthly_profit_rate === "number"
+                          ? "%" + number.format(quote.monthly_profit_rate)
+                          : "—"}
+                      </strong>
+                    </td>
+                    <td>
+                      {typeof quote.monthly_installment === "number"
+                        ? money.format(quote.monthly_installment)
+                        : "—"}
+                    </td>
+                    <td>
+                      {typeof quote.total_repayment === "number"
+                        ? money.format(quote.total_repayment)
+                        : "—"}
+                    </td>
+                    <td>
+                      {typeof quote.fees_total === "number"
+                        ? money.format(quote.fees_total)
+                        : "Belirtilmemiş"}
+                    </td>
+                    <td>
+                      <span
+                        className={
+                          quote.status === "available"
+                            ? styles.goldBadge
+                            : styles.softBadge
+                        }
+                      >
+                        {quoteStatus(quote)}
+                      </span>
+                      <small className={styles.statusMessage}>{quote.message}</small>
+                      {quote.source_url && (
+                        <a
+                          className={styles.sourceLink}
+                          href={quote.source_url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Resmî kaynak →
+                        </a>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className={styles.disclaimer}>
+            <span aria-hidden="true">i</span>
+            {result.disclaimer}
+          </p>
+        </section>
+      )}
     </main>
   );
 }

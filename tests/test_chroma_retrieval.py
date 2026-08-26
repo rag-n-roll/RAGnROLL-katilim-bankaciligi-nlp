@@ -166,7 +166,20 @@ def test_indexer_embeds_only_changed_documents(tmp_path, monkeypatch):
     )
     terms = terminology_documents(terminology_path)
     monkeypatch.setattr("src.retrieval.chroma.terminology_documents", lambda: terms)
-    monkeypatch.setattr("src.retrieval.chroma.pdf_evidence_documents", lambda: [])
+    pdf_documents = [
+        (
+            "pdf:verified:1",
+            "Kâr payı havuzu katılma hesaplarından oluşur.",
+            {
+                "source_type": "pdf_evidence",
+                "index_hash": "pdf-hash-1",
+                "source_url": "https://tkbb.org.tr/ornek.pdf",
+            },
+        )
+    ]
+    monkeypatch.setattr(
+        "src.retrieval.chroma.pdf_evidence_documents", lambda: pdf_documents
+    )
     store, row = _incremental_store(tmp_path)
     provider = CountingEmbeddingProvider()
     indexer = ChromaIndexer(
@@ -182,18 +195,24 @@ def test_indexer_embeds_only_changed_documents(tmp_path, monkeypatch):
     store.upsert_rows([preprocess_record(row)], run_status="success")
     third = indexer.build(batch_size=8)
 
-    assert first["embedded"] == 2
+    assert first["source_counts"] == {
+        "campaign": 1,
+        "terminology": 1,
+        "pdf_evidence": 1,
+    }
+    assert first["embedded"] == 3
     assert first["unchanged"] == 0
     assert second["embedded"] == 0
-    assert second["unchanged"] == 2
+    assert second["unchanged"] == 3
     assert third["embedded"] == 1
-    assert third["unchanged"] == 1
+    assert third["unchanged"] == 2
     assert third["stale_deleted"] == 0
     assert indexer.retriever.ready() is True
 
 
 def test_indexer_deletes_stale_chunks_after_campaign_becomes_short(tmp_path, monkeypatch):
     monkeypatch.setattr("src.retrieval.chroma.terminology_documents", lambda: [])
+    monkeypatch.setattr("src.retrieval.chroma.pdf_evidence_documents", lambda: [])
     store, row = _incremental_store(tmp_path)
     row["content"] = " ".join(f"uzun koşul {index}." for index in range(500))
     store.upsert_rows([preprocess_record(row)], run_status="success")

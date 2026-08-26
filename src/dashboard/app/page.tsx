@@ -5,31 +5,6 @@ import styles from "./page.module.css";
 import { getDashboardSnapshot } from "../services/api";
 import type { DashboardSnapshotData } from "../services/api";
 
-
-const FALLBACK_CAMPAIGNS = [
-  { initials: "KT", bank: "Kuveyt Türk", title: "Taşıt Finansmanı Özel Oran Kampanyası", type: "Finansman", date: "20 Mayıs 2024" },
-  { initials: "AT", bank: "Albaraka Türk", title: "Davet Et Kazan Kampanyası", type: "Kart", date: "19 Mayıs 2024" },
-  { initials: "TF", bank: "Türkiye Finans", title: "Katılma Hesabı Hoş Geldin Kampanyası", type: "Yatırım", date: "18 Mayıs 2024" },
-  { initials: "VK", bank: "Vakıf Katılım", title: "Avantajlı Konut Finansmanı Kampanyası", type: "Finansman", date: "17 Mayıs 2024" },
-  { initials: "ZK", bank: "Ziraat Katılım", title: "Bankkart Alışverişe Ekstra Kazanç", type: "Kart", date: "16 Mayıs 2024" },
-  { initials: "EK", bank: "Emlak Katılım", title: "Yeni Müşterilere Özel Katılma Hesabı", type: "Yatırım", date: "15 Mayıs 2024" },
-  { initials: "HF", bank: "Hayat Finans", title: "Dijital Finansman Fırsatları", type: "Finansman", date: "14 Mayıs 2024" },
-  { initials: "TK", bank: "TOM Katılım", title: "Kart Harcamalarına Özel Nakit İade", type: "Kart", date: "13 Mayıs 2024" },
-];
-
-const FALLBACK_LEGEND: Array<[string, string, string]> = [
-  ["Kuveyt Türk", "69", "%14,6"],
-  ["Albaraka Türk", "48", "%10,2"],
-  ["Türkiye Finans", "13", "%2,8"],
-  ["Vakıf Katılım", "3", "%0,6"],
-  ["Ziraat Katılım", "208", "%44,2"],
-  ["Emlak Katılım", "64", "%13,6"],
-  ["Hayat Finans", "10", "%2,1"],
-  ["TOM Katılım", "10", "%2,1"],
-  ["Dünya Katılım", "45", "%9,6"],
-  ["Adil Katılım", "1", "%0,2"],
-];
-
 const heroBanks = [
   { bank: "Kuveyt Türk", size: 54 },
   { bank: "Hayat Finans", size: 34 },
@@ -57,14 +32,14 @@ export default async function HomePage() {
   try {
     snapshot = await getDashboardSnapshot();
   } catch {
-    // Backend bağlı değilse veya hata verirse güvenli fallback
+    // Doğrulanmamış finansal değer üretme; görünür boş durum gösterilir.
     snapshot = null;
   }
-  const bankCount = snapshot?.summary?.bank_count || 10;
-  const campaignCount = snapshot?.summary?.campaign_count || 471;
+  const bankCount = snapshot?.summary?.bank_count ?? "—";
+  const campaignCount = snapshot?.summary?.campaign_count ?? "—";
   const avgProfitRate = snapshot?.summary?.average_profit_share_rate
     ? `%${snapshot.summary.average_profit_share_rate.toFixed(1).replace(".", ",")}`
-    : "%18,4";
+    : "—";
 
   const hasValidDistributions = Boolean(
     snapshot?.distributions?.banks &&
@@ -77,7 +52,7 @@ export default async function HomePage() {
         name: b.name,
         count: b.campaign_count,
       }))
-    : undefined;
+    : [];
 
   const legendRows = hasValidDistributions
     ? snapshot!.distributions.banks.map((b) => [
@@ -85,7 +60,7 @@ export default async function HomePage() {
         String(b.campaign_count),
         `%${(b.campaign_share * 100).toFixed(1).replace(".", ",")}`,
       ] as [string, string, string])
-    : FALLBACK_LEGEND;
+    : [];
 
   const displayCampaigns = snapshot?.recent_campaigns?.length
     ? snapshot.recent_campaigns.map((c) => ({
@@ -100,7 +75,7 @@ export default async function HomePage() {
             })
           : "Güncel",
       }))
-    : FALLBACK_CAMPAIGNS;
+    : [];
 
   return (
     <main className={styles.main}>
@@ -176,12 +151,22 @@ export default async function HomePage() {
             <span>Son 30 gün</span>
           </div>
           <div className={styles.chartContent}>
-            <div className={styles.chartVisualColumn}>
-              <div className={styles.chartArea}>
-                <CampaignDistributionChart
-                  items={distributionItems}
-                  total={campaignCount}
-                />
+              <div className={styles.chartVisualColumn}>
+                <div className={styles.chartArea}>
+                  {hasValidDistributions ? (
+                    <CampaignDistributionChart
+                      items={distributionItems}
+                      total={
+                        typeof campaignCount === "number"
+                          ? campaignCount
+                          : undefined
+                      }
+                    />
+                  ) : (
+                    <p className={styles.emptyData} role="status">
+                      Doğrulanmış güncel veri alınamadı.
+                    </p>
+                  )}
               </div>
               <div className={styles.overviewMetrics}>
                 <div className={styles.metricGrid}>
@@ -230,7 +215,11 @@ export default async function HomePage() {
           </Link>
         </div>
         <div className={styles.campaignList}>
-          {displayCampaigns.map((campaign) => (
+          {displayCampaigns.length === 0 ? (
+            <p className={styles.emptyData} role="status">
+              Doğrulanmış güncel veri alınamadı.
+            </p>
+          ) : displayCampaigns.map((campaign) => (
             <Link
               href="/campaigns"
               className={styles.campaignRow}

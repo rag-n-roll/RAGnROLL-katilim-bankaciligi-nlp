@@ -725,6 +725,7 @@ def financing_quotes(
         term_months=payload.term_months,
         official_quotes=official_quotes,
         eligible_bank_slugs=eligible_bank_slugs,
+        fee_priority=payload.fee_priority,
     )
 
 
@@ -839,8 +840,15 @@ def grounded_chat_stream(
 
         def produce() -> None:
             try:
-                for item in _assistant(request).stream_answer(
-                    payload.message, limit=payload.source_limit
+                state = (
+                    payload.conversation_state.model_dump()
+                    if payload.conversation_state is not None
+                    else None
+                )
+                for item in _assistant(request).stream_conversation_answer(
+                    payload.message,
+                    limit=payload.source_limit,
+                    conversation_state=state,
                 ):
                     queue.put(item)
             except ValueError as exc:

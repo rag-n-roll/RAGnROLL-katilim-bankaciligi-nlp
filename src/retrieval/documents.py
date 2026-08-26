@@ -17,6 +17,10 @@ INDEX_SCHEMA = "semantic-sections-1"
 DEFAULT_CHUNK_WORDS = 320
 DEFAULT_CHUNK_OVERLAP_WORDS = 40
 PDF_EVIDENCE_PATH = PROJECT_ROOT / "data" / "source_documents" / "pdf_evidence.jsonl"
+PDF_MANIFEST_PATH = PROJECT_ROOT / "data" / "source_documents" / "pdf_evidence.manifest.json"
+PDF_TOPIC_MAPPING_PATH = (
+    PROJECT_ROOT / "data" / "source_documents" / "pdf_topic_mapping.json"
+)
 
 IndexDocument = tuple[str, str, dict[str, Any]]
 RETRIEVAL_ENTITY_ALLOWLIST = frozenset(
@@ -369,7 +373,16 @@ def terminology_documents(path: Path | None = None) -> list[IndexDocument]:
     return documents
 
 
-def pdf_evidence_documents(path: Path | None = None) -> list[IndexDocument]:
+class PdfEvidenceIntegrityError(ValueError):
+    """Sürümlenmiş PDF kanıt paketi bütünlük kontrolünden geçmedi."""
+
+
+def pdf_evidence_documents(
+    path: Path | None = None,
+    *,
+    manifest_path: Path | None = None,
+    topic_mapping_path: Path | None = None,
+) -> list[IndexDocument]:
     """Sayfa numarası taşıyan kullanıcı PDF kanıtlarını indeks belgelerine dönüştürür.
 
     Dosya mevcut değilse temiz kurulumlarda geriye dönük uyumluluk için boş liste döner.
@@ -377,18 +390,81 @@ def pdf_evidence_documents(path: Path | None = None) -> list[IndexDocument]:
     source = path or PDF_EVIDENCE_PATH
     if not source.is_file():
         return []
+    manifest_source = manifest_path or (
+        PDF_MANIFEST_PATH if path is None else source.with_suffix(".manifest.json")
+    )
+    if not manifest_source.is_file():
+        raise PdfEvidenceIntegrityError("PDF kanıt manifestosu bulunamadı")
+    mapping_source = topic_mapping_path or PDF_TOPIC_MAPPING_PATH
+    if not mapping_source.is_file():
+        raise PdfEvidenceIntegrityError("PDF ontoloji eşlemesi bulunamadı")
+    mapping_payload = json.loads(mapping_source.read_text(encoding="utf-8"))
+    if not isinstance(mapping_payload, dict):
+        raise PdfEvidenceIntegrityError("PDF ontoloji eşlemesi geçersiz")
+    topic_mapping: dict[str, tuple[str, ...]] = {}
+    for topic, term_ids in mapping_payload.items():
+        if (
+            not isinstance(topic, str)
+            or not isinstance(term_ids, list)
+            or any(
+                not isinstance(term_id, str)
+                or re.fullmatch(r"TRM\d{4}", term_id) is None
+                for term_id in term_ids
+            )
+        ):
+            raise PdfEvidenceIntegrityError("PDF ontoloji eşlemesi geçersiz")
+        topic_mapping[topic] = tuple(dict.fromkeys(term_ids))
+    manifest_payload = json.loads(manifest_source.read_text(encoding="utf-8"))
+    if not isinstance(manifest_payload, list):
+        raise PdfEvidenceIntegrityError("PDF kanıt manifestosu geçersiz")
+    manifest: dict[str, dict[str, Any]] = {}
+    for item in manifest_payload:
+        if not isinstance(item, dict):
+            raise PdfEvidenceIntegrityError("PDF manifest kaydı geçersiz")
+        document_id = str(item.get("document_id") or "")
+        document_hash = str(item.get("sha256") or "")
+        if not document_id or len(document_hash) != 64:
+            raise PdfEvidenceIntegrityError("PDF manifest belge hash değeri geçersiz")
+        manifest[document_id] = item
     documents: list[IndexDocument] = []
-    for line in source.read_text(encoding="utf-8").splitlines():
+    for line_number, line in enumerate(
+        source.read_text(encoding="utf-8").splitlines(), start=1
+    ):
         if not line.strip():
             continue
         row = json.loads(line)
-        quote = str(row.get("quote") or "").strip()
+        quote = str(row.get("text") or "").strip()
         document_id = str(row.get("document_id") or "").strip()
         if not quote or not document_id:
-            continue
-        page = int(row.get("page") or 0)
-        topic = str(row.get("topic") or "").strip()
-        quote_hash = str(row.get("quote_hash") or _digest(document_id, page, quote))
+            raise PdfEvidenceIntegrityError(f"PDF parçası eksik: satır {line_number}")
+        manifest_item = manifest.get(document_id)
+        if manifest_item is None or str(row.get("document_sha256") or "") != str(
+            manifest_item.get("sha256") or ""
+        ):
+            raise PdfEvidenceIntegrityError(
+                f"PDF belge hash değeri uyuşmuyor: satır {line_number}"
+            )
+        quote_hash = str(row.get("quote_hash") or "")
+        if quote_hash != sha256(quote.encode("utf-8")).hexdigest():
+            raise PdfEvidenceIntegrityError(
+                f"PDF parça hash değeri uyuşmuyor: satır {line_number}"
+            )
+        page_start = int(row.get("page_start") or 0)
+        page_end = int(row.get("page_end") or page_start)
+        if page_start < 1 or page_end < page_start or page_end > int(
+            manifest_item.get("page_count") or 0
+        ):
+            raise PdfEvidenceIntegrityError(
+                f"PDF sayfa aralığı geçersiz: satır {line_number}"
+            )
+        topics = row.get("topics") if isinstance(row.get("topics"), list) else []
+        ontology_term_ids = tuple(
+            dict.fromkeys(
+                term_id
+                for topic in topics
+                for term_id in topic_mapping.get(str(topic), ())
+            )
+        )
         metadata = _metadata_with_hash(
             quote,
             {
@@ -399,22 +475,28 @@ def pdf_evidence_documents(path: Path | None = None) -> list[IndexDocument]:
                 "bank_name": "",
                 "product_type": "",
                 "financing_type": "",
-                "title": f"{document_id} s. {page}",
-                "source_url": str(row.get("source_url") or ""),
+                "title": str(manifest_item.get("title") or row.get("title") or document_id),
+                "source_url": str(manifest_item.get("source_url") or ""),
                 "scraped_at": str(row.get("extracted_at") or ""),
                 "content_hash": quote_hash,
                 "index_schema": INDEX_SCHEMA,
-                "section": topic or "pdf",
-                "chunk_index": 0,
+                "section": str(topics[0]) if topics else "pdf",
+                "chunk_index": int(row.get("chunk_index") or 0),
                 "char_start": 0,
                 "char_end": len(quote),
                 "document_id": document_id,
-                "page": page,
-                "topic": topic,
+                "document_sha256": str(row.get("document_sha256")),
+                "page": page_start,
+                "page_start": page_start,
+                "page_end": page_end,
+                "topics": ",".join(str(topic) for topic in topics),
+                "ontology_term_ids": ",".join(ontology_term_ids),
+                "publisher": str(manifest_item.get("publisher") or ""),
                 "quote_hash": quote_hash,
-                "local_path": str(row.get("local_path") or ""),
             },
         )
-        identifier = f"pdf:{document_id}:{page}:{quote_hash[:12]}"
+        identifier = str(row.get("chunk_id") or "")
+        if not identifier.startswith("pdf:"):
+            raise PdfEvidenceIntegrityError(f"PDF parça kimliği geçersiz: satır {line_number}")
         documents.append((identifier, quote, metadata))
     return documents

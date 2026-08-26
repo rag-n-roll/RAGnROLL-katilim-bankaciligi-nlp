@@ -387,7 +387,11 @@ def test_participation_principles_question_uses_exact_principles_term(tmp_path):
     payload = response.json()
     assert payload["plan"]["intent"] == "definition"
     assert payload["sources"]
-    assert [source.get("term_id") for source in payload["sources"]] == ["TRM0463"]
+    assert payload["sources"][0].get("term_id") == "TRM0463"
+    assert any(
+        source.get("document_id") and source.get("page_start")
+        for source in payload["sources"]
+    )
     assert "faizsiz finans prensipleri" in payload["answer"].casefold()
 
 
@@ -482,6 +486,48 @@ def test_initial_complete_comparison_executes_even_when_fee_metric_is_detected(t
     assert payload["plan"]["slots"]["term_months"] == 24
     assert payload["plan"]["slots"]["amount"] == 750_000
     assert payload["plan"]["slots"]["fee_priority"] is True
+
+
+def test_stream_executes_complete_criteria_in_initial_message(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "src.services.assistant.fetch_official_quotes",
+        lambda **_: {
+            "albaraka-turk": {
+                "bank_slug": "albaraka-turk",
+                "bank_name": "Albaraka Türk",
+                "product_name": "İhtiyaç Finansmanı",
+                "status": "available",
+                "monthly_profit_rate": 4.0,
+                "monthly_installment": 5_733.32,
+                "total_repayment": 68_799.23,
+                "annual_cost_rate": 83.87,
+                "fees_total": 0.0,
+                "source_url": "https://basvur.albaraka.com.tr/jet-finansman",
+                "retrieved_at": "2026-08-26T18:00:00+00:00",
+                "calculation_origin": "official_calculator_live",
+                "message": "Canlı resmî hesaplayıcı sonucu.",
+            }
+        },
+    )
+
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat/stream",
+            json={
+                "message": (
+                    "50.000 TL tutarda 12 ay vadeli ihtiyaç finansmanını "
+                    "masraf önceliğiyle tarafsız karşılaştır."
+                )
+            },
+        )
+
+    assert response.status_code == 200
+    assert '"action": "ANSWER"' in response.text
+    assert '"executed_tool": "financing_quote"' in response.text
+    assert '"term_months": 12' in response.text
+    assert '"amount": 50000.0' in response.text
+    assert '"fee_priority": true' in response.text
+    assert '"action": "CLARIFY"' not in response.text
 
 
 def test_explicit_fee_comparison_still_requires_term_and_amount(tmp_path):
@@ -711,7 +757,27 @@ def test_suitable_vehicle_financing_requires_criteria(tmp_path):
     assert "vade" in payload["answer_display"].casefold()
 
 
-def test_follow_up_criteria_produces_neutral_comparison(tmp_path):
+def test_follow_up_criteria_produces_neutral_comparison(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "src.services.assistant.fetch_official_quotes",
+        lambda **_: {
+            "kuveyt-turk": {
+                "bank_slug": "kuveyt-turk",
+                "bank_name": "Kuveyt Türk",
+                "product_name": "Konut Finansmanı",
+                "status": "available",
+                "monthly_profit_rate": 3.19,
+                "monthly_installment": 23_555.77,
+                "total_repayment": 848_007.72,
+                "annual_cost_rate": 45.8,
+                "fees_total": 500.0,
+                "source_url": "https://www.kuveytturk.com.tr/hesaplama-araclari/finansman-hesaplama",
+                "retrieved_at": "2026-08-26T18:00:00+00:00",
+                "calculation_origin": "official_calculator_live",
+                "message": "Canlı resmî hesaplayıcı sonucu.",
+            }
+        },
+    )
     with _client(tmp_path) as client:
         first = client.post(
             "/api/v1/chat",
@@ -730,6 +796,12 @@ def test_follow_up_criteria_produces_neutral_comparison(tmp_path):
     assert payload["action"] == "ANSWER"
     assert payload["missing_criteria"] == []
     assert payload["sources"]
-    assert all(source.get("campaign_id") for source in payload["sources"])
-    assert "doğrulayamıyorum" in payload["answer_display"].casefold()
+    assert all(
+        str(source.get("campaign_id") or "").startswith("financing:")
+        for source in payload["sources"]
+    )
+    assert "masraf önceliğine göre tarafsız sıralandı" in payload[
+        "answer_display"
+    ].casefold()
+    assert "500.000,00 tl" in payload["answer_display"].casefold()
     assert "[K" not in payload["answer_display"]

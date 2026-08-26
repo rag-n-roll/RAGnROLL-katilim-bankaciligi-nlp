@@ -226,7 +226,9 @@ def test_conflicting_model_intent_cannot_replace_concrete_definition(tmp_path):
     assert any("intent" in warning.casefold() for warning in plan.warnings)
 
 
-def test_complete_follow_up_criteria_override_stale_llm_clarification(tmp_path):
+def test_complete_follow_up_criteria_override_stale_llm_clarification(
+    tmp_path, monkeypatch
+):
     decision = PlannerDecision(
         action=Action.CLARIFY,
         in_domain=True,
@@ -243,37 +245,14 @@ def test_complete_follow_up_criteria_override_stale_llm_clarification(tmp_path):
             del args, kwargs
             return decision
 
+    monkeypatch.setattr("src.services.assistant.fetch_official_quotes", lambda **_: {})
+
     class VehicleRetriever:
         last_backend = "test"
 
         def retrieve(self, query, *, filters, limit):
             del query, filters, limit
-            return [
-                {
-                    "text": "Araç finansmanı için doğrulanmış seçenek.",
-                    "score": 1.0,
-                    "retrieval_method": "test",
-                    "metadata": {
-                        "campaign_id": "vehicle",
-                        "bank_name": "Örnek Katılım",
-                        "title": "Araç Finansmanı",
-                    },
-                },
-                {
-                    "text": (
-                        "Umre ziyareti için doğrulanmış finansman seçeneği. "
-                        "Kampanyaya araç kiralama dahil değildir."
-                    ),
-                    "score": 0.9,
-                    "retrieval_method": "test",
-                    "metadata": {
-                        "campaign_id": "wrong-metadata-label",
-                        "bank_name": "Örnek Katılım",
-                        "title": "Umre Finansmanı",
-                        "financing_type": "vehicle",
-                    },
-                },
-            ]
+            pytest.fail("Tam finansman kriterleri kampanya RAG'ına yönlenmemeli")
 
     assistant = GroundedAssistant(
         _store(tmp_path), llm=FakeLLM(), decisions=Decisions(), chroma_enabled=False
@@ -288,7 +267,45 @@ def test_complete_follow_up_criteria_override_stale_llm_clarification(tmp_path):
 
     assert result["action"] == "ANSWER"
     assert result["missing_criteria"] == []
-    assert [source["campaign_id"] for source in result["sources"]] == ["vehicle"]
+    assert result["executed_tool"] == "financing_quote"
+    assert result["sources"] == []
+
+
+def test_financing_comparison_executes_sourced_quote_tool(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "src.services.assistant.fetch_official_quotes",
+        lambda **_: {
+            "kuveyt-turk": {
+                "bank_slug": "kuveyt-turk",
+                "bank_name": "Kuveyt Türk",
+                "product_name": "Taşıt Finansmanı",
+                "status": "available",
+                "monthly_profit_rate": 3.49,
+                "monthly_installment": 9_125.5,
+                "total_repayment": 219_012.0,
+                "annual_cost_rate": 51.0,
+                "fees_total": 750.0,
+                "source_url": "https://www.kuveytturk.com.tr/hesaplama-araclari/finansman-hesaplama",
+                "retrieved_at": "2026-08-26T18:00:00+00:00",
+                "calculation_origin": "official_calculator_live",
+                "message": "Canlı resmî hesaplayıcı sonucu.",
+            }
+        },
+    )
+    assistant = GroundedAssistant(
+        _store(tmp_path), llm=FakeLLM(), chroma_enabled=False
+    )
+
+    result = assistant.answer(
+        "150.000 TL için 24 ay taşıt finansmanını karşılaştır; masraf önemli"
+    )
+
+    assert result["executed_tool"] == "financing_quote"
+    assert result["facts"][0]["amount"] == 150_000
+    assert result["facts"][0]["term_months"] == 24
+    assert result["facts"][0]["monthly_profit_rate"] == 3.49
+    assert result["sources"][0]["source_url"].startswith("https://www.kuveytturk.com.tr/")
+    assert "150.000,00 TL" in result["sources"][0]["evidence"]["text"]
 
 
 def _structured_row(identifier, field_name, value, evidence):
@@ -1040,7 +1057,7 @@ def test_definition_does_not_apply_product_slots_to_terminology_retrieval(tmp_pa
             del query, limit
             assert filters == {
                 "intent": "definition",
-                "source_types": ["terminology"],
+                "source_types": ["terminology", "pdf_evidence"],
             }
             return [
                 {
@@ -1065,6 +1082,44 @@ def test_definition_does_not_apply_product_slots_to_terminology_retrieval(tmp_pa
     assert [source["term_id"] for source in result["sources"]] == ["TRM0463"]
 
 
+def test_pdf_definition_source_preserves_document_page_provenance(tmp_path):
+    assistant = GroundedAssistant(
+        _store(tmp_path), llm=FakeLLM(), chroma_enabled=False
+    )
+
+    class PdfRetriever:
+        last_backend = "evren-qdrant+bm25"
+
+        def retrieve(self, query, *, filters, limit):
+            del query, limit
+            assert filters["source_types"] == ["terminology", "pdf_evidence"]
+            return [
+                {
+                    "text": "Kâr payı havuzu katılma hesaplarından oluşur.",
+                    "score": 0.9,
+                    "retrieval_method": "evren-qdrant+bge-m3-embed",
+                    "metadata": {
+                        "source_type": "pdf_evidence",
+                        "document_id": "kar-dagitimi",
+                        "title": "Katılım Bankacılığında Kâr Dağıtımı",
+                        "source_url": "https://example.test/kar-dagitimi.pdf",
+                        "page_start": 42,
+                        "page_end": 42,
+                        "section": "fon_havuzu",
+                        "ontology_term_ids": "TRM0452,TRM0385",
+                    },
+                }
+            ]
+
+    assistant.retriever = PdfRetriever()
+    result = assistant._grounded_result("Kâr payı havuzu nasıl işler?", limit=5)
+
+    assert result["sources"][0]["document_id"] == "kar-dagitimi"
+    assert result["sources"][0]["page_start"] == 42
+    assert result["sources"][0]["page_end"] == 42
+    assert result["sources"][0]["ontology_term_ids"] == ["TRM0452", "TRM0385"]
+
+
 def test_product_principles_definition_fallback_is_complete_and_scope_aware(tmp_path):
     assistant = GroundedAssistant(_store(tmp_path), llm=FakeLLM([]), chroma_enabled=False)
     result = assistant._grounded_result(
@@ -1074,6 +1129,18 @@ def test_product_principles_definition_fallback_is_complete_and_scope_aware(tmp_
     assert "faizsiz finans prensipleri" in answer
     assert "konut finansmanı" in answer
     assert "doğrulanmış kaynak" in answer
+
+
+def test_definition_fallback_never_ends_mid_sentence(tmp_path):
+    assistant = GroundedAssistant(_store(tmp_path), llm=FakeLLM([]), chroma_enabled=False)
+
+    result = assistant._grounded_result(
+        "Katılım bankacılığında kâr payı havuzu nasıl işler?", limit=5
+    )
+
+    answer = result["answer"].strip()
+    assert answer.endswith((".", "!", "?"))
+    assert not answer.casefold().endswith(" ile")
 
 
 def test_chunk_evidence_keeps_bounded_source_offsets(tmp_path):

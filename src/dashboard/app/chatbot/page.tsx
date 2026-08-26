@@ -6,6 +6,7 @@ import {
   streamChat,
   type ChatMeta,
   type ChatGeneration,
+  type ChatConversationState,
   type ChatSource,
   type StreamEventInfo,
 } from "../../services/api";
@@ -49,6 +50,18 @@ function generationLabel(generation?: ChatGeneration) {
     : "Güvenli doğrulanmış yanıt";
 }
 
+function sourceDisplayLabel(source: ChatSource) {
+  const institution = source.bank_name ?? source.publisher;
+  const title = source.title ?? source.document_id ?? "Kaynak";
+  const start = source.page_start;
+  const end = source.page_end;
+  const page =
+    typeof start === "number"
+      ? `s. ${start}${typeof end === "number" && end !== start ? `–${end}` : ""}`
+      : null;
+  return [institution, title, page].filter(Boolean).join(" – ");
+}
+
 function safeSourceUrl(value?: string | null) {
   if (!value) return null;
   try {
@@ -65,6 +78,8 @@ export default function ChatbotPage() {
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [requestToken, setRequestToken] = useState(0);
+  const [conversationState, setConversationState] =
+    useState<ChatConversationState | null>(null);
 
   const activeController = useRef<AbortController | null>(null);
   const currentTokenRef = useRef(0);
@@ -88,6 +103,7 @@ export default function ChatbotPage() {
     setExchanges(reset.exchanges as MessageExchange[]);
     setInput(reset.message);
     setLoading(reset.loading);
+    setConversationState(null);
     if (reset.focusInput) {
       requestAnimationFrame(() => messageInput.current?.focus());
     }
@@ -130,6 +146,7 @@ export default function ChatbotPage() {
         {
           onMeta: (meta: ChatMeta) => {
             if (!isActiveChatRequest(currentTokenRef.current, token)) return;
+            setConversationState(meta.conversation_state ?? null);
             setExchanges((curr) =>
               applyActiveChatUpdate(currentTokenRef.current, token, curr, (items: MessageExchange[]) => {
                 return items.map((item, idx) =>
@@ -220,6 +237,7 @@ export default function ChatbotPage() {
             );
           },
         },
+        conversationState,
         controller.signal
       );
     } catch (reason) {
@@ -329,12 +347,12 @@ export default function ChatbotPage() {
 
                     {exchange.sources && exchange.sources.length > 0 && (
                       <div className={styles.sourcesBlock}>
-                        <strong>Kaynak Kampanyalar:</strong>
+                        <strong>Kaynaklar:</strong>
                         <div className={styles.sourcesList}>
                           {exchange.sources.map((source, sIndex) => (
                             (() => {
                               const href = safeSourceUrl(source.source_url);
-                              const label = `${source.bank_name ? `${source.bank_name} – ` : ""}${source.title ?? "Kampanya"}`;
+                              const label = sourceDisplayLabel(source);
                               return href ? (
                                 <a
                                   className={styles.sourceBadge}

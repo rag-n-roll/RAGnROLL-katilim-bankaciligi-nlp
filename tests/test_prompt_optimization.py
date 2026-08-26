@@ -124,6 +124,25 @@ def _build_prompt(builder: GroundedPromptBuilder) -> tuple[str, str]:
     )
 
 
+def test_prompt_carries_pdf_ontology_links_inside_the_evidence_packet():
+    _, user_prompt = GroundedPromptBuilder().build(
+        question="Fon havuzu nasıl işler?",
+        fallback_answer="Fon havuzu katılma hesaplarından oluşur.",
+        facts=[],
+        sources=[
+            {
+                "document_id": "kar-dagitimi",
+                "title": "Katılım Bankacılığında Kâr Dağıtımı",
+                "ontology_term_ids": ["TRM0452", "TRM0385"],
+                "evidence": {"text": "Fon havuzu katılma hesaplarından oluşur."},
+            }
+        ],
+        plan={"route": "HYBRID_RAG", "intent": "definition"},
+    )
+
+    assert '"ontology_term_ids":["TRM0452","TRM0385"]' in user_prompt
+
+
 def test_default_prompt_keeps_committed_live_behavior(monkeypatch):
     monkeypatch.delenv("RAGNROLL_PROMPT_MODE", raising=False)
     monkeypatch.setenv("RAGNROLL_PROMPT_ARTIFACT", "/missing/must-not-be-read.json")

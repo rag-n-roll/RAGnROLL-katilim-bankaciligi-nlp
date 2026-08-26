@@ -7,7 +7,8 @@ from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
 import re
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
+import unicodedata
 
 from src.ingestion.pdf_registry import VerifiedPdfSource
 
@@ -62,6 +63,43 @@ class PyMuPdfExtractor:
         return pages
 
 
+class RapidOcrFallback:
+    """Bozuk font haritalı sayfaları yerel ONNX OCR ile kurtarır."""
+
+    def __init__(self, *, scale: float = 1.5, minimum_confidence: float = 0.45) -> None:
+        self.scale = scale
+        self.minimum_confidence = minimum_confidence
+        self._engine = None
+
+    def __call__(self, path: Path, page_number: int) -> str:
+        import numpy as np
+        import pymupdf
+        from rapidocr_onnxruntime import RapidOCR
+
+        if self._engine is None:
+            self._engine = RapidOCR()
+        with pymupdf.open(path) as document:
+            page = document[page_number - 1]
+            pixmap = page.get_pixmap(
+                matrix=pymupdf.Matrix(self.scale, self.scale),
+                colorspace=pymupdf.csRGB,
+                alpha=False,
+            )
+        image = np.frombuffer(pixmap.samples, dtype=np.uint8).reshape(
+            pixmap.height, pixmap.width, pixmap.n
+        )
+        result, _ = self._engine(image)
+        if not result:
+            return ""
+        return "\n".join(
+            str(item[1]).strip()
+            for item in result
+            if len(item) >= 3
+            and float(item[2]) >= self.minimum_confidence
+            and str(item[1]).strip()
+        )
+
+
 def _line_key(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip().casefold()
 
@@ -85,6 +123,18 @@ def _repeated_margin_lines(pages: list[PdfPage]) -> set[str]:
 
 
 def _clean_page(text: str, *, repeated_lines: set[str]) -> str:
+    # PDF fontları satır sonundaki isteğe bağlı heceleme işaretini görünmez
+    # U+00AD olarak bırakabilir. Önce bu özel satır bölünmesini birleştir.
+    text = re.sub("\u00ad[ \t]*\n[ \t]*", "", text)
+    text = "".join(
+        character
+        if character in "\r\n\t"
+        or not unicodedata.category(character).startswith("C")
+        else ""
+        if unicodedata.category(character) == "Cf"
+        else " "
+        for character in text
+    )
     kept = [
         line.rstrip()
         for line in text.replace("\r", "").split("\n")
@@ -95,6 +145,17 @@ def _clean_page(text: str, *, repeated_lines: set[str]) -> str:
     joined = re.sub(r"[ \t]+", " ", joined)
     joined = re.sub(r"\n{3,}", "\n\n", joined)
     return joined.strip()
+
+
+def _control_character_ratio(text: str) -> float:
+    if not text:
+        return 0.0
+    controls = sum(
+        unicodedata.category(char).startswith("C")
+        for char in text
+        if char not in "\r\n\t"
+    )
+    return controls / len(text)
 
 
 def _is_table_of_contents(text: str) -> bool:
@@ -152,6 +213,7 @@ def extract_pdf_document(
     max_tokens: int = 450,
     overlap_tokens: int = 50,
     max_pages: int | None = None,
+    ocr_fallback: Callable[[Path, int], str] | None = None,
 ) -> PdfExtractionResult:
     selected = extractor or PyMuPdfExtractor()
     pages = selected.extract_all(source.path, max_pages=max_pages)
@@ -160,13 +222,28 @@ def extract_pdf_document(
     failed_pages: list[dict[str, Any]] = []
     extracted = 0
     empty = 0
+    low_quality = 0
+    ocr_recovered = 0
     skipped_toc = 0
 
     for page in pages:
         if page.error:
             failed_pages.append({"page": page.number, "reason": page.error})
             continue
-        cleaned = _clean_page(page.text, repeated_lines=repeated_lines)
+        page_text = page.text
+        if _control_character_ratio(page_text) > 0.02:
+            recovered = ""
+            if ocr_fallback is not None:
+                try:
+                    recovered = ocr_fallback(source.path, page.number)
+                except Exception:
+                    recovered = ""
+            if not recovered or _control_character_ratio(recovered) > 0.02:
+                low_quality += 1
+                continue
+            page_text = recovered
+            ocr_recovered += 1
+        cleaned = _clean_page(page_text, repeated_lines=repeated_lines)
         if not cleaned:
             empty += 1
             continue
@@ -205,6 +282,8 @@ def extract_pdf_document(
         "attempted": len(pages),
         "extracted": extracted,
         "empty": empty,
+        "low_quality": low_quality,
+        "ocr_recovered": ocr_recovered,
         "failed": len(failed_pages),
         "skipped_toc": skipped_toc,
         "chunk_count": len(chunks),

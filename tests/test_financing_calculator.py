@@ -129,6 +129,43 @@ def test_official_quote_takes_priority_over_campaign_fallback():
     assert result["quotes"][0]["source_url"] == "https://a.example/live"
 
 
+def test_fee_priority_orders_known_lower_fees_before_lower_installment():
+    official = {
+        "bank-a": {
+            "bank_slug": "bank-a",
+            "bank_name": "Banka A",
+            "status": "available",
+            "monthly_installment": 4_000.0,
+            "total_repayment": 48_000.0,
+            "fees_total": 900.0,
+            "source_url": "https://a.example/live",
+            "message": "Canlı",
+        },
+        "bank-b": {
+            "bank_slug": "bank-b",
+            "bank_name": "Banka B",
+            "status": "available",
+            "monthly_installment": 4_100.0,
+            "total_repayment": 49_200.0,
+            "fees_total": 0.0,
+            "source_url": "https://b.example/live",
+            "message": "Canlı",
+        },
+    }
+
+    result = build_financing_quotes(
+        records=[],
+        banks=BANKS,
+        financing_type="consumer",
+        amount=40_000,
+        term_months=12,
+        official_quotes=official,
+        fee_priority=True,
+    )
+
+    assert [quote["bank_slug"] for quote in result["quotes"]] == ["bank-b", "bank-a"]
+
+
 def test_official_annuity_includes_effective_taxed_rate():
     effective_rate = 3.8 / 100 * 1.30
     assert _annuity(100_000, effective_rate, 36) == pytest.approx(5996.94)
@@ -853,5 +890,4 @@ def test_financing_quotes_endpoint_keeps_ten_bank_coverage(tmp_path, monkeypatch
     assert payload["coverage"]["catalog_bank_count"] == 10
     assert len(payload["quotes"]) == 10
     assert all(quote["source_url"] for quote in payload["quotes"])
-
 

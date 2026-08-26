@@ -94,3 +94,58 @@ def test_non_topic_text_is_still_kept_for_full_corpus():
 
     assert len(result.chunks) == 1
     assert result.chunks[0]["topics"] == []
+
+
+def test_control_character_heavy_page_is_not_embedded():
+    result = extract_pdf_document(
+        _source(),
+        extractor=FakeExtractor(
+            [PdfPage(number=10, text="\u0003\u0014\u0015\u000f\u0003\u0019\u0018\u000f\u0003")]
+        ),
+    )
+
+    assert result.chunks == []
+    assert result.report["low_quality"] == 1
+
+
+def test_low_quality_page_can_be_recovered_by_ocr_fallback():
+    result = extract_pdf_document(
+        _source(),
+        extractor=FakeExtractor(
+            [PdfPage(number=11, text="\u0003\u0014\u0015\u000f\u0003\u0019")]
+        ),
+        ocr_fallback=lambda _path, _page: (
+            "Kâr payı havuzu katılma hesaplarından toplanan fonları içerir."
+        ),
+    )
+
+    assert len(result.chunks) == 1
+    assert "fon_havuzu" in result.chunks[0]["topics"]
+    assert result.report["ocr_recovered"] == 1
+    assert result.report["low_quality"] == 0
+
+
+def test_readable_page_strips_invisible_controls_before_chunking():
+    readable_tail = " Katılım finans ilkeleri ve denetim esasları açıklanır." * 12
+    result = extract_pdf_document(
+        _source(),
+        extractor=FakeExtractor(
+            [
+                PdfPage(
+                    number=12,
+                    text=(
+                        "Vergi de\u00ad\nnetmeni \u200bkatılım\u000ffinansını inceler."
+                        + readable_tail
+                    ),
+                )
+            ]
+        ),
+    )
+
+    assert result.chunks[0]["text"].startswith(
+        "Vergi denetmeni katılım finansını inceler."
+    )
+    assert all(
+        ord(character) >= 32 and character not in {"\u00ad", "\u200b"}
+        for character in result.chunks[0]["text"]
+    )

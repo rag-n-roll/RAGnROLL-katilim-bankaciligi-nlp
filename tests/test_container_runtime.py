@@ -6,7 +6,11 @@ import json
 from math import isclose
 
 from scripts.container_entrypoint import bootstrap_runtime
-from scripts.ingest_chroma import SmokeEmbeddingProvider
+from scripts.ingest_chroma import (
+    SmokeEmbeddingProvider,
+    load_runtime_env,
+    required_evren_exit_code,
+)
 from src.scraper.models import Campaign
 
 
@@ -90,3 +94,26 @@ def test_smoke_embedding_is_deterministic_normalized_and_local():
     assert first == second
     assert len(first) == 32
     assert isclose(sum(value * value for value in first), 1.0)
+
+
+def test_require_evren_fails_when_remote_index_is_not_ready():
+    assert required_evren_exit_code(required=True, status="ready") == 0
+    assert required_evren_exit_code(required=True, status="disabled") == 2
+    assert required_evren_exit_code(required=True, status="failed") == 2
+    assert required_evren_exit_code(required=False, status="disabled") == 0
+
+
+def test_ingestion_cli_loads_dotenv_without_overriding_process_env(tmp_path, monkeypatch):
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        "RAGNROLL_TEST_FROM_DOTENV=dosyadan\n"
+        "RAGNROLL_TEST_PRESERVED=dosyadan\n",
+        encoding="utf-8",
+    )
+    monkeypatch.delenv("RAGNROLL_TEST_FROM_DOTENV", raising=False)
+    monkeypatch.setenv("RAGNROLL_TEST_PRESERVED", "surecten")
+
+    load_runtime_env(env_file)
+
+    assert __import__("os").environ["RAGNROLL_TEST_FROM_DOTENV"] == "dosyadan"
+    assert __import__("os").environ["RAGNROLL_TEST_PRESERVED"] == "surecten"

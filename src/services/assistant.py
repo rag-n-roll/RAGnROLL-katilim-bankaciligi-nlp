@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 from hashlib import sha256
+import json
 from math import isfinite
+from pathlib import Path
 from time import perf_counter, sleep
 import re
 from typing import Any, Iterator
@@ -17,6 +19,7 @@ from src.llm import (
 )
 from src.llm.client import LLMUnavailableError
 from src.llm.judging import SemanticJudge
+from src.financing import build_financing_quotes, fetch_official_quotes
 from src.normalization import normalize_duration, normalize_money, normalize_rate
 from src.normalization.values import parse_number
 from src.observability import EventRecorder
@@ -41,11 +44,29 @@ def _safe_stream_chunks(text: str, *, words_per_chunk: int = 3) -> Iterator[str]
     for start in range(0, len(words), words_per_chunk):
         yield "".join(words[start : start + words_per_chunk])
         sleep(0.035)
+
+
+def _complete_excerpt(text: str, *, limit: int = 360) -> str:
+    """Kanıt özetini son tamamlanmış cümlede kes; yarım hüküm üretme."""
+
+    clean = " ".join(str(text or "").split()).strip()
+    if len(clean) <= limit:
+        return clean
+    bounded = clean[:limit].rstrip()
+    sentence_ends = [match.end() for match in re.finditer(r"[.!?](?=\s|$)", bounded)]
+    if sentence_ends:
+        return bounded[: sentence_ends[-1]].rstrip()
+    return bounded.rstrip(" ,;:-") + "…"
+
+
 from src.query import DomainQueryCompiler, QueryPlan
 from src.query.compiler import _answer_confidence
 from src.retrieval import HybridRetriever
 from src.services.conversation import extract_comparison_criteria, merge_criteria
 from src.services.orchestration import ToolOrchestrator
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _source_value(source: dict[str, Any], key: str) -> Any:
@@ -443,14 +464,23 @@ class GroundedAssistant:
     def _tool_call_for_plan(
         plan: QueryPlan, *, criteria: ComparisonCriteria | None = None
     ) -> tuple[dict[str, Any], ComparisonCriteria]:
+        effective_criteria = criteria or ComparisonCriteria()
+        sourced_financing_comparison = (
+            plan.intent == "product_comparison"
+            and plan.slots.get("financing_type")
+            in {"consumer", "vehicle", "housing", "commercial"}
+            and plan.slots.get("aggregation") not in {"MIN", "MAX"}
+            and not effective_criteria.missing()
+        )
         tool_name = (
-            "comparison"
+            "financing_quote"
+            if sourced_financing_comparison
+            else "comparison"
             if plan.intent == "product_comparison"
             else "structured_sql"
             if plan.route == "STRUCTURED_SQL"
             else "hybrid_rag"
         )
-        effective_criteria = criteria or ComparisonCriteria()
         if plan.intent == "product_comparison" and plan.slots.get(
             "aggregation"
         ) in {"MIN", "MAX"}:
@@ -471,16 +501,20 @@ class GroundedAssistant:
                     if tool_name == "structured_sql"
                     else None
                 ),
-                "product_type": plan.slots.get("product_type"),
+                "product_type": (
+                    plan.slots.get("product_type")
+                    if tool_name != "financing_quote"
+                    else None
+                ),
                 "financing_type": plan.slots.get("financing_type"),
                 "term_months": effective_criteria.term_months
-                if tool_name == "comparison"
+                if tool_name in {"comparison", "financing_quote"}
                 else None,
                 "amount": effective_criteria.amount
-                if tool_name == "comparison"
+                if tool_name in {"comparison", "financing_quote"}
                 else None,
                 "fee_priority": effective_criteria.fee_priority
-                if tool_name == "comparison"
+                if tool_name in {"comparison", "financing_quote"}
                 else None,
             }.items()
             if value not in (None, [], "")
@@ -968,6 +1002,163 @@ class GroundedAssistant:
             "warnings": [*plan.warnings, *comparison_warnings],
         }
 
+    @staticmethod
+    def _financing_catalog_items(filename: str, key: str) -> list[dict[str, Any]]:
+        path = PROJECT_ROOT / "data" / filename
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return []
+        items = payload.get(key)
+        return [item for item in items if isinstance(item, dict)] if isinstance(items, list) else []
+
+    @staticmethod
+    def _try_amount(value: Any) -> str:
+        number = _finite(value)
+        if number is None:
+            return "belirtilmedi"
+        return f"{number:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") + " TL"
+
+    def _financing_answer(
+        self,
+        plan: QueryPlan,
+        *,
+        arguments: dict[str, Any],
+    ) -> dict[str, Any]:
+        financing_type = str(arguments["financing_type"])
+        amount = float(arguments["amount"])
+        term_months = int(arguments["term_months"])
+        fee_priority = bool(arguments["fee_priority"])
+        bank_slugs = {
+            str(item) for item in arguments.get("banks", []) if str(item).strip()
+        }
+        eligible = bank_slugs or None
+        official_quotes = fetch_official_quotes(
+            financing_type=financing_type,
+            amount=amount,
+            term_months=term_months,
+            eligible_bank_slugs=eligible,
+        )
+        banks = self._financing_catalog_items("raw/participation_banks.json", "banks")
+        records = self.store.list_campaigns()
+        if not records:
+            records = self._financing_catalog_items("processed/campaigns.json", "records")
+        packet = build_financing_quotes(
+            records=records,
+            banks=banks,
+            financing_type=financing_type,
+            amount=amount,
+            term_months=term_months,
+            official_quotes=official_quotes,
+            eligible_bank_slugs=eligible,
+            fee_priority=fee_priority,
+        )
+        verified = [
+            quote
+            for quote in packet["quotes"]
+            if quote.get("status") == "available"
+            and str(quote.get("source_url") or "").startswith("https://")
+            and str(quote.get("retrieved_at") or "").strip()
+            and _finite(quote.get("monthly_installment")) is not None
+            and _finite(quote.get("total_repayment")) is not None
+        ]
+        if fee_priority:
+            verified.sort(
+                key=lambda quote: (
+                    quote.get("fees_total") is None,
+                    _finite(quote.get("fees_total")) or 0.0,
+                    _finite(quote.get("total_repayment")) or float("inf"),
+                    str(quote.get("bank_name") or ""),
+                )
+            )
+        else:
+            verified.sort(
+                key=lambda quote: (
+                    _finite(quote.get("total_repayment")) or float("inf"),
+                    str(quote.get("bank_name") or ""),
+                )
+            )
+
+        facts: list[dict[str, Any]] = []
+        sources: list[dict[str, Any]] = []
+        lines: list[str] = []
+        amount_text = self._try_amount(amount)
+        for index, quote in enumerate(verified, start=1):
+            bank_slug = str(quote.get("bank_slug") or "")
+            bank_name = str(quote.get("bank_name") or bank_slug)
+            product_name = str(quote.get("product_name") or "Finansman")
+            monthly_rate = _finite(quote.get("monthly_profit_rate"))
+            installment = self._try_amount(quote.get("monthly_installment"))
+            total = self._try_amount(quote.get("total_repayment"))
+            fees = self._try_amount(quote.get("fees_total"))
+            rate_text = f"%{monthly_rate:.2f}".replace(".", ",") if monthly_rate is not None else "belirtilmedi"
+            evidence = (
+                f"{bank_name} — {product_name}. Finansman tutarı {amount_text}; "
+                f"vade {term_months} ay; aylık kâr payı {rate_text}; "
+                f"aylık taksit {installment}; toplam geri ödeme {total}; "
+                f"toplam masraf {fees}. Doğrulama zamanı: {quote['retrieved_at']}."
+            )
+            facts.append(
+                {
+                    "quote_id": f"{bank_slug}:{financing_type}:{int(amount)}:{term_months}",
+                    "bank_slug": bank_slug,
+                    "bank_name": bank_name,
+                    "product_name": product_name,
+                    "financing_type": financing_type,
+                    "amount": amount,
+                    "term_months": term_months,
+                    "fee_priority": fee_priority,
+                    "monthly_profit_rate": monthly_rate,
+                    "monthly_installment": _finite(quote.get("monthly_installment")),
+                    "total_repayment": _finite(quote.get("total_repayment")),
+                    "fees_total": _finite(quote.get("fees_total")),
+                    "retrieved_at": quote["retrieved_at"],
+                }
+            )
+            sources.append(
+                {
+                    "campaign_id": f"financing:{bank_slug}:{financing_type}:{int(amount)}:{term_months}",
+                    "bank_name": bank_name,
+                    "title": product_name,
+                    "source_url": quote["source_url"],
+                    "retrieved_at": quote["retrieved_at"],
+                    "evidence": {"text": evidence, "char_start": 0, "char_end": len(evidence)},
+                    "retrieval_score": 1.0,
+                    "retrieval_method": "official_financing_quote",
+                }
+            )
+            lines.append(
+                f"- {bank_name} — {product_name}: aylık kâr payı {rate_text}; "
+                f"aylık taksit {installment}; toplam geri ödeme {total}; "
+                f"masraf {fees} [K{index}]"
+            )
+
+        if lines:
+            priority = "masraf önceliğine" if fee_priority else "toplam geri ödemeye"
+            answer = (
+                f"{amount_text} ve {term_months} ay için doğrulanmış teklifler "
+                f"{priority} göre tarafsız sıralandı:\n" + "\n".join(lines)
+            )
+        else:
+            answer = (
+                f"{amount_text} ve {term_months} ay için resmî kaynağı ve doğrulama "
+                "zamanı bulunan karşılaştırılabilir bir teklif alınamadı."
+            )
+        typed = len(facts)
+        confidence, components = _answer_confidence(
+            typed=typed, evidenced=len(sources), candidates=typed
+        )
+        return {
+            "answer": answer,
+            "facts": facts,
+            "sources": sources,
+            "quote_coverage": packet["coverage"],
+            "confidence": confidence,
+            "answer_confidence": confidence,
+            "confidence_components": components,
+            "warnings": plan.warnings,
+        }
+
     def _hybrid_answer(self, plan: QueryPlan, *, limit: int) -> dict[str, Any]:
         filters = dict(plan.filters)
         filters["intent"] = plan.intent
@@ -976,7 +1167,7 @@ class GroundedAssistant:
             # değildir. Bu filtreleri taşımak geçerli terimleri Chroma'da sıfırlar.
             filters = {
                 "intent": plan.intent,
-                "source_types": ["terminology"],
+                "source_types": ["terminology", "pdf_evidence"],
             }
         elif plan.intent in {
             "application_requirements",
@@ -1042,7 +1233,13 @@ class GroundedAssistant:
                 in exact_term_ids
             ]
             if exact_documents:
-                documents = exact_documents
+                pdf_documents = [
+                    document
+                    for document in documents
+                    if document.get("metadata", {}).get("source_type")
+                    == "pdf_evidence"
+                ]
+                documents = exact_documents + pdf_documents
         if not documents:
             answer_confidence, confidence_components = _answer_confidence(
                 typed=0, evidenced=0, candidates=0
@@ -1060,14 +1257,16 @@ class GroundedAssistant:
         sources = []
         relation_sentences: list[str] = []
         for document in documents:
-            excerpt = " ".join(document["text"].split())[:360]
+            excerpt = _complete_excerpt(document["text"])
             metadata = document["metadata"]
             evidence_text = excerpt
             char_start = metadata.get("char_start")
             char_end = metadata.get("char_end")
             section = str(metadata.get("section") or "")
             if section == "content" and "İçerik: " in document["text"]:
-                evidence_text = document["text"].split("İçerik: ", 1)[1][:360]
+                evidence_text = _complete_excerpt(
+                    document["text"].split("İçerik: ", 1)[1]
+                )
                 char_end = min(int(char_end), int(char_start) + len(evidence_text))
             elif section == "overview":
                 lines = document["text"].splitlines()
@@ -1075,7 +1274,8 @@ class GroundedAssistant:
                     lines.pop(0)
                 evidence_text = "\n".join(lines).split(
                     "\nYapılandırılmış alanlar:", 1
-                )[0][:360]
+                )[0]
+                evidence_text = _complete_excerpt(evidence_text)
                 char_end = min(int(char_end), len(evidence_text))
             elif section == "terminology":
                 # Ontolojiye ait dahili sınıflandırma alanları yanıt kanıtı değildir.
@@ -1095,6 +1295,16 @@ class GroundedAssistant:
                     "bank_name": _source_value(document, "bank_name") or None,
                     "title": _source_value(document, "title") or None,
                     "source_url": _source_value(document, "source_url") or None,
+                    "page_start": metadata.get("page_start"),
+                    "page_end": metadata.get("page_end"),
+                    "publisher": metadata.get("publisher") or None,
+                    "ontology_term_ids": [
+                        term_id
+                        for term_id in str(
+                            metadata.get("ontology_term_ids") or ""
+                        ).split(",")
+                        if term_id
+                    ],
                     "relations": metadata.get("graph_relations") or [],
                     "evidence": {
                         "text": evidence_text,
@@ -1258,7 +1468,10 @@ class GroundedAssistant:
             expected_call, _ = self._tool_call_for_plan(
                 plan, criteria=effective_criteria
             )
-            if plan.route == "STRUCTURED_SQL":
+            if expected_call["name"] == "financing_quote":
+                def operation(call: Any) -> dict[str, Any]:
+                    return self._financing_answer(plan, arguments=call["arguments"])
+            elif plan.route == "STRUCTURED_SQL":
                 def operation(_call: Any) -> dict[str, Any]:
                     return self._structured_answer(plan)
             else:
@@ -1269,6 +1482,8 @@ class GroundedAssistant:
                 expected_call=expected_call,
                 operation=operation,
             )
+            if result is not None:
+                result["executed_tool"] = expected_call["name"]
         if result is None:
             result = {
                 "answer": "Bu istek için doğrulanmış bir araç planı bulunamadı.",
@@ -1940,52 +2155,13 @@ class GroundedAssistant:
     ) -> dict[str, Any]:
         """Streaming sözleşmesini tüketerek geriye uyumlu toplu yanıt döndürür."""
 
-        criteria: ComparisonCriteria | None = None
-        execution_message = message
-        if conversation_state is not None:
-            if conversation_state.get("pending_intent") != "product_comparison":
-                raise ValueError("Geçersiz konuşma durumu")
-            execution_message = str(conversation_state.get("pending_query") or "")
-            pending_plan = self.compiler.compile(
-                execution_message, known_banks=self.store.bank_summary()
-            )
-            if pending_plan.intent != "product_comparison":
-                raise ValueError("Konuşma durumu karşılaştırma isteğiyle uyuşmuyor")
-            criteria = merge_criteria(
-                ComparisonCriteria(), dict(conversation_state.get("criteria") or {})
-            )
-            criteria = merge_criteria(
-                criteria, extract_comparison_criteria(message)
-            )
-            if criteria.missing():
-                return self._clarification_answer(
-                    message=execution_message, plan=pending_plan, criteria=criteria
-                )
-        else:
-            pending_plan = self.compiler.compile(
-                message, known_banks=self.store.bank_summary()
-            )
-            criteria = merge_criteria(
-                ComparisonCriteria(), extract_comparison_criteria(message)
-            )
-            subjective_comparison = (
-                pending_plan.intent == "product_comparison"
-                and pending_plan.slots.get("aggregation") not in {"MIN", "MAX"}
-            )
-            if subjective_comparison and criteria.missing():
-                return self._clarification_answer(
-                    message=message,
-                    plan=pending_plan,
-                    criteria=criteria,
-                )
-            if not subjective_comparison:
-                criteria = None
-
         response: dict[str, Any] = {}
         answer_parts: list[str] = []
         generation = self._generation(mode="fallback", fallback_reason="unknown")
-        for item in self.stream_answer(
-            execution_message, limit=limit, criteria=criteria
+        for item in self.stream_conversation_answer(
+            message,
+            limit=limit,
+            conversation_state=conversation_state,
         ):
             event = item["event"]
             data = item["data"]
@@ -2018,3 +2194,77 @@ class GroundedAssistant:
             "conversation_state": response.get("conversation_state"),
             "generation": generation,
         }
+
+    def stream_conversation_answer(
+        self,
+        message: str,
+        *,
+        limit: int = 5,
+        conversation_state: dict[str, Any] | None = None,
+    ) -> Iterator[dict[str, Any]]:
+        """Konuşma kriterlerini çözüp aynı sözleşmeyle SSE olayları üret."""
+
+        criteria: ComparisonCriteria | None = None
+        execution_message = message
+        clarification: dict[str, Any] | None = None
+        if conversation_state is not None:
+            if conversation_state.get("pending_intent") != "product_comparison":
+                raise ValueError("Geçersiz konuşma durumu")
+            execution_message = str(conversation_state.get("pending_query") or "")
+            pending_plan = self.compiler.compile(
+                execution_message, known_banks=self.store.bank_summary()
+            )
+            if pending_plan.intent != "product_comparison":
+                raise ValueError("Konuşma durumu karşılaştırma isteğiyle uyuşmuyor")
+            criteria = merge_criteria(
+                ComparisonCriteria(), dict(conversation_state.get("criteria") or {})
+            )
+            criteria = merge_criteria(
+                criteria, extract_comparison_criteria(message)
+            )
+            if criteria.missing():
+                clarification = self._clarification_answer(
+                    message=execution_message, plan=pending_plan, criteria=criteria
+                )
+        else:
+            pending_plan = self.compiler.compile(
+                message, known_banks=self.store.bank_summary()
+            )
+            criteria = merge_criteria(
+                ComparisonCriteria(), extract_comparison_criteria(message)
+            )
+            subjective_comparison = (
+                pending_plan.intent == "product_comparison"
+                and pending_plan.slots.get("aggregation") not in {"MIN", "MAX"}
+            )
+            if subjective_comparison and criteria.missing():
+                clarification = self._clarification_answer(
+                    message=message,
+                    plan=pending_plan,
+                    criteria=criteria,
+                )
+            if not subjective_comparison:
+                criteria = None
+
+        if clarification is not None:
+            yield {
+                "event": "meta",
+                "data": {
+                    key: value
+                    for key, value in clarification.items()
+                    if key not in {"answer", "generation"}
+                },
+            }
+            for text_chunk in _safe_stream_chunks(clarification["answer_display"]):
+                yield {"event": "delta", "data": {"text": text_chunk}}
+            yield {
+                "event": "done",
+                "data": self._generation(
+                    mode="fallback", fallback_reason="missing_comparison_criteria"
+                ),
+            }
+            return
+
+        yield from self.stream_answer(
+            execution_message, limit=limit, criteria=criteria
+        )

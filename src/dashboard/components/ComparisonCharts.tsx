@@ -7,23 +7,6 @@ const Plot = dynamic(() => import("react-plotly.js"), {
   ssr: false,
 });
 
-const DEFAULT_BANKS = [
-  "Kuveyt Türk",
-  "Albaraka Türk",
-  "Türkiye Finans",
-  "Vakıf Katılım",
-  "Ziraat Katılım",
-  "Emlak Katılım",
-  "Hayat Finans",
-  "TOM Katılım",
-  "Dünya Katılım",
-  "Adil Katılım",
-];
-
-const DEFAULT_PROFIT_RATES = [2.49, 2.69, 2.79, 2.89, 2.95, 3.05, 3.12, 3.2, 3.28, 3.36];
-const DEFAULT_TERMS = [24, 36, 48, 36, 24, 48, 36, 24, 48, 36];
-const DEFAULT_COSTS = [0, 0, 250, 250, 150, 200, 100, 0, 180, 120];
-
 export type ComparisonChartItem = {
   bank: string;
   rate?: number | null;
@@ -58,11 +41,13 @@ const makeBankLogoImages = (
   }));
 
 export function ProfitRateChart({ items }: { items?: ComparisonChartItem[] }) {
-  const banks = items && items.length > 0 ? items.map((i) => i.bank) : DEFAULT_BANKS;
-  const rates =
-    items && items.length > 0
-      ? items.map((i) => (typeof i.rate === "number" && !isNaN(i.rate) ? i.rate : 2.5))
-      : DEFAULT_PROFIT_RATES;
+  const chartItems = (items ?? []).filter(
+    (item): item is ComparisonChartItem & { rate: number } =>
+      typeof item.rate === "number" && Number.isFinite(item.rate)
+  );
+  if (!chartItems.length) return null;
+  const banks = chartItems.map((item) => item.bank);
+  const rates = chartItems.map((item) => item.rate);
   const tickText = makeBankTickText(banks);
   const maxRate = Math.max(4, ...rates.map((r) => r + 0.8));
 
@@ -113,11 +98,13 @@ export function ProfitRateChart({ items }: { items?: ComparisonChartItem[] }) {
 }
 
 export function TermChart({ items }: { items?: ComparisonChartItem[] }) {
-  const banks = items && items.length > 0 ? items.map((i) => i.bank) : DEFAULT_BANKS;
-  const terms =
-    items && items.length > 0
-      ? items.map((i) => (typeof i.term === "number" && !isNaN(i.term) ? i.term : 24))
-      : DEFAULT_TERMS;
+  const chartItems = (items ?? []).filter(
+    (item): item is ComparisonChartItem & { term: number } =>
+      typeof item.term === "number" && Number.isFinite(item.term)
+  );
+  if (!chartItems.length) return null;
+  const banks = chartItems.map((item) => item.bank);
+  const terms = chartItems.map((item) => item.term);
   const tickText = makeBankTickText(banks);
   const maxTerm = Math.max(60, ...terms.map((t) => t + 12));
 
@@ -175,11 +162,13 @@ export function TermChart({ items }: { items?: ComparisonChartItem[] }) {
 }
 
 export function CostChart({ items }: { items?: ComparisonChartItem[] }) {
-  const banks = items && items.length > 0 ? items.map((i) => i.bank) : DEFAULT_BANKS;
-  const costs =
-    items && items.length > 0
-      ? items.map((i) => (typeof i.cost === "number" && !isNaN(i.cost) ? i.cost : 0))
-      : DEFAULT_COSTS;
+  const chartItems = (items ?? []).filter(
+    (item): item is ComparisonChartItem & { cost: number } =>
+      typeof item.cost === "number" && Number.isFinite(item.cost)
+  );
+  if (!chartItems.length) return null;
+  const banks = chartItems.map((item) => item.bank);
+  const costs = chartItems.map((item) => item.cost);
   const tickText = makeBankTickText(banks);
   const maxCost = Math.max(600, ...costs.map((c) => c + 100));
 
