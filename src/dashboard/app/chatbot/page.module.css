@@ -228,6 +228,29 @@
   color: #b77a08;
 }
 
+.thinkingDots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 2px;
+}
+
+.thinkingDots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #b77a08;
+  animation: thinkingDot 1.05s ease-in-out infinite;
+}
+
+.thinkingDots i:nth-child(2) { animation-delay: 0.14s; }
+.thinkingDots i:nth-child(3) { animation-delay: 0.28s; }
+
+@keyframes thinkingDot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.45; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
 .thinkingPanel ul {
   margin: 0;
   padding: 0 12px 8px 27px;

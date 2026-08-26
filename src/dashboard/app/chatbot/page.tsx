@@ -286,6 +286,11 @@ export default function ChatbotPage() {
                         <summary>
                           <span className={styles.thinkingIcon} aria-hidden="true">✦</span>
                           Yanıt hazırlanıyor
+                          {exchange.streaming && (
+                            <span className={styles.thinkingDots} aria-label="İşleniyor">
+                              <i /> <i /> <i />
+                            </span>
+                          )}
                         </summary>
                         <ul>
                           {exchange.thinkingSteps.map((step) => (

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import replace
 from hashlib import sha256
 from math import isfinite
-from time import perf_counter
+from time import perf_counter, sleep
 import re
 from typing import Any, Iterator
 
@@ -34,11 +34,13 @@ from src.preprocessing.clean_text import tokenize_turkish
 from src.prompt_optimization import IntentTraceRecorder
 
 
-def _safe_stream_chunks(text: str, *, chunk_size: int = 28) -> Iterator[str]:
+def _safe_stream_chunks(text: str, *, words_per_chunk: int = 3) -> Iterator[str]:
     """Doğrulanmış metni küçük parçalar halinde aktarır; ham düşünceyi hiç açmaz."""
     clean = str(text or "")
-    for start in range(0, len(clean), chunk_size):
-        yield clean[start : start + chunk_size]
+    words = re.findall(r"\S+\s*", clean)
+    for start in range(0, len(words), words_per_chunk):
+        yield "".join(words[start : start + words_per_chunk])
+        sleep(0.035)
 from src.query import DomainQueryCompiler, QueryPlan
 from src.query.compiler import _answer_confidence
 from src.retrieval import HybridRetriever
