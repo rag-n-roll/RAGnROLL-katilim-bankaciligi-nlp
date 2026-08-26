@@ -9,6 +9,8 @@ import {
 import styles from "../live.module.css";
 import {
   applyActiveChatUpdate,
+  applyStreamEvent,
+  createStreamState,
   isActiveChatRequest,
   nextChatRequestToken,
   resetChatSession,
@@ -19,6 +21,9 @@ const suggestions = [
   "Kuveyt Türk kampanyalarında hangi avantajlar var?",
   "Murabaha nedir?",
 ];
+
+const CONNECTION_ERROR =
+  "Bağlantı kurulamadı. Lütfen kısa süre sonra yeniden deneyin; güncel finansal bilgi için bankanızın resmî kanalını kullanın.";
 
 function generationLabel(generation?: ChatGeneration) {
   if (!generation) return "Kaynaklar hazırlanıyor";
@@ -80,6 +85,7 @@ export default function ChatbotPage() {
       ...items,
       { question: trimmed, answer: "", streaming: true },
     ]);
+    let streamState = createStreamState(activeToken);
     let completed = false;
     try {
       await streamChat(
@@ -87,13 +93,30 @@ export default function ChatbotPage() {
         {
           onMeta: (meta) =>
             updateLatest(activeToken, (item) => ({ ...item, meta })),
-          onDelta: (text) =>
+          onDelta: (text, eventInfo) => {
+            const event = {
+              requestId: eventInfo?.requestId ?? null,
+              eventId: eventInfo?.eventId ?? `delta-${Date.now()}`,
+              sequence: eventInfo?.sequence ?? (streamState.lastSequence + 1),
+              text,
+            };
+            streamState = applyStreamEvent(streamState, activeToken, event);
             updateLatest(activeToken, (item) => ({
               ...item,
-              answer: item.answer + text,
-            })),
-          onReplace: (text) =>
-            updateLatest(activeToken, (item) => ({ ...item, answer: text })),
+              answer: streamState.answer,
+            }));
+          },
+          onReplace: (text, eventInfo) => {
+            streamState = {
+              ...streamState,
+              answer: text,
+              seenEventIds: eventInfo?.eventId
+                ? new Set(streamState.seenEventIds).add(eventInfo.eventId)
+                : streamState.seenEventIds,
+              lastSequence: eventInfo?.sequence ?? streamState.lastSequence,
+            };
+            updateLatest(activeToken, (item) => ({ ...item, answer: text }));
+          },
           onDone: (generation) => {
             if (!isActiveChatRequest(requestToken.current, activeToken)) return;
             completed = true;
@@ -110,9 +133,12 @@ export default function ChatbotPage() {
       const stopped = reason instanceof DOMException && reason.name === "AbortError";
       const error = stopped
         ? "Yanıt akışı kullanıcı tarafından durduruldu."
-        : reason instanceof Error
+        : reason instanceof Error &&
+            reason.message &&
+            reason.message !== "Failed to fetch" &&
+            !reason.message.includes("fetch failed")
           ? reason.message
-          : "Yanıt üretilemedi.";
+          : CONNECTION_ERROR;
       if (!completed) {
         if (isActiveChatRequest(requestToken.current, activeToken)) {
           updateLatest(activeToken, (item) => ({

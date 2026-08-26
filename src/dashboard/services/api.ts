@@ -189,11 +189,17 @@ export type ChatGeneration = {
   prompt?: { profile?: string; optimizer?: string; status?: string };
 };
 
+export type StreamEventInfo = {
+  eventId?: string;
+  sequence?: number;
+  requestId?: string;
+};
+
 type StreamHandlers = {
-  onMeta: (data: ChatMeta) => void;
-  onDelta: (text: string) => void;
-  onReplace: (text: string) => void;
-  onDone: (data: ChatGeneration) => void;
+  onMeta: (data: ChatMeta, event?: StreamEventInfo) => void;
+  onDelta: (text: string, event?: StreamEventInfo) => void;
+  onReplace: (text: string, event?: StreamEventInfo) => void;
+  onDone: (data: ChatGeneration, event?: StreamEventInfo) => void;
 };
 
 export async function streamChat(
@@ -226,19 +232,26 @@ export async function streamChat(
 
   function consume(block: string) {
     let event = "message";
+    let blockId = "";
     const dataLines: string[] = [];
     for (const line of block.split(/\r?\n/)) {
+      if (line.startsWith("id:")) blockId = line.slice(3).trim();
       if (line.startsWith("event:")) event = line.slice(6).trim();
       if (line.startsWith("data:")) dataLines.push(line.slice(5).trimStart());
     }
     if (!dataLines.length) return;
     const data = JSON.parse(dataLines.join("\n"));
-    if (event === "meta") handlers.onMeta(data as ChatMeta);
-    else if (event === "delta") handlers.onDelta(String(data.text ?? ""));
-    else if (event === "replace") handlers.onReplace(String(data.text ?? ""));
+    const eventId = String(data.event_id || data.eventId || blockId || "");
+    const sequence = typeof data.sequence === "number" ? data.sequence : Number(data.sequence) || 0;
+    const requestId = String(data.request_id || data.requestId || (eventId ? eventId.split(":")[0] : ""));
+    const eventInfo: StreamEventInfo = { eventId, sequence, requestId };
+
+    if (event === "meta") handlers.onMeta(data as ChatMeta, eventInfo);
+    else if (event === "delta") handlers.onDelta(String(data.text ?? ""), eventInfo);
+    else if (event === "replace") handlers.onReplace(String(data.text ?? ""), eventInfo);
     else if (event === "done") {
       completed = true;
-      handlers.onDone(data as ChatGeneration);
+      handlers.onDone(data as ChatGeneration, eventInfo);
     }
     else if (event === "error") throw new Error(String(data.message ?? "Yanıt üretilemedi."));
   }

@@ -728,6 +728,7 @@ def grounded_chat_stream(
 
         Thread(target=produce, daemon=True).start()
         heartbeat_seconds = float(os.getenv("RAGNROLL_SSE_HEARTBEAT_SECONDS", "15"))
+        sequence = 0
         while True:
             try:
                 item = queue.get(timeout=heartbeat_seconds)
@@ -739,7 +740,11 @@ def grounded_chat_stream(
             data = dict(item["data"])
             if item["event"] == "meta":
                 data.update(api_version="2026.08", request_id=request_id)
+            sequence += 1
+            event_id = f"{request_id}:{sequence}"
+            data.update(event_id=event_id, sequence=sequence)
             yield (
+                f"id: {event_id}\n"
                 f"event: {item['event']}\n"
                 f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
             )

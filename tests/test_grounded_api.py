@@ -496,3 +496,39 @@ def test_local_dashboard_origins_pass_cors_preflight(tmp_path):
         )
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:3000"
+
+
+def test_chat_stream_emits_sequential_and_non_empty_event_ids(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat/stream",
+            json={"message": "Murabaha nedir?"},
+        )
+
+    assert response.status_code == 200
+    assert "text/event-stream" in response.headers["content-type"]
+
+    events = []
+    for block in response.text.strip().split("\n\n"):
+        lines = [line.strip() for line in block.split("\n") if line.strip()]
+        if not lines:
+            continue
+        event_type = "message"
+        event_id = None
+        data = None
+        for line in lines:
+            if line.startswith("id:"):
+                event_id = line[3:].strip()
+            elif line.startswith("event:"):
+                event_type = line[6:].strip()
+            elif line.startswith("data:"):
+                data = json.loads(line[5:].strip())
+        if event_type != "heartbeat" and data is not None:
+            events.append({"event": event_type, "id": event_id, "data": data})
+
+    assert len(events) >= 2
+    for idx, event in enumerate(events, start=1):
+        assert event["id"] is not None and len(event["id"]) > 0
+        assert event["data"]["event_id"] == event["id"]
+        assert event["data"]["sequence"] == idx
+        assert event["id"].endswith(f":{idx}")
