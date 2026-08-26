@@ -19,10 +19,12 @@ from src.normalization import normalize_duration, normalize_money, normalize_rat
 from src.normalization.values import parse_number
 from src.observability import EventRecorder
 from src.persistence import CampaignStore
+from src.policy import ComparisonCriteria
 from src.preprocessing.clean_text import tokenize_turkish
 from src.prompt_optimization import IntentTraceRecorder
 from src.query import DomainQueryCompiler, QueryPlan
 from src.retrieval import HybridRetriever
+from src.services.conversation import merge_criteria
 
 
 def _finite(value: Any) -> float | None:
@@ -674,10 +676,26 @@ class GroundedAssistant:
             "warnings": plan.warnings,
         }
 
-    def _grounded_result(self, message: str, *, limit: int) -> dict[str, Any]:
+    def _grounded_result(
+        self,
+        message: str,
+        *,
+        limit: int,
+        criteria: ComparisonCriteria | None = None,
+    ) -> dict[str, Any]:
         if not 1 <= limit <= 10:
             raise ValueError("limit 1 ile 10 arasında olmalıdır")
         plan = self.compile(message)
+        if criteria is not None:
+            plan = replace(
+                plan,
+                slots={
+                    **plan.slots,
+                    "term_months": criteria.term_months,
+                    "amount": criteria.amount,
+                    "fee_priority": criteria.fee_priority,
+                },
+            )
         if plan.route == "SAFE_REDIRECT":
             result = {
                 "answer": (
@@ -860,7 +878,11 @@ class GroundedAssistant:
         }
 
     def stream_answer(
-        self, message: str, *, limit: int = 5
+        self,
+        message: str,
+        *,
+        limit: int = 5,
+        criteria: ComparisonCriteria | None = None,
     ) -> Iterator[dict[str, Any]]:
         """Kanıt paketini ve yalnız doğrulanmış nihai yanıtı aktarır."""
 
@@ -869,7 +891,7 @@ class GroundedAssistant:
         route = "UNKNOWN"
         mode = "fallback"
         try:
-            grounded = self._grounded_result(message, limit=limit)
+            grounded = self._grounded_result(message, limit=limit, criteria=criteria)
             route = str(grounded["plan"]["route"])
             fallback_answer = str(grounded["answer"])
             metadata = {key: value for key, value in grounded.items() if key != "answer"}
@@ -998,13 +1020,89 @@ class GroundedAssistant:
                 retrieval_backend=getattr(self.retriever, "last_backend", "bm25"),
             )
 
-    def answer(self, message: str, *, limit: int = 5) -> dict[str, Any]:
+    @staticmethod
+    def _clarification_answer(
+        *, message: str, plan: QueryPlan, criteria: ComparisonCriteria
+    ) -> dict[str, Any]:
+        missing = criteria.missing()
+        answer_display = (
+            "Karşılaştırmayı netleştirmek için vade süresini, finansman tutarını "
+            "ve masraf önceliğiniz olup olmadığını belirtir misiniz?"
+        )
+        return {
+            "answer": answer_display,
+            "answer_display": answer_display,
+            "action": "CLARIFY",
+            "missing_criteria": missing,
+            "conversation_state": {
+                "pending_intent": "product_comparison",
+                "pending_query": message,
+                "criteria": {
+                    "term_months": criteria.term_months,
+                    "amount": criteria.amount,
+                    "fee_priority": criteria.fee_priority,
+                },
+            },
+            "facts": [],
+            "sources": [],
+            "confidence": plan.confidence,
+            "warnings": plan.warnings,
+            "plan": plan.to_dict(),
+            "generation": {
+                "mode": "fallback",
+                "model": None,
+                "fallback_reason": "missing_comparison_criteria",
+            },
+        }
+
+    def answer(
+        self,
+        message: str,
+        *,
+        limit: int = 5,
+        conversation_state: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Streaming sözleşmesini tüketerek geriye uyumlu toplu yanıt döndürür."""
+
+        criteria: ComparisonCriteria | None = None
+        execution_message = message
+        if conversation_state is not None:
+            if conversation_state.get("pending_intent") != "product_comparison":
+                raise ValueError("Geçersiz konuşma durumu")
+            execution_message = str(conversation_state.get("pending_query") or "")
+            pending_plan = self.compiler.compile(
+                execution_message, known_banks=self.store.bank_summary()
+            )
+            if pending_plan.intent != "product_comparison":
+                raise ValueError("Konuşma durumu karşılaştırma isteğiyle uyuşmuyor")
+            criteria = merge_criteria(
+                ComparisonCriteria(), dict(conversation_state.get("criteria") or {})
+            )
+            if criteria.missing():
+                return self._clarification_answer(
+                    message=execution_message, plan=pending_plan, criteria=criteria
+                )
+        else:
+            pending_plan = self.compiler.compile(
+                message, known_banks=self.store.bank_summary()
+            )
+            subjective_comparison = (
+                pending_plan.intent == "product_comparison"
+                and pending_plan.slots.get("metric") is None
+            )
+            if subjective_comparison:
+                return self._clarification_answer(
+                    message=message,
+                    plan=pending_plan,
+                    criteria=ComparisonCriteria(),
+                )
 
         response: dict[str, Any] = {}
         answer_parts: list[str] = []
         generation = self._generation(mode="fallback", fallback_reason="unknown")
-        for item in self.stream_answer(message, limit=limit):
+        for item in self.stream_answer(
+            execution_message, limit=limit, criteria=criteria
+        ):
             event = item["event"]
             data = item["data"]
             if event == "meta":
@@ -1022,8 +1120,17 @@ class GroundedAssistant:
             response.setdefault("warnings", []).append(
                 "Dil modeli kullanılamadığı için doğrulanabilir yerel yanıt gösterildi"
             )
+        answer_display = "".join(answer_parts).strip()
+        plan = response.get("plan", {})
+        action = "ANSWER"
+        if plan.get("route") == "SAFE_REDIRECT":
+            action = "REFUSE" if plan.get("intent") == "unknown" else "REDIRECT"
         return {
             **response,
-            "answer": "".join(answer_parts).strip(),
+            "answer": answer_display,
+            "answer_display": answer_display,
+            "action": action,
+            "missing_criteria": [],
+            "conversation_state": None,
             "generation": generation,
         }

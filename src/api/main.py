@@ -679,7 +679,16 @@ def compile_query(payload: QueryCompileRequest, request: Request) -> dict[str, A
 )
 def grounded_chat(payload: GroundedChatRequest, request: Request) -> dict[str, Any]:
     try:
-        return _assistant(request).answer(payload.message, limit=payload.source_limit)
+        state = (
+            payload.conversation_state.model_dump()
+            if payload.conversation_state is not None
+            else None
+        )
+        return _assistant(request).answer(
+            payload.message,
+            limit=payload.source_limit,
+            conversation_state=state,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 

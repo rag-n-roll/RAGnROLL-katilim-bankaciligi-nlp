@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt
 
 
 class ApiModel(BaseModel):
@@ -39,13 +39,36 @@ class QueryCompileResponse(ContractResponse):
     plan: dict[str, Any]
 
 
+class ComparisonCriteriaState(ApiModel):
+    model_config = ConfigDict(extra="forbid")
+
+    term_months: Annotated[StrictInt, Field(gt=0, le=1200)] | None = None
+    amount: (
+        Annotated[StrictInt | StrictFloat, Field(gt=0, le=1_000_000_000)] | None
+    ) = None
+    fee_priority: StrictBool | None = None
+
+
+class ConversationState(ApiModel):
+    model_config = ConfigDict(extra="forbid")
+
+    pending_intent: Literal["product_comparison"]
+    pending_query: str = Field(min_length=1, max_length=4000)
+    criteria: ComparisonCriteriaState
+
+
 class GroundedChatRequest(ApiModel):
     message: str = Field(min_length=1, max_length=4000)
     source_limit: int = Field(default=5, ge=1, le=10)
+    conversation_state: ConversationState | None = None
 
 
 class GroundedChatResponse(ContractResponse):
     answer: str
+    action: Literal["ANSWER", "CLARIFY", "REFUSE", "REDIRECT"]
+    missing_criteria: list[Literal["term_months", "amount", "fee_priority"]]
+    conversation_state: ConversationState | None
+    answer_display: str
     facts: list[dict[str, Any]]
     sources: list[dict[str, Any]]
     confidence: float = Field(ge=0, le=1)
