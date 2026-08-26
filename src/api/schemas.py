@@ -107,6 +107,91 @@ class ComparisonRequest(ApiModel):
     limit: int = Field(default=100, ge=2, le=500)
 
 
+class FinancingQuoteRequest(ApiModel):
+    financing_type: Literal["consumer", "vehicle", "housing", "commercial"] | None = None
+    campaign_key: str | None = Field(default=None, min_length=1, max_length=100)
+    amount: float = Field(gt=0, le=100_000_000)
+    term_months: int = Field(ge=1, le=240)
+    currency: Literal["TRY"] = "TRY"
+    turkiye_finans_credit_id: int | None = Field(default=None, gt=0)
+
+
+class FinancingProductRateBand(ApiModel):
+    min_term_months: int = Field(ge=1)
+    max_term_months: int = Field(ge=1)
+    min_amount: float | None = Field(default=None, gt=0)
+    max_amount: float | None = Field(default=None, gt=0)
+    monthly_profit_rate: float = Field(ge=0)
+
+
+class TurkiyeFinansProduct(ApiModel):
+    credit_id: int = Field(gt=0)
+    financing_type: Literal["consumer", "vehicle", "housing", "commercial"]
+    campaign_name: str
+    rate_bands: list[FinancingProductRateBand]
+    source_url: str
+
+
+class TurkiyeFinansProductsResponse(ApiModel):
+    retrieved_at: str
+    products: list[TurkiyeFinansProduct]
+
+
+class FinancingCampaignBankProduct(ApiModel):
+    bank_slug: str
+    bank_name: str
+    external_product_id: str
+    campaign_name: str
+    rate_bands: list[FinancingProductRateBand]
+    monthly_profit_rate: float | None = Field(default=None, ge=0)
+    source_url: str
+
+
+class FinancingCampaign(ApiModel):
+    campaign_key: str
+    display_name: str
+    financing_type: Literal["consumer", "vehicle", "housing", "commercial"]
+    bank_products: list[FinancingCampaignBankProduct]
+    availability_message: str | None = None
+
+
+class FinancingCampaignsResponse(ApiModel):
+    retrieved_at: str
+    campaigns: list[FinancingCampaign]
+
+
+class FinancingQuoteItem(ApiModel):
+    bank_slug: str
+    bank_name: str
+    status: Literal[
+        "available", "unsupported", "ineligible", "stale", "temporarily_unavailable"
+    ]
+    product_name: str | None = None
+    monthly_profit_rate: float | None = None
+    monthly_installment: float | None = None
+    total_repayment: float | None = None
+    annual_cost_rate: float | None = None
+    fees_total: float | None = None
+    source_url: str | None = None
+    retrieved_at: str | None = None
+    calculation_origin: str | None = None
+    message: str
+
+
+class FinancingCoverage(ApiModel):
+    catalog_bank_count: int = Field(ge=0)
+    available: int = Field(ge=0)
+    unsupported: int = Field(ge=0)
+
+
+class FinancingQuoteResponse(ApiModel):
+    generated_at: str
+    currency: Literal["TRY"]
+    quotes: list[FinancingQuoteItem]
+    coverage: FinancingCoverage
+    disclaimer: str
+
+
 class RefreshRequest(ApiModel):
     max_per_bank: int = Field(default=20, ge=1, le=100)
 
