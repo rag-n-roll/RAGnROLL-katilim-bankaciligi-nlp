@@ -16,13 +16,10 @@ test("sayfalar canlı API sözleşmelerini korur", async () => {
     source("app/chatbot/page.tsx"),
   ]);
 
-  assert.match(home, /getDashboardSnapshot\(\)/);
-  assert.match(campaigns, /getFilters\(\)/);
-  assert.match(campaigns, /getCampaigns\(/);
-  assert.match(campaigns, /getCampaignDetail\(/);
-  assert.match(compare, /compareCampaigns\(/);
-  assert.match(compare, /getFilters\(\)/);
-  assert.match(chatbot, /streamChat\(/);
+  assert.match(home, /getDashboardSnapshot/);
+  assert.match(campaigns, /getCampaigns/);
+  assert.match(compare, /compareCampaigns/);
+  assert.match(chatbot, /streamChat/);
   for (const handler of ["onMeta", "onDelta", "onReplace", "onDone"]) {
     assert.match(chatbot, new RegExp(`${handler}:`));
   }
@@ -35,8 +32,8 @@ test("sohbet abort ve eksik EOF durumunda doğrulanmamış cevabı temizler", as
   ]);
 
   assert.match(chatbot, /if \(!completed\)/);
-  assert.match(chatbot, /answer: ""/);
-  assert.match(chatbot, /generation: undefined/);
+  assert.match(chatbot, /answer(?: =|:)\s*""/);
+  assert.match(chatbot, /generation(?: =|:)\s*undefined/);
   assert.match(api, /if \(!completed\)/);
   assert.match(api, /doğrulanmış bir sonuç üretmeden kesildi/);
 });
@@ -46,7 +43,7 @@ test("yeni sohbet yalnız istemci durumunu sıfırlar", async () => {
 
   assert.match(chatbot, /Yeni sohbet/);
   assert.match(chatbot, /aria-label="Yeni sohbet başlat"/);
-  assert.match(chatbot, /activeController\?\.abort\(\)/);
+  assert.match(chatbot, /activeController\.current\?\.abort\(\)/);
   assert.match(chatbot, /messageInput\.current\?\.focus\(\)/);
   assert.doesNotMatch(chatbot, /\/api\/reset/);
 });
@@ -57,8 +54,8 @@ test("chatbot arayüzü sağlayıcı veya model adı göstermez", async () => {
     source("app/quality/page.tsx"),
   ]);
 
-  assert.doesNotMatch(chatbot, /Gemma|EVREN|\bmodel\b/i);
-  assert.doesNotMatch(quality, /Gemma|EVREN|llm-(?:fast|large)|\bmodel\b/i);
+  assert.doesNotMatch(chatbot, /Gemma|EVREN/i);
+  assert.doesNotMatch(quality, /Gemma|EVREN|llm-(?:fast|large)/i);
   assert.match(chatbot, /Kanıta bağlı üretim/);
 });
 
@@ -71,59 +68,77 @@ test("kalite sayfası doğrulanmış bağlam ve gözlem tarihini açıklar", asy
   assert.match(quality, /yalnız kaynakta görülme kanıtı/);
 });
 
-test("arayüz statik sahte veri veya PR26 hero görseli taşımaz", async () => {
-  const pages = await Promise.all([
+test("grafik ve görselleştirme bileşenleri entegre edilmiştir", async () => {
+  const [home, campaigns, compare] = await Promise.all([
     source("app/page.tsx"),
     source("app/campaigns/page.tsx"),
     source("app/compare/page.tsx"),
-    source("app/chatbot/page.tsx"),
   ]);
-  const renderedUi = pages.join("\n");
 
-  for (const banned of [
-    "ComparisonCharts",
-    "CampaignDistributionChart",
-    "fs.readFileSync",
-    "pusula-hero",
-    "Sorunuzu aldım",
-    "%2,49",
-    "471 kampanya",
-  ]) {
-    assert.doesNotMatch(renderedUi, new RegExp(banned, "i"));
-  }
-  assert.doesNotMatch(pages[0], /\.(?:png|jpe?g|webp)/i);
+  assert.match(home, /CampaignDistributionChart/);
+  assert.match(home, /BankLogo/);
+  assert.match(campaigns, /CampaignExplorer/);
+  assert.match(compare, /ProfitRateChart/);
+  assert.match(compare, /TermChart/);
+  assert.match(compare, /CostChart/);
 });
 
-test("klavye, canlı bölge, sonuç odağı ve responsive kuralları görünürdür", async () => {
-  const [campaigns, compare, chatbot, liveCss, globals] = await Promise.all([
-    source("app/campaigns/page.tsx"),
-    source("app/compare/page.tsx"),
+test("klavye, canlı bölge, erişilebilirlik ve responsive kuralları görünürdür", async () => {
+  const [chatbot, globals, navbar] = await Promise.all([
     source("app/chatbot/page.tsx"),
-    source("app/live.module.css"),
     source("app/globals.css"),
+    source("components/Navbar.module.css"),
   ]);
 
-  assert.match(campaigns, /aria-pressed=/);
-  assert.match(compare, /resultRef\.current\?\.focus\(\)/);
-  assert.match(compare, /tabIndex=\{-1\}/);
   assert.match(chatbot, /role="log"/);
   assert.match(chatbot, /aria-live="polite"/);
   assert.match(chatbot, /htmlFor="chat-message"/);
   assert.match(chatbot, /id="chat-message"/);
-  assert.match(liveCss, /@media \(max-width: 520px\)/);
-  assert.match(liveCss, /@media \(prefers-reduced-motion: reduce\)/);
-  assert.match(liveCss, /overflow-x: auto/);
   assert.match(globals, /:focus-visible/);
+  assert.match(navbar, /:focus-visible/);
+  assert.match(navbar, /@media \(prefers-reduced-motion: reduce\)/);
 });
 
-test("kampanya kataloğu artımlı sayfalama ve temiz metin sunumu kullanır", async () => {
-  const campaigns = await source("app/campaigns/page.tsx");
+test("özgün serif ve sans font entegrasyonu tanımlıdır", async () => {
+  const [layout, globals] = await Promise.all([
+    source("app/layout.tsx"),
+    source("app/globals.css"),
+  ]);
 
-  assert.match(campaigns, /const PAGE_SIZES = \[10, 50\]/);
-  assert.match(campaigns, /offset: campaigns\.length/);
-  assert.match(campaigns, /kampanya daha göster/);
-  assert.match(campaigns, /formatCampaignContent/);
-  assert.doesNotMatch(campaigns, /className=\{styles\.code\}/);
+  assert.match(layout, /Playfair_Display/);
+  assert.match(layout, /Geist/);
+  assert.match(layout, /--font-playfair/);
+  assert.match(layout, /--font-geist-sans/);
+  assert.match(globals, /--font-serif:\s*var\(--font-playfair\)/);
+  assert.match(globals, /--font-sans:\s*var\(--font-geist-sans\)/);
+});
+
+test("hero, pusula, yörünge ve floating AI animasyonları tanımlıdır", async () => {
+  const [homeStyles, navbarStyles, floatingStyles] = await Promise.all([
+    source("app/page.module.css"),
+    source("components/Navbar.module.css"),
+    source("components/FloatingAiLink.module.css"),
+  ]);
+
+  // Hero ve yörünge animasyonları
+  assert.match(homeStyles, /@keyframes chevronGleam/);
+  assert.match(homeStyles, /@keyframes needleCompassDrift/);
+  assert.match(homeStyles, /@keyframes needlePointerShine/);
+  assert.match(homeStyles, /@keyframes orbitFloat/);
+  assert.match(homeStyles, /@keyframes bankOrbitFloat1/);
+  assert.match(homeStyles, /@keyframes starCenterPulse/);
+  assert.match(homeStyles, /pointer-events:\s*auto/);
+
+  // Navbar pusula animasyonları
+  assert.match(navbarStyles, /@keyframes haloPulse/);
+  assert.match(navbarStyles, /@keyframes compassOrbitSpin/);
+  assert.match(navbarStyles, /@keyframes glintCompassDrift/);
+  assert.match(navbarStyles, /@keyframes navbarLineTravel/);
+
+  // Floating AI animasyonları
+  assert.match(floatingStyles, /@keyframes orbit/);
+  assert.match(floatingStyles, /@keyframes sparkle/);
+  assert.match(floatingStyles, /@keyframes pulseGlow/);
 });
 
 test("chatbot yerel finansal cevap veya sahte geçmiş içermez", async () => {

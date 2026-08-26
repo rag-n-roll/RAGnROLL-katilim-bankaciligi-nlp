@@ -45,31 +45,54 @@ export function getHealth() {
   return apiRequest<{ status: string; database: string }>("/health");
 }
 
-export function getDashboardSnapshot() {
-  return apiRequest<{
-    summary: {
+export type DashboardSummaryData = {
+  campaign_count: number;
+  bank_count: number;
+  record_count: number;
+  average_profit_share_rate: number | null;
+  last_updated_at: string | null;
+};
+
+export function getDashboardSummary() {
+  return apiRequest<DashboardSummaryData>("/dashboard/summary");
+}
+
+export type BankSummaryData = {
+  items: Array<{ slug: string; name: string; campaign_count: number }>;
+  total: number;
+};
+
+export function getBanks() {
+  return apiRequest<BankSummaryData>("/banks");
+}
+
+export type DashboardSnapshotData = {
+  summary: {
+    campaign_count: number;
+    bank_count: number;
+    record_count: number;
+    average_profit_share_rate: number | null;
+    last_updated_at: string | null;
+  };
+  distributions: {
+    banks: Array<{
+      slug: string;
+      name: string;
       campaign_count: number;
-      bank_count: number;
-      record_count: number;
-      average_profit_share_rate: number | null;
-      last_updated_at: string | null;
-    };
-    distributions: {
-      banks: Array<{
-        slug: string;
-        name: string;
-        campaign_count: number;
-        campaign_share: number;
-      }>;
-    };
-    recent_campaigns: Array<{
-      id: string;
-      bank_name: string;
-      title: string;
-      product_type: string | null;
-      updated_at: string;
+      campaign_share: number;
     }>;
-  }>("/dashboard/snapshot?recent_limit=8");
+  };
+  recent_campaigns: Array<{
+    id: string;
+    bank_name: string;
+    title: string;
+    product_type: string | null;
+    updated_at: string;
+  }>;
+};
+
+export function getDashboardSnapshot() {
+  return apiRequest<DashboardSnapshotData>("/dashboard/snapshot?recent_limit=8");
 }
 
 export function getFilters() {
