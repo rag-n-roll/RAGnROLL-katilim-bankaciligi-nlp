@@ -156,3 +156,44 @@ def test_product_matching_uses_word_boundaries_without_breaking_card_queries():
     assert legitimate.intent == "product_search"
     assert legitimate.route == "HYBRID_RAG"
     assert legitimate.slots["product_type"] == "card"
+
+
+@pytest.mark.parametrize(
+    ("query", "intent", "metric", "aggregation"),
+    (
+        ("Katılım bankalarını listele", "bank_list", None, None),
+        (
+            "Albaraka Türk kampanyalarını sayar mısın?",
+            "campaign_count",
+            None,
+            "COUNT",
+        ),
+        (
+            "Konut finansmanında oran kaçtır?",
+            "rate_query",
+            "PROFIT_RATE",
+            None,
+        ),
+    ),
+)
+def test_inflected_measurable_queries_keep_structured_routes(
+    query, intent, metric, aggregation
+):
+    plan = DomainQueryCompiler().compile(query)
+
+    assert plan.intent == intent
+    assert plan.route == "STRUCTURED_SQL"
+    assert plan.slots["metric"] == metric
+    assert plan.slots["aggregation"] == aggregation
+
+
+def test_inflected_card_product_is_domain_evidence_without_matching_kartal():
+    card = DomainQueryCompiler().compile("Kartım")
+    collision = DomainQueryCompiler().compile("Kartal'da hava nasıl?")
+
+    assert card.intent == "product_search"
+    assert card.route == "HYBRID_RAG"
+    assert card.slots["product_type"] == "card"
+    assert card.confidence == 0.55
+    assert collision.intent == "unknown"
+    assert "product_type" not in collision.slots

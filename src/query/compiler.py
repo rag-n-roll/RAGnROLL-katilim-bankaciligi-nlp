@@ -14,6 +14,55 @@ from src.preprocessing.clean_text import turkish_lower
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
+NOMINAL_SUFFIXES = (
+    "",
+    "ı",
+    "i",
+    "u",
+    "ü",
+    "a",
+    "e",
+    "da",
+    "de",
+    "ta",
+    "te",
+    "dan",
+    "den",
+    "tan",
+    "ten",
+    "ın",
+    "in",
+    "un",
+    "ün",
+    "ım",
+    "im",
+    "um",
+    "üm",
+    "ımız",
+    "imiz",
+    "umuz",
+    "ümüz",
+    "lar",
+    "ler",
+    "ları",
+    "leri",
+    "ların",
+    "lerin",
+    "larını",
+    "lerini",
+    "larımız",
+    "lerimiz",
+    "la",
+    "le",
+    "yla",
+    "yle",
+    "ıyla",
+    "iyle",
+    "uyla",
+    "üyle",
+)
+QUESTION_SUFFIXES = ("", "tır", "tir", "tur", "tür")
+
 BANK_ALIASES = {
     "adil katılım": "adil-katilim",
     "albaraka": "albaraka-turk",
@@ -71,13 +120,24 @@ class DomainQueryCompiler:
         return bool(re.search(rf"(?<!\w){re.escape(target)}(?!\w)", normalized))
 
     @classmethod
-    def _contains_inflected_word(cls, value: str, word: str) -> bool:
+    def _contains_suffixed_phrase(
+        cls, value: str, phrase: str, suffixes: Iterable[str]
+    ) -> bool:
         normalized = cls._normalized(value)
-        target = cls._normalized(word)
-        suffix = r"(?:lar|ler|ları|leri|lardan|lerden|ı|i|u|ü|ya|ye|yı|yi|yu|yü)?"
-        return bool(
-            re.search(rf"(?<!\w){re.escape(target)}{suffix}(?!\w)", normalized)
+        target = cls._normalized(phrase)
+        suffix_pattern = "|".join(
+            re.escape(suffix) for suffix in sorted(set(suffixes), key=len, reverse=True)
         )
+        return bool(
+            re.search(
+                rf"(?<!\w){re.escape(target)}(?:{suffix_pattern})(?!\w)",
+                normalized,
+            )
+        )
+
+    @classmethod
+    def _contains_nominal_phrase(cls, value: str, phrase: str) -> bool:
+        return cls._contains_suffixed_phrase(value, phrase, NOMINAL_SUFFIXES)
 
     def _intent(
         self,
@@ -105,14 +165,22 @@ class DomainQueryCompiler:
             for term in ("şikâyet", "şikayet", "itiraz")
         ):
             return "complaint_support", 0.99
-        if re.search(r"(?<!\w)katılım banka\w*(?!\w)", normalized) and any(
+        if self._contains_nominal_phrase(normalized, "katılım banka") and any(
             self._contains_phrase(normalized, term)
-            for term in ("kaç", "sayısı", "sayisi", "say", "sayar", "liste")
+            for term in (
+                "kaç",
+                "sayısı",
+                "sayisi",
+                "say",
+                "sayar",
+                "liste",
+                "listele",
+            )
         ):
             return "bank_list", 0.99
-        if re.search(r"(?<!\w)kampanya\w*(?!\w)", normalized) and any(
+        if self._contains_nominal_phrase(normalized, "kampanya") and any(
             self._contains_phrase(normalized, term)
-            for term in ("kaç", "sayısı", "sayisi", "say", "adet")
+            for term in ("kaç", "sayısı", "sayisi", "say", "sayar", "adet")
         ):
             return "campaign_count", 0.99
         if (bank_count > 1 or has_domain) and any(
@@ -133,9 +201,14 @@ class DomainQueryCompiler:
         )
         if definition_requested:
             return ("definition", 0.98) if has_domain else ("unknown", 0.0)
-        if has_domain and metric == "PROFIT_RATE" and any(
-            self._contains_phrase(normalized, term)
-            for term in ("kâr payı oranı kaç", "kar payı oranı kaç", "oran kaç")
+        if has_domain and metric == "PROFIT_RATE" and (
+            any(
+                self._contains_phrase(normalized, term)
+                for term in ("kâr payı oranı kaç", "kar payı oranı kaç")
+            )
+            or self._contains_suffixed_phrase(
+                normalized, "oran kaç", QUESTION_SUFFIXES
+            )
         ):
             return "rate_query", 0.98
         if has_domain and metric == "MATURITY" and any(
@@ -194,7 +267,7 @@ class DomainQueryCompiler:
             patterns = self.terminology.intent_schema[intent].get("patterns", [])
             score = sum(
                 (
-                    self._contains_inflected_word(normalized, pattern)
+                    self._contains_nominal_phrase(normalized, pattern)
                     if pattern in {"kampanya", "fırsat"}
                     else self._contains_phrase(normalized, pattern)
                 )
@@ -261,7 +334,7 @@ class DomainQueryCompiler:
         normalized = self._normalized(query)
         selected: tuple[int, dict[str, Any]] | None = None
         for term, values in self.product_terms.items():
-            if not self._contains_phrase(normalized, term):
+            if not self._contains_nominal_phrase(normalized, term):
                 continue
             candidate = (len(term), dict(values))
             if selected is None or candidate[0] > selected[0]:
