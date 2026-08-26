@@ -13,5 +13,3 @@ __all__ = [
     "financing_campaign_catalog",
     "turkiye_finans_product_catalog",
 ]
-
-

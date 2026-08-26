@@ -521,7 +521,10 @@ def test_hayat_finans_quote_rejects_products_without_published_rate(monkeypatch)
             "product_code": "XIAOMI-FINANSMAN",
             "campaign_name": "Xiaomi Ürünlerinde Finansman",
             "financing_type": "consumer",
-            "source_url": "https://hayatfinans.com.tr/kampanyalar/xiaomi-urunlerinde-finansman-avantaji",
+            "source_url": (
+                "https://hayatfinans.com.tr/kampanyalar/"
+                "xiaomi-urunlerinde-finansman-avantaji"
+            ),
             "monthly_profit_rate": None,
             "allowed_terms": [1, 2, 3],
             "min_amount": None,
@@ -890,4 +893,3 @@ def test_financing_quotes_endpoint_keeps_ten_bank_coverage(tmp_path, monkeypatch
     assert payload["coverage"]["catalog_bank_count"] == 10
     assert len(payload["quotes"]) == 10
     assert all(quote["source_url"] for quote in payload["quotes"])
-

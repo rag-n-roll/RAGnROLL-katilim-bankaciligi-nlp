@@ -59,7 +59,9 @@ class PdfSourceRegistry:
                 key = _normalized_filename(str(filename))
                 existing = self._by_filename.get(key)
                 if existing is not None and existing.get("document_id") != item.get("document_id"):
-                    raise PdfSourceIntegrityError(f"PDF dosya adı birden çok kayıtla eşleşiyor: {filename}")
+                    raise PdfSourceIntegrityError(
+                        f"PDF dosya adı birden çok kayıtla eşleşiyor: {filename}"
+                    )
                 self._by_filename[key] = item
 
     @classmethod

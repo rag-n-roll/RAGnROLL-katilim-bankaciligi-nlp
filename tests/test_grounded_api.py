@@ -771,7 +771,10 @@ def test_follow_up_criteria_produces_neutral_comparison(tmp_path, monkeypatch):
                 "total_repayment": 848_007.72,
                 "annual_cost_rate": 45.8,
                 "fees_total": 500.0,
-                "source_url": "https://www.kuveytturk.com.tr/hesaplama-araclari/finansman-hesaplama",
+                "source_url": (
+                    "https://www.kuveytturk.com.tr/hesaplama-araclari/"
+                    "finansman-hesaplama"
+                ),
                 "retrieved_at": "2026-08-26T18:00:00+00:00",
                 "calculation_origin": "official_calculator_live",
                 "message": "Canlı resmî hesaplayıcı sonucu.",

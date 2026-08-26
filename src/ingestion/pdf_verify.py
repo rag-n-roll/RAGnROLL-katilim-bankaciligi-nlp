@@ -68,7 +68,9 @@ def verify_pdf_packet(
         if not chunk_id.startswith("pdf:") or chunk_id in seen_ids:
             raise PdfPacketVerificationError(f"PDF parça kimliği geçersiz: satır {line_number}")
         if "local_path" in row or "C:\\Users\\" in line:
-            raise PdfPacketVerificationError(f"PDF paketinde yerel yol sızıntısı: satır {line_number}")
+            raise PdfPacketVerificationError(
+                f"PDF paketinde yerel yol sızıntısı: satır {line_number}"
+            )
         seen_ids.add(chunk_id)
         chunk_count += 1
 

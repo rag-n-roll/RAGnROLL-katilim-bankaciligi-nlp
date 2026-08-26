@@ -18,9 +18,18 @@ CALCULATOR_SOURCES = {
     "hayat-finans": "https://hayatfinans.com.tr/krediler/bana-bunu-al",
     "kuveyt-turk": "https://www.kuveytturk.com.tr/hesaplama-araclari/finansman-hesaplama",
     "tom-katilim": "https://www.tombank.com.tr/hesaplama-araclari.html",
-    "turkiye-finans": "https://www.turkiyefinans.com.tr/tr-tr/hesaplama-araclari/sayfalar/finansman-odeme-plani.aspx",
-    "vakif-katilim": "https://www.vakifkatilim.com.tr/tr/yardimci-sayfalar/hesaplama-araclari/finansman-hesaplama",
-    "ziraat-katilim": "https://www.ziraatkatilim.com.tr/bireysel/finansman-urunleri/ihtiyac-finansmani",
+    "turkiye-finans": (
+        "https://www.turkiyefinans.com.tr/tr-tr/hesaplama-araclari/"
+        "sayfalar/finansman-odeme-plani.aspx"
+    ),
+    "vakif-katilim": (
+        "https://www.vakifkatilim.com.tr/tr/yardimci-sayfalar/"
+        "hesaplama-araclari/finansman-hesaplama"
+    ),
+    "ziraat-katilim": (
+        "https://www.ziraatkatilim.com.tr/bireysel/finansman-urunleri/"
+        "ihtiyac-finansmani"
+    ),
 }
 
 UNAVAILABLE_MESSAGES = {
@@ -219,7 +228,7 @@ def build_financing_quotes(
         },
         "disclaimer": (
             "Sonuçlar bilgilendirme amaçlı tahmini değerlerdir; kesin banka teklifi değildir. "
-            "Vergi, fon, sigorta ve tahsis ücretleri yalnızca resmî kaynakta yayımlandığı ölçüde dahil edilir."
+            "Vergi, fon, sigorta ve tahsis ücretleri yalnızca resmî kaynakta "
+            "yayımlandığı ölçüde dahil edilir."
         ),
     }
-

@@ -35,6 +35,11 @@ from src.policy import (
 from src.policy.tool_policy import ALLOWED_BANKS
 from src.preprocessing.clean_text import tokenize_turkish
 from src.prompt_optimization import IntentTraceRecorder
+from src.query import DomainQueryCompiler, QueryPlan
+from src.query.compiler import _answer_confidence
+from src.retrieval import HybridRetriever
+from src.services.conversation import extract_comparison_criteria, merge_criteria
+from src.services.orchestration import ToolOrchestrator
 
 
 def _safe_stream_chunks(text: str, *, words_per_chunk: int = 3) -> Iterator[str]:
@@ -57,13 +62,6 @@ def _complete_excerpt(text: str, *, limit: int = 360) -> str:
     if sentence_ends:
         return bounded[: sentence_ends[-1]].rstrip()
     return bounded.rstrip(" ,;:-") + "…"
-
-
-from src.query import DomainQueryCompiler, QueryPlan
-from src.query.compiler import _answer_confidence
-from src.retrieval import HybridRetriever
-from src.services.conversation import extract_comparison_criteria, merge_criteria
-from src.services.orchestration import ToolOrchestrator
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -1091,7 +1089,11 @@ class GroundedAssistant:
             installment = self._try_amount(quote.get("monthly_installment"))
             total = self._try_amount(quote.get("total_repayment"))
             fees = self._try_amount(quote.get("fees_total"))
-            rate_text = f"%{monthly_rate:.2f}".replace(".", ",") if monthly_rate is not None else "belirtilmedi"
+            rate_text = (
+                f"%{monthly_rate:.2f}".replace(".", ",")
+                if monthly_rate is not None
+                else "belirtilmedi"
+            )
             evidence = (
                 f"{bank_name} — {product_name}. Finansman tutarı {amount_text}; "
                 f"vade {term_months} ay; aylık kâr payı {rate_text}; "
@@ -1117,7 +1119,10 @@ class GroundedAssistant:
             )
             sources.append(
                 {
-                    "campaign_id": f"financing:{bank_slug}:{financing_type}:{int(amount)}:{term_months}",
+                    "campaign_id": (
+                        f"financing:{bank_slug}:{financing_type}:"
+                        f"{int(amount)}:{term_months}"
+                    ),
                     "bank_name": bank_name,
                     "title": product_name,
                     "source_url": quote["source_url"],

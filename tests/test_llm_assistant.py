@@ -285,7 +285,10 @@ def test_financing_comparison_executes_sourced_quote_tool(tmp_path, monkeypatch)
                 "total_repayment": 219_012.0,
                 "annual_cost_rate": 51.0,
                 "fees_total": 750.0,
-                "source_url": "https://www.kuveytturk.com.tr/hesaplama-araclari/finansman-hesaplama",
+                "source_url": (
+                    "https://www.kuveytturk.com.tr/hesaplama-araclari/"
+                    "finansman-hesaplama"
+                ),
                 "retrieved_at": "2026-08-26T18:00:00+00:00",
                 "calculation_origin": "official_calculator_live",
                 "message": "Canlı resmî hesaplayıcı sonucu.",

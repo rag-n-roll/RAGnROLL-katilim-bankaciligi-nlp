@@ -9,7 +9,12 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from src.persistence import CampaignStore
-from src.retrieval.documents import INDEX_SCHEMA, campaign_documents, pdf_evidence_documents, terminology_documents
+from src.retrieval.documents import (
+    INDEX_SCHEMA,
+    campaign_documents,
+    pdf_evidence_documents,
+    terminology_documents,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]

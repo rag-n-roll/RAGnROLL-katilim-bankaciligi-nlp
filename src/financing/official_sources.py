@@ -258,7 +258,10 @@ _HAYAT_CATALOG_DEFINITIONS = {
         "campaign_name": "Xiaomi Ürünlerinde Finansman (3 ay / 40.000 TL'ye kadar)",
         "financing_type": "consumer",
         "path": "/kampanyalar/xiaomi-urunlerinde-finansman-avantaji",
-        "source_url": "https://hayatfinans.com.tr/kampanyalar/xiaomi-urunlerinde-finansman-avantaji",
+        "source_url": (
+            "https://hayatfinans.com.tr/kampanyalar/"
+            "xiaomi-urunlerinde-finansman-avantaji"
+        ),
         "monthly_profit_rate": None,
         "allowed_terms": [1, 2, 3],
         "min_amount": None,
@@ -270,7 +273,10 @@ _HAYAT_CATALOG_DEFINITIONS = {
         "campaign_name": "Troy Mağazalarında Finansman (3 ay / 80.000 TL'ye kadar)",
         "financing_type": "consumer",
         "path": "/kampanyalar/bana-bunu-al-is-ortagim-ile-troy-magaza-firsatlari",
-        "source_url": "https://hayatfinans.com.tr/kampanyalar/bana-bunu-al-is-ortagim-ile-troy-magaza-firsatlari",
+        "source_url": (
+            "https://hayatfinans.com.tr/kampanyalar/"
+            "bana-bunu-al-is-ortagim-ile-troy-magaza-firsatlari"
+        ),
         "monthly_profit_rate": None,
         "allowed_terms": [1, 2, 3],
         "min_amount": None,
@@ -1176,7 +1182,11 @@ def financing_campaign_catalog(
         quote = dunya_quotes.get(product["product_code"])
         rate = float(quote["monthly_profit_rate"]) if quote else None
         limits = quote.get("_limits") if quote else None
-        rate_bands = [{**limits, "monthly_profit_rate": rate}] if limits and rate is not None else []
+        rate_bands = (
+            [{**limits, "monthly_profit_rate": rate}]
+            if limits and rate is not None
+            else []
+        )
         campaign["bank_products"].append(
             {
                 "bank_slug": "dunya-katilim",
@@ -2101,7 +2111,11 @@ def ziraat_katilim_quote(
         method="POST",
     )
     commands = result if isinstance(result, list) else result.get("commands", [])
-    inserts = {str(row.get("selector")): row.get("data") for row in commands if isinstance(row, dict)}
+    inserts = {
+        str(row.get("selector")): row.get("data")
+        for row in commands
+        if isinstance(row, dict)
+    }
     installment = _tr_number(inserts.get(".finansman-taksit-tutar"))
     total = _tr_number(inserts.get(".finansman-toplam-tutar"))
     if not installment:
@@ -2143,7 +2157,10 @@ def vakif_katilim_quote(
         if product is None:
             return None
         product_code, product_name = product
-    page = "https://www.vakifkatilim.com.tr/tr/yardimci-sayfalar/hesaplama-araclari/finansman-hesaplama"
+    page = (
+        "https://www.vakifkatilim.com.tr/tr/yardimci-sayfalar/"
+        "hesaplama-araclari/finansman-hesaplama"
+    )
     opener = build_opener(HTTPCookieProcessor(CookieJar()))
     common = {
         "User-Agent": "Mozilla/5.0 (compatible; RAGnROLL/1.0)",
@@ -2296,7 +2313,10 @@ def hayat_finans_quote(
         "source_url": product["source_url"],
         "retrieved_at": _timestamp(),
         "calculation_origin": "official_published_rate",
-        "message": "Oran Hayat Finans'ın resmî maliyet tablosundan alındı; taksit bu oranla hesaplandı.",
+        "message": (
+            "Oran Hayat Finans'ın resmî maliyet tablosundan alındı; "
+            "taksit bu oranla hesaplandı."
+        ),
     }
 
 
@@ -2428,5 +2448,3 @@ def fetch_official_quotes(
                 _remember_verified_quote(cache_key, quote)
             quotes[slug] = quote
     return quotes
-
-

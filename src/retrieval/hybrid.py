@@ -12,7 +12,12 @@ from src.knowledge import TerminologyService
 from src.persistence import CampaignStore
 from src.preprocessing.clean_text import tokenize_turkish
 from src.retrieval.chroma import ChromaVectorRetriever
-from src.retrieval.documents import PDF_EVIDENCE_PATH, campaign_documents, pdf_evidence_documents, terminology_documents
+from src.retrieval.documents import (
+    PDF_EVIDENCE_PATH,
+    campaign_documents,
+    pdf_evidence_documents,
+    terminology_documents,
+)
 from src.retrieval.graph import KnowledgeGraphRetriever
 from src.retrieval.qdrant import EvrenQdrantRetriever
 

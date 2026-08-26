@@ -11,7 +11,12 @@ from uuid import NAMESPACE_URL, uuid5
 
 from src.persistence import CampaignStore
 from src.providers import CircuitBreaker, CircuitOpenError
-from src.retrieval.documents import INDEX_SCHEMA, campaign_documents, pdf_evidence_documents, terminology_documents
+from src.retrieval.documents import (
+    INDEX_SCHEMA,
+    campaign_documents,
+    pdf_evidence_documents,
+    terminology_documents,
+)
 from src.retrieval.evren import EvrenEmbeddingProvider
 
 

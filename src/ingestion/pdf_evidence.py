@@ -48,7 +48,11 @@ class PyMuPdfExtractor:
         pages: list[PdfPage] = []
         with pymupdf.open(path) as document:
             page_count = len(document)
-            limit = page_count if max_pages is None or max_pages <= 0 else min(max_pages, page_count)
+            limit = (
+                page_count
+                if max_pages is None or max_pages <= 0
+                else min(max_pages, page_count)
+            )
             for index in range(limit):
                 try:
                     pages.append(PdfPage(number=index + 1, text=document[index].get_text("text")))
