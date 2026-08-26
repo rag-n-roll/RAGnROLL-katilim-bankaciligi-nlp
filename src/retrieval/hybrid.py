@@ -226,11 +226,12 @@ class HybridRetriever:
                 or document["metadata"]["financing_type"] in {"", financing_type}
             )
         ]
-        terminology = (
-            cached_terminology
-            if not source_types or "terminology" in source_types
-            else []
-        )
+        terminology = [
+            document
+            for document in cached_terminology
+            if not source_types
+            or document["metadata"].get("source_type") in source_types
+        ]
         documents = campaigns + terminology
         graph_expansion = self.graph_retriever.expand(
             query, intent=str(filters.get("intent") or "") or None

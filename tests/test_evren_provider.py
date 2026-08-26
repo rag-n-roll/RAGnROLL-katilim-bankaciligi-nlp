@@ -763,6 +763,7 @@ class FakeEvrenEmbedding:
 
 def test_qdrant_index_is_incremental_and_retrievable(tmp_path, monkeypatch):
     monkeypatch.setattr("src.retrieval.qdrant.terminology_documents", lambda: [])
+    monkeypatch.setattr("src.retrieval.qdrant.pdf_evidence_documents", lambda: [])
     store = CampaignStore(tmp_path / "campaigns.sqlite3")
     row = Campaign(
         id="housing",

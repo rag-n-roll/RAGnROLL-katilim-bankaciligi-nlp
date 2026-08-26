@@ -166,6 +166,7 @@ def test_indexer_embeds_only_changed_documents(tmp_path, monkeypatch):
     )
     terms = terminology_documents(terminology_path)
     monkeypatch.setattr("src.retrieval.chroma.terminology_documents", lambda: terms)
+    monkeypatch.setattr("src.retrieval.chroma.pdf_evidence_documents", lambda: [])
     store, row = _incremental_store(tmp_path)
     provider = CountingEmbeddingProvider()
     indexer = ChromaIndexer(
