@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from hashlib import sha256
 from math import isfinite
 import re
 from time import perf_counter
@@ -19,12 +20,54 @@ from src.normalization import normalize_duration, normalize_money, normalize_rat
 from src.normalization.values import parse_number
 from src.observability import EventRecorder
 from src.persistence import CampaignStore
-from src.policy import ComparisonCriteria
+from src.policy import Action, ComparisonCriteria, PolicyDecision
 from src.preprocessing.clean_text import tokenize_turkish
 from src.prompt_optimization import IntentTraceRecorder
 from src.query import DomainQueryCompiler, QueryPlan
 from src.retrieval import HybridRetriever
 from src.services.conversation import extract_comparison_criteria, merge_criteria
+from src.services.orchestration import ToolOrchestrator
+
+
+def _source_value(source: dict[str, Any], key: str) -> Any:
+    value = source.get(key)
+    if value not in (None, ""):
+        return value
+    metadata = source.get("metadata")
+    return metadata.get(key) if isinstance(metadata, dict) else None
+
+
+def stable_source_key(source: dict[str, Any]) -> str:
+    """Return a stable evidence identity across raw and normalized source shapes."""
+
+    for key in ("campaign_id", "term_id", "document_id"):
+        value = str(_source_value(source, key) or "").strip()
+        if value:
+            return f"{key}:{value}"
+    source_url = str(_source_value(source, "source_url") or "").strip()
+    if source_url:
+        return f"source_url:{source_url}"
+    evidence = source.get("evidence")
+    evidence_text = evidence.get("text") if isinstance(evidence, dict) else evidence
+    if evidence_text in (None, ""):
+        evidence_text = source.get("text")
+    material = f"{_source_value(source, 'title') or ''}\n{evidence_text or ''}"
+    return f"content:{sha256(material.encode('utf-8')).hexdigest()}"
+
+
+def deduplicate_sources(sources: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep the greatest-scoring source per stable identity in input-key order."""
+
+    winners: dict[str, tuple[int, float, dict[str, Any]]] = {}
+    for index, source in enumerate(sources):
+        key = stable_source_key(source)
+        score = _finite(source.get("retrieval_score"))
+        if score is None:
+            score = _finite(source.get("score")) or 0.0
+        current = winners.get(key)
+        if current is None or score > current[1]:
+            winners[key] = (current[0] if current else index, score, source)
+    return [item[2] for item in sorted(winners.values(), key=lambda item: item[0])]
 
 
 def _finite(value: Any) -> float | None:
@@ -109,10 +152,16 @@ class GroundedAssistant:
         )
 
     def compile(self, message: str) -> QueryPlan:
+        plan, _ = self._compile_with_policy(message)
+        return plan
+
+    def _compile_with_policy(
+        self, message: str
+    ) -> tuple[QueryPlan, PolicyDecision | None]:
         known_banks = self.store.bank_summary()
         plan = self.compiler.compile(message, known_banks=known_banks)
         if plan.route == "SAFE_REDIRECT":
-            return plan
+            return plan, None
         analyzer = getattr(self.decisions, "analyze", None)
         decision = (
             analyzer(
@@ -125,7 +174,7 @@ class GroundedAssistant:
             else None
         )
         if callable(analyzer):
-            if decision:
+            if isinstance(decision, PolicyDecision):
                 selected = self._merge_llm_plan(plan, decision)
                 try:
                     self.intent_trace.record(
@@ -142,8 +191,8 @@ class GroundedAssistant:
                 except OSError:
                     # Eğitim izi yanıt yolunu kesemez; metrikler ana akışta tutulur.
                     pass
-                return selected
-            return plan
+                return selected, decision
+            return plan, None
 
         # Enjekte edilmiş eski karar servisleri için geriye uyumlu yol.
         safe = self.decisions.is_safe(message)
@@ -151,7 +200,7 @@ class GroundedAssistant:
         warnings = list(plan.warnings)
         if safe is False or advised_route == "SAFE_REDIRECT":
             warnings.append("EVREN güvenlik sinyali güvenli yönlendirme önerdi")
-            return replace(plan, route="SAFE_REDIRECT", warnings=warnings)
+            return replace(plan, route="SAFE_REDIRECT", warnings=warnings), None
         if advised_route == "STRUCTURED_SQL":
             trusted_domain = bool(
                 plan.confidence_components.get("trusted_domain", False)
@@ -160,15 +209,81 @@ class GroundedAssistant:
                 plan.intent, plan.slots, trusted_domain=trusted_domain
             )
             if eligible_route == "STRUCTURED_SQL":
-                return replace(plan, route="STRUCTURED_SQL")
+                return replace(plan, route="STRUCTURED_SQL"), None
             warnings.append(
                 "EVREN structured route önerisi ölçülebilir sorgu koşullarını karşılamadı"
             )
-            return replace(plan, route=eligible_route, warnings=warnings)
+            return replace(plan, route=eligible_route, warnings=warnings), None
         if advised_route not in {None, plan.route, "HYBRID_RAG"}:
             warnings.append("EVREN route önerisi yerel sözleşmeyle uyuşmadığı için yok sayıldı")
-            return replace(plan, warnings=warnings)
-        return plan
+            return replace(plan, warnings=warnings), None
+        return plan, None
+
+    @staticmethod
+    def _local_policy_decision(
+        plan: QueryPlan, *, criteria: ComparisonCriteria | None = None
+    ) -> PolicyDecision:
+        """Adapt a trusted compiler plan to the same validated tool contract."""
+
+        if plan.route == "SAFE_REDIRECT":
+            return PolicyDecision(
+                action=Action.REDIRECT,
+                in_domain=True,
+                intent=plan.intent,
+                confidence=plan.confidence,
+                reason_code="deterministic_safe_redirect",
+            )
+        tool_name = (
+            "comparison"
+            if plan.intent == "product_comparison"
+            else "structured_sql"
+            if plan.route == "STRUCTURED_SQL"
+            else "hybrid_rag"
+        )
+        effective_criteria = criteria or ComparisonCriteria()
+        if plan.intent == "product_comparison" and plan.slots.get(
+            "aggregation"
+        ) in {"MIN", "MAX"}:
+            # Objective extrema do not require preference criteria; complete only
+            # the authorization contract and do not pass these values to tools.
+            effective_criteria = ComparisonCriteria(1, 0.0, False)
+        arguments = {
+            key: value
+            for key, value in {
+                "banks": plan.slots.get("banks"),
+                "metric": (
+                    plan.slots.get("metric")
+                    if tool_name == "structured_sql"
+                    else None
+                ),
+                "aggregation": (
+                    plan.slots.get("aggregation")
+                    if tool_name == "structured_sql"
+                    else None
+                ),
+                "product_type": plan.slots.get("product_type"),
+                "financing_type": plan.slots.get("financing_type"),
+                "term_months": effective_criteria.term_months
+                if tool_name == "comparison"
+                else None,
+                "amount": effective_criteria.amount
+                if tool_name == "comparison"
+                else None,
+                "fee_priority": effective_criteria.fee_priority
+                if tool_name == "comparison"
+                else None,
+            }.items()
+            if value not in (None, [], "")
+        }
+        return PolicyDecision(
+            action=Action.ANSWER,
+            in_domain=True,
+            intent=plan.intent,
+            confidence=plan.confidence,
+            reason_code="deterministic_compiler_plan",
+            criteria=effective_criteria,
+            tool_calls=({"name": tool_name, "arguments": arguments},),
+        )
 
     def _merge_llm_plan(
         self, plan: QueryPlan, decision: dict[str, Any]
@@ -626,18 +741,18 @@ class GroundedAssistant:
             elif section == "structured_fields":
                 char_start = None
                 char_end = None
-            excerpts.append(excerpt)
             for relation in metadata.get("graph_relations") or []:
                 sentence = self._relation_sentence(relation)
                 if sentence and sentence not in relation_sentences:
                     relation_sentences.append(sentence)
             sources.append(
                 {
-                    "campaign_id": metadata.get("campaign_id") or None,
-                    "term_id": metadata.get("term_id") or None,
-                    "bank_name": metadata.get("bank_name") or None,
-                    "title": metadata.get("title") or None,
-                    "source_url": metadata.get("source_url") or None,
+                    "campaign_id": _source_value(document, "campaign_id") or None,
+                    "term_id": _source_value(document, "term_id") or None,
+                    "document_id": _source_value(document, "document_id") or None,
+                    "bank_name": _source_value(document, "bank_name") or None,
+                    "title": _source_value(document, "title") or None,
+                    "source_url": _source_value(document, "source_url") or None,
                     "relations": metadata.get("graph_relations") or [],
                     "evidence": {
                         "text": evidence_text,
@@ -648,6 +763,11 @@ class GroundedAssistant:
                     "retrieval_method": document["retrieval_method"],
                 }
             )
+        sources = deduplicate_sources(sources)
+        excerpts = [
+            str(source.get("evidence", {}).get("text") or "")
+            for source in sources
+        ]
         campaign_lines = []
         for index, source in enumerate(sources, start=1):
             if not source.get("campaign_id"):
@@ -685,7 +805,7 @@ class GroundedAssistant:
     ) -> dict[str, Any]:
         if not 1 <= limit <= 10:
             raise ValueError("limit 1 ile 10 arasında olmalıdır")
-        plan = self.compile(message)
+        plan, policy_decision = self._compile_with_policy(message)
         if criteria is not None:
             plan = replace(
                 plan,
@@ -696,6 +816,16 @@ class GroundedAssistant:
                     "fee_priority": criteria.fee_priority,
                 },
             )
+        decision = policy_decision or self._local_policy_decision(
+            plan, criteria=criteria
+        )
+        orchestrator = ToolOrchestrator(
+            allowed_banks={
+                str(bank.get("slug") or "")
+                for bank in self.store.bank_summary()
+                if str(bank.get("slug") or "")
+            }
+        )
         if plan.route == "SAFE_REDIRECT":
             result = {
                 "answer": (
@@ -708,9 +838,33 @@ class GroundedAssistant:
                 "warnings": plan.warnings,
             }
         elif plan.route == "STRUCTURED_SQL":
-            result = self._structured_answer(plan)
+            result = orchestrator.execute(
+                decision,
+                tool_name=(
+                    "comparison"
+                    if plan.intent == "product_comparison"
+                    else "structured_sql"
+                ),
+                operation=lambda: self._structured_answer(plan),
+            )
         else:
-            result = self._hybrid_answer(plan, limit=limit)
+            result = orchestrator.execute(
+                decision,
+                tool_name=(
+                    "comparison"
+                    if plan.intent == "product_comparison"
+                    else "hybrid_rag"
+                ),
+                operation=lambda: self._hybrid_answer(plan, limit=limit),
+            )
+        if result is None:
+            result = {
+                "answer": "Bu istek için doğrulanmış bir araç planı bulunamadı.",
+                "facts": [],
+                "sources": [],
+                "confidence": 0.0,
+                "warnings": [*plan.warnings, "Araç çağrısı politika tarafından engellendi"],
+            }
         return {**result, "plan": plan.to_dict()}
 
     @staticmethod

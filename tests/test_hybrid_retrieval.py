@@ -5,6 +5,7 @@ from src.persistence import CampaignStore
 from src.preprocessing.clean_text import preprocess_record
 from src.retrieval import HybridRetriever
 from src.scraper.models import Campaign
+from src.services.assistant import deduplicate_sources, stable_source_key
 
 
 def _store(tmp_path):
@@ -182,3 +183,36 @@ def test_retrieval_falls_back_from_evren_to_local_then_bm25(tmp_path):
 def test_retrieval_rejects_unbounded_limit(tmp_path, limit):
     with pytest.raises(ValueError, match="1 ile 20"):
         HybridRetriever(_store(tmp_path)).retrieve("finansman", limit=limit)
+
+
+def test_stable_source_identity_reads_nested_ids_and_keeps_best_score_stably():
+    sources = [
+        {
+            "metadata": {"campaign_id": "campaign-1"},
+            "title": "Başlık",
+            "text": "ilk",
+            "retrieval_score": 0.7,
+        },
+        {
+            "campaign_id": "campaign-1",
+            "title": "Başlık",
+            "evidence": {"text": "en iyi"},
+            "retrieval_score": 0.9,
+        },
+        {
+            "campaign_id": "campaign-1",
+            "title": "Başlık",
+            "evidence": {"text": "eşit ama sonra"},
+            "retrieval_score": 0.9,
+        },
+        {
+            "metadata": {"term_id": "TRM0001"},
+            "title": "Terim",
+            "text": "tanım",
+            "retrieval_score": 0.5,
+        },
+    ]
+
+    assert stable_source_key(sources[0]) == "campaign_id:campaign-1"
+    assert stable_source_key(sources[-1]) == "term_id:TRM0001"
+    assert deduplicate_sources(sources) == [sources[1], sources[-1]]

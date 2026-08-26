@@ -4,10 +4,13 @@ from fastapi.testclient import TestClient
 
 from src.api.main import create_app
 from src.llm.client import LLMSettings, LLMUnavailableError, OpenAICompatibleLLM
+from src.llm.decisions import PlannerDecision
 from src.persistence import CampaignStore
 from src.preprocessing.clean_text import preprocess_record
 from src.scraper.models import Campaign
 from src.services import GroundedAssistant
+from src.services.orchestration import ToolOrchestrator
+from src.policy import Action, PolicyDecision
 
 
 class FakeLLM:
@@ -41,6 +44,76 @@ class StructuredStore:
     def query_campaigns(self, *, limit, offset=0, **filters):
         del filters
         return self.rows[offset : offset + limit], len(self.rows)
+
+
+def test_tool_orchestrator_rejects_unvalidated_or_unlisted_tool_calls():
+    calls = []
+    orchestrator = ToolOrchestrator(allowed_banks=set())
+    invalid = PolicyDecision(
+        action=Action.ANSWER,
+        in_domain=True,
+        intent="product_search",
+        confidence=0.8,
+        reason_code="raw_model_plan",
+        tool_calls=({"name": "shell", "arguments": {}},),
+    )
+    valid_but_unlisted = PolicyDecision(
+        action=Action.ANSWER,
+        in_domain=True,
+        intent="product_search",
+        confidence=0.8,
+        reason_code="validated_plan",
+        tool_calls=({"name": "hybrid_rag", "arguments": {}},),
+    )
+
+    assert orchestrator.execute(
+        invalid, tool_name="structured_sql", operation=lambda: calls.append("sql")
+    ) is None
+    assert orchestrator.execute(
+        valid_but_unlisted,
+        tool_name="structured_sql",
+        operation=lambda: calls.append("sql"),
+    ) is None
+    assert calls == []
+
+
+def test_assistant_does_not_dispatch_a_tool_unlisted_by_validated_policy(tmp_path):
+    decision = PlannerDecision(
+        action=Action.ANSWER,
+        in_domain=True,
+        intent="definition",
+        confidence=0.8,
+        reason_code="ontology_only",
+        normalized_query="Murabaha nedir?",
+        slots={"banks": []},
+        tool_calls=({"name": "ontology", "arguments": {}},),
+    )
+
+    class Decisions:
+        def analyze(self, *args, **kwargs):
+            del args, kwargs
+            return decision
+
+    class MustNotRunRetriever:
+        last_backend = "unused"
+
+        def retrieve(self, *args, **kwargs):
+            del args, kwargs
+            raise AssertionError("unlisted hybrid_rag must not execute")
+
+    assistant = GroundedAssistant(
+        _store(tmp_path),
+        llm=FakeLLM(),
+        decisions=Decisions(),
+        chroma_enabled=False,
+    )
+    assistant.retriever = MustNotRunRetriever()
+
+    result = assistant._grounded_result("Murabaha nedir?", limit=5)
+
+    assert result["sources"] == []
+    assert result["confidence"] == 0.0
+    assert "Araç çağrısı politika tarafından engellendi" in result["warnings"]
 
 
 def _structured_row(identifier, field_name, value, evidence):
@@ -639,6 +712,53 @@ def test_campaign_fallback_never_exposes_raw_index_document_format(tmp_path):
     )
     assert "Yapılandırılmış alanlar" not in result["answer"]
     assert "campaign_benefit" not in result["answer"]
+
+
+def test_duplicate_campaign_chunks_are_deduplicated_before_answer_and_prompt(tmp_path):
+    title = "Albaraka'da Masraflara Son!"
+    llm = FakeLLM([])
+    assistant = GroundedAssistant(
+        _store(tmp_path), llm=llm, chroma_enabled=False
+    )
+
+    class DuplicateCampaignRetriever:
+        last_backend = "chroma+bm25"
+
+        def retrieve(self, query, *, filters, limit):
+            del query, filters, limit
+            return [
+                {
+                    "id": f"chunk-{index}",
+                    "text": evidence,
+                    "score": score,
+                    "retrieval_method": "chroma+bm25",
+                    "metadata": {
+                        "campaign_id": "same-campaign",
+                        "title": title,
+                        "bank_name": "Albaraka Türk",
+                    },
+                }
+                for index, score, evidence in (
+                    (1, 0.41, "İlk düşük skorlu bölüm."),
+                    (2, 0.93, "Masrafsız bankacılık avantajları sunulur."),
+                    (3, 0.72, "Diğer düşük skorlu bölüm."),
+                )
+            ]
+
+    assistant.retriever = DuplicateCampaignRetriever()
+
+    grounded = assistant._grounded_result("Masrafsız kampanya hangisi?", limit=5)
+    result = assistant.answer("Masrafsız kampanya hangisi?")
+
+    assert [source["campaign_id"] for source in grounded["sources"]] == [
+        "same-campaign"
+    ]
+    assert grounded["sources"][0]["retrieval_score"] == 0.93
+    assert grounded["answer"].count(title) == 1
+    assert result["answer"].count(title) == 1
+    assert result["sources"] == grounded["sources"]
+    assert len(llm.calls) == 1
+    assert llm.calls[0][1].count('"campaign_id":"same-campaign"') == 1
 
 
 def test_graph_relationship_is_preserved_in_deterministic_fallback(tmp_path):
