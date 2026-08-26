@@ -63,7 +63,14 @@ def test_compiler_links_domain_definition_to_ontology():
 
     assert plan.route == "HYBRID_RAG"
     assert plan.intent == "definition"
-    assert any(item.get("term_id") == "TRM0462" for item in plan.terminology_rewrites)
+
+
+def test_compiler_recognizes_profit_pool_informational_question():
+    plan = DomainQueryCompiler().compile("Katılım bankacılığındaki kâr payı havuzu nasıl işler?")
+    assert plan.intent == "definition"
+    assert plan.route == "HYBRID_RAG"
+    assert "Fon Havuzu" in plan.canonical_query
+    assert any(item.get("term_id") == "TRM0452" for item in plan.terminology_rewrites)
 
 
 @pytest.mark.parametrize(

@@ -209,6 +209,7 @@ class DomainQueryCompiler:
                 "açıklar mısın",
                 "ilkeleri nelerdir",
                 "esasları nelerdir",
+                "nasıl işler",
             )
         )
         if definition_requested:
