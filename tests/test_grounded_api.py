@@ -532,3 +532,18 @@ def test_chat_stream_emits_sequential_and_non_empty_event_ids(tmp_path):
         assert event["data"]["event_id"] == event["id"]
         assert event["data"]["sequence"] == idx
         assert event["id"].endswith(f":{idx}")
+
+
+def test_fee_free_card_campaigns_are_unique_and_citation_free(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat",
+            json={"message": "Masrafsız kart kampanyaları nelerdir?"},
+        )
+        assert response.status_code == 200
+        payload = response.json()
+        assert "[K" not in payload["answer"]
+        assert "[K" not in payload["answer_display"]
+        assert payload["answer"] == payload["answer_display"]
+        campaign_ids = [s.get("campaign_id") for s in payload["sources"] if s.get("campaign_id")]
+        assert len(campaign_ids) == len(set(campaign_ids))

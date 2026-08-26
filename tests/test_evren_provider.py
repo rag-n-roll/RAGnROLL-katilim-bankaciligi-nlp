@@ -224,7 +224,7 @@ def test_assistant_rejects_evren_claim_and_accepts_local_candidate(tmp_path):
         store, llm=chain, chroma_enabled=False
     ).answer("Konut finansmanında oran kaç?")
 
-    assert result["answer"] == "Oran %1,89'dur [K1]."
+    assert result["answer"] == "Oran %1,89'dur."
     assert result["generation"]["provider"] == "local"
     assert [
         item["outcome"] for item in result["generation"]["fallback_chain"]
@@ -381,7 +381,8 @@ def test_same_llm_is_called_once_for_plan_and_once_for_grounded_answer(tmp_path)
     result = assistant.answer("Albaraka gençlere ne sunuyor?")
 
     assert result["generation"]["mode"] == "llm"
-    assert result["answer"].endswith("[K1].")
+    assert result["answer"] == "Albaraka Türk öğrencilere ücretsiz internet avantajı sunuyor."
+    assert "[K1]" not in result["answer"]
     assert len(llm.calls) == 2
     assert '"raw_input":"Albaraka gençlere ne sunuyor?"' in llm.calls[0][1]
     assert "KANIT PAKETİ" in llm.calls[1][1]
@@ -721,4 +722,4 @@ def test_capability_matrix_and_sse_heartbeat_preserve_fallback(tmp_path, monkeyp
     assert status.status_code == 200
     assert status.json()["retrieval"]["bm25_graph"]["available"] is True
     assert "event: heartbeat" in body
-    assert "Oran %1,89'dur [K1]." in body
+    assert "Oran %1,89'dur." in body

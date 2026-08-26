@@ -10,8 +10,15 @@ from src.preprocessing.clean_text import preprocess_record
 from src.scraper.models import Campaign
 from src.services import GroundedAssistant
 from src.services.orchestration import ToolOrchestrator
-from src.policy import Action, ComparisonCriteria, PolicyDecision
-
+from src.policy import (
+    Action,
+    ComparisonCriteria,
+    OutputGate,
+    OutputVerdict,
+    PolicyDecision,
+    PresentedAnswer,
+    present_answer,
+)
 
 class FakeLLM:
     enabled = True
@@ -357,7 +364,8 @@ def test_assistant_uses_llm_only_as_grounded_answer_writer(tmp_path):
     result = assistant.answer("Konut finansmanında oran kaç?")
 
     assert result["generation"]["mode"] == "llm"
-    assert result["answer"].endswith("[K1].")
+    assert result["answer"] == "Örnek Katılım kaydında oran %1,89'dur."
+    assert "[K1]" not in result["answer"]
     assert result["facts"][0]["campaign_id"] == "housing"
     assert "KANIT PAKETİ" in llm.calls[0][1]
     assert "kanıta dayalı" in llm.calls[0][0]
@@ -843,7 +851,7 @@ def test_campaign_fallback_never_exposes_raw_index_document_format(tmp_path):
 
     assert result["answer"] == (
         "İlgili doğrulanmış kampanya kayıtları:\n"
-        "- Örnek Katılım — Öğrenci Kampanyası [K1]"
+        "- Örnek Katılım — Öğrenci Kampanyası"
     )
     assert "Yapılandırılmış alanlar" not in result["answer"]
     assert "campaign_benefit" not in result["answer"]
@@ -1035,3 +1043,49 @@ def test_llm_status_contract_uses_configured_assistant(tmp_path):
         payload = client.get("/api/v1/llm/status").json()
 
     assert payload == {"available": True, "model": "test-gemma"}
+
+
+def test_presentation_removes_internal_citations_and_deduplicates_badges():
+    presented = present_answer(
+        "Masrafsız kart seçeneği sunulur [K1].",
+        sources=[
+            {"campaign_id": "same", "title": "Masraflara Son!"},
+            {"campaign_id": "same", "title": "Masraflara Son!"},
+        ],
+    )
+    assert presented.answer_display == "Masrafsız kart seçeneği sunulur."
+    assert len(presented.sources) == 1
+
+
+class MultiTurnFakeLLM:
+    enabled = True
+    model = "test-gemma"
+
+    def __init__(self, turns: list[str]):
+        self.turns = list(turns)
+        self.calls: list[tuple[str, str]] = []
+
+    def stream_chat(self, *, system_prompt: str, user_prompt: str):
+        self.calls.append((system_prompt, user_prompt))
+        turn = self.turns.pop(0) if self.turns else ""
+        yield turn
+
+    def status(self):
+        return {"available": True, "model": self.model}
+
+def test_assistant_single_repair_loop_recovers_from_repeated_content(tmp_path):
+    store = _store(tmp_path)
+    llm = MultiTurnFakeLLM([
+        "- Konut finansmanı kâr payı oranı %1,89'dur [K1]\n- Konut finansmanı kâr payı oranı %1,89'dur [K1]",
+        "Örnek Katılım konut finansmanı kâr payı oranı %1,89'dur [K1].",
+    ])
+    assistant = GroundedAssistant(
+        store,
+        llm=llm,
+        chroma_enabled=False,
+    )
+    result = assistant.answer("Konut finansmanında oran kaç?")
+    assert len(llm.calls) == 2
+    assert result["generation"]["mode"] == "llm"
+    assert result["answer"] == "Örnek Katılım konut finansmanı kâr payı oranı %1,89'dur."
+    assert "[K1]" not in result["answer"]

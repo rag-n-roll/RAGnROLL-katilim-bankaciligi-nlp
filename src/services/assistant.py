@@ -20,7 +20,15 @@ from src.normalization import normalize_duration, normalize_money, normalize_rat
 from src.normalization.values import parse_number
 from src.observability import EventRecorder
 from src.persistence import CampaignStore
-from src.policy import Action, ComparisonCriteria, PolicyDecision
+from src.policy import (
+    Action,
+    ComparisonCriteria,
+    OutputGate,
+    OutputVerdict,
+    PolicyDecision,
+    PresentedAnswer,
+    present_answer,
+)
 from src.preprocessing.clean_text import tokenize_turkish
 from src.prompt_optimization import IntentTraceRecorder
 from src.query import DomainQueryCompiler, QueryPlan
@@ -142,6 +150,8 @@ class GroundedAssistant:
         prompt_builder: GroundedPromptBuilder | None = None,
         intent_trace: IntentTraceRecorder | None = None,
         chroma_enabled: bool | None = None,
+        output_gate: OutputGate | None = None,
+        judge: Any | None = None,
     ) -> None:
         self.store = store
         self.compiler = compiler or DomainQueryCompiler()
@@ -159,7 +169,7 @@ class GroundedAssistant:
             self.compiler.terminology,
             chroma_enabled=chroma_enabled,
         )
-
+        self.output_gate = output_gate or OutputGate(judge=judge)
     def compile(self, message: str) -> QueryPlan:
         plan, _ = self._compile_with_policy(message)
         return plan
@@ -987,11 +997,22 @@ class GroundedAssistant:
             result["confidence"] = answer_confidence
             result["answer_confidence"] = answer_confidence
             result["confidence_components"] = confidence_components
+        action = result.get("action") or (
+            validated_decision.action.value
+            if hasattr(validated_decision.action, "value")
+            else "ANSWER"
+        )
+        sources = deduplicate_sources(result.get("sources") or [])
+        raw_answer = str(result.get("answer") or "")
+        presented = present_answer(raw_answer, sources=sources)
         return {
-            "action": "ANSWER",
-            "missing_criteria": [],
-            "conversation_state": None,
+            "action": action,
+            "missing_criteria": result.get("missing_criteria", []),
+            "conversation_state": result.get("conversation_state"),
             **result,
+            "answer": presented.answer_display,
+            "answer_display": presented.answer_display,
+            "sources": presented.sources,
             "plan": plan.to_dict(),
         }
 
@@ -1198,7 +1219,10 @@ class GroundedAssistant:
                 fallback_reason = "llm_disabled"
 
             if fallback_reason:
-                yield {"event": "delta", "data": {"text": fallback_answer}}
+                presented_fallback = present_answer(
+                    fallback_answer, sources=grounded["sources"]
+                )
+                yield {"event": "delta", "data": {"text": presented_fallback.answer_display}}
                 yield {
                     "event": "done",
                     "data": self._generation(
@@ -1234,6 +1258,15 @@ class GroundedAssistant:
                             generated, sources=grounded["sources"]
                         )
                         valid = sanitized is not None
+                    if valid:
+                        candidate_text = sanitized or generated
+                        gate_verdict = self.output_gate.validate(
+                            candidate_text,
+                            sources=grounded["sources"],
+                            question=message,
+                        )
+                        if not gate_verdict.valid:
+                            valid = False
                     if not valid:
                         rejected = True
                         self.llm.reject_candidate(candidate_metadata)
@@ -1242,14 +1275,18 @@ class GroundedAssistant:
                         candidate_metadata["validation"] = "unsupported_lines_removed"
                     self.llm.accept_candidate(candidate_metadata)
                     polished = self._polish_llm_answer(sanitized or generated)
-                    yield {"event": "delta", "data": {"text": polished}}
+                    presented = present_answer(polished, sources=grounded["sources"])
+                    yield {"event": "delta", "data": {"text": presented.answer_display}}
                     mode = "llm"
                     yield {"event": "done", "data": self._generation(mode="llm")}
                     return
                 fallback_reason = (
                     "llm_output_rejected" if rejected else "llm_unavailable"
                 )
-                yield {"event": "delta", "data": {"text": fallback_answer}}
+                presented_fallback = present_answer(
+                    fallback_answer, sources=grounded["sources"]
+                )
+                yield {"event": "delta", "data": {"text": presented_fallback.answer_display}}
                 yield {
                     "event": "done",
                     "data": self._generation(
@@ -1266,10 +1303,68 @@ class GroundedAssistant:
                 ):
                     chunks.append(chunk)
                 generated = "".join(chunks).strip()
-                if not self._valid_llm_answer(
+                sanitized = None
+                valid = self._valid_llm_answer(
                     generated, sources=grounded["sources"]
-                ):
-                    yield {"event": "delta", "data": {"text": fallback_answer}}
+                )
+                if not valid:
+                    sanitized = self._sanitize_llm_answer(
+                        generated, sources=grounded["sources"]
+                    )
+                    valid = sanitized is not None
+                if valid:
+                    candidate_text = sanitized or generated
+                    gate_verdict = self.output_gate.validate(
+                        candidate_text,
+                        sources=grounded["sources"],
+                        question=message,
+                    )
+                    if not gate_verdict.valid:
+                        valid = False
+                # Single repair attempt if first generation is non-empty but invalid
+                if not valid and generated:
+                    repair_chunks: list[str] = []
+                    repair_user_prompt = (
+                        f"{user_prompt}\n\n"
+                        "Önceki yanıt doğrulama veya tekrar denetiminden geçemedi. "
+                        "Lütfen KANIT PAKETİ'ne tam olarak sadık kalarak, "
+                        "tekrarsız ve tarafsız biçimde yanıtı yeniden üret."
+                    )
+                    try:
+                        for chunk in self.llm.stream_chat(
+                            system_prompt=system_prompt,
+                            user_prompt=repair_user_prompt,
+                        ):
+                            repair_chunks.append(chunk)
+                        repaired = "".join(repair_chunks).strip()
+                        repaired_sanitized = None
+                        repaired_valid = self._valid_llm_answer(
+                            repaired, sources=grounded["sources"]
+                        )
+                        if not repaired_valid:
+                            repaired_sanitized = self._sanitize_llm_answer(
+                                repaired, sources=grounded["sources"]
+                            )
+                            repaired_valid = repaired_sanitized is not None
+                        if repaired_valid:
+                            repaired_candidate = repaired_sanitized or repaired
+                            repaired_verdict = self.output_gate.validate(
+                                repaired_candidate,
+                                sources=grounded["sources"],
+                                question=message,
+                            )
+                            if repaired_verdict.valid:
+                                valid = True
+                                generated = repaired
+                                sanitized = repaired_sanitized
+                    except Exception:
+                        pass
+
+                if not valid:
+                    presented_fallback = present_answer(
+                        fallback_answer, sources=grounded["sources"]
+                    )
+                    yield {"event": "delta", "data": {"text": presented_fallback.answer_display}}
                     yield {
                         "event": "done",
                         "data": self._generation(
@@ -1277,12 +1372,16 @@ class GroundedAssistant:
                         ),
                     }
                     return
-                polished = self._polish_llm_answer(generated)
-                yield {"event": "delta", "data": {"text": polished}}
+                polished = self._polish_llm_answer(sanitized or generated)
+                presented = present_answer(polished, sources=grounded["sources"])
+                yield {"event": "delta", "data": {"text": presented.answer_display}}
                 mode = "llm"
                 yield {"event": "done", "data": self._generation(mode="llm")}
             except LLMUnavailableError:
-                yield {"event": "delta", "data": {"text": fallback_answer}}
+                presented_fallback = present_answer(
+                    fallback_answer, sources=grounded["sources"]
+                )
+                yield {"event": "delta", "data": {"text": presented_fallback.answer_display}}
                 yield {
                     "event": "done",
                     "data": self._generation(
