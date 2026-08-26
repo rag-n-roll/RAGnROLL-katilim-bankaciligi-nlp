@@ -151,14 +151,23 @@ class DomainQueryCompiler:
         normalized = self._normalized(query)
         matches = list(terminology_matches)
         entities = {str(item.get("entity") or "") for item in matches}
-        has_domain_terminology = any(
-            str(item.get("entity") or "") not in GENERIC_ONTOLOGY_ENTITIES
+        matched_term_intents: set[str] = {
+            intent
             for item in matches
-        )
-        has_domain = (
+            for intent in item.get("intents", [])
+        }
+        generic_terms = {
+            "kampanya", "belge", "tarih", "koşul", "şart", "fırsat", "durum", "sayfa", "sayfası"
+        }
+        domain_matches = [
+            item for item in matches
+            if str(item.get("surface") or "").casefold() not in generic_terms
+            and str(item.get("canonical") or "").casefold() not in generic_terms
+        ]
+        has_domain = bool(
             has_product
-            or bool(bank_count)
-            or has_domain_terminology
+            or bank_count
+            or domain_matches
             or metric == "REWARD_AMOUNT"
         )
         if any(
@@ -200,6 +209,41 @@ class DomainQueryCompiler:
             )
         ):
             return "product_comparison", 0.99
+        if (
+            self._contains_nominal_phrase(normalized, "kampanya")
+            or "campaign_query" in matched_term_intents
+            or "CAMPAIGN" in entities
+        ) and any(
+            self._contains_phrase(normalized, term)
+            for term in (
+                "ne zamana kadar",
+                "geçerli",
+                "avantaj",
+                "fırsat",
+                "koşul",
+                "şart",
+                "indirim",
+                "nakit iade",
+                "ödül",
+            )
+        ):
+            return "campaign_query", 0.98
+        if has_domain and any(
+            (
+                self._contains_nominal_phrase(normalized, term)
+                if term in ("başvuru şart", "başvuru koşul", "istenen belge", "gerekli evrak")
+                else self._contains_phrase(normalized, term)
+            )
+            for term in (
+                "kimler başvur",
+                "başvuru şart",
+                "başvuru koşul",
+                "istenen belge",
+                "gerekli evrak",
+                "başvurabilir",
+            )
+        ):
+            return "application_requirements", 0.97
         definition_requested = any(
             self._contains_phrase(normalized, term)
             for term in (
@@ -230,10 +274,83 @@ class DomainQueryCompiler:
             return "maturity_query", 0.96
         if "nasıl yaparım" in normalized or "nasıl yapılır" in normalized:
             return "transaction_howto", 0.96
-        if entities & {"INCOTERM", "TRADE_FINANCE_TERM", "TRADE_FINANCE_PRODUCT"}:
+        if (
+            "trade_finance_query" in matched_term_intents
+            or entities & {
+                "INCOTERM",
+                "TRADE_FINANCE_TERM",
+                "TRADE_FINANCE_PRODUCT",
+                "TRADE_DOCUMENT",
+                "PAYMENT_METHOD",
+                "GUARANTEE_TYPE",
+                "PRE_SHIPMENT_FINANCING",
+                "COUNTRY_RISK",
+                "HOLDER",
+                "ENDORSEMENT",
+            }
+            or "taraflar bulunur" in normalized
+        ):
             return "trade_finance_query", 0.94
-        if "AGRICULTURE_TERM" in entities:
+        if has_domain and any(
+            self._contains_phrase(normalized, phrase)
+            for phrase in (
+                "hangi finansman ürün",
+                "hangi ürün",
+                "uygun ürün",
+                "ürün öner",
+                "kullanabilirim",
+            )
+        ):
+            return "product_search", 0.55
+        if (
+            "agriculture_finance_query" in matched_term_intents
+            or entities & {
+                "AGRICULTURE_TERM",
+                "AGRICULTURE_ACTIVITY",
+                "IRRIGATION_SYSTEM",
+            }
+            or (
+                any(
+                    self._contains_phrase(normalized, term)
+                    for term in (
+                        "tarım",
+                        "hayvancılık",
+                        "çiftçi",
+                        "hasat",
+                        "sera",
+                        "traktör",
+                        "sulama",
+                    )
+                )
+                and not any(
+                    term in normalized
+                    for term in ("başvuru", "başvur", "belge", "şart", "koşul")
+                )
+            )
+        ):
             return "agriculture_finance_query", 0.94
+        if (
+            "investment_query" in matched_term_intents
+            or entities & {
+                "INVESTMENT_TERM",
+                "INVESTMENT_FUND",
+                "CAPITAL_MARKET_INSTRUMENT",
+                "ACCOUNT_TYPE",
+            }
+            or any(
+                self._contains_phrase(normalized, term)
+                for term in (
+                    "fon",
+                    "sukuk",
+                    "kira sertifikası",
+                    "halka arz",
+                    "getiri",
+                    "getirisi",
+                    "saklama",
+                )
+            )
+        ):
+            return "investment_query", 0.94
         if has_domain and any(
             term in normalized
             for term in ("ilişkilidir", "ilişkili", "bağlantılı", "arasındaki ilişki")
@@ -249,6 +366,8 @@ class DomainQueryCompiler:
                 "neleri gerektir",
                 "evrak",
                 "belge",
+                "başvuru için",
+                "nasıl başvur",
             )
         ):
             return "application_requirements", 0.97

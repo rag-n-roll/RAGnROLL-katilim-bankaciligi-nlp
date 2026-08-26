@@ -28,11 +28,13 @@ def _resources() -> tuple[
     dict[str, Any],
     dict[str, str],
     dict[str, dict[str, Any]],
+    dict[str, list[str]],
 ]:
     reverse_path = PROJECT_ROOT / "data" / "ontology" / "reverse_alias_index.json"
     intent_path = PROJECT_ROOT / "data" / "ontology" / "intent_schema.json"
     rules_path = PROJECT_ROOT / "configs" / "query_rules.json"
     aliases_path = PROJECT_ROOT / "data" / "ontology" / "alias_dictionary.json"
+    term_intent_path = PROJECT_ROOT / "data" / "ontology" / "term_intent_map.json"
     reverse = _read_json(reverse_path)
     intents = _read_json(intent_path)
     rules = _read_json(rules_path)
@@ -43,18 +45,25 @@ def _resources() -> tuple[
         _normalized(alias): str(canonical)
         for alias, canonical in rules.get("aliases", {}).items()
     }
-    return reverse, intents, configured, canonical_terms
+    term_intents: dict[str, list[str]] = {}
+    if term_intent_path.exists():
+        for item in _read_json(term_intent_path):
+            tid = item.get("term_id")
+            if tid:
+                term_intents[tid] = list(item.get("intents", []))
+    return reverse, intents, configured, canonical_terms, term_intents
 
 
 class TerminologyService:
     """Alias çözümleme ve sorgu yeniden yazımını dış servissiz yapar."""
 
     def __init__(self) -> None:
-        reverse, intents, configured, canonical_terms = _resources()
+        reverse, intents, configured, canonical_terms, term_intents = _resources()
         self.reverse_alias_index = reverse
         self.intent_schema = intents
         self.configured_aliases = configured
         self.canonical_terms = canonical_terms
+        self.term_intent_map = term_intents
 
     def resolve(self, surface: str) -> dict[str, Any] | None:
         normalized = _normalized(surface)
@@ -65,6 +74,7 @@ class TerminologyService:
                 "canonical": configured,
                 "term_id": None,
                 "entity": None,
+                "intents": [],
                 "source": "query_rules",
             }
         candidates = self.reverse_alias_index.get(normalized)
@@ -75,6 +85,7 @@ class TerminologyService:
                 "canonical": selected.get("canonical", surface),
                 "term_id": selected.get("term_id"),
                 "entity": selected.get("entity"),
+                "intents": self.term_intent_map.get(selected.get("term_id"), []),
                 "source": "ontology",
             }
         selected = self.canonical_terms.get(normalized)
@@ -85,6 +96,7 @@ class TerminologyService:
             "canonical": selected.get("canonical", surface),
             "term_id": selected.get("term_id"),
             "entity": selected.get("entity"),
+            "intents": self.term_intent_map.get(selected.get("term_id"), []),
             "source": "ontology",
         }
 
@@ -105,6 +117,7 @@ class TerminologyService:
                     "canonical": canonical,
                     "term_id": None,
                     "entity": None,
+                    "intents": [],
                     "source": "query_rules",
                 }
             )
@@ -130,6 +143,7 @@ class TerminologyService:
                     "canonical": selected.get("canonical", alias),
                     "term_id": selected.get("term_id"),
                     "entity": selected.get("entity"),
+                    "intents": self.term_intent_map.get(selected.get("term_id"), []),
                     "source": "ontology",
                 }
             )
@@ -150,6 +164,7 @@ class TerminologyService:
                     "canonical": item.get("canonical", canonical),
                     "term_id": item.get("term_id"),
                     "entity": item.get("entity"),
+                    "intents": self.term_intent_map.get(item.get("term_id"), []),
                     "source": "ontology",
                 }
             )
