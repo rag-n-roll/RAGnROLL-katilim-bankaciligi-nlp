@@ -57,7 +57,8 @@ class PdfSourceRegistry:
                 raise PdfSourceIntegrityError("PDF kayıt dosya adları geçersiz")
             for filename in filenames:
                 key = _normalized_filename(str(filename))
-                if key in self._by_filename:
+                existing = self._by_filename.get(key)
+                if existing is not None and existing.get("document_id") != item.get("document_id"):
                     raise PdfSourceIntegrityError(f"PDF dosya adı birden çok kayıtla eşleşiyor: {filename}")
                 self._by_filename[key] = item
 
@@ -92,4 +93,3 @@ class PdfSourceRegistry:
             filename=path.name,
             path=path.resolve(),
         )
-

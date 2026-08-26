@@ -15,6 +15,7 @@ flake8==7.1.1
 beautifulsoup4>=4.12,<5
 truststore>=0.10,<1
 pypdf>=6,<7
+pymupdf>=1.26,<2
 
 
 # RAG

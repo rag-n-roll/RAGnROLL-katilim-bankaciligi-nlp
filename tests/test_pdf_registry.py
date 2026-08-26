@@ -45,6 +45,23 @@ def test_registry_rejects_unregistered_filename(tmp_path: Path):
         _registry(b"verified").verify(source)
 
 
+def test_registry_allows_unicode_aliases_that_normalize_to_same_filename():
+    registry = PdfSourceRegistry.from_items(
+        [
+            {
+                "document_id": "aaoifi",
+                "filenames": ["Güncellenmiş.pdf", "Güncellenmiş.pdf"],
+                "sha256": "a" * 64,
+                "title": "AAOIFI",
+                "source_url": "https://example.test/aaoifi.pdf",
+                "publisher": "TKBB",
+            }
+        ]
+    )
+
+    assert registry is not None
+
+
 def test_manifest_does_not_serialize_local_path(monkeypatch, tmp_path: Path):
     source = tmp_path / "guide.pdf"
     source.write_bytes(b"verified")
