@@ -64,24 +64,59 @@ class DomainQueryCompiler:
     def _normalized(value: str) -> str:
         return " ".join(turkish_lower(value).split())
 
+    @classmethod
+    def _contains_phrase(cls, value: str, phrase: str) -> bool:
+        normalized = cls._normalized(value)
+        target = cls._normalized(phrase)
+        return bool(re.search(rf"(?<!\w){re.escape(target)}(?!\w)", normalized))
+
+    @classmethod
+    def _contains_inflected_word(cls, value: str, word: str) -> bool:
+        normalized = cls._normalized(value)
+        target = cls._normalized(word)
+        suffix = r"(?:lar|ler|ları|leri|lardan|lerden|ı|i|u|ü|ya|ye|yı|yi|yu|yü)?"
+        return bool(
+            re.search(rf"(?<!\w){re.escape(target)}{suffix}(?!\w)", normalized)
+        )
+
     def _intent(
-        self, query: str, bank_count: int, *, has_product: bool = False
+        self,
+        query: str,
+        bank_count: int,
+        *,
+        has_product: bool = False,
+        terminology_matches: Iterable[dict[str, Any]] = (),
+        metric: str | None = None,
     ) -> tuple[str, float]:
         normalized = self._normalized(query)
-        if any(term in normalized for term in ("şikâyet", "şikayet", "itiraz")):
+        matches = list(terminology_matches)
+        entities = {str(item.get("entity") or "") for item in matches}
+        has_domain_terminology = any(
+            str(item.get("entity") or "") != "CAMPAIGN" for item in matches
+        )
+        has_domain = (
+            has_product
+            or bool(bank_count)
+            or has_domain_terminology
+            or metric == "REWARD_AMOUNT"
+        )
+        if any(
+            self._contains_phrase(normalized, term)
+            for term in ("şikâyet", "şikayet", "itiraz")
+        ):
             return "complaint_support", 0.99
-        if "katılım banka" in normalized and any(
-            term in normalized
-            for term in ("kaç", "sayısı", "sayisi", "say", "liste")
+        if re.search(r"(?<!\w)katılım banka\w*(?!\w)", normalized) and any(
+            self._contains_phrase(normalized, term)
+            for term in ("kaç", "sayısı", "sayisi", "say", "sayar", "liste")
         ):
             return "bank_list", 0.99
-        if "kampanya" in normalized and any(
-            term in normalized
+        if re.search(r"(?<!\w)kampanya\w*(?!\w)", normalized) and any(
+            self._contains_phrase(normalized, term)
             for term in ("kaç", "sayısı", "sayisi", "say", "adet")
         ):
             return "campaign_count", 0.99
-        if bank_count > 1 or any(
-            term in normalized
+        if (bank_count > 1 or has_domain) and any(
+            self._contains_phrase(normalized, term)
             for term in (
                 "karşılaştır",
                 "hangisi daha",
@@ -92,24 +127,23 @@ class DomainQueryCompiler:
             )
         ):
             return "product_comparison", 0.99
-        if any(
-            term in normalized
+        definition_requested = any(
+            self._contains_phrase(normalized, term)
             for term in ("nedir", "ne demek", "ne anlama geliyor", "açıklar mısın")
-        ):
-            return "definition", 0.98
-        if any(
-            term in normalized
+        )
+        if definition_requested:
+            return ("definition", 0.98) if has_domain else ("unknown", 0.0)
+        if has_domain and metric == "PROFIT_RATE" and any(
+            self._contains_phrase(normalized, term)
             for term in ("kâr payı oranı kaç", "kar payı oranı kaç", "oran kaç")
         ):
             return "rate_query", 0.98
-        if "vade kaç" in normalized or "kaç ay" in normalized:
+        if has_domain and metric == "MATURITY" and any(
+            self._contains_phrase(normalized, term) for term in ("vade kaç", "kaç ay")
+        ):
             return "maturity_query", 0.96
         if "nasıl yaparım" in normalized or "nasıl yapılır" in normalized:
             return "transaction_howto", 0.96
-        entities = {
-            str(item.get("entity") or "")
-            for item in self.terminology.find_terms(query, limit=12)
-        }
         if entities & {"INCOTERM", "TRADE_FINANCE_TERM", "TRADE_FINANCE_PRODUCT"}:
             return "trade_finance_query", 0.94
         if "AGRICULTURE_TERM" in entities:
@@ -131,7 +165,7 @@ class DomainQueryCompiler:
         ):
             return "application_requirements", 0.97
         if any(
-            self._normalized(pattern) in normalized
+            self._contains_phrase(normalized, pattern)
             for pattern in self.product_search_patterns
         ):
             return "product_search", 0.55
@@ -147,25 +181,51 @@ class DomainQueryCompiler:
             "definition",
         )
         scored: list[tuple[int, int, str]] = []
+        domain_required = {
+            "application_requirements",
+            "rate_query",
+            "maturity_query",
+            "transaction_howto",
+            "definition",
+        }
         for priority, intent in enumerate(priorities):
+            if intent in domain_required and not has_domain:
+                continue
             patterns = self.terminology.intent_schema[intent].get("patterns", [])
-            score = sum(self._normalized(pattern) in normalized for pattern in patterns)
+            score = sum(
+                (
+                    self._contains_inflected_word(normalized, pattern)
+                    if pattern in {"kampanya", "fırsat"}
+                    else self._contains_phrase(normalized, pattern)
+                )
+                for pattern in patterns
+            )
             if score:
                 scored.append((score, -priority, intent))
         if scored:
             score, _, intent = max(scored)
             return intent, min(0.98, 0.78 + score * 0.08)
-        if has_product or bank_count or self.terminology.find_terms(query, limit=1):
+        if has_domain:
             return "product_search", 0.55
         return "unknown", 0.0
 
     @staticmethod
     def _route_for(
-        intent: str, metric: str | None, aggregation: str | None
+        intent: str,
+        metric: str | None,
+        aggregation: str | None,
+        *,
+        has_domain: bool = False,
     ) -> str:
         if intent in {"complaint_support", "transaction_howto", "unknown"}:
             return "SAFE_REDIRECT"
-        if intent in {"bank_list", "campaign_count", "rate_query", "maturity_query"}:
+        if intent == "bank_list":
+            return "STRUCTURED_SQL"
+        if intent == "campaign_count" and aggregation == "COUNT" and has_domain:
+            return "STRUCTURED_SQL"
+        if intent == "rate_query" and metric == "PROFIT_RATE" and has_domain:
+            return "STRUCTURED_SQL"
+        if intent == "maturity_query" and metric == "MATURITY" and has_domain:
             return "STRUCTURED_SQL"
         if (
             intent == "product_comparison"
@@ -193,7 +253,7 @@ class DomainQueryCompiler:
         matches = [
             (normalized.find(alias), -len(alias), slug)
             for alias, slug in aliases.items()
-            if alias in normalized
+            if self._contains_phrase(normalized, alias)
         ]
         return list(dict.fromkeys(slug for _, _, slug in sorted(matches)))
 
@@ -201,7 +261,7 @@ class DomainQueryCompiler:
         normalized = self._normalized(query)
         selected: tuple[int, dict[str, Any]] | None = None
         for term, values in self.product_terms.items():
-            if self._normalized(term) not in normalized:
+            if not self._contains_phrase(normalized, term):
                 continue
             candidate = (len(term), dict(values))
             if selected is None or candidate[0] > selected[0]:
@@ -212,9 +272,9 @@ class DomainQueryCompiler:
     def _metric(query: str) -> tuple[str | None, str | None]:
         normalized = turkish_lower(query)
         if (
-            "kâr payı" in normalized
-            or "kar payı" in normalized
-            or "oran" in normalized
+            DomainQueryCompiler._contains_phrase(normalized, "kâr payı")
+            or DomainQueryCompiler._contains_phrase(normalized, "kar payı")
+            or DomainQueryCompiler._contains_phrase(normalized, "oran")
         ):
             aggregation = (
                 "MIN"
@@ -230,6 +290,25 @@ class DomainQueryCompiler:
             return "REWARD_AMOUNT", "MAX" if "yüksek" in normalized else None
         return None, None
 
+    @staticmethod
+    def confidence_evidence(
+        slots: dict[str, Any],
+        filters: dict[str, Any],
+        terminology_matches: Iterable[dict[str, Any]],
+        *,
+        source: str,
+    ) -> dict[str, Any]:
+        return {
+            "source": source,
+            "product": {
+                key: slots[key]
+                for key in ("product_type", "financing_type")
+                if slots.get(key) is not None
+            },
+            "terminology": list(terminology_matches),
+            "filters": dict(filters),
+        }
+
     def compile(
         self,
         query: str,
@@ -242,10 +321,18 @@ class DomainQueryCompiler:
         canonical, rewrites = self.terminology.rewrite_query(original)
         banks = self._banks(canonical, known_banks)
         slots = self._product_slots(canonical)
-        intent, confidence = self._intent(
-            canonical, len(banks), has_product=bool(slots)
-        )
+        has_product = bool(slots)
+        terminology_matches = self.terminology.find_terms(canonical, limit=12)
         metric, aggregation = self._metric(canonical)
+        intent, confidence = self._intent(
+            canonical,
+            len(banks),
+            has_product=has_product,
+            terminology_matches=terminology_matches,
+            metric=metric,
+        )
+        if intent == "campaign_count":
+            aggregation = "COUNT"
         slots.update({"banks": banks, "metric": metric, "aggregation": aggregation})
         filters = {
             key: value
@@ -258,12 +345,23 @@ class DomainQueryCompiler:
             if value not in (None, [], "")
         }
         warnings: list[str] = []
-        route = self._route_for(intent, metric, aggregation)
+        route = self._route_for(
+            intent,
+            metric,
+            aggregation,
+            has_domain=bool(
+                has_product
+                or banks
+                or terminology_matches
+                or intent == "campaign_count"
+                or metric == "REWARD_AMOUNT"
+            ),
+        )
         if intent in self.blocked_intents:
             warnings.append("Sistem müşteri işlemi veya şikâyet kaydı gerçekleştirmez")
         if intent == "product_comparison" and len(banks) < 2:
             warnings.append("Karşılaştırma için banka filtresi belirtilmedi")
-        rewrites.extend(self.terminology.find_terms(canonical, limit=5))
+        rewrites.extend(terminology_matches[:5])
         unique_rewrites = list(
             {
                 (
@@ -274,15 +372,9 @@ class DomainQueryCompiler:
                 for item in rewrites
             }.values()
         )
-        confidence_components = {
-            "product": {
-                key: slots[key]
-                for key in ("product_type", "financing_type")
-                if slots.get(key) is not None
-            },
-            "terminology": unique_rewrites,
-            "filters": dict(filters),
-        }
+        confidence_components = self.confidence_evidence(
+            slots, filters, unique_rewrites, source="deterministic"
+        )
         return QueryPlan(
             original_query=original,
             canonical_query=canonical,

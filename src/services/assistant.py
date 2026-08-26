@@ -173,12 +173,6 @@ class GroundedAssistant:
 
         intent = str(decision["intent"])
         advised_route = str(decision["route"])
-        structured_intents = self.compiler.structured_intents
-        route = (
-            "STRUCTURED_SQL"
-            if intent in structured_intents and advised_route == "STRUCTURED_SQL"
-            else "HYBRID_RAG"
-        )
         decision_slots = decision.get("slots") or {}
         slots = dict(plan.slots)
         for key in (
@@ -203,6 +197,25 @@ class GroundedAssistant:
             }.items()
             if value not in (None, [], "")
         }
+        eligible_route = self.compiler._route_for(
+            intent,
+            slots.get("metric"),
+            slots.get("aggregation"),
+            has_domain=bool(
+                slots.get("banks")
+                or slots.get("product_type")
+                or slots.get("financing_type")
+                or intent == "campaign_count"
+            ),
+        )
+        route = (
+            "STRUCTURED_SQL"
+            if advised_route == "STRUCTURED_SQL" and eligible_route == "STRUCTURED_SQL"
+            else "HYBRID_RAG"
+        )
+        confidence_components = self.compiler.confidence_evidence(
+            slots, filters, (), source="llm_plan"
+        )
         return replace(
             plan,
             canonical_query=str(decision["normalized_query"]),
@@ -210,7 +223,9 @@ class GroundedAssistant:
             route=route,
             slots=slots,
             filters=filters,
+            terminology_rewrites=[],
             confidence=float(decision["confidence"]),
+            confidence_components=confidence_components,
         )
 
     @staticmethod

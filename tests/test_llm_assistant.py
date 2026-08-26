@@ -191,6 +191,40 @@ def test_campaign_count_uses_exact_structured_total_without_raw_rag_fallback(tmp
     assert llm.calls == []
 
 
+def test_llm_slot_merge_replaces_deterministic_confidence_evidence(tmp_path):
+    assistant = GroundedAssistant(_store(tmp_path), chroma_enabled=False)
+    deterministic = assistant.compiler.compile("Konut finansmanı seçenekleri")
+
+    selected = assistant._merge_llm_plan(
+        deterministic,
+        {
+            "intent": "product_search",
+            "route": "HYBRID_RAG",
+            "confidence": 0.91,
+            "normalized_query": "Taşıt finansmanı seçenekleri",
+            "slots": {
+                "banks": [],
+                "metric": None,
+                "aggregation": None,
+                "product_type": "financing",
+                "financing_type": "vehicle",
+            },
+        },
+    )
+
+    assert selected.slots["financing_type"] == "vehicle"
+    assert selected.filters["financing_type"] == "vehicle"
+    assert selected.confidence == 0.91
+    assert selected.confidence_components["source"] == "llm_plan"
+    assert selected.confidence_components["product"] == {
+        "product_type": "financing",
+        "financing_type": "vehicle",
+    }
+    assert selected.confidence_components["filters"] == selected.filters
+    assert selected.confidence_components["terminology"] == []
+    assert selected.terminology_rewrites == []
+
+
 def test_structured_extrema_scans_beyond_first_hundred_rows(tmp_path):
     records = [
         Campaign(

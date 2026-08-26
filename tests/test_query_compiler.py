@@ -128,3 +128,31 @@ def test_configured_product_only_term_is_in_domain(query, financing_type):
         "financing_type": financing_type,
     }
     assert plan.confidence_components["filters"]["financing_type"] == financing_type
+
+
+@pytest.mark.parametrize(
+    "query",
+    (
+        "Bir yılda kaç ay vardır?",
+        "Kampanya sayfası nedir?",
+        "Bu restoranın oran kaç menüsü var?",
+        "Kartal'da hava nasıl?",
+    ),
+)
+def test_financial_substrings_do_not_make_out_of_domain_queries_structured(query):
+    plan = DomainQueryCompiler().compile(query)
+
+    assert plan.intent == "unknown"
+    assert plan.route == "SAFE_REDIRECT"
+    assert plan.confidence == 0.0
+
+
+def test_product_matching_uses_word_boundaries_without_breaking_card_queries():
+    collision = DomainQueryCompiler().compile("Kartal'da hava nasıl?")
+    legitimate = DomainQueryCompiler().compile("Kart seçenekleri neler?")
+
+    assert "product_type" not in collision.slots
+    assert collision.confidence_components["product"] == {}
+    assert legitimate.intent == "product_search"
+    assert legitimate.route == "HYBRID_RAG"
+    assert legitimate.slots["product_type"] == "card"
