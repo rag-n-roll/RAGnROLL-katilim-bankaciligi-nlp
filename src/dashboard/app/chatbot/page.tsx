@@ -285,7 +285,6 @@ export default function ChatbotPage() {
                       <details className={styles.thinkingPanel} open={exchange.streaming}>
                         <summary>
                           <span className={styles.thinkingIcon} aria-hidden="true">✦</span>
-                          Yanıt hazırlanıyor
                           {exchange.streaming && (
                             <span className={styles.thinkingDots} aria-label="İşleniyor">
                               <i /> <i /> <i />
@@ -303,7 +302,7 @@ export default function ChatbotPage() {
                       <p style={{ color: "#b91c1c" }}>{exchange.error}</p>
                     ) : (
                       <p style={{ whiteSpace: "pre-line" }}>
-                        {exchange.answer || (exchange.streaming ? "Yanıt hazırlanıyor..." : "")}
+                        {exchange.answer}
                       </p>
                     )}
 

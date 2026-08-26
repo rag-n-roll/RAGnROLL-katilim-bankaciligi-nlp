@@ -151,7 +151,7 @@ test("chatbot yerel finansal cevap veya sahte geçmiş içermez", async () => {
 test("chatbot güvenli düşünme özeti ve akış göstergesi sunar", async () => {
   const chatbot = await source("app/chatbot/page.tsx");
   assert.match(chatbot, /<details/);
-  assert.match(chatbot, /Yanıt hazırlanıyor/);
+  assert.doesNotMatch(chatbot, /Yanıt hazırlanıyor/);
   assert.match(chatbot, /Kanıtlar kontrol ediliyor/);
   assert.doesNotMatch(chatbot, /raw.*reasoning|chain.?of.?thought/i);
   assert.match(chatbot, /thinkingDots/);
