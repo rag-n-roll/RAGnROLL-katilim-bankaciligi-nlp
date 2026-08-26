@@ -24,7 +24,7 @@ from src.preprocessing.clean_text import tokenize_turkish
 from src.prompt_optimization import IntentTraceRecorder
 from src.query import DomainQueryCompiler, QueryPlan
 from src.retrieval import HybridRetriever
-from src.services.conversation import merge_criteria
+from src.services.conversation import extract_comparison_criteria, merge_criteria
 
 
 def _finite(value: Any) -> float | None:
@@ -1077,6 +1077,9 @@ class GroundedAssistant:
                 raise ValueError("Konuşma durumu karşılaştırma isteğiyle uyuşmuyor")
             criteria = merge_criteria(
                 ComparisonCriteria(), dict(conversation_state.get("criteria") or {})
+            )
+            criteria = merge_criteria(
+                criteria, extract_comparison_criteria(message)
             )
             if criteria.missing():
                 return self._clarification_answer(

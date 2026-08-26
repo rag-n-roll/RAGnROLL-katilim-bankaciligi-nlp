@@ -171,11 +171,6 @@ def test_subjective_comparison_is_clarified_then_resumed_from_client_state(tmp_p
         first = client.post("/api/v1/chat", json={"message": question})
         first_payload = first.json()
         state = first_payload["conversation_state"]
-        state["criteria"] = {
-            "term_months": 24,
-            "amount": 750_000,
-            "fee_priority": True,
-        }
         second = client.post(
             "/api/v1/chat",
             json={
@@ -193,6 +188,11 @@ def test_subjective_comparison_is_clarified_then_resumed_from_client_state(tmp_p
     ]
     assert first_payload["facts"] == []
     assert first_payload["sources"] == []
+    assert first_payload["conversation_state"]["criteria"] == {
+        "term_months": None,
+        "amount": None,
+        "fee_priority": None,
+    }
     assert "vade" in first_payload["answer_display"].casefold()
     assert first_payload["answer"] == first_payload["answer_display"]
 
@@ -201,7 +201,44 @@ def test_subjective_comparison_is_clarified_then_resumed_from_client_state(tmp_p
     assert resumed["missing_criteria"] == []
     assert resumed["conversation_state"] is None
     assert resumed["sources"]
+    assert resumed["plan"]["slots"]["term_months"] == 24
+    assert resumed["plan"]["slots"]["amount"] == 750_000
+    assert resumed["plan"]["slots"]["fee_priority"] is True
     assert resumed["answer"] == resumed["answer_display"]
+
+
+def test_partial_follow_ups_round_trip_remaining_criteria_without_server_state(tmp_path):
+    question = (
+        "Albaraka Türk ile Kuveyt Türk konut finansmanlarından hangisi daha avantajlı?"
+    )
+    with _client(tmp_path) as client:
+        first = client.post("/api/v1/chat", json={"message": question}).json()
+        partial = client.post(
+            "/api/v1/chat",
+            json={
+                "message": "24 aylık olsun",
+                "conversation_state": first["conversation_state"],
+            },
+        ).json()
+        completed = client.post(
+            "/api/v1/chat",
+            json={
+                "message": "750 bin TL, masraf önemli değil",
+                "conversation_state": partial["conversation_state"],
+            },
+        ).json()
+
+    assert partial["action"] == "CLARIFY"
+    assert partial["missing_criteria"] == ["amount", "fee_priority"]
+    assert partial["conversation_state"]["criteria"] == {
+        "term_months": 24,
+        "amount": None,
+        "fee_priority": None,
+    }
+    assert completed["action"] == "ANSWER"
+    assert completed["plan"]["slots"]["term_months"] == 24
+    assert completed["plan"]["slots"]["amount"] == 750_000
+    assert completed["plan"]["slots"]["fee_priority"] is False
 
 
 def test_conversation_state_rejects_injected_execution_fields(tmp_path):
