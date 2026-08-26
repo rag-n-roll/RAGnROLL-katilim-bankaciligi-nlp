@@ -1025,10 +1025,17 @@ class GroundedAssistant:
         *, message: str, plan: QueryPlan, criteria: ComparisonCriteria
     ) -> dict[str, Any]:
         missing = criteria.missing()
-        answer_display = (
-            "Karşılaştırmayı netleştirmek için vade süresini, finansman tutarını "
-            "ve masraf önceliğiniz olup olmadığını belirtir misiniz?"
-        )
+        labels = {
+            "term_months": "vade süresini",
+            "amount": "finansman tutarını",
+            "fee_priority": "masraf önceliğinizi",
+        }
+        requested = [labels[name] for name in missing]
+        if len(requested) == 1:
+            requested_text = requested[0]
+        else:
+            requested_text = ", ".join(requested[:-1]) + f" ve {requested[-1]}"
+        answer_display = f"Karşılaştırma için {requested_text} belirtir misiniz?"
         return {
             "answer": answer_display,
             "answer_display": answer_display,
@@ -1094,10 +1101,7 @@ class GroundedAssistant:
             )
             subjective_comparison = (
                 pending_plan.intent == "product_comparison"
-                and (
-                    pending_plan.slots.get("metric") is None
-                    or "avantaj" in pending_plan.canonical_query.casefold()
-                )
+                and pending_plan.slots.get("aggregation") not in {"MIN", "MAX"}
             )
             if subjective_comparison and criteria.missing():
                 return self._clarification_answer(

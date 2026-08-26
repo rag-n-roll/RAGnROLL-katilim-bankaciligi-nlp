@@ -227,6 +227,11 @@ def test_initial_comparison_retains_explicit_criteria_and_only_asks_for_fee(tmp_
         "amount": 750_000,
         "fee_priority": None,
     }
+    display = payload["answer_display"].casefold()
+    assert "masraf" in display
+    assert "vade" not in display
+    assert "tutar" not in display
+    assert payload["answer"] == payload["answer_display"]
 
 
 def test_initial_complete_comparison_executes_even_when_fee_metric_is_detected(tmp_path):
@@ -249,6 +254,43 @@ def test_initial_complete_comparison_executes_even_when_fee_metric_is_detected(t
     assert payload["plan"]["slots"]["term_months"] == 24
     assert payload["plan"]["slots"]["amount"] == 750_000
     assert payload["plan"]["slots"]["fee_priority"] is True
+
+
+def test_explicit_fee_comparison_still_requires_term_and_amount(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat",
+            json={"message": "Konut finansmanlarını karşılaştır; masraf önemli."},
+        )
+
+    payload = response.json()
+    assert payload["action"] == "CLARIFY"
+    assert payload["missing_criteria"] == ["term_months", "amount"]
+    assert payload["facts"] == []
+    assert payload["sources"] == []
+    display = payload["answer_display"].casefold()
+    assert "vade" in display
+    assert "tutar" in display
+    assert "masraf" not in display
+
+
+def test_metric_comparison_verb_requires_all_personal_criteria(tmp_path):
+    with _client(tmp_path) as client:
+        for message in (
+            "Konut finansmanlarını masraf açısından karşılaştır.",
+            "Konut finansmanlarını masraf açısından kıyasla.",
+        ):
+            payload = client.post("/api/v1/chat", json={"message": message}).json()
+            assert payload["action"] == "CLARIFY"
+            assert payload["missing_criteria"] == [
+                "term_months",
+                "amount",
+                "fee_priority",
+            ]
+            display = payload["answer_display"].casefold()
+            assert "vade" in display
+            assert "tutar" in display
+            assert "masraf" in display
 
 
 def test_partial_follow_ups_round_trip_remaining_criteria_without_server_state(tmp_path):

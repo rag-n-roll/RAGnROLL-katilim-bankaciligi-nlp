@@ -163,6 +163,7 @@ class DomainQueryCompiler:
             self._contains_phrase(normalized, term)
             for term in (
                 "karşılaştır",
+                "kıyasla",
                 "hangisi daha",
                 "hangi ürün daha avantajlı",
                 "arasındaki fark",
