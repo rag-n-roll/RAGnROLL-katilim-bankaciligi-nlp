@@ -125,3 +125,10 @@ test("kampanya kataloğu artımlı sayfalama ve temiz metin sunumu kullanır", a
   assert.match(campaigns, /formatCampaignContent/);
   assert.doesNotMatch(campaigns, /className=\{styles\.code\}/);
 });
+
+test("chatbot yerel finansal cevap veya sahte geçmiş içermez", async () => {
+  const chatbot = await source("app/chatbot/page.tsx");
+  assert.doesNotMatch(chatbot, /INITIAL_EXCHANGES|FALLBACK_ANSWERS|getFallbackAnswer/);
+  assert.doesNotMatch(chatbot, /%2,49|%2,69|120 aya varan/);
+  assert.match(chatbot, /Bağlantı kurulamadı/);
+});
