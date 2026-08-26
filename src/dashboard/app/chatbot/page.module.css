@@ -244,6 +244,22 @@
   border: 1px solid #d0e4dc;
   color: #08766f;
   font-size: 11px;
+  text-decoration: none;
+  transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+a.sourceBadge:hover,
+a.sourceBadge:focus-visible {
+  background: #e1f2eb;
+  border-color: #79b9a4;
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.sourceArrow {
+  margin-left: 6px;
+  font-size: 13px;
+  line-height: 1;
 }
 
 .inputArea {

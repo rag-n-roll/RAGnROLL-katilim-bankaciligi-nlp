@@ -48,6 +48,16 @@ function generationLabel(generation?: ChatGeneration) {
     : "Güvenli doğrulanmış yanıt";
 }
 
+function safeSourceUrl(value?: string | null) {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function ChatbotPage() {
   const [exchanges, setExchanges] = useState<MessageExchange[]>([]);
   const [input, setInput] = useState("");
@@ -271,10 +281,26 @@ export default function ChatbotPage() {
                         <strong>Kaynak Kampanyalar:</strong>
                         <div className={styles.sourcesList}>
                           {exchange.sources.map((source, sIndex) => (
-                            <span className={styles.sourceBadge} key={sIndex}>
-                              {source.bank_name ? `${source.bank_name} – ` : ""}
-                              {source.title ?? "Kampanya"}
-                            </span>
+                            (() => {
+                              const href = safeSourceUrl(source.source_url);
+                              const label = `${source.bank_name ? `${source.bank_name} – ` : ""}${source.title ?? "Kampanya"}`;
+                              return href ? (
+                                <a
+                                  className={styles.sourceBadge}
+                                  href={href}
+                                  key={sIndex}
+                                  target="_blank"
+                                  rel="noreferrer noopener"
+                                  aria-label={`${label} web sitesini aç`}
+                                >
+                                  {label}<span className={styles.sourceArrow} aria-hidden="true">→</span>
+                                </a>
+                              ) : (
+                                <span className={styles.sourceBadge} key={sIndex}>
+                                  {label}
+                                </span>
+                              );
+                            })()
                           ))}
                         </div>
                       </div>
