@@ -14,54 +14,22 @@ from src.preprocessing.clean_text import turkish_lower
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-NOMINAL_SUFFIXES = (
-    "",
-    "ı",
-    "i",
-    "u",
-    "ü",
-    "a",
-    "e",
-    "da",
-    "de",
-    "ta",
-    "te",
-    "dan",
-    "den",
-    "tan",
-    "ten",
-    "ın",
-    "in",
-    "un",
-    "ün",
-    "ım",
-    "im",
-    "um",
-    "üm",
-    "ımız",
-    "imiz",
-    "umuz",
-    "ümüz",
-    "lar",
-    "ler",
-    "ları",
-    "leri",
-    "ların",
-    "lerin",
-    "larını",
-    "lerini",
-    "larımız",
-    "lerimiz",
-    "la",
-    "le",
-    "yla",
-    "yle",
-    "ıyla",
-    "iyle",
-    "uyla",
-    "üyle",
+NOMINAL_PLURAL = r"(?:lar|ler)?"
+NOMINAL_POSSESSIVE = r"(?:ım|im|um|üm|ımız|imiz|umuz|ümüz|ı|i|u|ü)?"
+NOMINAL_CASE = (
+    r"(?:a|e|da|de|ta|te|dan|den|tan|ten|ın|in|un|ün|"
+    r"nı|ni|nu|nü|nın|nin|nun|nün|ndan|nden|la|le|yla|yle|"
+    r"ıyla|iyle|uyla|üyle)?"
 )
+NOMINAL_SUFFIX_PATTERN = NOMINAL_PLURAL + NOMINAL_POSSESSIVE + NOMINAL_CASE
 QUESTION_SUFFIXES = ("", "tır", "tir", "tur", "tür")
+GENERIC_ONTOLOGY_ENTITIES = {
+    "CAMPAIGN",
+    "CONDITION",
+    "DOCUMENT",
+    "END_DATE",
+    "START_DATE",
+}
 
 BANK_ALIASES = {
     "adil katılım": "adil-katilim",
@@ -137,7 +105,14 @@ class DomainQueryCompiler:
 
     @classmethod
     def _contains_nominal_phrase(cls, value: str, phrase: str) -> bool:
-        return cls._contains_suffixed_phrase(value, phrase, NOMINAL_SUFFIXES)
+        normalized = cls._normalized(value)
+        target = cls._normalized(phrase)
+        return bool(
+            re.search(
+                rf"(?<!\w){re.escape(target)}{NOMINAL_SUFFIX_PATTERN}(?!\w)",
+                normalized,
+            )
+        )
 
     def _intent(
         self,
@@ -152,7 +127,8 @@ class DomainQueryCompiler:
         matches = list(terminology_matches)
         entities = {str(item.get("entity") or "") for item in matches}
         has_domain_terminology = any(
-            str(item.get("entity") or "") != "CAMPAIGN" for item in matches
+            str(item.get("entity") or "") not in GENERIC_ONTOLOGY_ENTITIES
+            for item in matches
         )
         has_domain = (
             has_product
@@ -221,12 +197,12 @@ class DomainQueryCompiler:
             return "trade_finance_query", 0.94
         if "AGRICULTURE_TERM" in entities:
             return "agriculture_finance_query", 0.94
-        if any(
+        if has_domain and any(
             term in normalized
             for term in ("ilişkilidir", "ilişkili", "bağlantılı", "arasındaki ilişki")
         ):
             return "relationship_query", 0.97
-        if any(
+        if has_domain and any(
             term in normalized
             for term in (
                 "hangi belge",
@@ -237,9 +213,17 @@ class DomainQueryCompiler:
             )
         ):
             return "application_requirements", 0.97
-        if any(
-            self._contains_phrase(normalized, pattern)
+        matched_product_patterns = [
+            pattern
             for pattern in self.product_search_patterns
+            if self._contains_phrase(normalized, pattern)
+        ]
+        if matched_product_patterns and (
+            has_domain
+            or any(
+                "finansman" in self._normalized(pattern)
+                for pattern in matched_product_patterns
+            )
         ):
             return "product_search", 0.55
         priorities = (
@@ -283,13 +267,25 @@ class DomainQueryCompiler:
         return "unknown", 0.0
 
     @staticmethod
-    def _route_for(
+    def route_for(
         intent: str,
-        metric: str | None,
-        aggregation: str | None,
-        *,
-        has_domain: bool = False,
+        slots: dict[str, Any],
+        terminology_matches: Iterable[dict[str, Any]] = (),
     ) -> str:
+        metric = slots.get("metric")
+        aggregation = slots.get("aggregation")
+        has_domain_terminology = any(
+            str(item.get("entity") or "") not in GENERIC_ONTOLOGY_ENTITIES
+            for item in terminology_matches
+        )
+        has_domain = bool(
+            slots.get("banks")
+            or slots.get("product_type")
+            or slots.get("financing_type")
+            or has_domain_terminology
+            or intent == "campaign_count"
+            or metric == "REWARD_AMOUNT"
+        )
         if intent in {"complaint_support", "transaction_howto", "unknown"}:
             return "SAFE_REDIRECT"
         if intent == "bank_list":
@@ -418,18 +414,7 @@ class DomainQueryCompiler:
             if value not in (None, [], "")
         }
         warnings: list[str] = []
-        route = self._route_for(
-            intent,
-            metric,
-            aggregation,
-            has_domain=bool(
-                has_product
-                or banks
-                or terminology_matches
-                or intent == "campaign_count"
-                or metric == "REWARD_AMOUNT"
-            ),
-        )
+        route = self.route_for(intent, slots, terminology_matches)
         if intent in self.blocked_intents:
             warnings.append("Sistem müşteri işlemi veya şikâyet kaydı gerçekleştirmez")
         if intent == "product_comparison" and len(banks) < 2:

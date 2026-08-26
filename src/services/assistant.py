@@ -150,8 +150,16 @@ class GroundedAssistant:
         if safe is False or advised_route == "SAFE_REDIRECT":
             warnings.append("EVREN güvenlik sinyali güvenli yönlendirme önerdi")
             return replace(plan, route="SAFE_REDIRECT", warnings=warnings)
-        if advised_route == "STRUCTURED_SQL" and plan.slots.get("metric"):
-            return replace(plan, route="STRUCTURED_SQL")
+        if advised_route == "STRUCTURED_SQL":
+            eligible_route = self.compiler.route_for(
+                plan.intent, plan.slots, plan.terminology_rewrites
+            )
+            if eligible_route == "STRUCTURED_SQL":
+                return replace(plan, route="STRUCTURED_SQL")
+            warnings.append(
+                "EVREN structured route önerisi ölçülebilir sorgu koşullarını karşılamadı"
+            )
+            return replace(plan, route=eligible_route, warnings=warnings)
         if advised_route not in {None, plan.route, "HYBRID_RAG"}:
             warnings.append("EVREN route önerisi yerel sözleşmeyle uyuşmadığı için yok sayıldı")
             return replace(plan, warnings=warnings)
@@ -197,17 +205,7 @@ class GroundedAssistant:
             }.items()
             if value not in (None, [], "")
         }
-        eligible_route = self.compiler._route_for(
-            intent,
-            slots.get("metric"),
-            slots.get("aggregation"),
-            has_domain=bool(
-                slots.get("banks")
-                or slots.get("product_type")
-                or slots.get("financing_type")
-                or intent == "campaign_count"
-            ),
-        )
+        eligible_route = self.compiler.route_for(intent, slots)
         route = (
             "STRUCTURED_SQL"
             if advised_route == "STRUCTURED_SQL" and eligible_route == "STRUCTURED_SQL"

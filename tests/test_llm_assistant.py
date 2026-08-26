@@ -225,6 +225,38 @@ def test_llm_slot_merge_replaces_deterministic_confidence_evidence(tmp_path):
     assert selected.terminology_rewrites == []
 
 
+@pytest.mark.parametrize(
+    "query",
+    (
+        "Konut finansmanında oran seçenekleri nelerdir?",
+        "Kart seçeneklerinde ücret nedir?",
+    ),
+)
+def test_legacy_structured_suggestion_cannot_bypass_compiler_route_policy(
+    tmp_path, query
+):
+    class LegacyStructuredDecision:
+        @staticmethod
+        def is_safe(message):
+            del message
+            return True
+
+        @staticmethod
+        def route(message):
+            del message
+            return "STRUCTURED_SQL"
+
+    assistant = GroundedAssistant(
+        _store(tmp_path),
+        decisions=LegacyStructuredDecision(),
+        chroma_enabled=False,
+    )
+
+    plan = assistant.compile(query)
+
+    assert plan.route == "HYBRID_RAG"
+
+
 def test_structured_extrema_scans_beyond_first_hundred_rows(tmp_path):
     records = [
         Campaign(

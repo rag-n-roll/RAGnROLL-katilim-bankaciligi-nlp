@@ -197,3 +197,33 @@ def test_inflected_card_product_is_domain_evidence_without_matching_kartal():
     assert card.confidence == 0.55
     assert collision.intent == "unknown"
     assert "product_type" not in collision.slots
+
+
+@pytest.mark.parametrize(
+    "query",
+    (
+        "Akşam yemeği için seçenekler neler?",
+        "Bu işte ne kullanabilirim?",
+        "Aşı başvurusu için hangi belge gerekir?",
+    ),
+)
+def test_generic_discovery_and_requirement_cues_fail_closed(query):
+    plan = DomainQueryCompiler().compile(query)
+
+    assert plan.intent == "unknown"
+    assert plan.route == "SAFE_REDIRECT"
+    assert plan.confidence == 0.0
+
+
+def test_chained_turkish_suffixes_preserve_measurable_bank_queries():
+    campaign = DomainQueryCompiler().compile(
+        "Albaraka Türk kampanyalarından kaç tanesi aktif?"
+    )
+    banks = DomainQueryCompiler().compile("Katılım bankalarının sayısı kaç?")
+
+    assert campaign.intent == "campaign_count"
+    assert campaign.route == "STRUCTURED_SQL"
+    assert campaign.slots["banks"] == ["albaraka-turk"]
+    assert campaign.slots["aggregation"] == "COUNT"
+    assert banks.intent == "bank_list"
+    assert banks.route == "STRUCTURED_SQL"
