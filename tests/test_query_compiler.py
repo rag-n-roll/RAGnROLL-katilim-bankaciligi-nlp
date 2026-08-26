@@ -111,3 +111,20 @@ def test_product_search_keeps_confidence_evidence_separate_from_base_score():
         "financing_type": "housing",
     }
     assert plan.confidence_components["filters"]["active_only"] is True
+
+
+@pytest.mark.parametrize(
+    ("query", "financing_type"),
+    (("Konut", "housing"), ("Taşıt", "vehicle")),
+)
+def test_configured_product_only_term_is_in_domain(query, financing_type):
+    plan = DomainQueryCompiler().compile(query)
+
+    assert plan.intent == "product_search"
+    assert plan.route == "HYBRID_RAG"
+    assert plan.confidence == 0.55
+    assert plan.confidence_components["product"] == {
+        "product_type": "financing",
+        "financing_type": financing_type,
+    }
+    assert plan.confidence_components["filters"]["financing_type"] == financing_type

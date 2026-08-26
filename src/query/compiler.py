@@ -64,7 +64,9 @@ class DomainQueryCompiler:
     def _normalized(value: str) -> str:
         return " ".join(turkish_lower(value).split())
 
-    def _intent(self, query: str, bank_count: int) -> tuple[str, float]:
+    def _intent(
+        self, query: str, bank_count: int, *, has_product: bool = False
+    ) -> tuple[str, float]:
         normalized = self._normalized(query)
         if any(term in normalized for term in ("şikâyet", "şikayet", "itiraz")):
             return "complaint_support", 0.99
@@ -153,7 +155,7 @@ class DomainQueryCompiler:
         if scored:
             score, _, intent = max(scored)
             return intent, min(0.98, 0.78 + score * 0.08)
-        if bank_count or self.terminology.find_terms(query, limit=1):
+        if has_product or bank_count or self.terminology.find_terms(query, limit=1):
             return "product_search", 0.55
         return "unknown", 0.0
 
@@ -239,8 +241,10 @@ class DomainQueryCompiler:
             raise ValueError("Sorgu boş olamaz")
         canonical, rewrites = self.terminology.rewrite_query(original)
         banks = self._banks(canonical, known_banks)
-        intent, confidence = self._intent(canonical, len(banks))
         slots = self._product_slots(canonical)
+        intent, confidence = self._intent(
+            canonical, len(banks), has_product=bool(slots)
+        )
         metric, aggregation = self._metric(canonical)
         slots.update({"banks": banks, "metric": metric, "aggregation": aggregation})
         filters = {
