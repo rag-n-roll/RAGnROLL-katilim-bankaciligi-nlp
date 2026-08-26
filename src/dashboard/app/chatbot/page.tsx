@@ -190,6 +190,11 @@ export default function ChatbotPage() {
           onDone: (generation: ChatGeneration) => {
             if (!isActiveChatRequest(currentTokenRef.current, token)) return;
             completed = true;
+            const blocked = Boolean(
+              generation.fallback_reason === "safe_redirect" ||
+                generation.fallback_reason?.startsWith("policy_") ||
+                generation.fallback_reason === "llm_output_rejected"
+            );
             setExchanges((curr) =>
               applyActiveChatUpdate(currentTokenRef.current, token, curr, (items: MessageExchange[]) => {
                 return items.map((item, idx) =>
@@ -198,11 +203,16 @@ export default function ChatbotPage() {
                         ...item,
                         streaming: false,
                         generation,
-                        thinkingSteps: [
-                          "İstek sınıflandırıldı",
-                          "Kanıtlar kontrol edildi",
-                          "Yanıt güvenlik kontrolünden geçti",
-                        ],
+                        thinkingSteps: blocked
+                          ? [
+                              "İstek sınıflandırıldı",
+                              "Yanıt güvenlik kontrolünden geçmedi",
+                            ]
+                          : [
+                              "İstek sınıflandırıldı",
+                              "Kanıtlar kontrol edildi",
+                              "Yanıt güvenlik kontrolünden geçti",
+                            ],
                       }
                     : item
                 );
@@ -293,7 +303,12 @@ export default function ChatbotPage() {
                         </summary>
                         <ul>
                           {exchange.thinkingSteps.map((step) => (
-                            <li key={step}>{step}</li>
+                            <li
+                              key={step}
+                              className={step.includes("geçmedi") ? styles.thinkingFailed : undefined}
+                            >
+                              {step}
+                            </li>
                           ))}
                         </ul>
                       </details>

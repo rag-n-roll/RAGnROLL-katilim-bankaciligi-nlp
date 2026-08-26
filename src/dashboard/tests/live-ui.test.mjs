@@ -155,4 +155,5 @@ test("chatbot güvenli düşünme özeti ve akış göstergesi sunar", async () 
   assert.match(chatbot, /Kanıtlar kontrol ediliyor/);
   assert.doesNotMatch(chatbot, /raw.*reasoning|chain.?of.?thought/i);
   assert.match(chatbot, /thinkingDots/);
+  assert.match(chatbot, /Yanıt güvenlik kontrolünden geçmedi/);
 });
