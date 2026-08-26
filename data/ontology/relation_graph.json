@@ -2411,6 +2411,42 @@
       "target_term": "Taksitlio",
       "confidence": 0.95,
       "origin": "curated_rule"
+    },
+    {
+      "source_id": "TRM0452",
+      "source_term": "Fon Havuzu",
+      "relation": "COLLECTS_FROM",
+      "target_id": "TRM0385",
+      "target_term": "Katılma Hesabı",
+      "confidence": 0.98,
+      "origin": "tkbb_curated"
+    },
+    {
+      "source_id": "TRM0452",
+      "source_term": "Fon Havuzu",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0454",
+      "target_term": "Kâr Paylaşım Oranı",
+      "confidence": 0.96,
+      "origin": "tkbb_curated"
+    },
+    {
+      "source_id": "TRM0452",
+      "source_term": "Fon Havuzu",
+      "relation": "DISTRIBUTES",
+      "target_id": "TRM0455",
+      "target_term": "Kâr Payı Dağıtımı",
+      "confidence": 0.96,
+      "origin": "tkbb_curated"
+    },
+    {
+      "source_id": "TRM0452",
+      "source_term": "Fon Havuzu",
+      "relation": "RELATED_TO",
+      "target_id": "TRM0453",
+      "target_term": "Günlük Kâr Dağıtımı",
+      "confidence": 0.9,
+      "origin": "tkbb_curated"
     }
   ]
 }
