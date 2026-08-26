@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+import json
 import pytest
 
 from src.api.main import create_app
@@ -92,6 +93,43 @@ def test_api_preserves_validated_terminal_policy_action(tmp_path, action):
         assert payload["conversation_state"]["criteria"]["term_months"] == 24
     else:
         assert payload["answer"] == decision.safe_message
+
+
+def test_api_normalizes_nan_retrieval_score_for_strict_json(tmp_path):
+    database = tmp_path / "nan-score.sqlite3"
+    store = CampaignStore(database)
+    assistant = GroundedAssistant(store, chroma_enabled=False)
+
+    class NanRetriever:
+        last_backend = "test"
+
+        def retrieve(self, query, *, filters, limit):
+            del query, filters, limit
+            return [
+                {
+                    "text": "Doğrulanmış kampanya bilgisi.",
+                    "score": float("nan"),
+                    "retrieval_method": "test",
+                    "metadata": {
+                        "campaign_id": "nan-campaign",
+                        "title": "NaN skorlu kampanya",
+                    },
+                }
+            ]
+
+    assistant.retriever = NanRetriever()
+    app = create_app(database_path=database, chroma_enabled=False)
+    app.state.grounded_assistant = assistant
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/chat", json={"message": "Kampanyaları göster"}
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["sources"][0]["retrieval_score"] == 0.0
+    json.dumps(payload, allow_nan=False)
 
 
 def test_extraction_endpoint_returns_traceable_field_contracts(tmp_path):

@@ -239,3 +239,28 @@ def test_non_finite_or_invalid_scores_never_beat_a_finite_score():
     nan = {"campaign_id": "same", "retrieval_score": float("nan")}
 
     assert deduplicate_sources([invalid, nan, finite]) == [finite]
+
+
+def test_finite_negative_score_beats_invalid_scores_without_mutating_input():
+    malformed = {"campaign_id": "same", "retrieval_score": "invalid"}
+    nan = {"campaign_id": "same", "retrieval_score": float("nan")}
+    finite = {"campaign_id": "same", "retrieval_score": -0.5}
+    sources = [malformed, nan, finite]
+
+    result = deduplicate_sources(sources)
+
+    assert result == [{"campaign_id": "same", "retrieval_score": -0.5}]
+    assert result[0] is not finite
+    assert malformed["retrieval_score"] == "invalid"
+    assert nan["retrieval_score"] != nan["retrieval_score"]
+
+
+@pytest.mark.parametrize("invalid_score", (float("nan"), "invalid", None))
+def test_invalid_winner_score_is_emitted_as_finite_fallback(invalid_score):
+    source = {"campaign_id": "only", "retrieval_score": invalid_score}
+
+    result = deduplicate_sources([source])
+
+    assert result == [{"campaign_id": "only", "retrieval_score": 0.0}]
+    assert result[0] is not source
+    assert source["retrieval_score"] is invalid_score

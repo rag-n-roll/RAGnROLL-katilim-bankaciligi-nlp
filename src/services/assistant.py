@@ -58,16 +58,24 @@ def stable_source_key(source: dict[str, Any]) -> str:
 def deduplicate_sources(sources: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Keep the greatest-scoring source per stable identity in input-key order."""
 
-    winners: dict[str, tuple[int, float, dict[str, Any]]] = {}
+    winners: dict[
+        str, tuple[int, tuple[int, float], dict[str, Any]]
+    ] = {}
     for index, source in enumerate(sources):
         key = stable_source_key(source)
         score = _finite(source.get("retrieval_score"))
         if score is None:
-            score = _finite(source.get("score")) or 0.0
+            score = _finite(source.get("score"))
+        rank = (1, score) if score is not None else (0, 0.0)
         current = winners.get(key)
-        if current is None or score > current[1]:
-            winners[key] = (current[0] if current else index, score, source)
-    return [item[2] for item in sorted(winners.values(), key=lambda item: item[0])]
+        if current is None or rank > current[1]:
+            winners[key] = (current[0] if current else index, rank, source)
+    deduplicated = []
+    for _, rank, source in sorted(winners.values(), key=lambda item: item[0]):
+        normalized = dict(source)
+        normalized["retrieval_score"] = rank[1] if rank[0] else 0.0
+        deduplicated.append(normalized)
+    return deduplicated
 
 
 def _finite(value: Any) -> float | None:
