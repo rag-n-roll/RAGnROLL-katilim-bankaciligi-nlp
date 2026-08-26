@@ -3,9 +3,11 @@ __pycache__/
 *.pyc
 .env
 .pytest_cache/
+.pytest-tmp-*/
 .coverage
 htmlcov/
 .venv/
+.venv311/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -20,6 +22,10 @@ data/raw/*.json
 data/processed/*.json
 outputs/*.json
 output/playwright/
+tmp/pdfs/
+*.restart*.log
+pdf.*extraction*.log
+embedding.*.log
 
 # Calistirma sirasinda uretilen veri ve raporlar
 data/raw/*.json*

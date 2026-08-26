@@ -1,24 +1,47 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import styles from "./page.module.css";
 import {
-  ChatGeneration,
-  ChatMeta,
   streamChat,
+  type ChatMeta,
+  type ChatGeneration,
+  type ChatConversationState,
+  type ChatSource,
+  type StreamEventInfo,
 } from "../../services/api";
-import styles from "../live.module.css";
 import {
   applyActiveChatUpdate,
+  applyStreamEvent,
+  createStreamState,
   isActiveChatRequest,
   nextChatRequestToken,
   resetChatSession,
-} from "./sessionGuard";
+} from "./sessionGuard.js";
 
-const suggestions = [
+type MessageExchange = {
+  question: string;
+  answer: string;
+  streaming?: boolean;
+  meta?: ChatMeta;
+  generation?: ChatGeneration;
+  error?: string;
+  time?: string;
+  sources?: ChatSource[];
+  thinkingSteps?: string[];
+};
+
+const SUGGESTIONS = [
   "Türkiye'deki katılım bankalarını sayar mısın?",
   "Kuveyt Türk kampanyalarında hangi avantajlar var?",
   "Murabaha nedir?",
+  "Katılım bankacılığında kâr payı havuzu nasıl işler?",
+  "Masrafsız kart ve hesap seçenekleri nelerdir?",
+  "Konut finansmanında katılım bankacılığı ilkeleri nelerdir?",
 ];
+
+const CONNECTION_ERROR =
+  "Bağlantı kurulamadı. Lütfen kısa süre sonra yeniden deneyin; güncel finansal bilgi için bankanızın resmî kanalını kullanın.";
 
 function generationLabel(generation?: ChatGeneration) {
   if (!generation) return "Kaynaklar hazırlanıyor";
@@ -27,234 +50,439 @@ function generationLabel(generation?: ChatGeneration) {
     : "Güvenli doğrulanmış yanıt";
 }
 
-type Exchange = {
-  question: string;
-  answer: string;
-  meta?: ChatMeta;
-  generation?: ChatGeneration;
-  streaming: boolean;
-  error?: string;
-};
+function sourceDisplayLabel(source: ChatSource) {
+  const institution = source.bank_name ?? source.publisher;
+  const title = source.title ?? source.document_id ?? "Kaynak";
+  const start = source.page_start;
+  const end = source.page_end;
+  const page =
+    typeof start === "number"
+      ? `s. ${start}${typeof end === "number" && end !== start ? `–${end}` : ""}`
+      : null;
+  return [institution, title, page].filter(Boolean).join(" – ");
+}
+
+function safeSourceUrl(value?: string | null) {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function ChatbotPage() {
-  const [message, setMessage] = useState("");
-  const [exchanges, setExchanges] = useState<Exchange[]>([]);
+  const [exchanges, setExchanges] = useState<MessageExchange[]>([]);
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const controller = useRef<AbortController | null>(null);
-  const requestToken = useRef(0);
-  const conversationEnd = useRef<HTMLDivElement | null>(null);
-  const messageInput = useRef<HTMLTextAreaElement | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(true);
+  const [requestToken, setRequestToken] = useState(0);
+  const [conversationState, setConversationState] =
+    useState<ChatConversationState | null>(null);
+
+  const activeController = useRef<AbortController | null>(null);
+  const currentTokenRef = useRef(0);
+  const messageInput = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    conversationEnd.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    currentTokenRef.current = requestToken;
+  }, [requestToken]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [exchanges]);
 
-  function updateLatest(
-    activeToken: number,
-    update: (exchange: Exchange) => Exchange
-  ) {
-    setExchanges((items) =>
-      applyActiveChatUpdate(
-        requestToken.current,
-        activeToken,
-        items,
-        (currentItems: Exchange[]) => {
-          const latest = currentItems[currentItems.length - 1];
-          if (!latest) return currentItems;
-          return [...currentItems.slice(0, -1), update(latest)];
-        }
-      )
-    );
-  }
+  const handleResetChat = () => {
+    activeController.current?.abort();
+    activeController.current = null;
+    const reset = resetChatSession(currentTokenRef.current);
+    currentTokenRef.current = reset.requestToken;
+    setRequestToken(reset.requestToken);
+    setExchanges(reset.exchanges as MessageExchange[]);
+    setInput(reset.message);
+    setLoading(reset.loading);
+    setConversationState(null);
+    if (reset.focusInput) {
+      requestAnimationFrame(() => messageInput.current?.focus());
+    }
+  };
 
-  async function ask(question: string) {
-    const trimmed = question.trim();
-    if (!trimmed || loading || controller.current) return;
-    const activeToken = nextChatRequestToken(requestToken.current);
-    requestToken.current = activeToken;
-    const activeController = new AbortController();
-    controller.current = activeController;
+  const handleSendMessage = async (textToSend?: string) => {
+    const message = (textToSend ?? input).trim();
+    if (!message || loading) return;
+
+    setInput("");
     setLoading(true);
-    setMessage("");
-    setExchanges((items) => [
-      ...items,
-      { question: trimmed, answer: "", streaming: true },
-    ]);
+
+    const token = nextChatRequestToken(currentTokenRef.current);
+    currentTokenRef.current = token;
+    setRequestToken(token);
+
+    const timeString = new Date().toLocaleTimeString("tr-TR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const newExchange: MessageExchange = {
+      question: message,
+      answer: "",
+      streaming: true,
+      time: timeString,
+      thinkingSteps: ["İstek sınıflandırıldı"],
+    };
+
+    setExchanges((prev) => [...prev, newExchange]);
+
+    const controller = new AbortController();
+    activeController.current = controller;
+    let streamState = createStreamState(token);
     let completed = false;
+
     try {
       await streamChat(
-        trimmed,
+        message,
         {
-          onMeta: (meta) =>
-            updateLatest(activeToken, (item) => ({ ...item, meta })),
-          onDelta: (text) =>
-            updateLatest(activeToken, (item) => ({
-              ...item,
-              answer: item.answer + text,
-            })),
-          onReplace: (text) =>
-            updateLatest(activeToken, (item) => ({ ...item, answer: text })),
-          onDone: (generation) => {
-            if (!isActiveChatRequest(requestToken.current, activeToken)) return;
+          onMeta: (meta: ChatMeta) => {
+            if (!isActiveChatRequest(currentTokenRef.current, token)) return;
+            setConversationState(meta.conversation_state ?? null);
+            setExchanges((curr) =>
+              applyActiveChatUpdate(currentTokenRef.current, token, curr, (items: MessageExchange[]) => {
+                return items.map((item, idx) =>
+                  idx === items.length - 1
+                    ? {
+                        ...item,
+                        meta,
+                        sources: meta.sources,
+                        thinkingSteps: [
+                          "İstek sınıflandırıldı",
+                          "Kanıtlar kontrol ediliyor",
+                        ],
+                      }
+                    : item
+                );
+              })
+            );
+          },
+          onDelta: (text: string, eventInfo?: StreamEventInfo) => {
+            if (!isActiveChatRequest(currentTokenRef.current, token)) return;
+            const event = {
+              requestId: eventInfo?.requestId ?? null,
+              eventId: eventInfo?.eventId ?? `delta-${Date.now()}`,
+              sequence: eventInfo?.sequence ?? (streamState.lastSequence + 1),
+              text,
+            };
+            streamState = applyStreamEvent(streamState, token, event);
+            setExchanges((curr) =>
+              applyActiveChatUpdate(currentTokenRef.current, token, curr, (items: MessageExchange[]) => {
+                return items.map((item, idx) =>
+                  idx === items.length - 1
+                    ? { ...item, answer: streamState.answer }
+                    : item
+                );
+              })
+            );
+          },
+          onReplace: (text: string, eventInfo?: StreamEventInfo) => {
+            if (!isActiveChatRequest(currentTokenRef.current, token)) return;
+            streamState = {
+              ...streamState,
+              answer: text,
+              seenEventIds: eventInfo?.eventId
+                ? new Set(streamState.seenEventIds).add(eventInfo.eventId)
+                : streamState.seenEventIds,
+              lastSequence: eventInfo?.sequence ?? streamState.lastSequence,
+            };
+            setExchanges((curr) =>
+              applyActiveChatUpdate(currentTokenRef.current, token, curr, (items: MessageExchange[]) => {
+                return items.map((item, idx) =>
+                  idx === items.length - 1
+                    ? { ...item, answer: text }
+                    : item
+                );
+              })
+            );
+          },
+          onDone: (generation: ChatGeneration) => {
+            if (!isActiveChatRequest(currentTokenRef.current, token)) return;
             completed = true;
-            updateLatest(activeToken, (item) => ({
-              ...item,
-              generation,
-              streaming: false,
-            }));
+            const blocked = Boolean(
+              generation.fallback_reason === "safe_redirect" ||
+                generation.fallback_reason?.startsWith("policy_") ||
+                generation.fallback_reason === "llm_output_rejected"
+            );
+            setExchanges((curr) =>
+              applyActiveChatUpdate(currentTokenRef.current, token, curr, (items: MessageExchange[]) => {
+                return items.map((item, idx) =>
+                  idx === items.length - 1
+                    ? {
+                        ...item,
+                        streaming: false,
+                        generation,
+                        thinkingSteps: blocked
+                          ? [
+                              "İstek sınıflandırıldı",
+                              "Yanıt güvenlik kontrolünden geçmedi",
+                            ]
+                          : [
+                              "İstek sınıflandırıldı",
+                              "Kanıtlar kontrol edildi",
+                              "Yanıt güvenlik kontrolünden geçti",
+                            ],
+                      }
+                    : item
+                );
+              })
+            );
           },
         },
-        activeController.signal
+        conversationState,
+        controller.signal
       );
     } catch (reason) {
       const stopped = reason instanceof DOMException && reason.name === "AbortError";
       const error = stopped
         ? "Yanıt akışı kullanıcı tarafından durduruldu."
-        : reason instanceof Error
+        : reason instanceof Error &&
+            reason.message &&
+            reason.message !== "Failed to fetch" &&
+            !reason.message.includes("fetch failed")
           ? reason.message
-          : "Yanıt üretilemedi.";
+          : CONNECTION_ERROR;
+
       if (!completed) {
-        if (isActiveChatRequest(requestToken.current, activeToken)) {
-          updateLatest(activeToken, (item) => ({
-            ...item,
-            answer: "",
-            generation: undefined,
-            streaming: false,
-            error,
-          }));
+        if (isActiveChatRequest(currentTokenRef.current, token)) {
+          setExchanges((curr) =>
+            applyActiveChatUpdate(currentTokenRef.current, token, curr, (items: MessageExchange[]) => {
+              return items.map((item, idx) =>
+                idx === items.length - 1 && item.streaming
+                  ? {
+                      ...item,
+                      answer: "",
+                      generation: undefined,
+                      streaming: false,
+                      error,
+                    }
+                  : item
+              );
+            })
+          );
         }
       }
     } finally {
-      if (isActiveChatRequest(requestToken.current, activeToken)) {
+      if (isActiveChatRequest(currentTokenRef.current, token)) {
         setLoading(false);
-        controller.current = null;
+        activeController.current = null;
       }
     }
-  }
-
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    void ask(message);
-  }
-
-  function stop() {
-    controller.current?.abort();
-  }
-
-  function resetConversation() {
-    const resetState = resetChatSession(requestToken.current);
-    const activeController = controller.current;
-    requestToken.current = resetState.requestToken;
-    controller.current = null;
-    activeController?.abort();
-    setExchanges(resetState.exchanges);
-    setMessage(resetState.message);
-    setLoading(resetState.loading);
-    if (resetState.focusInput) {
-      requestAnimationFrame(() => messageInput.current?.focus());
-    }
-  }
+  };
 
   return (
-    <main className={styles.main} aria-busy={loading}>
-      <header className={styles.header}>
-        <div>
-          <span className={styles.eyebrow}>Kaynakla sınırlandırılmış üretim</span>
-          <h1>Kanıta dayalı asistan</h1>
-          <p>Doğrulanmış kampanya verileri ve bilgi tabanı üzerinden kanıta bağlı yanıtlar sunar.</p>
-        </div>
-        <div className={styles.chatHeaderActions}>
-          <button
-            aria-label="Yeni sohbet başlat"
-            className={styles.resetChatButton}
-            onClick={resetConversation}
-            type="button"
-          >
-            Yeni sohbet
-          </button>
-          <span className={styles.liveStatus}><span /> Kanıta bağlı</span>
-        </div>
-      </header>
-      <section className={styles.chatLayout}>
-        <article className={`${styles.card} ${styles.chat}`}>
-          <div
-            className={styles.transcript}
-            role="log"
-            aria-live="polite"
-            aria-relevant="additions text"
-            aria-busy={loading}
-          >
-            {exchanges.length === 0 && (
-              <div className={styles.chatWelcome}>
-                <span className={styles.assistantMark}>RnR</span>
-                <h2>Size nasıl yardımcı olabilirim?</h2>
-                <p>Finansman oranlarını karşılaştırabilir, kampanya koşullarını inceleyebilir veya katılım bankacılığı terimlerini sorabilirsiniz.</p>
-              </div>
-            )}
+    <main className={styles.main}>
+      <section className={styles.assistantLayout}>
+        <section className={styles.pageHeader}>
+          <span className={styles.headerAiIcon} aria-hidden="true">
+            ✦
+          </span>
+          <div className={styles.headerCopy}>
+            <h1>Pusula AI</h1>
+            <p>Katılım bankacılığında akıllı karar asistanınız</p>
+          </div>
+        </section>
+
+        <section className={styles.chatPanel}>
+          <div className={styles.messages} role="log" aria-live="polite">
             {exchanges.map((exchange, index) => (
-              <div className={styles.exchange} key={`${exchange.question}-${index}`}>
-                <div className={`${styles.message} ${styles.userMessage}`}>{exchange.question}</div>
-                <div className={`${styles.message} ${styles.assistantMessage}`}>
-                  <div className={styles.answerHeader}>
-                    <span className={styles.assistantMark}>RnR</span>
-                    <div>
-                      <strong>RAGnROLL Asistan</strong>
-                      <small>
-                        {generationLabel(exchange.generation)}
-                      </small>
+              <div key={index} style={{ display: "contents" }}>
+                <div className={styles.userRow}>
+                  <div className={styles.userBubble}>
+                    <p>{exchange.question}</p>
+                    <div className={styles.messageMeta}>
+                      {exchange.time ?? "Şimdi"} <span>✓✓</span>
                     </div>
                   </div>
-                  {!exchange.answer && exchange.streaming && (
-                    <span className={styles.typing} aria-label="Yanıt hazırlanıyor"><i /><i /><i /></span>
-                  )}
-                  {exchange.error && <span className={styles.inlineError} role="alert">{exchange.error}</span>}
-                  {exchange.answer && (
-                    <>
-                      <p className={styles.answerText}>{exchange.answer}<span className={exchange.streaming ? styles.cursor : undefined} /></p>
-                      {exchange.meta && (
-                        <div className={styles.answerMeta}>
-                          <span className={styles.badge}>{exchange.meta.plan.route}</span>
-                          <span className={styles.confidence}>Güven %{Math.round(exchange.meta.confidence * 100)}</span>
+                </div>
+
+                <div className={styles.botRow}>
+                  <div className={styles.botAvatar} aria-hidden="true">
+                    ✦
+                  </div>
+                  <div className={styles.botBubble}>
+                    {exchange.thinkingSteps && (
+                      <details className={styles.thinkingPanel} open={exchange.streaming}>
+                        <summary>
+                          <span className={styles.thinkingIcon} aria-hidden="true">✦</span>
+                          {exchange.streaming && (
+                            <span className={styles.thinkingDots} aria-label="İşleniyor">
+                              <i /> <i /> <i />
+                            </span>
+                          )}
+                        </summary>
+                        <ul>
+                          {exchange.thinkingSteps.map((step) => (
+                            <li
+                              key={step}
+                              className={step.includes("geçmedi") ? styles.thinkingFailed : undefined}
+                            >
+                              {step}
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
+                    {exchange.error ? (
+                      <p style={{ color: "#b91c1c" }}>{exchange.error}</p>
+                    ) : (
+                      <p style={{ whiteSpace: "pre-line" }}>
+                        {exchange.answer}
+                      </p>
+                    )}
+
+                    {exchange.generation && (
+                      <div style={{ marginTop: "6px", fontSize: "12px", opacity: 0.8 }}>
+                        <small>{generationLabel(exchange.generation)}</small>
+                      </div>
+                    )}
+
+                    {exchange.sources && exchange.sources.length > 0 && (
+                      <div className={styles.sourcesBlock}>
+                        <strong>Kaynaklar:</strong>
+                        <div className={styles.sourcesList}>
+                          {exchange.sources.map((source, sIndex) => (
+                            (() => {
+                              const href = safeSourceUrl(source.source_url);
+                              const label = sourceDisplayLabel(source);
+                              return href ? (
+                                <a
+                                  className={styles.sourceBadge}
+                                  href={href}
+                                  key={sIndex}
+                                  target="_blank"
+                                  rel="noreferrer noopener"
+                                  aria-label={`${label} web sitesini aç`}
+                                >
+                                  {label}<span className={styles.sourceArrow} aria-hidden="true">→</span>
+                                </a>
+                              ) : (
+                                <span className={styles.sourceBadge} key={sIndex}>
+                                  {label}
+                                </span>
+                              );
+                            })()
+                          ))}
                         </div>
-                      )}
-                      {exchange.meta?.warnings.map((warning) => <span className={`${styles.badge} ${styles.warningBadge}`} key={warning}>{warning}</span>)}
-                      {!!exchange.meta?.sources.length && (
-                        <details className={styles.sources}>
-                          <summary>{exchange.meta.sources.length} kanıt kaynağını görüntüle</summary>
-                          <div className={styles.sourceGrid}>
-                            {exchange.meta.sources.map((source, sourceIndex) => source.source_url ? (
-                              <a className={styles.sourceCard} href={source.source_url} key={`${source.source_url}-${sourceIndex}`} rel="noreferrer" target="_blank"><span>K{sourceIndex + 1}</span><div><strong>{source.bank_name || source.title || source.campaign_id}</strong><small>Resmî kaynağı aç ↗</small></div></a>
-                            ) : (
-                              <div className={styles.sourceCard} key={`${source.term_id}-${sourceIndex}`}><span>K{sourceIndex + 1}</span><div><strong>{source.title || source.term_id}</strong><small>Yerel terminoloji kaydı</small></div></div>
-                            ))}
-                          </div>
-                        </details>
-                      )}
-                    </>
-                  )}
+                      </div>
+                    )}
+
+                    <div className={styles.botTime}>{exchange.time ?? "Şimdi"}</div>
+                  </div>
                 </div>
               </div>
             ))}
-            <div ref={conversationEnd} />
+            <div ref={messagesEndRef} />
           </div>
-          <form className={styles.chatControls} onSubmit={submit}>
-            <label className={styles.visuallyHidden} htmlFor="chat-message">Sorunuz</label>
-            <textarea className={styles.chatInput} id="chat-message" maxLength={4000} minLength={1} onChange={(event) => setMessage(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); if (!loading) void ask(message); } }} placeholder="Katılım bankacılığı hakkında sorunuzu yazın…" ref={messageInput} rows={2} value={message} />
-            {loading ? (
-              <button className={styles.stopButton} onClick={stop} type="button">Durdur</button>
-            ) : (
-              <button className={styles.sendButton} disabled={!message.trim()} type="submit" aria-label="Gönder">↑</button>
-            )}
-          </form>
-          <p className={styles.disclaimer}>Yanıtlar bilgilendirme amaçlıdır; güncel koşulları bankanın resmî kanalından doğrulayın.</p>
-        </article>
-        <aside className={`${styles.card} ${styles.suggestionPanel}`}>
-          <span className={styles.eyebrow}>Başlangıç önerileri</span>
-          <h2>Ne sorabilirsiniz?</h2>
-          <div className={styles.list}>
-            {suggestions.map((question) => <button className={styles.listButton} disabled={loading} key={question} onClick={() => void ask(question)} type="button">{question}</button>)}
+
+          <div className={styles.inputArea}>
+            <button
+              type="button"
+              aria-label="Hazır soruları aç veya kapat"
+              className={styles.plusButton}
+              onClick={() => setShowSuggestions((shown) => !shown)}
+            >
+              ＋
+            </button>
+
+            <div className={styles.inputWrapper}>
+              <label htmlFor="chat-message" style={{ display: "none" }}>
+                Sorunuz
+              </label>
+              <input
+                id="chat-message"
+                ref={messageInput}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSendMessage();
+                }}
+                type="text"
+                placeholder="Sorunuzu yazın..."
+                disabled={loading}
+              />
+              <button
+                type="button"
+                aria-label="Mesajı gönder"
+                onClick={() => handleSendMessage()}
+                className={styles.sendButton}
+                disabled={loading}
+              >
+                ➤
+              </button>
+            </div>
           </div>
-          <div className={styles.safetyNote}><strong>Kanıt koruması</strong><p>Üretim servisine ulaşılamazsa veya kaynak dışı yanıt oluşursa doğrulanmış yerel cevap otomatik gösterilir.</p></div>
+
+          <div className={styles.disclaimer}>
+            Kanıta bağlı üretim. Yanıtlar bilgilendirme amaçlıdır. Detaylı bilgi için
+            lütfen bankanızla iletişime geçiniz.
+          </div>
+
+          <div className={styles.assistantBenefits}>
+            <div>
+              <span aria-hidden="true">✦</span>
+              <strong>7/24 Akıllı Destek</strong>
+              <small>İhtiyacınız olduğunda yanınızda</small>
+            </div>
+            <div>
+              <span aria-hidden="true">✓</span>
+              <strong>Güvenilir ve Güncel Bilgi</strong>
+              <small>Veriye dayalı anlaşılır yanıtlar</small>
+            </div>
+            <div>
+              <span aria-hidden="true">⌁</span>
+              <strong>Size Özel Öneriler</strong>
+              <small>Tercihlerinize uygun seçenekler</small>
+            </div>
+          </div>
+        </section>
+
+        <aside className={styles.aiSideRail}>
+          <section className={styles.aiMarkCard}>
+            <div className={styles.aiMarkOrbit} aria-hidden="true">
+              <span>✦</span>
+              <i>AI</i>
+            </div>
+            <h2>Pusula AI</h2>
+            <p>Finansal kararlarınız için akıllı yol arkadaşınız.</p>
+            <button
+              type="button"
+              className={styles.resetChatButton}
+              aria-label="Yeni sohbet başlat"
+              onClick={handleResetChat}
+            >
+              Yeni sohbet
+            </button>
+          </section>
+
+          {showSuggestions && (
+            <section className={styles.quickQuestions}>
+              <div className={styles.quickQuestionsTitle}>
+                <span aria-hidden="true">✦</span>
+                <strong>Hazır Sorular</strong>
+              </div>
+              <div className={styles.quickQuestionList}>
+                {SUGGESTIONS.map((question) => (
+                  <button
+                    key={question}
+                    type="button"
+                    onClick={() => handleSendMessage(question)}
+                  >
+                    <span>{question}</span>
+                    <span aria-hidden="true">›</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
         </aside>
       </section>
     </main>

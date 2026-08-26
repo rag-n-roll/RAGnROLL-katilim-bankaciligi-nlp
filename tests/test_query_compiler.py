@@ -1,6 +1,29 @@
 import pytest
 
 from src.query import DomainQueryCompiler
+from src.query.compiler import _answer_confidence
+
+
+def test_answer_confidence_weights_verified_candidate_evidence():
+    score, components = _answer_confidence(typed=2, evidenced=1, candidates=2)
+
+    assert score == 0.715
+    assert components == {
+        "typed_field": 1.0,
+        "evidence_coverage": 0.5,
+        "candidate_coverage": 0.4,
+    }
+
+
+def test_answer_confidence_is_zero_without_candidates():
+    assert _answer_confidence(typed=3, evidenced=3, candidates=0) == (
+        0.0,
+        {
+            "typed_field": 0.0,
+            "evidence_coverage": 0.0,
+            "candidate_coverage": 0.0,
+        },
+    )
 
 
 def test_compiler_routes_exact_financing_question_to_structured_query():
@@ -40,7 +63,33 @@ def test_compiler_links_domain_definition_to_ontology():
 
     assert plan.route == "HYBRID_RAG"
     assert plan.intent == "definition"
-    assert any(item.get("term_id") == "TRM0462" for item in plan.terminology_rewrites)
+
+
+def test_compiler_recognizes_profit_pool_informational_question():
+    plan = DomainQueryCompiler().compile("Katılım bankacılığındaki kâr payı havuzu nasıl işler?")
+    assert plan.intent == "definition"
+    assert plan.route == "HYBRID_RAG"
+    assert "Fon Havuzu" in plan.canonical_query
+    assert any(item.get("term_id") == "TRM0452" for item in plan.terminology_rewrites)
+
+
+@pytest.mark.parametrize(
+    "query",
+    (
+        "Katılım bankacılığı nedir?",
+        "Konut finansmanında katılım bankacılığı ilkeleri nelerdir?",
+    ),
+)
+def test_compiler_recognizes_foundational_participation_banking_questions(query):
+    plan = DomainQueryCompiler().compile(query)
+
+    assert plan.intent == "definition"
+    assert plan.route == "HYBRID_RAG"
+    assert plan.confidence_components["trusted_domain"] is True
+    assert any(
+        item.get("term_id") == "TRM0463"
+        for item in plan.terminology_rewrites
+    )
 
 
 @pytest.mark.parametrize(
@@ -68,3 +117,170 @@ def test_compiler_safely_redirects_complaints_and_rejects_empty_queries():
     assert plan.warnings
     with pytest.raises(ValueError, match="boş olamaz"):
         compiler.compile("   ")
+
+
+def test_compiler_fails_closed_for_unmatched_out_of_domain_query():
+    plan = DomainQueryCompiler().compile("İstanbul'da hava durumu nasıl?")
+
+    assert plan.intent == "unknown"
+    assert plan.route == "SAFE_REDIRECT"
+    assert plan.confidence == 0.0
+
+
+@pytest.mark.parametrize(
+    "query",
+    (
+        "Konut finansmanı için seçenekler neler?",
+        "Bana bir finansman bul",
+    ),
+)
+def test_product_discovery_uses_hybrid_rag(query):
+    plan = DomainQueryCompiler().compile(query)
+
+    assert plan.intent == "product_search"
+    assert plan.route == "HYBRID_RAG"
+
+
+def test_metric_bound_comparison_keeps_structured_sql():
+    plan = DomainQueryCompiler().compile(
+        "Konut finansmanında en düşük kâr payı hangisi?"
+    )
+
+    assert plan.route == "STRUCTURED_SQL"
+    assert plan.slots["metric"] == "PROFIT_RATE"
+    assert plan.slots["aggregation"] == "MIN"
+
+
+def test_aidatsiz_product_query_is_typed_as_fee_metric():
+    plan = DomainQueryCompiler().compile("Aidatsız kart seçenekleri nelerdir?")
+
+    assert plan.intent == "product_search"
+    assert plan.route == "HYBRID_RAG"
+    assert plan.slots["metric"] == "FEE"
+
+
+def test_product_search_keeps_confidence_evidence_separate_from_base_score():
+    plan = DomainQueryCompiler().compile("Konut finansmanı için seçenekler neler?")
+
+    assert plan.confidence == 0.55
+    assert plan.confidence_components["product"] == {
+        "product_type": "financing",
+        "financing_type": "housing",
+    }
+    assert plan.confidence_components["filters"]["active_only"] is True
+
+
+@pytest.mark.parametrize(
+    ("query", "financing_type"),
+    (("Konut", "housing"), ("Taşıt", "vehicle")),
+)
+def test_configured_product_only_term_is_in_domain(query, financing_type):
+    plan = DomainQueryCompiler().compile(query)
+
+    assert plan.intent == "product_search"
+    assert plan.route == "HYBRID_RAG"
+    assert plan.confidence == 0.55
+    assert plan.confidence_components["product"] == {
+        "product_type": "financing",
+        "financing_type": financing_type,
+    }
+    assert plan.confidence_components["filters"]["financing_type"] == financing_type
+
+
+@pytest.mark.parametrize(
+    "query",
+    (
+        "Bir yılda kaç ay vardır?",
+        "Kampanya sayfası nedir?",
+        "Bu restoranın oran kaç menüsü var?",
+        "Kartal'da hava nasıl?",
+    ),
+)
+def test_financial_substrings_do_not_make_out_of_domain_queries_structured(query):
+    plan = DomainQueryCompiler().compile(query)
+
+    assert plan.intent == "unknown"
+    assert plan.route == "SAFE_REDIRECT"
+    assert plan.confidence == 0.0
+
+
+def test_product_matching_uses_word_boundaries_without_breaking_card_queries():
+    collision = DomainQueryCompiler().compile("Kartal'da hava nasıl?")
+    legitimate = DomainQueryCompiler().compile("Kart seçenekleri neler?")
+
+    assert "product_type" not in collision.slots
+    assert collision.confidence_components["product"] == {}
+    assert legitimate.intent == "product_search"
+    assert legitimate.route == "HYBRID_RAG"
+    assert legitimate.slots["product_type"] == "card"
+
+
+@pytest.mark.parametrize(
+    ("query", "intent", "metric", "aggregation"),
+    (
+        ("Katılım bankalarını listele", "bank_list", None, None),
+        (
+            "Albaraka Türk kampanyalarını sayar mısın?",
+            "campaign_count",
+            None,
+            "COUNT",
+        ),
+        (
+            "Konut finansmanında oran kaçtır?",
+            "rate_query",
+            "PROFIT_RATE",
+            None,
+        ),
+    ),
+)
+def test_inflected_measurable_queries_keep_structured_routes(
+    query, intent, metric, aggregation
+):
+    plan = DomainQueryCompiler().compile(query)
+
+    assert plan.intent == intent
+    assert plan.route == "STRUCTURED_SQL"
+    assert plan.slots["metric"] == metric
+    assert plan.slots["aggregation"] == aggregation
+
+
+def test_inflected_card_product_is_domain_evidence_without_matching_kartal():
+    card = DomainQueryCompiler().compile("Kartım")
+    collision = DomainQueryCompiler().compile("Kartal'da hava nasıl?")
+
+    assert card.intent == "product_search"
+    assert card.route == "HYBRID_RAG"
+    assert card.slots["product_type"] == "card"
+    assert card.confidence == 0.55
+    assert collision.intent == "unknown"
+    assert "product_type" not in collision.slots
+
+
+@pytest.mark.parametrize(
+    "query",
+    (
+        "Akşam yemeği için seçenekler neler?",
+        "Bu işte ne kullanabilirim?",
+        "Aşı başvurusu için hangi belge gerekir?",
+    ),
+)
+def test_generic_discovery_and_requirement_cues_fail_closed(query):
+    plan = DomainQueryCompiler().compile(query)
+
+    assert plan.intent == "unknown"
+    assert plan.route == "SAFE_REDIRECT"
+    assert plan.confidence == 0.0
+
+
+def test_chained_turkish_suffixes_preserve_measurable_bank_queries():
+    campaign = DomainQueryCompiler().compile(
+        "Albaraka Türk kampanyalarından kaç tanesi aktif?"
+    )
+    banks = DomainQueryCompiler().compile("Katılım bankalarının sayısı kaç?")
+
+    assert campaign.intent == "campaign_count"
+    assert campaign.route == "STRUCTURED_SQL"
+    assert campaign.slots["banks"] == ["albaraka-turk"]
+    assert campaign.slots["aggregation"] == "COUNT"
+    assert banks.intent == "bank_list"
+    assert banks.route == "STRUCTURED_SQL"

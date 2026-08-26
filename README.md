@@ -20,6 +20,93 @@ karşılaştırma ve kaynaklı soru-cevap sunan yerel çalışabilir platform.
 - FastAPI sözleşmeleri ve canlı Next.js dashboard
 - Golden Set, edge-case testleri, gecikme/hata ve veri kalitesi metrikleri
 
+
+## Pusula AI — Güvenlikli Asistan Mimarisi
+
+Pusula AI, katılım bankacılığına odaklanan, **LLM-öncelikli fakat deterministik fail-closed güvenlik kapılarıyla korunan** bir asistan mimarisine sahiptir.
+
+```text
+                  ┌────────────┐
+                  │ InputGuard │
+                  └─────┬──────┘
+                        │ (maskeleme / erken ret)
+                        ▼
+                ┌───────────────┐
+                │ PolicyPlanner │ (LLM planlayıcı)
+                └───────┬───────┘
+                        │
+                        ▼
+               ┌─────────────────┐
+               │ PolicyValidator │ (deterministik veto)
+               └────────┬────────┘
+                        │
+         ┌──────────────┼──────────────┐
+         ▼              ▼              ▼
+     [ANSWER]       [CLARIFY]       [REFUSE]
+         │              │              │
+         ▼              │              │
+┌──────────────────┐    │              │
+│ ToolOrchestrator │    │              │
+└────────┬─────────┘    │              │
+         ▼              │              │
+┌──────────────────┐    │              │
+│ AnswerGenerator  │    │              │
+└────────┬─────────┘    │              │
+         ▼              │              │
+   ┌────────────┐       │              │
+   │ OutputGate │       │              │
+   └─────┬──────┘       │              │
+         │              │              │
+         └──────────────┼──────────────┘
+                        │
+                        ▼
+             ┌─────────────────────┐
+             │ PresentationAdapter │
+             └──────────┬──────────┘
+                        │
+                        ▼
+                ┌──────────────┐
+                │ SessionGuard │ (SSE / Arayüz)
+                └──────────────┘
+```
+
+### Bileşenler ve Güvenlik Hatları
+1. **InputGuard**: İstek uzunluğunu, sistem promptu/saklı bilgi çıkarma girişimlerini, hassas verileri (TCKN, IBAN, kredi kartı numaraları maskelenir) ve yetkisiz işlem/şikâyet taleplerini araç çağrısı yapılmadan önce doğrular ve filtreler.
+2. **PolicyPlanner**: Kullanıcı niyetini, alan kapsamını (`in_domain`), ontoloji kavramlarını ve sınırlandırılmış araç çağrılarını JSON şemasıyla önerir.
+3. **PolicyValidator**: Planlayıcı çıktısını güvenilmeyen girdi olarak değerlendirir. Deterministik enum, allowlist, parametre sınırları ve alan dışı kontrollerini fail-closed uygular.
+4. **ToolOrchestrator**: Yalnızca onaylanmış planı yürütür (SQLite, hibrit arama, karşılaştırma motoru, terminoloji). Kanıtlar kararlı `campaign_id` ve `term_id` üzerinden tekilleştirilir.
+5. **OutputGate**: Model çıktısını doğrular. Sayısal/oran/vade iddialarını kanıt paketiyle karşılaştırır, tekrarlanan cümle ve blokları tespit eder, nitel iddiaları (ör. "en iyi", "en uygun") denetler ve tek onarım (repair) döngüsü uygular. Başarısızlıkta güvenli deterministik yedek yanıta düşer.
+6. **PresentationAdapter**: Dahili `[K#]` kaynak işaretlerini kullanıcı metninden arındırarak temiz `answer_display` üretir; kaynakları tekilleştirilmiş rozetler ve resmî bağlantılar olarak sunar. Dahili model/sağlayıcı ayrıntılarını dışarı sızdırmaz.
+7. **SessionGuard (SSE Idempotency)**: Akış olayları `eventId` (`{requestId}:{sequence}`) ve monoton artan sıra numarası taşır. Arayüz yinelenen veya eski olayları güvenle yok sayar.
+
+### Desteklenen Alan ve Katılım Bankaları
+Pusula AI, Türkiye'deki 10 katılım bankasının ürün ve kampanyalarını destekler:
+- **Albaraka Türk**
+- **Kuveyt Türk**
+- **Türkiye Finans**
+- **Vakıf Katılım**
+- **Ziraat Katılım**
+- **Emlak Katılım**
+- **Hayat Finans**
+- **Dünya Katılım**
+- **Adil Katılım**
+- **TOM Katılım**
+
+Alan dışı sorular (hava durumu, spor, kripto para vb.) araç çağrısı tetiklenmeden nazikçe reddedilir.
+
+### Öznel Karşılaştırmalarda Netleştirme (`CLARIFY`) Akışı
+"En uygun taşıt finansmanı hangisi?" gibi ölçüt içermeyen öznel isteklerde asistan doğrudan ürün sıralamak yerine `CLARIFY` durumuna geçer ve eksik ölçütleri ister:
+- **Vade (`term_months`)**
+- **Tutar (`amount`)**
+- **Masraf önceliği (`fee_priority`)**
+
+Kullanıcı bu ölçütleri sağladığında (ör. "36 ay, 500.000 TL, masraf öncelikli"), asistan tarafsız, kanıta dayalı ve karşılaştırmalı yanıt üretir.
+
+### Rota ve Kalibrasyon Değerlendirmesi
+Asistanın intent exact-match, rota doğruluğu, SQL kesinliği ve beklenen kalibrasyon hatasını (ECE) doğrulamak için:
+```bash
+pytest tests/test_query_routing_evaluation.py -v
+```
 ## Kurulum yolları ve önkoşullar
 
 Platformdan bağımsız tüm yerel kurulumlar Python **3.11** ve Node.js **22**
@@ -65,7 +152,7 @@ kullanın. Örneğin:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m uvicorn src.main:app --reload
+.\.venv\Scripts\python.exe -m uvicorn src.main:app --reload --env-file .env
 ```
 
 ### Linux
@@ -102,10 +189,13 @@ cd ../..
 
 İlk kurulum için yalnızca API ve dashboard'u çalıştırın; Python ve Node
 bağımlılıkları yukarıdaki platform bölümünde bir kez kurulmuş olmalıdır. API'yi
-bir terminalde başlatın:
+bir terminalde başlatın. `.env` içindeki EVREN, Chroma veya yerel model ayarlarının
+uygulanması için dosyayı açıkça Uvicorn'a verin. `.env` henüz yoksa önce
+`.env.example` dosyasını `.env` adıyla kopyalayın; mevcut `.env` dosyanızın
+üzerine yazmayın:
 
 ```bash
-python -m uvicorn src.main:app --reload
+python -m uvicorn src.main:app --reload --env-file .env
 ```
 
 Windows PowerShell'de aynı komut çalışır. Dashboard için ikinci terminalde:

@@ -45,31 +45,54 @@ export function getHealth() {
   return apiRequest<{ status: string; database: string }>("/health");
 }
 
-export function getDashboardSnapshot() {
-  return apiRequest<{
-    summary: {
+export type DashboardSummaryData = {
+  campaign_count: number;
+  bank_count: number;
+  record_count: number;
+  average_profit_share_rate: number | null;
+  last_updated_at: string | null;
+};
+
+export function getDashboardSummary() {
+  return apiRequest<DashboardSummaryData>("/dashboard/summary");
+}
+
+export type BankSummaryData = {
+  items: Array<{ slug: string; name: string; campaign_count: number }>;
+  total: number;
+};
+
+export function getBanks() {
+  return apiRequest<BankSummaryData>("/banks");
+}
+
+export type DashboardSnapshotData = {
+  summary: {
+    campaign_count: number;
+    bank_count: number;
+    record_count: number;
+    average_profit_share_rate: number | null;
+    last_updated_at: string | null;
+  };
+  distributions: {
+    banks: Array<{
+      slug: string;
+      name: string;
       campaign_count: number;
-      bank_count: number;
-      record_count: number;
-      average_profit_share_rate: number | null;
-      last_updated_at: string | null;
-    };
-    distributions: {
-      banks: Array<{
-        slug: string;
-        name: string;
-        campaign_count: number;
-        campaign_share: number;
-      }>;
-    };
-    recent_campaigns: Array<{
-      id: string;
-      bank_name: string;
-      title: string;
-      product_type: string | null;
-      updated_at: string;
+      campaign_share: number;
     }>;
-  }>("/dashboard/snapshot?recent_limit=8");
+  };
+  recent_campaigns: Array<{
+    id: string;
+    bank_name: string;
+    title: string;
+    product_type: string | null;
+    updated_at: string;
+  }>;
+};
+
+export function getDashboardSnapshot() {
+  return apiRequest<DashboardSnapshotData>("/dashboard/snapshot?recent_limit=8");
 }
 
 export function getFilters() {
@@ -133,6 +156,95 @@ export function compareCampaigns(payload: ComparisonRequest) {
   }>("/compare", { method: "POST", body: JSON.stringify(payload) });
 }
 
+export type FinancingType = "consumer" | "vehicle" | "housing" | "commercial";
+
+export type FinancingQuoteRequest = {
+  financing_type?: FinancingType;
+  campaign_key?: string;
+  amount: number;
+  term_months: number;
+  currency?: "TRY";
+  fee_priority?: boolean;
+  turkiye_finans_credit_id?: number;
+};
+
+export type FinancingProductRateBand = {
+  min_term_months: number;
+  max_term_months: number;
+  min_amount?: number | null;
+  max_amount?: number | null;
+  monthly_profit_rate: number;
+};
+
+export type FinancingCampaignBankProduct = {
+  bank_slug: string;
+  bank_name: string;
+  external_product_id: string;
+  campaign_name: string;
+  rate_bands: FinancingProductRateBand[];
+  monthly_profit_rate?: number | null;
+  source_url: string;
+};
+
+export type FinancingCampaign = {
+  campaign_key: string;
+  display_name: string;
+  financing_type: FinancingType;
+  bank_products: FinancingCampaignBankProduct[];
+  availability_message?: string | null;
+};
+
+export type FinancingCampaignsResponse = {
+  retrieved_at: string;
+  campaigns: FinancingCampaign[];
+};
+
+export type FinancingQuote = {
+  bank_slug: string;
+  bank_name: string;
+  status:
+    | "available"
+    | "unsupported"
+    | "ineligible"
+    | "stale"
+    | "temporarily_unavailable";
+  product_name?: string | null;
+  monthly_profit_rate?: number | null;
+  monthly_installment?: number | null;
+  total_repayment?: number | null;
+  annual_cost_rate?: number | null;
+  fees_total?: number | null;
+  source_url?: string | null;
+  retrieved_at?: string | null;
+  calculation_origin?: string | null;
+  message: string;
+};
+
+export type FinancingQuoteResponse = {
+  generated_at: string;
+  currency: "TRY";
+  quotes: FinancingQuote[];
+  coverage: {
+    catalog_bank_count: number;
+    available: number;
+    unsupported: number;
+  };
+  disclaimer: string;
+};
+
+export function getFinancingQuotes(payload: FinancingQuoteRequest) {
+  return apiRequest<FinancingQuoteResponse>("/financing-quotes", {
+    method: "POST",
+    body: JSON.stringify({ currency: "TRY", ...payload }),
+  });
+}
+
+export function getFinancingCampaigns() {
+  return apiRequest<FinancingCampaignsResponse>(
+    "/financing-campaigns?catalog_only=true"
+  );
+}
+
 export function compileQuery(query: string) {
   return apiRequest<{
     plan: { intent: string; route: string; confidence: number };
@@ -147,14 +259,7 @@ export function sendChat(message: string) {
     answer: string;
     confidence: number;
     warnings: string[];
-    sources: Array<{
-      campaign_id?: string | null;
-      term_id?: string | null;
-      bank_name?: string | null;
-      title?: string | null;
-      source_url?: string | null;
-      evidence?: { text: string } | null;
-    }>;
+    sources: ChatSource[];
     plan: { intent: string; route: string };
     generation: ChatGeneration;
   }>("/chat", { method: "POST", body: JSON.stringify({ message }) });
@@ -163,15 +268,32 @@ export function sendChat(message: string) {
 export type ChatSource = {
   campaign_id?: string | null;
   term_id?: string | null;
+  document_id?: string | null;
   bank_name?: string | null;
+  publisher?: string | null;
   title?: string | null;
   source_url?: string | null;
+  page_start?: number | null;
+  page_end?: number | null;
   evidence?: { text: string } | null;
+};
+
+export type ChatConversationState = {
+  pending_intent: "product_comparison";
+  pending_query: string;
+  criteria: {
+    term_months?: number | null;
+    amount?: number | null;
+    fee_priority?: boolean | null;
+  };
 };
 
 export type ChatMeta = {
   api_version: string;
   request_id: string;
+  action?: "ANSWER" | "CLARIFY" | "REFUSE" | "REDIRECT";
+  missing_criteria?: Array<"term_months" | "amount" | "fee_priority">;
+  conversation_state?: ChatConversationState | null;
   confidence: number;
   warnings: string[];
   sources: ChatSource[];
@@ -189,22 +311,32 @@ export type ChatGeneration = {
   prompt?: { profile?: string; optimizer?: string; status?: string };
 };
 
+export type StreamEventInfo = {
+  eventId?: string;
+  sequence?: number;
+  requestId?: string;
+};
+
 type StreamHandlers = {
-  onMeta: (data: ChatMeta) => void;
-  onDelta: (text: string) => void;
-  onReplace: (text: string) => void;
-  onDone: (data: ChatGeneration) => void;
+  onMeta: (data: ChatMeta, event?: StreamEventInfo) => void;
+  onDelta: (text: string, event?: StreamEventInfo) => void;
+  onReplace: (text: string, event?: StreamEventInfo) => void;
+  onDone: (data: ChatGeneration, event?: StreamEventInfo) => void;
 };
 
 export async function streamChat(
   message: string,
   handlers: StreamHandlers,
+  conversationState?: ChatConversationState | null,
   signal?: AbortSignal
 ) {
   const response = await fetch(`${API_BASE_URL}/chat/stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({
+      message,
+      conversation_state: conversationState ?? undefined,
+    }),
     signal,
   });
   if (!response.ok) {
@@ -226,19 +358,26 @@ export async function streamChat(
 
   function consume(block: string) {
     let event = "message";
+    let blockId = "";
     const dataLines: string[] = [];
     for (const line of block.split(/\r?\n/)) {
+      if (line.startsWith("id:")) blockId = line.slice(3).trim();
       if (line.startsWith("event:")) event = line.slice(6).trim();
       if (line.startsWith("data:")) dataLines.push(line.slice(5).trimStart());
     }
     if (!dataLines.length) return;
     const data = JSON.parse(dataLines.join("\n"));
-    if (event === "meta") handlers.onMeta(data as ChatMeta);
-    else if (event === "delta") handlers.onDelta(String(data.text ?? ""));
-    else if (event === "replace") handlers.onReplace(String(data.text ?? ""));
+    const eventId = String(data.event_id || data.eventId || blockId || "");
+    const sequence = typeof data.sequence === "number" ? data.sequence : Number(data.sequence) || 0;
+    const requestId = String(data.request_id || data.requestId || (eventId ? eventId.split(":")[0] : ""));
+    const eventInfo: StreamEventInfo = { eventId, sequence, requestId };
+
+    if (event === "meta") handlers.onMeta(data as ChatMeta, eventInfo);
+    else if (event === "delta") handlers.onDelta(String(data.text ?? ""), eventInfo);
+    else if (event === "replace") handlers.onReplace(String(data.text ?? ""), eventInfo);
     else if (event === "done") {
       completed = true;
-      handlers.onDone(data as ChatGeneration);
+      handlers.onDone(data as ChatGeneration, eventInfo);
     }
     else if (event === "error") throw new Error(String(data.message ?? "Yanıt üretilemedi."));
   }

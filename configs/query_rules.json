@@ -5,7 +5,14 @@
     "faiz oranı": "kâr payı oranı",
     "kredi": "finansman",
     "ev kredisi": "konut finansmanı",
-    "araç kredisi": "taşıt finansmanı"
+    "araç kredisi": "taşıt finansmanı",
+    "katılım bankacılığı": "katılım esasları",
+    "kâr payı havuzu": "Fon Havuzu",
+    "kar payı havuzu": "Fon Havuzu",
+    "faizsiz bankacılık": "katılım esasları",
+    "mudarebe": "mudârebe",
+    "mudaraba": "mudârebe",
+    "icâre": "icare"
   },
   "product_terms": {
     "ev": {"product_type": "financing", "financing_type": "housing"},
@@ -19,12 +26,18 @@
     "katılma hesabı": {"product_type": "investment"}
   },
   "structured_intents": [
-    "product_search",
-    "product_comparison",
     "bank_list",
     "campaign_count",
     "rate_query",
     "maturity_query"
+  ],
+  "product_search_patterns": [
+    "hangi finansman",
+    "hangi ürün",
+    "uygun ürün",
+    "ne kullanabilirim",
+    "seçenekler",
+    "finansman bul"
   ],
   "blocked_transaction_intents": ["complaint_support"]
 }

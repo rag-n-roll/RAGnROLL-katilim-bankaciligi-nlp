@@ -32,11 +32,15 @@ def _enabled(value: str | None, *, default: bool = True) -> bool:
 def _database_is_healthy(database: Path) -> bool:
     if not database.is_file():
         return False
+    connection = None
     try:
-        with sqlite3.connect(database) as connection:
-            result = connection.execute("PRAGMA quick_check").fetchone()
+        connection = sqlite3.connect(database)
+        result = connection.execute("PRAGMA quick_check;").fetchone()
     except sqlite3.DatabaseError:
         return False
+    finally:
+        if connection:
+            connection.close()
     return bool(result and result[0] == "ok")
 
 
@@ -46,14 +50,24 @@ def _write_last_good_database(database: Path, snapshot: Path) -> None:
     snapshot.parent.mkdir(parents=True, exist_ok=True)
     temporary = snapshot.with_name(f".{snapshot.name}.tmp")
     temporary.unlink(missing_ok=True)
+    source = sqlite3.connect(database)
+    target = sqlite3.connect(temporary)
     try:
-        with sqlite3.connect(database) as source:
-            with sqlite3.connect(temporary) as target:
-                source.backup(target)
+        source.backup(target)
+        target.close()
+        source.close()
         if not _database_is_healthy(temporary):
             raise RuntimeError("Son iyi SQLite snapshot doğrulanamadı")
         os.replace(temporary, snapshot)
     finally:
+        try:
+            target.close()
+        except Exception:
+            pass
+        try:
+            source.close()
+        except Exception:
+            pass
         temporary.unlink(missing_ok=True)
 
 

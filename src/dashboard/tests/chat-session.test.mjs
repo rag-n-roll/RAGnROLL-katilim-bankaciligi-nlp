@@ -3,6 +3,8 @@ import test from "node:test";
 
 import {
   applyActiveChatUpdate,
+  applyStreamEvent,
+  createStreamState,
   nextChatRequestToken,
   resetChatSession,
 } from "../app/chatbot/sessionGuard.js";
@@ -47,4 +49,22 @@ test("yeni sohbet geç stream olaylarını yok sayar ve odağı girdiye ister", 
   assert.equal(resetState.message, "");
   assert.equal(resetState.loading, false);
   assert.equal(resetState.focusInput, true);
+});
+
+test("aynı event_id cevaba yalnız bir kez uygulanır (test_duplicate_sse_event_is_applied_once)", () => {
+  let state = createStreamState(7);
+  const event = { requestId: "req-1", eventId: "req-1:1", sequence: 1, text: "Yanıt" };
+  state = applyStreamEvent(state, 7, event);
+  state = applyStreamEvent(state, 7, event);
+  assert.equal(state.answer, "Yanıt");
+  assert.equal(state.seenEventIds.size, 1);
+});
+
+test("test_duplicate_sse_event_is_applied_once", () => {
+  let state = createStreamState(7);
+  const event = { requestId: "req-1", eventId: "req-1:1", sequence: 1, text: "Yanıt" };
+  state = applyStreamEvent(state, 7, event);
+  state = applyStreamEvent(state, 7, event);
+  assert.equal(state.answer, "Yanıt");
+  assert.equal(state.seenEventIds.size, 1);
 });

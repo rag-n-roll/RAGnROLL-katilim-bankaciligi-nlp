@@ -12,7 +12,12 @@ from src.knowledge import TerminologyService
 from src.persistence import CampaignStore
 from src.preprocessing.clean_text import tokenize_turkish
 from src.retrieval.chroma import ChromaVectorRetriever
-from src.retrieval.documents import campaign_documents, terminology_documents
+from src.retrieval.documents import (
+    PDF_EVIDENCE_PATH,
+    campaign_documents,
+    pdf_evidence_documents,
+    terminology_documents,
+)
 from src.retrieval.graph import KnowledgeGraphRetriever
 from src.retrieval.qdrant import EvrenQdrantRetriever
 
@@ -64,7 +69,7 @@ class HybridRetriever:
             self.terminology
         )
         self.last_backend = "bm25"
-        self._corpus_key: tuple[int, int] | None = None
+        self._corpus_key: tuple[int, int, int] | None = None
         self._campaign_cache: list[dict[str, Any]] = []
         self._terminology_cache: list[dict[str, Any]] = []
         self._token_cache: dict[tuple[str, str], list[str]] = {}
@@ -83,7 +88,8 @@ class HybridRetriever:
     def _load_corpus(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         database_mtime = self.store.path.stat().st_mtime_ns if self.store.path.exists() else 0
         ontology_mtime = ONTOLOGY_CHUNKS_PATH.stat().st_mtime_ns
-        corpus_key = (database_mtime, ontology_mtime)
+        pdf_mtime = PDF_EVIDENCE_PATH.stat().st_mtime_ns if PDF_EVIDENCE_PATH.exists() else 0
+        corpus_key = (database_mtime, ontology_mtime, pdf_mtime)
         if corpus_key != self._corpus_key:
             self._campaign_cache = [
                 self._document(document)
@@ -93,6 +99,9 @@ class HybridRetriever:
             self._terminology_cache = [
                 self._document(document) for document in terminology_documents()
             ]
+            self._terminology_cache.extend(
+                self._document(document) for document in pdf_evidence_documents()
+            )
             active_tokens = {
                 (
                     str(document["id"]),
@@ -108,6 +117,7 @@ class HybridRetriever:
             self._corpus_key = (
                 self.store.path.stat().st_mtime_ns,
                 ONTOLOGY_CHUNKS_PATH.stat().st_mtime_ns,
+                pdf_mtime,
             )
         return self._campaign_cache, self._terminology_cache
 
@@ -221,11 +231,12 @@ class HybridRetriever:
                 or document["metadata"]["financing_type"] in {"", financing_type}
             )
         ]
-        terminology = (
-            cached_terminology
-            if not source_types or "terminology" in source_types
-            else []
-        )
+        terminology = [
+            document
+            for document in cached_terminology
+            if not source_types
+            or document["metadata"].get("source_type") in source_types
+        ]
         documents = campaigns + terminology
         graph_expansion = self.graph_retriever.expand(
             query, intent=str(filters.get("intent") or "") or None

@@ -47,7 +47,7 @@
 
 .header h1,
 .hero h1 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-weight: 500;
   letter-spacing: -0.025em;
 }
@@ -240,7 +240,7 @@
 
 .heroCompass strong {
   margin-top: 46px;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: 25px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -259,7 +259,7 @@
   top: 19px;
   left: 50%;
   color: #f4cb67;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: 18px;
   transform: translateX(-50%);
 }
@@ -334,7 +334,7 @@
 .sectionHeading h2 {
   margin-top: 5px;
   color: #06473e;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: clamp(26px, 4vw, 36px);
   font-weight: 500;
 }
@@ -399,7 +399,7 @@
 .card h2 {
   margin-bottom: 14px;
   color: #06473e;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: 21px;
   font-weight: 600;
 }
@@ -882,7 +882,7 @@
   background: linear-gradient(145deg, #002739, #08766f);
   box-shadow: 0 5px 12px rgba(0, 39, 57, 0.16);
   color: #fff;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.03em;
@@ -1406,13 +1406,7 @@ a.sourceCard:hover {
   .button,
   .secondaryButton,
   .listButton {
-    transition: none;
-  }
-
-  .button:hover:not(:disabled),
-  .secondaryButton:hover,
-  .listButton:hover:not(:disabled) {
-    transform: none;
+    transition-duration: 0.15s;
   }
 
   .orbitLabelOne,
@@ -1420,6 +1414,6 @@ a.sourceCard:hover {
   .orbitLabelThree,
   .cursor,
   .typing i {
-    animation: none;
+    animation-duration: 6s;
   }
 }

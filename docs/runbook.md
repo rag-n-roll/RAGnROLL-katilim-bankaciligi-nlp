@@ -13,6 +13,13 @@ EVREN_QDRANT_API_KEY
 LLM ve Qdrant anahtarları birbirinin yerine kullanılamaz. Qdrant için ayrıca
 `EVREN_QDRANT_PREFIX=teamNN`, `EVREN_QDRANT_PORT=443` ve REST kullanımı zorunludur.
 
+Yerel `.env` dosyasındaki değerlerin sürece gerçekten yüklenmesi için API şu
+şekilde başlatılmalıdır; yalnız dosyayı oluşturmak Uvicorn'a otomatik yükletmez:
+
+```bash
+python -m uvicorn src.main:app --reload --env-file .env
+```
+
 Başlangıç kontrolü:
 
 ```bash

@@ -20,6 +20,12 @@ def test_resolve_uses_reverse_alias_ontology_index():
     assert result["source"] == "ontology"
 
 
+def test_profit_pool_alias_resolves_to_fon_havuzu():
+    result = TerminologyService().resolve("kâr payı havuzu")
+    assert result is not None
+    assert result["canonical"] == "Fon Havuzu"
+
+
 def test_resolve_matches_canonical_terms_directly():
     service = TerminologyService()
     result = service.resolve("bloke")

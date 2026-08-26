@@ -1,0 +1,57 @@
+[
+  {
+    "document_id": "FAIZSIZ-FINANS-KURULUSLARI-MUHASEBESI",
+    "filename": "FAIZSIZ-FINANS-KURULUSLARI-MUHASEBESI.pdf",
+    "sha256": "492e1c3bcce9ab3d1f37b2208e56c20fc0a973bf4e7cbc273960e03791b93dba",
+    "page_count": 358,
+    "title": "Faizsiz Finans Kuruluşları Muhasebesi",
+    "publisher": "TKBB",
+    "source_url": "https://www.tkbb.org.tr/upload/FAIZSIZ-FINANS-KURULUSLARI-MUHASEBESI.pdf",
+    "source_kind": "user_supplied_pdf",
+    "extracted_at": "2026-08-26T18:47:02.533037+00:00"
+  },
+  {
+    "document_id": "AAOIFI-FAIZSIZ-FINANS-STANDARTLARI-GUNCELLENMIS",
+    "filename": "Faizsiz Finans Standartları AAOIFI (Güncellenmiş Versiyon).pdf",
+    "sha256": "c92a20003930ceccc015ae7a39e6c962b77688da951907b58a18903bd124b305",
+    "page_count": 1398,
+    "title": "Faizsiz Finans Standartları AAOIFI - Güncellenmiş Versiyon",
+    "publisher": "TKBB / AAOIFI",
+    "source_url": "https://tkbb.org.tr/faaliyetler/yayinlar/kitap-yayinlari",
+    "source_kind": "user_supplied_pdf",
+    "extracted_at": "2026-08-26T18:47:03.083129+00:00"
+  },
+  {
+    "document_id": "KATILIM-FINANS-URUNLERI-VE-MUHASEBE-SURECLERI",
+    "filename": "Katilim_Finans_Urunleri_ve_Muhasebe_Surecleri_2.pdf",
+    "sha256": "95888b6aa7d7fe809c15773e3d5464aeb0159a08712009cce67fe2e0734da1e3",
+    "page_count": 402,
+    "title": "Katılım Finans Ürünleri ve Muhasebe Süreçleri",
+    "publisher": "TKBB",
+    "source_url": "https://tkbb.org.tr/faaliyetler/yayinlar/kitap-yayinlari",
+    "source_kind": "user_supplied_pdf",
+    "extracted_at": "2026-08-26T18:47:03.333417+00:00"
+  },
+  {
+    "document_id": "TKBB-2025-FAALIYET-RAPORU",
+    "filename": "8803561630-2025-faaliyet-raporu.pdf",
+    "sha256": "94687eed341c543c295025170fabba5eb9f663362cbbb638415e8e323a6799e7",
+    "page_count": 174,
+    "title": "TKBB 2025 Faaliyet Raporu",
+    "publisher": "TKBB",
+    "source_url": "https://www.tkbb.org.tr/faaliyetler/yayinlar/yillik-sektor-raporlari",
+    "source_kind": "user_supplied_pdf",
+    "extracted_at": "2026-08-26T18:47:03.442416+00:00"
+  },
+  {
+    "document_id": "KATILIM-BANKACILIGINDA-KAR-DAGITIMI",
+    "filename": "KATILIM_BANKACILIGINDA_KAR_DAGITIMI.pdf",
+    "sha256": "61ac130b01c5c8721c092039155fb3759bf03b361333751b3ed4a76cf69fbfd6",
+    "page_count": 270,
+    "title": "Katılım Bankacılığında Kâr Dağıtımı",
+    "publisher": "TKBB",
+    "source_url": "https://tkbb.org.tr/upload/KATILIM_BANKACILIGINDA_KAR_DAGITIMI.pdf",
+    "source_kind": "user_supplied_pdf",
+    "extracted_at": "2026-08-26T18:47:03.473415+00:00"
+  }
+]

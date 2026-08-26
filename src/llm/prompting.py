@@ -103,6 +103,10 @@ class GroundedPromptBuilder:
                 "label": f"K{index}",
                 "campaign_id": source.get("campaign_id"),
                 "term_id": source.get("term_id"),
+                "document_id": source.get("document_id"),
+                "page_start": source.get("page_start"),
+                "page_end": source.get("page_end"),
+                "ontology_term_ids": source.get("ontology_term_ids") or [],
                 "bank_name": source.get("bank_name"),
                 "title": source.get("title"),
                 "source_url": source.get("source_url"),
@@ -122,7 +126,7 @@ class GroundedPromptBuilder:
             "sources": evidence,
             "verified_fallback_answer": fallback_answer,
         }
-        instruction_heading = "OPTİMİZE EDİLMİŞ GÖREV TALİMATI:"
+        instruction_heading = "GÖREV TALİMATI:"
         if self.mode == "gepa":
             instruction_heading = (
                 "DOĞRULANMIŞ GEPA ADAY TALİMATI "

@@ -1,185 +1,246 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import CampaignDistributionChart from "../components/CampaignDistributionChart";
 import BankLogo from "../components/BankLogo";
+import styles from "./page.module.css";
 import { getDashboardSnapshot } from "../services/api";
-import styles from "./live.module.css";
+import type { DashboardSnapshotData } from "../services/api";
 
-type Snapshot = Awaited<ReturnType<typeof getDashboardSnapshot>>;
+const heroBanks = [
+  { bank: "Kuveyt Türk", size: 54 },
+  { bank: "Hayat Finans", size: 34 },
+  { bank: "Albaraka Türk", size: 54 },
+  { bank: "TOM Katılım", size: 34 },
+  { bank: "Türkiye Finans", size: 54 },
+  { bank: "Dünya Katılım", size: 34 },
+  { bank: "Vakıf Katılım", size: 54 },
+  { bank: "Adil Katılım", size: 34 },
+  { bank: "Ziraat Katılım", size: 54 },
+  { bank: "Emlak Katılım", size: 34 },
+];
 
-function formatUpdatedAt(value: string | null) {
-  if (!value) return "Güncelleme zamanı belirtilmemiş";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return new Intl.DateTimeFormat("tr-TR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(parsed);
+function mapProductType(type?: string | null): string {
+  if (!type) return "Finansman";
+  const lower = type.toLowerCase();
+  if (lower.includes("card") || lower.includes("kart")) return "Kart";
+  if (lower.includes("invest") || lower.includes("katıl") || lower.includes("yatırım")) return "Yatırım";
+  return "Finansman";
 }
 
-export default function HomePage() {
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
-  const [error, setError] = useState("");
+export default async function HomePage() {
+  let snapshot: DashboardSnapshotData | null = null;
 
-  useEffect(() => {
-    getDashboardSnapshot()
-      .then(setSnapshot)
-      .catch((reason: Error) => setError(reason.message));
-  }, []);
+  try {
+    snapshot = await getDashboardSnapshot();
+  } catch {
+    // Doğrulanmamış finansal değer üretme; görünür boş durum gösterilir.
+    snapshot = null;
+  }
+  const bankCount = snapshot?.summary?.bank_count ?? "—";
+  const campaignCount = snapshot?.summary?.campaign_count ?? "—";
+  const avgProfitRate = snapshot?.summary?.average_profit_share_rate
+    ? `%${snapshot.summary.average_profit_share_rate.toFixed(1).replace(".", ",")}`
+    : "—";
+
+  const hasValidDistributions = Boolean(
+    snapshot?.distributions?.banks &&
+      snapshot.distributions.banks.length > 0 &&
+      snapshot.distributions.banks.some((b) => b.campaign_count > 0)
+  );
+
+  const distributionItems = hasValidDistributions
+    ? snapshot!.distributions.banks.map((b) => ({
+        name: b.name,
+        count: b.campaign_count,
+      }))
+    : [];
+
+  const legendRows = hasValidDistributions
+    ? snapshot!.distributions.banks.map((b) => [
+        b.name,
+        String(b.campaign_count),
+        `%${(b.campaign_share * 100).toFixed(1).replace(".", ",")}`,
+      ] as [string, string, string])
+    : [];
+
+  const displayCampaigns = snapshot?.recent_campaigns?.length
+    ? snapshot.recent_campaigns.map((c) => ({
+        bank: c.bank_name,
+        title: c.title,
+        type: mapProductType(c.product_type),
+        date: c.updated_at
+          ? new Date(c.updated_at).toLocaleDateString("tr-TR", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })
+          : "Güncel",
+      }))
+    : [];
 
   return (
-    <main className={`${styles.main} ${styles.homePage}`}>
-      <section className={styles.hero} aria-labelledby="home-title">
-        <div className={styles.heroCopy}>
-          <span className={styles.eyebrow}>Kanıta dayalı finansal keşif</span>
-          <h1 id="home-title">
-            Katılım bankacılığındaki seçenekleri tek pusulada görün.
-          </h1>
-          <p>
-            Canlı kampanya verisini, açıklanabilir karşılaştırmayı ve kaynaklara
-            bağlı asistan yanıtlarını aynı çalışma alanında inceleyin.
-          </p>
-          <div className={styles.heroActions}>
-            <Link className={styles.button} href="/campaigns">
-              Kampanyaları incele <span aria-hidden="true">→</span>
-            </Link>
-            <Link className={styles.secondaryButton} href="/chatbot">
-              <span aria-hidden="true">✦</span> Kanıta dayalı asistana sor
-            </Link>
+    <main className={styles.main}>
+      <section className={styles.hero}>
+        <div className={styles.heroPattern} aria-hidden="true" />
+        <div className={styles.splitChevron} aria-hidden="true" />
+        <div className={`${styles.diagonalDivider} ${styles.dividerOne}`} aria-hidden="true" />
+        <div className={`${styles.diagonalDivider} ${styles.dividerTwo}`} aria-hidden="true" />
+        <div className={styles.heroZoneGrid}>
+          <div className={styles.heroStarDivider} aria-hidden="true">
+            <i>✦</i>
+            <b>✦</b>
+            <span>✦</span>
           </div>
-        </div>
-        <div className={styles.heroVisual} aria-hidden="true">
-          <div className={styles.heroCompass}>
-            <span className={styles.compassNorth}>N</span>
-            <span className={styles.compassNeedle} />
-            <strong>Pusula</strong>
-            <small>veri · kanıt · karar</small>
+          <div className={styles.heroLeft}>
+            <h1>
+              <span className={styles.heroTitleIntro}>
+                <b>Katılım bankacılığında</b>
+                <b>fırsatları</b>
+              </span>
+              <strong>
+                <em>TEK MERKEZDEN</em>
+                <span>keşfedin.</span>
+              </strong>
+            </h1>
+            <ul className={styles.heroBenefits}>
+              <li>Kampanyaları tek ekranda görün</li>
+              <li>Bankaları saniyeler içinde karşılaştırın</li>
+              <li>Kâr payı, vade ve avantajları analiz edin</li>
+              <li>Pusula AI ile en uygun seçeneği bulun</li>
+            </ul>
+            <div className={styles.heroRightActions}>
+              <Link href="/campaigns">
+                Kampanyaları İncele <span>→</span>
+              </Link>
+              <Link href="/chatbot">
+                <i>✦</i> AI Asistana Sor
+              </Link>
+            </div>
           </div>
-          <span className={styles.orbitLabelOne}>Canlı veri</span>
-          <span className={styles.orbitLabelTwo}>Kaynak kanıtı</span>
-          <span className={styles.orbitLabelThree}>Açıklanabilir sonuç</span>
+
+          <div
+            className={styles.heroBankOrbit}
+            aria-label="Analiz edilen katılım bankaları"
+          >
+            <div className={styles.centerNeedle} aria-hidden="true">
+              <b>N</b>
+              <span />
+            </div>
+            {heroBanks.map(({ bank, size }, index) => (
+              <span
+                className={styles[`orbitBank${index + 1}`]}
+                key={bank}
+                title={bank}
+              >
+                <BankLogo bank={bank} size={size} />
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
-      {error && (
-        <p className={styles.error} role="alert">
-          {error}
-        </p>
-      )}
-      {!snapshot && !error && (
-        <p className={styles.status} role="status">Canlı veriler yükleniyor…</p>
-      )}
-      {snapshot && (
-        <>
-          <div className={styles.sectionHeading}>
+      <section
+        className={styles.overviewSection}
+        aria-label="Platform ve kampanya özeti"
+      >
+        <div className={styles.chartBlock}>
+          <div className={styles.blockHeading}>
             <div>
-              <span className={styles.eyebrow}>Canlı görünüm</span>
-              <h2>Platform özeti</h2>
+              <h3>Kampanya dağılımı</h3>
+              <p>Bankalara göre aktif kampanyalar</p>
             </div>
-            <span className={styles.updatedAt}>
-              Son güncelleme: {formatUpdatedAt(snapshot.summary.last_updated_at)}
-            </span>
+            <span>Son 30 gün</span>
           </div>
-          <section className={styles.cards} aria-label="Özet metrikler">
-            <article className={`${styles.card} ${styles.metricCard}`}>
-              <span className={styles.metricLabel}>Banka</span>
-              <strong className={styles.metric}>{snapshot.summary.bank_count}</strong>
-            </article>
-            <article className={`${styles.card} ${styles.metricCard}`}>
-              <span className={styles.metricLabel}>Kampanya</span>
-              <strong className={styles.metric}>
-                {snapshot.summary.campaign_count}
-              </strong>
-            </article>
-            <article className={`${styles.card} ${styles.metricCard}`}>
-              <span className={styles.metricLabel}>Toplam kayıt</span>
-              <strong className={styles.metric}>
-                {snapshot.summary.record_count}
-              </strong>
-            </article>
-            <article className={`${styles.card} ${styles.metricCard}`}>
-              <span className={styles.metricLabel}>Ortalama kâr payı</span>
-              <strong className={styles.metric}>
-                {snapshot.summary.average_profit_share_rate === null
-                  ? "Belirtilmemiş"
-                  : `%${(
-                      snapshot.summary.average_profit_share_rate * 100
-                    ).toFixed(2)}`}
-              </strong>
-            </article>
-          </section>
-          <section className={styles.grid} aria-label="Canlı kampanya görünümü">
-            <article className={styles.card}>
-              <div className={styles.cardHeading}>
-                <div>
-                  <span className={styles.eyebrow}>Dağılım</span>
-                  <h2>Bankalara göre kampanyalar</h2>
+          <div className={styles.chartContent}>
+              <div className={styles.chartVisualColumn}>
+                <div className={styles.chartArea}>
+                  {hasValidDistributions ? (
+                    <CampaignDistributionChart
+                      items={distributionItems}
+                      total={
+                        typeof campaignCount === "number"
+                          ? campaignCount
+                          : undefined
+                      }
+                    />
+                  ) : (
+                    <p className={styles.emptyData} role="status">
+                      Doğrulanmış güncel veri alınamadı.
+                    </p>
+                  )}
+              </div>
+              <div className={styles.overviewMetrics}>
+                <div className={styles.metricGrid}>
+                  <div>
+                    <strong>{bankCount}</strong>
+                    <span>Analiz edilen banka</span>
+                  </div>
+                  <div>
+                    <strong>{campaignCount}</strong>
+                    <span>Güncel kampanya</span>
+                  </div>
+                  <div>
+                    <strong>{avgProfitRate}</strong>
+                    <span>Ortalama kâr payı</span>
+                  </div>
                 </div>
+                <p className={styles.updateNote}>
+                  <span>✦</span> Veriler düzenli olarak güncellenir ve Pusula AI
+                  tarafından yapılandırılır.
+                </p>
               </div>
-              <div className={styles.distributionList} role="list">
-                {snapshot.distributions.banks.map((bank) => {
-                  const share = Math.min(100, Math.max(bank.campaign_share * 100, 0));
-                  return (
-                    <div className={styles.barRow} key={bank.slug} role="listitem">
-                      <span className={styles.bankIdentity}>
-                        <BankLogo bank={bank.name} decorative size={34} />
-                        <span>{bank.name}</span>
-                      </span>
-                      <span
-                        aria-label={`${bank.name}: ${bank.campaign_count} kampanya, yüzde ${share.toFixed(1)}`}
-                        className={styles.bar}
-                        role="img"
-                      >
-                        <span style={{ width: `${share}%` }} />
-                      </span>
-                      <strong>{bank.campaign_count}</strong>
-                    </div>
-                  );
-                })}
-                {snapshot.distributions.banks.length === 0 && (
-                  <p className={styles.muted}>Banka dağılımı henüz oluşmadı.</p>
-                )}
-              </div>
-            </article>
-            <article className={styles.card}>
-              <div className={styles.cardHeading}>
-                <div>
-                  <span className={styles.eyebrow}>Yeni hareketler</span>
-                  <h2>Son güncellenen kampanyalar</h2>
+            </div>
+            <div className={styles.legend}>
+              {legendRows.map(([bank, count, percent]) => (
+                <div className={styles.legendRow} key={bank}>
+                  <BankLogo bank={bank} size={40} />
+                  <span>{bank}</span>
+                  <strong>{count}</strong>
+                  <small>{percent}</small>
                 </div>
-              </div>
-              <div className={styles.tableWrap}>
-                <table className={styles.table}>
-                  <caption className={styles.visuallyHidden}>
-                    Son güncellenen kampanyalar
-                  </caption>
-                  <thead>
-                    <tr><th>Banka</th><th>Kampanya</th><th>Tür</th></tr>
-                  </thead>
-                  <tbody>
-                    {snapshot.recent_campaigns.map((item) => (
-                      <tr key={item.id}>
-                        <td>
-                          <span className={styles.bankIdentity}>
-                            <BankLogo bank={item.bank_name} decorative size={30} />
-                            <span>{item.bank_name}</span>
-                          </span>
-                        </td>
-                        <td>{item.title}</td>
-                        <td>{item.product_type ?? "Belirtilmemiş"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {snapshot.recent_campaigns.length === 0 && (
-                <p className={styles.muted}>Henüz güncel kampanya bulunmuyor.</p>
-              )}
-            </article>
-          </section>
-        </>
-      )}
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.campaignSection}>
+        <div className={styles.campaignHeading}>
+          <div>
+            <span className={styles.sectionLabel}>YENİ FIRSATLAR</span>
+            <h2>Güncel kampanyalar</h2>
+            <p>Katılım bankalarının yeni ve öne çıkan kampanyaları.</p>
+          </div>
+          <Link href="/campaigns">
+            Tümünü gör <span>→</span>
+          </Link>
+        </div>
+        <div className={styles.campaignList}>
+          {displayCampaigns.length === 0 ? (
+            <p className={styles.emptyData} role="status">
+              Doğrulanmış güncel veri alınamadı.
+            </p>
+          ) : displayCampaigns.map((campaign) => (
+            <Link
+              href="/campaigns"
+              className={styles.campaignRow}
+              key={campaign.title}
+            >
+              <BankLogo bank={campaign.bank} size={36} />
+              <strong>{campaign.bank}</strong>
+              <h3>{campaign.title}</h3>
+              <span
+                className={`${styles.typeBadge} ${
+                  styles[campaign.type.toLowerCase()] ?? styles.finansman
+                }`}
+              >
+                {campaign.type}
+              </span>
+              <time>{campaign.date}</time>
+              <i>→</i>
+            </Link>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }

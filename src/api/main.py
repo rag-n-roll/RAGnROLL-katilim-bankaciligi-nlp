@@ -19,6 +19,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from src.comparison import ComparisonQuery, compare_records
 from src.extraction.hybrid import HybridExtractor
+from src.financing import (
+    build_financing_quotes,
+    fetch_official_quotes,
+    financing_campaign_catalog,
+    turkiye_finans_product_catalog,
+)
 from src.observability import EventRecorder
 from src.persistence import CampaignStore, DashboardDataService
 from src.query import DomainQueryCompiler
@@ -33,6 +39,9 @@ from src.api.schemas import (
     ExtractionRequest,
     ExtractionResponse,
     FilterOptionsResponse,
+    FinancingCampaignsResponse,
+    FinancingQuoteRequest,
+    FinancingQuoteResponse,
     GroundedChatRequest,
     GroundedChatResponse,
     HealthResponse,
@@ -42,6 +51,7 @@ from src.api.schemas import (
     RecordVersionsResponse,
     RefreshJobResponse,
     RefreshRequest,
+    TurkiyeFinansProductsResponse,
 )
 
 
@@ -599,6 +609,126 @@ def comparisons(payload: ComparisonRequest, request: Request) -> dict[str, Any]:
     return result.to_dict()
 
 
+def _participation_banks() -> list[dict[str, Any]]:
+    path = PROJECT_ROOT / "data" / "raw" / "participation_banks.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    banks = payload.get("banks")
+    return banks if isinstance(banks, list) else []
+
+
+def _fallback_records() -> list[dict[str, Any]]:
+    path = PROJECT_ROOT / "data" / "processed" / "campaigns.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    records = payload.get("records")
+    return records if isinstance(records, list) else []
+
+
+@router.get(
+    "/turkiye-finans-products",
+    response_model=TurkiyeFinansProductsResponse,
+    tags=["financing"],
+)
+def turkiye_finans_products() -> dict[str, Any]:
+    return {
+        "retrieved_at": datetime.now(timezone.utc).isoformat(),
+        "products": turkiye_finans_product_catalog(),
+    }
+
+
+@router.get(
+    "/financing-campaigns",
+    response_model=FinancingCampaignsResponse,
+    tags=["financing"],
+)
+def financing_campaigns(
+    amount: Annotated[float, Query(gt=0, le=100_000_000)] = 50_000,
+    term_months: Annotated[int, Query(ge=1, le=240)] = 3,
+    catalog_only: bool = False,
+) -> dict[str, Any]:
+    return {
+        "retrieved_at": datetime.now(timezone.utc).isoformat(),
+        "campaigns": financing_campaign_catalog(
+            amount=None if catalog_only else amount,
+            term_months=None if catalog_only else term_months,
+        ),
+    }
+
+
+@router.post(
+    "/financing-quotes",
+    response_model=FinancingQuoteResponse,
+    tags=["financing"],
+)
+def financing_quotes(
+    payload: FinancingQuoteRequest,
+    request: Request,
+) -> dict[str, Any]:
+    eligible_bank_slugs = None
+    selected_product_ids: dict[str, str] = {}
+    turkiye_finans_credit_id = payload.turkiye_finans_credit_id
+    financing_type = payload.financing_type
+    if payload.campaign_key:
+        selected_campaign = next(
+            (
+                campaign
+                for campaign in financing_campaign_catalog()
+                if campaign["campaign_key"] == payload.campaign_key
+            ),
+            None,
+        )
+        if selected_campaign is None:
+            raise HTTPException(status_code=422, detail="Finansman kampanyası bulunamadı")
+        financing_type = selected_campaign["financing_type"]
+        eligible_bank_slugs = {
+            product["bank_slug"] for product in selected_campaign["bank_products"]
+        }
+        selected_product_ids = {
+            product["bank_slug"]: product["external_product_id"]
+            for product in selected_campaign["bank_products"]
+        }
+        tf_product = next(
+            (
+                product
+                for product in selected_campaign["bank_products"]
+                if product["bank_slug"] == "turkiye-finans"
+            ),
+            None,
+        )
+        turkiye_finans_credit_id = (
+            int(tf_product["external_product_id"]) if tf_product else None
+        )
+    if financing_type is None:
+        raise HTTPException(status_code=422, detail="Finansman kampanyası seçilmelidir")
+
+    records = _store(request).list_campaigns()
+    if not records:
+        records = _fallback_records()
+    official_quotes = fetch_official_quotes(
+        financing_type=financing_type,
+        amount=payload.amount,
+        term_months=payload.term_months,
+        turkiye_finans_credit_id=turkiye_finans_credit_id,
+        eligible_bank_slugs=eligible_bank_slugs,
+        selected_product_ids=selected_product_ids,
+    )
+    return build_financing_quotes(
+        records=records,
+        banks=_participation_banks(),
+        financing_type=financing_type,
+        amount=payload.amount,
+        term_months=payload.term_months,
+        official_quotes=official_quotes,
+        eligible_bank_slugs=eligible_bank_slugs,
+        fee_priority=payload.fee_priority,
+    )
+
+
 @router.post(
     "/compare",
     response_model=ComparisonContractResponse,
@@ -679,7 +809,16 @@ def compile_query(payload: QueryCompileRequest, request: Request) -> dict[str, A
 )
 def grounded_chat(payload: GroundedChatRequest, request: Request) -> dict[str, Any]:
     try:
-        return _assistant(request).answer(payload.message, limit=payload.source_limit)
+        state = (
+            payload.conversation_state.model_dump()
+            if payload.conversation_state is not None
+            else None
+        )
+        return _assistant(request).answer(
+            payload.message,
+            limit=payload.source_limit,
+            conversation_state=state,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
@@ -701,8 +840,15 @@ def grounded_chat_stream(
 
         def produce() -> None:
             try:
-                for item in _assistant(request).stream_answer(
-                    payload.message, limit=payload.source_limit
+                state = (
+                    payload.conversation_state.model_dump()
+                    if payload.conversation_state is not None
+                    else None
+                )
+                for item in _assistant(request).stream_conversation_answer(
+                    payload.message,
+                    limit=payload.source_limit,
+                    conversation_state=state,
                 ):
                     queue.put(item)
             except ValueError as exc:
@@ -719,6 +865,7 @@ def grounded_chat_stream(
 
         Thread(target=produce, daemon=True).start()
         heartbeat_seconds = float(os.getenv("RAGNROLL_SSE_HEARTBEAT_SECONDS", "15"))
+        sequence = 0
         while True:
             try:
                 item = queue.get(timeout=heartbeat_seconds)
@@ -730,7 +877,11 @@ def grounded_chat_stream(
             data = dict(item["data"])
             if item["event"] == "meta":
                 data.update(api_version="2026.08", request_id=request_id)
+            sequence += 1
+            event_id = f"{request_id}:{sequence}"
+            data.update(event_id=event_id, sequence=sequence)
             yield (
+                f"id: {event_id}\n"
                 f"event: {item['event']}\n"
                 f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
             )

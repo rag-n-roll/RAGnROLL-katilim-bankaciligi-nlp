@@ -1,0 +1,121 @@
+.floatingAi {
+  position: fixed;
+  z-index: 50;
+  right: 28px;
+  bottom: 26px;
+  width: 76px;
+  height: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 2px solid #e7b23f;
+  border-radius: 50%;
+  color: #fff;
+  background: radial-gradient(circle at 35% 30%, #0c6b5b, #06473e 68%);
+  box-shadow:
+    0 10px 28px rgba(4, 71, 62, 0.28),
+    0 0 0 5px rgba(250, 233, 181, 0.55);
+  text-decoration: none;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+  font-family: var(--font-sans);
+  animation: floatAi 3.4s ease-in-out infinite, pulseGlow 4s ease-in-out infinite;
+}
+
+.floatingAi:active {
+  cursor: grabbing;
+}
+
+.floatingAi:hover {
+  transform: translateY(-5px) scale(1.05);
+  box-shadow:
+    0 15px 34px rgba(4, 71, 62, 0.34),
+    0 0 0 7px rgba(250, 233, 181, 0.65);
+}
+
+.sparkle {
+  display: inline-block;
+  color: #f3c958;
+  font-size: 24px;
+  line-height: 1;
+  animation: sparkle 2.8s ease-in-out infinite;
+}
+.floatingAi strong {
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.orbit {
+  position: absolute;
+  inset: 7px;
+  border: 1px dashed rgba(243, 201, 88, 0.75);
+  border-radius: 50%;
+  animation: orbit 12s linear infinite;
+}
+
+@keyframes orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 4px rgba(243, 201, 88, 0.5));
+  }
+  50% {
+    transform: scale(1.22) rotate(30deg);
+    filter: drop-shadow(0 0 10px rgba(255, 235, 150, 1));
+    color: #fff3ad;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow:
+      0 10px 28px rgba(4, 71, 62, 0.28),
+      0 0 0 5px rgba(250, 233, 181, 0.45);
+  }
+  50% {
+    box-shadow:
+      0 14px 36px rgba(4, 71, 62, 0.38),
+      0 0 0 9px rgba(250, 233, 181, 0.75),
+      0 0 20px rgba(243, 201, 88, 0.5);
+  }
+}
+@keyframes floatAi {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -7px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floatingAi {
+    animation-duration: 12s;
+  }
+
+  .sparkle {
+    animation-duration: 8s;
+  }
+
+  .orbit {
+    animation-duration: 30s;
+  }
+}
+
+@media (max-width: 700px) {
+  .floatingAi {
+    right: 16px;
+    bottom: 16px;
+    width: 66px;
+    height: 66px;
+  }
+}

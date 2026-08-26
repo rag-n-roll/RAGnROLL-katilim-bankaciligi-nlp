@@ -1,291 +1,137 @@
-"use client";
+import fs from "node:fs";
+import path from "node:path";
+import styles from "./page.module.css";
+import CampaignExplorer, { type CampaignRowItem } from "./CampaignExplorer";
+import { getCampaigns } from "../../services/api";
+import { cleanCampaignText } from "./textFormatter";
 
-import { FormEvent, useEffect, useState } from "react";
-import BankLogo from "../../components/BankLogo";
-import {
-  Campaign,
-  getCampaignDetail,
-  getCampaigns,
-  getFilters,
-} from "../../services/api";
-import styles from "../live.module.css";
+type ProcessedCampaign = {
+  id: string;
+  bank_name?: string;
+  title?: string;
+  summary?: string | null;
+  clean_text?: string | null;
+  content?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  structured?: {
+    product_type?: string | null;
+    profit_share_rate?: string | number | null;
+    term_months?: string | number | null;
+    fee_information?: string | null;
+  };
+};
 
-type Filters = Awaited<ReturnType<typeof getFilters>>;
+const canonicalBankName = (name = "") => {
+  const value = name.toLocaleLowerCase("tr-TR");
+  if (value.includes("kuveyt")) return "Kuveyt Türk";
+  if (value.includes("albaraka")) return "Albaraka Türk";
+  if (value.includes("türkiye finans")) return "Türkiye Finans";
+  if (value.includes("vakıf")) return "Vakıf Katılım";
+  if (value.includes("ziraat")) return "Ziraat Katılım";
+  if (value.includes("emlak")) return "Emlak Katılım";
+  if (value.includes("hayat")) return "Hayat Finans";
+  if (value.includes("tom")) return "TOM Katılım";
+  if (value.includes("dünya")) return "Dünya Katılım";
+  if (value.includes("adil")) return "Adil Katılım";
+  return name || "Katılım Bankası";
+};
 
-function displayValue(value: unknown) {
-  if (value === null || value === undefined || value === "") return "—";
-  if (typeof value === "object") return JSON.stringify(value, null, 2);
-  return String(value);
-}
+const mapCampaignType = (value?: string | null) => {
+  if (!value) return "Finansman";
+  const lower = value.toLowerCase();
+  if (lower.includes("card") || lower.includes("kart")) return "Kart";
+  if (lower.includes("invest") || lower.includes("katıl") || lower.includes("yatırım")) return "Yatırım";
+  return "Finansman";
+};
 
-const PAGE_SIZES = [10, 50] as const;
-
-function joinCampaignFragments(left: string, right: string) {
-  if (!left) return right;
-  if (/^[,.;:!?%)}\]’']/.test(right) || /[(\[{'’]$/.test(left)) return left + right;
-  return `${left} ${right}`;
-}
-
-function formatCampaignContent(content: string) {
-  const lines = content
-    .replace(/\r\n?/g, "\n")
-    .split("\n")
-    .map((line) => line.replace(/\s+/g, " ").trim())
-    .filter(Boolean);
-  const paragraphs: string[] = [];
-  let current = "";
-  for (const line of lines) {
-    current = joinCampaignFragments(current, line);
-    if (/[.!?]$/.test(current) || (/:$/.test(current) && current.length <= 120)) {
-      paragraphs.push(current);
-      current = "";
-    }
-  }
-  if (current) paragraphs.push(current);
-  return paragraphs;
-}
-
-export default function CampaignsPage() {
-  const [filters, setFilters] = useState<Filters | null>(null);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [selected, setSelected] = useState<Campaign | null>(null);
-  const [bank, setBank] = useState("");
-  const [product, setProduct] = useState("");
-  const [search, setSearch] = useState("");
-  const [total, setTotal] = useState(0);
-  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(10);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  async function loadCampaigns(limit = pageSize) {
-    setLoading(true);
-    setError("");
-    try {
-      const result = await getCampaigns({
-        bank_slug: bank,
-        product_type: product,
-        search: search.trim() || undefined,
-        limit,
-        offset: 0,
-      });
-      setCampaigns(result.items);
-      setTotal(result.total);
-      if (result.items[0]) {
-        setSelected(await getCampaignDetail(result.items[0].id));
-      } else {
-        setSelected(null);
+function loadLocalProcessedCampaigns(): CampaignRowItem[] {
+  try {
+    const candidatePath = path.resolve(process.cwd(), "..", "..", "data", "processed", "campaigns.json");
+    if (fs.existsSync(/* turbopackIgnore: true */ candidatePath)) {
+      const rawContent = fs.readFileSync(/* turbopackIgnore: true */ candidatePath, "utf8");
+      const parsed = JSON.parse(rawContent) as { records?: ProcessedCampaign[] } | ProcessedCampaign[];
+      const records = Array.isArray(parsed) ? parsed : parsed.records ?? [];
+      if (records.length > 0) {
+        return records.map((record) => {
+          const structured = record.structured ?? {};
+          const rate = structured.profit_share_rate;
+          const term = structured.term_months;
+          return {
+            id: record.id,
+            bank: canonicalBankName(record.bank_name),
+            campaign: record.title || "Güncel Kampanya",
+            text: cleanCampaignText(record.summary || record.clean_text || record.content) || "Bu kampanya için ayrıntılı metin bulunmuyor.",
+            summary: cleanCampaignText(record.summary) || "Bu kampanya için kısa özet bulunmuyor.",
+            cleanText: cleanCampaignText(record.clean_text || record.content || record.summary) || "Bu kampanya için temizlenmiş tam metin bulunmuyor.",
+            type: mapCampaignType(structured.product_type),
+            rate: rate ? `%${String(rate).replace(".", ",")}` : "—",
+            term: term ? `${term} Ay` : "—",
+            cost: structured.fee_information || "—",
+            validity: [record.start_date, record.end_date].filter(Boolean).join(" – ") || "Güncel",
+          };
+        });
       }
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Kampanyalar yüklenemedi.");
-    } finally {
-      setLoading(false);
     }
+  } catch {
+    // Doğrulanmamış statik kampanya üretme; görünür boş durum gösterilir.
   }
+  return [];
+}
 
-  useEffect(() => {
-    Promise.all([getFilters(), getCampaigns({ limit: 10, offset: 0 })])
-      .then(async ([filterResult, campaignResult]) => {
-        setFilters(filterResult);
-        setCampaigns(campaignResult.items);
-        setTotal(campaignResult.total);
-        if (campaignResult.items[0]) {
-          setSelected(await getCampaignDetail(campaignResult.items[0].id));
-        }
-      })
-      .catch((reason: Error) => setError(reason.message))
-      .finally(() => setLoading(false));
-  }, []);
+export default async function CampaignsPage() {
+  let rows: CampaignRowItem[] = [];
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    void loadCampaigns();
-  }
-
-  async function changePageSize(size: (typeof PAGE_SIZES)[number]) {
-    if (size === pageSize || loading) return;
-    setPageSize(size);
-    await loadCampaigns(size);
-  }
-
-  async function loadMore() {
-    if (loadingMore || campaigns.length >= total) return;
-    setLoadingMore(true);
-    setError("");
-    try {
-      const result = await getCampaigns({
-        bank_slug: bank,
-        product_type: product,
-        search: search.trim() || undefined,
-        limit: pageSize,
-        offset: campaigns.length,
+  try {
+    const apiResult = await getCampaigns({ limit: 100 });
+    if (apiResult && apiResult.items && apiResult.items.length > 0) {
+      rows = apiResult.items.map((item) => {
+        const structured = item.structured as Record<string, unknown> | undefined;
+        const rate = structured?.profit_share_rate as number | string | undefined;
+        const term = structured?.term_months as number | string | undefined;
+        const fee = structured?.fee_information as string | undefined;
+        return {
+          id: item.id,
+          bank: canonicalBankName(item.bank_name),
+          campaign: item.title,
+          text: cleanCampaignText(item.content) || "Kampanya ayrıntısı bulunmuyor.",
+          summary: cleanCampaignText(item.title) || item.title,
+          cleanText: cleanCampaignText(item.content) || "Tam metin bulunmuyor.",
+          type: mapCampaignType((structured?.product_type as string) || null),
+          rate: rate ? `%${String(rate).replace(".", ",")}` : "—",
+          term: term ? `${term} Ay` : "—",
+          cost: fee || "—",
+          validity: "Güncel",
+        };
       });
-      setCampaigns((current) => [
-        ...current,
-        ...result.items.filter((item) => !current.some((row) => row.id === item.id)),
-      ]);
-      setTotal(result.total);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Diğer kampanyalar yüklenemedi.");
-    } finally {
-      setLoadingMore(false);
     }
+  } catch {
+    // API bağlantısı yoksa yerel veriye geçilir
   }
 
-  async function selectCampaign(campaign: Campaign) {
-    setError("");
-    try {
-      setSelected(await getCampaignDetail(campaign.id));
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Kampanya detayı yüklenemedi.");
-    }
+  if (rows.length === 0) {
+    rows = loadLocalProcessedCampaigns();
   }
-
-  const fields = Object.entries(selected?.structured?.fields ?? {});
 
   return (
-    <main className={styles.main} aria-busy={loading}>
-      <header className={styles.header}>
+    <main className={styles.main}>
+      <section className={styles.pageHeader}>
         <div>
-          <span className={styles.eyebrow}>Canlı kampanya kataloğu</span>
-          <h1>Kampanya merkezi</h1>
-          <p>Ham metni, yapılandırılmış alanı ve alanın kaynak kanıtını birlikte inceleyin.</p>
+          <h1 className={styles.title}>Kampanya Merkezi</h1>
+          <p className={styles.description}>
+            Bankaların güncel kampanyalarını, kampanya metinlerini ve çıkarılan
+            finansal bilgileri tek ekranda inceleyin.
+          </p>
         </div>
-        <span className={styles.headerBadge}>{total} kayıt</span>
-      </header>
 
-      <form className={styles.controls} onSubmit={submit} aria-label="Kampanya filtreleri">
-        <label className={styles.filterField}>
-          <span>Banka</span>
-          <select value={bank} onChange={(event) => setBank(event.target.value)}>
-            <option value="">Tüm bankalar</option>
-            {filters?.banks.map((item) => <option key={item.value} value={item.value}>{item.label} ({item.count})</option>)}
-          </select>
-        </label>
-        <label className={styles.filterField}>
-          <span>Ürün türü</span>
-          <select value={product} onChange={(event) => setProduct(event.target.value)}>
-            <option value="">Tüm ürün türleri</option>
-            {filters?.product_types.map((item) => <option key={item.value} value={item.value}>{item.label} ({item.count})</option>)}
-          </select>
-        </label>
-        <label className={styles.filterField}>
-          <span>Kampanya ara</span>
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Başlıkta ara" minLength={2} />
-        </label>
-        <button className={styles.button} disabled={loading} type="submit">Filtrele</button>
-      </form>
-
-      {error && <p className={styles.error} role="alert">{error}</p>}
-      {loading && <p className={styles.status} role="status">Kampanyalar yükleniyor…</p>}
-      {!loading && !error && campaigns.length === 0 && <p className={styles.status}>Filtreyle eşleşen kampanya bulunamadı.</p>}
-
-      <section className={styles.campaignGrid} aria-label="Kampanya sonuçları">
-        <article className={`${styles.card} ${styles.campaignListCard}`}>
-          <div className={styles.cardHeading}>
-            <div>
-              <span className={styles.eyebrow}>Sonuçlar</span>
-              <h2>Kampanyalar</h2>
-            </div>
-          </div>
-          <div className={styles.list}>
-            {campaigns.map((campaign) => (
-              <button
-                className={`${styles.listButton} ${selected?.id === campaign.id ? styles.selected : ""}`}
-                aria-pressed={selected?.id === campaign.id}
-                key={campaign.id}
-                onClick={() => void selectCampaign(campaign)}
-                type="button"
-              >
-                <span className={styles.campaignBank}>
-                  <BankLogo bank={campaign.bank_name} decorative size={34} />
-                  <strong>{campaign.bank_name}</strong>
-                </span>
-                <span className={styles.campaignTitle}>{campaign.title}</span>
-              </button>
-            ))}
-          </div>
-          <footer className={styles.campaignListFooter}>
-            <div className={styles.pageSizeControl} aria-label="Bir seferde gösterilecek kampanya sayısı">
-              <span>Gösterim</span>
-              {PAGE_SIZES.map((size) => (
-                <button
-                  aria-pressed={pageSize === size}
-                  className={pageSize === size ? styles.pageSizeActive : ""}
-                  disabled={loading || loadingMore}
-                  key={size}
-                  onClick={() => void changePageSize(size)}
-                  type="button"
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
-            <span className={styles.shownCount}>{campaigns.length} / {total} gösteriliyor</span>
-            {campaigns.length < total && (
-              <button
-                className={styles.loadMoreButton}
-                disabled={loading || loadingMore}
-                onClick={() => void loadMore()}
-                type="button"
-              >
-                {loadingMore ? "Yükleniyor…" : `${pageSize} kampanya daha göster`}
-              </button>
-            )}
-          </footer>
-        </article>
-        <article className={`${styles.card} ${styles.campaignDetail}`} aria-live="polite">
-          {selected && (
-            <div className={styles.detailBank}>
-              <BankLogo bank={selected.bank_name} decorative size={42} />
-              <span>{selected.bank_name}</span>
-            </div>
-          )}
-          <h2>{selected?.title ?? "Kampanya detayı"}</h2>
-          {selected ? (
-            <>
-              <div className={styles.campaignCopy}>
-                {formatCampaignContent(selected.content || "Kaynak metin bulunmuyor.").map((paragraph, index) => (
-                  /:$/.test(paragraph) && paragraph.length <= 120
-                    ? <h3 key={`${index}-${paragraph}`}>{paragraph}</h3>
-                    : <p key={`${index}-${paragraph}`}>{paragraph}</p>
-                ))}
-              </div>
-              <a className={styles.source} href={selected.source_url} rel="noreferrer" target="_blank">
-                Resmî kaynağı yeni sekmede aç <span aria-hidden="true">↗</span>
-              </a>
-            </>
-          ) : <p className={styles.muted}>İncelemek için bir kampanya seçin.</p>}
-        </article>
+        <div className={styles.headerDecoration}>
+          <span className={styles.waveOne} />
+          <span className={styles.waveTwo} />
+          <span className={styles.waveThree} />
+        </div>
       </section>
 
-      {selected && (
-        <section className={`${styles.card} ${styles.contractCard}`}>
-          <div className={styles.cardHeading}>
-            <div>
-              <span className={styles.eyebrow}>İzlenebilir veri</span>
-              <h2>Alan sözleşmeleri</h2>
-            </div>
-          </div>
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <caption className={styles.visuallyHidden}>{selected.title} için yapılandırılmış alanlar</caption>
-              <thead><tr><th>Alan</th><th>Değer</th><th>Durum</th><th>Güven</th><th>Kanıt</th></tr></thead>
-              <tbody>
-                {fields.map(([name, field]) => (
-                  <tr key={name}>
-                    <td><strong>{name}</strong></td>
-                    <td><pre>{displayValue(field.value)}</pre></td>
-                    <td><span className={`${styles.badge} ${field.status === "EXPLICIT" ? "" : styles.warningBadge}`}>{field.status}</span></td>
-                    <td>{Math.round(field.confidence * 100)}%</td>
-                    <td>{field.evidence?.text ?? "Kaynakta belirtilmemiş"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
+      <CampaignExplorer rows={rows} />
     </main>
   );
 }

@@ -3404,7 +3404,7 @@
   "Fon Havuzu": {
     "term_id": "TRM0452",
     "canonical": "Fon Havuzu",
-    "aliases": [],
+    "aliases": ["Kâr Payı Havuzu", "Kar Payı Havuzu", "Katılım Havuzu"],
     "entity": "PARTICIPATION_FUND_POOL",
     "category": "Katılım Finans"
   },
