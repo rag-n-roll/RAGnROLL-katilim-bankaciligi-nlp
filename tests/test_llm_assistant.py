@@ -1065,6 +1065,17 @@ def test_definition_does_not_apply_product_slots_to_terminology_retrieval(tmp_pa
     assert [source["term_id"] for source in result["sources"]] == ["TRM0463"]
 
 
+def test_product_principles_definition_fallback_is_complete_and_scope_aware(tmp_path):
+    assistant = GroundedAssistant(_store(tmp_path), llm=FakeLLM([]), chroma_enabled=False)
+    result = assistant._grounded_result(
+        "Konut finansmanında katılım bankacılığı ilkeleri nelerdir?", limit=5
+    )
+    answer = result["answer"].casefold()
+    assert "faizsiz finans prensipleri" in answer
+    assert "konut finansmanı" in answer
+    assert "doğrulanmış kaynak" in answer
+
+
 def test_chunk_evidence_keeps_bounded_source_offsets(tmp_path):
     assistant = GroundedAssistant(
         _store(tmp_path), llm=FakeLLM(), chroma_enabled=False

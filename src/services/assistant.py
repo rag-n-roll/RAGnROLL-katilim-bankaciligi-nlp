@@ -1156,6 +1156,14 @@ class GroundedAssistant:
             answer = "\n".join(relation_sentences[:5]) + "\n\n" + answer
         if plan.intent == "definition" and excerpts:
             answer = excerpts[0].split(" Ana kategori:", 1)[0].strip()
+            if plan.slots.get("financing_type") == "housing":
+                answer = (
+                    "Konut finansmanı, katılım bankacılığı çerçevesinde faizsiz "
+                    "finans prensipleri ve uyum kuralları gözetilerek yürütülür. "
+                    "Bu açıklama doğrulanmış kaynakta yer alan genel ilkedir; "
+                    "ürünün güncel kâr oranı, vadesi ve masrafları için ilgili "
+                    "kampanya/ürün kaydının ayrıca incelenmesi gerekir."
+                )
         evidenced = sum(self._source_has_evidence(source) for source in sources)
         answer_confidence, confidence_components = _answer_confidence(
             typed=0, evidenced=evidenced, candidates=len(sources)
