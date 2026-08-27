@@ -55,14 +55,15 @@ FINANCING_TYPE_LABELS = {
 }
 _FINANCING_TYPE_PATTERNS = {
     "consumer": re.compile(
-        r"\b(?:ihtiyac|tuketici|borc\s+(?:transfer|kapatma)|"
-        r"evlilik|egitim|okul|saglik|hac|umre)\s*(?:finansman\w*)?\b"
+        r"\b(?:ihtiyac|tuketici|borc\s+(?:transfer|kapatma))\s*(?:finansman\w*)?\b|"
+        r"\b(?:evlilik|egitim|okul|saglik|hac|umre)\b[^\n.!?]{0,30}?\s*finansman\w*\b"
     ),
     "vehicle": re.compile(
         r"\b(?:tasit|arac|otomobil|araba|togg|motosiklet)\s*(?:finansman\w*)?\b"
     ),
     "housing": re.compile(
-        r"\b(?:konut|ev|bina|kentsel\s+donusum|gunes\s+enerji\w*)\s*(?:finansman\w*)?\b"
+        r"\b(?:konut|kentsel\s+donusum|gunes\s+enerji\w*)\s*(?:finansman\w*)?\b|"
+        r"\b(?:ev|bina)\b[^\n.!?]{0,30}?\s*finansman\w*\b"
     ),
     "commercial": re.compile(
         r"\b(?:ticari|isletme|kobi|esnaf|hammadde)\s*(?:finansman\w*)?\b"

@@ -666,6 +666,46 @@ def test_multi_turn_chain_resolves_bare_boolean_fee_priority(
     assert t3_pos["plan"]["slots"]["fee_priority"] is True
 
 
+def test_campaign_comparison_does_not_require_financing_criteria(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat",
+            json={
+                "message": (
+                    "kuveyt türk ve albaraka türk eğitim kampanyalarını "
+                    "karşılaştır en iyisini bana söyle"
+                )
+            },
+        ).json()
+
+    assert response["action"] == "ANSWER"
+    assert response["conversation_state"] is None
+    assert response["plan"]["slots"].get("financing_type") is None
+    assert len(response["sources"]) > 0
+
+
+def test_topic_switch_ignores_pending_financing_state(tmp_path):
+    with _client(tmp_path) as client:
+        first = client.post(
+            "/api/v1/chat",
+            json={"message": "800 bin tl'lik konut finansmanı almak istiyorum."},
+        ).json()
+        assert first["action"] == "CLARIFY"
+
+        topic_switch = client.post(
+            "/api/v1/chat",
+            json={
+                "message": "Masrafsız kart ve hesap seçenekleri nelerdir?",
+                "conversation_state": first["conversation_state"],
+            },
+        ).json()
+
+    assert topic_switch["action"] == "ANSWER"
+    assert topic_switch["conversation_state"] is None
+    assert topic_switch["plan"]["slots"].get("product_type") == "card"
+    assert "İhtiyaç finansmanı için karşılaştırma" not in topic_switch["answer_display"]
+
+
 def test_restricted_follow_up_cannot_reuse_pending_financing_context(tmp_path):
     with _client(tmp_path) as client:
         first = client.post(
