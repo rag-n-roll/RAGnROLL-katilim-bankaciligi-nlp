@@ -73,4 +73,10 @@ def present_answer(
 ) -> PresentedAnswer:
     display = re.sub(r"\s*\[K\d+(?:\s*,\s*K?\d+)*\]", "", answer)
     display = re.sub(r"[ \t]+([.,;:!?])", r"\1", display).strip()
+    # Küçük modeller kaynak etiketinin çevresinde bazen `,,.` gibi artık
+    # noktalama bırakır. Yalnızca ara noktalama ile cümle sonu işaretinin
+    # çakışmasını gider; `...` ve `?!` gibi anlamlı kullanımları koru.
+    display = re.sub(r"[,;:]+([.!?])", r"\1", display)
+    display = re.sub(r"([.!?])[,;:]+", r"\1", display)
+    display = re.sub(r"([,;:])\1+", r"\1", display)
     return PresentedAnswer(display, deduplicate_sources(sources))

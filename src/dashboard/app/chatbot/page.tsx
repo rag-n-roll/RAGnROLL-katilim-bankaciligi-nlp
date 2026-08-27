@@ -207,11 +207,12 @@ export default function ChatbotPage() {
           onDone: (generation: ChatGeneration) => {
             if (!isActiveChatRequest(currentTokenRef.current, token)) return;
             completed = true;
-            const blocked = Boolean(
+            const policyRedirected = Boolean(
               generation.fallback_reason === "safe_redirect" ||
-                generation.fallback_reason?.startsWith("policy_") ||
-                generation.fallback_reason === "llm_output_rejected"
+                generation.fallback_reason?.startsWith("policy_")
             );
+            const verifiedFallback =
+              generation.fallback_reason === "llm_output_rejected";
             setExchanges((curr) =>
               applyActiveChatUpdate(currentTokenRef.current, token, curr, (items: MessageExchange[]) => {
                 return items.map((item, idx) =>
@@ -220,15 +221,21 @@ export default function ChatbotPage() {
                         ...item,
                         streaming: false,
                         generation,
-                        thinkingSteps: blocked
+                        thinkingSteps: policyRedirected
                           ? [
-                              "İstek sınıflandırıldı",
-                              "Yanıt güvenlik kontrolünden geçmedi",
+                              "İstek değerlendirildi",
+                              "Destek kapsamı bilgisi paylaşıldı",
                             ]
+                          : verifiedFallback
+                            ? [
+                                "İstek değerlendirildi",
+                                "Kaynaklar doğrulandı",
+                                "Doğrulanmış yanıt hazırlandı",
+                              ]
                           : [
-                              "İstek sınıflandırıldı",
-                              "Kanıtlar kontrol edildi",
-                              "Yanıt güvenlik kontrolünden geçti",
+                              "İstek değerlendirildi",
+                              "Kaynaklar doğrulandı",
+                              "Yanıt hazırlandı",
                             ],
                       }
                     : item
@@ -321,10 +328,7 @@ export default function ChatbotPage() {
                         </summary>
                         <ul>
                           {exchange.thinkingSteps.map((step) => (
-                            <li
-                              key={step}
-                              className={step.includes("geçmedi") ? styles.thinkingFailed : undefined}
-                            >
+                            <li key={step}>
                               {step}
                             </li>
                           ))}
