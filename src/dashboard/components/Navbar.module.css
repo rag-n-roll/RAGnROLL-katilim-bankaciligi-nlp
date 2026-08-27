@@ -285,7 +285,7 @@
 .navbarGlint::after {
   content: "";
   position: absolute;
-  inset: -2px 0;
+  inset: -1px 0;
 
   pointer-events: none;
   opacity: 0.95;
