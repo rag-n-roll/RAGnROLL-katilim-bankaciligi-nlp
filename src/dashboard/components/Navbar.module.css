@@ -293,21 +293,55 @@
   z-index: 2;
   top: 50%;
   left: 50%;
+
   width: 28px;
   height: 28px;
   overflow: visible;
+
+  filter: drop-shadow(0 0 8px rgba(240, 185, 31, 0.75)) drop-shadow(0 2px 5px rgba(0, 39, 57, 0.2));
+
+  transform: translate(-50%, -50%) translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, filter;
+  animation: glintCompassDrift 7s ease-in-out infinite;
   pointer-events: none;
-  transform: translate(-50%, -50%);
 }
 
-/* Pusula hattı kapatmaz; 3 px'lik ışın merkezden kesintisiz geçer. */
-.glintCompass .compassHalo,
-.glintCompass .compassRing {
-  fill: transparent;
+.glintCompassReflection {
+  fill: none;
+  stroke: rgba(255, 245, 190, 0.92);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 3px rgba(255, 230, 110, 0.95));
+  transform-origin: 24px 24px;
+  transform-box: view-box;
+  animation: compassReflectionSweep 3.4s ease-in-out infinite;
 }
 
-.glintCompass .compassHalo {
-  animation: none;
+@keyframes glintCompassDrift {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+    filter: drop-shadow(0 0 6px rgba(201, 155, 63, 0.6)) drop-shadow(0 2px 4px rgba(0, 43, 58, 0.18));
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(180deg) scale(1.15);
+    filter: drop-shadow(0 0 16px rgba(255, 240, 168, 1)) drop-shadow(0 0 26px rgba(240, 185, 31, 0.8));
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg) scale(1);
+    filter: drop-shadow(0 0 6px rgba(201, 155, 63, 0.6)) drop-shadow(0 2px 4px rgba(0, 43, 58, 0.18));
+  }
+}
+
+@keyframes compassReflectionSweep {
+  0%, 100% {
+    opacity: 0.25;
+    transform: rotate(-28deg) scale(0.86);
+  }
+  50% {
+    opacity: 1;
+    transform: rotate(38deg) scale(1.08);
+  }
 }
 
 .navigation {
