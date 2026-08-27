@@ -42,6 +42,7 @@ from src.retrieval import HybridRetriever
 from src.services.conversation import (
     FINANCING_TYPE_LABELS,
     extract_comparison_criteria,
+    extract_contextual_fee_priority,
     extract_financing_type,
     merge_criteria,
 )
@@ -2426,12 +2427,20 @@ class GroundedAssistant:
             # bir politika yetkisi olarak kullanılamaz.
             follow_up_criteria = extract_comparison_criteria(message)
             follow_up_financing_type = extract_financing_type(message)
+            state_criteria = dict(conversation_state.get("criteria") or {})
+            if (
+                "fee_priority" not in follow_up_criteria
+                and state_criteria.get("fee_priority") is None
+            ):
+                contextual_fee = extract_contextual_fee_priority(message)
+                if contextual_fee is not None:
+                    follow_up_criteria["fee_priority"] = contextual_fee
+
             if not follow_up_criteria and follow_up_financing_type is None:
                 follow_up_plan = self._deterministic_plan(message)
                 if follow_up_plan.route == "SAFE_REDIRECT":
                     yield from self.stream_answer(message, limit=limit)
                     return
-
             execution_message = str(conversation_state.get("pending_query") or "")
             pending_plan = self._deterministic_plan(execution_message)
             if pending_plan.intent not in {"product_comparison", "product_search"}:

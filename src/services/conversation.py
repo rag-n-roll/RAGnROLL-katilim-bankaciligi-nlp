@@ -38,6 +38,15 @@ _FEE_NEGATION_RE = re.compile(
     re.IGNORECASE,
 )
 
+_BARE_NEGATIVE_FEE_RE = re.compile(
+    r"^\s*(?:yok|hay[ıi]r|istemiyorum|[öo]nemli\s+de[gğ]il|fark\s+etmez)\s*[.!]?\s*$",
+    re.IGNORECASE,
+)
+_BARE_POSITIVE_FEE_RE = re.compile(
+    r"^\s*(?:var|evet|olsun|istiyorum|[öo]nemli)\s*[.!]?\s*$",
+    re.IGNORECASE,
+)
+
 FINANCING_TYPE_LABELS = {
     "consumer": "İhtiyaç finansmanı",
     "vehicle": "Taşıt finansmanı",
@@ -123,6 +132,17 @@ def extract_financing_type(message: str) -> str | None:
         if pattern.search(normalized)
     ]
     return matches[0] if len(matches) == 1 else None
+
+
+def extract_contextual_fee_priority(message: str) -> bool | None:
+    """Extract contextual boolean fee_priority from a short yes/no response."""
+
+    normalized = _ascii_turkish(message.strip())
+    if _BARE_NEGATIVE_FEE_RE.match(normalized):
+        return False
+    if _BARE_POSITIVE_FEE_RE.match(normalized):
+        return True
+    return None
 
 
 def merge_criteria(
