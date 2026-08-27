@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import BankLogo from "../../components/BankLogo";
 import styles from "./page.module.css";
 import { parseCampaignText } from "./textFormatter";
+import { initialCampaignId } from "./campaignSelection";
 
 export type CampaignRowItem = {
   id: string;
@@ -76,8 +77,11 @@ function CampaignFormattedContent({ text }: { text: string }) {
   );
 };
 
-export default function CampaignExplorer({ rows }: { rows: CampaignRowItem[] }) {
-  const [selectedId, setSelectedId] = useState<string>(rows[0]?.id ?? "");
+export default function CampaignExplorer({ rows, initialSelectedId }: {
+  rows: CampaignRowItem[];
+  initialSelectedId?: string;
+}) {
+  const [selectedId, setSelectedId] = useState(() => initialCampaignId(rows, initialSelectedId));
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
 

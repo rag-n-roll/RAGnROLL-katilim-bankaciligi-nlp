@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import styles from "./page.module.css";
 import CampaignExplorer, { type CampaignRowItem } from "./CampaignExplorer";
-import { getCampaigns } from "../../services/api";
+import { getCampaignDetail, getCampaigns } from "../../services/api";
 import { cleanCampaignText } from "./textFormatter";
 
 type ProcessedCampaign = {
@@ -84,13 +84,25 @@ function loadLocalProcessedCampaigns(): CampaignRowItem[] {
   return [];
 }
 
-export default async function CampaignsPage() {
+export default async function CampaignsPage({ searchParams }: {
+  searchParams: Promise<{ campaign?: string | string[] }>;
+}) {
+  const { campaign } = await searchParams;
+  const requestedId = typeof campaign === "string" ? campaign : undefined;
   let rows: CampaignRowItem[] = [];
 
   try {
     // API'nin üst sınırıyla tüm katalog tek istekte alınır; istemci tarafı
     // filtreleri yalnızca ilk 100 kayıtla sınırlı kalmaz.
     const apiResult = await getCampaigns({ limit: 500 });
+    // Bağlantıdaki kampanya ilk katalog sayfasının dışında da olabilir.
+    if (requestedId && !apiResult.items.some((item) => item.id === requestedId)) {
+      try {
+        apiResult.items.unshift(await getCampaignDetail(requestedId));
+      } catch {
+        // Silinmiş veya erişilemeyen kayıt için katalog kullanılabilir kalır.
+      }
+    }
     if (apiResult && apiResult.items && apiResult.items.length > 0) {
       rows = apiResult.items.map((item) => {
         const structured = item.structured as Record<string, unknown> | undefined;
@@ -138,7 +150,10 @@ export default async function CampaignsPage() {
         </div>
       </section>
 
-      <CampaignExplorer rows={rows} />
+      {requestedId && !rows.some((row) => row.id === requestedId) && (
+        <p role="status">Seçtiğiniz kampanya bulunamadı. Diğer kampanyaları inceleyebilirsiniz.</p>
+      )}
+      <CampaignExplorer key={requestedId ?? "all"} rows={rows} initialSelectedId={requestedId} />
     </main>
   );
 }
