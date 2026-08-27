@@ -44,7 +44,8 @@ NUMERIC_DATE_PATTERN = r"(?<!\d)\d{1,2}[./-]\d{1,2}[./-]\d{4}"
 TEXTUAL_DATE_PATTERN = rf"(?<!\d)\d{{1,2}}\s*(?:{MONTH_PATTERN})(?:\s*\d{{4}})?"
 FULL_TEXTUAL_DATE_PATTERN = rf"(?<!\d)\d{{1,2}}\s*(?:{MONTH_PATTERN})\s*\d{{4}}"
 PRIMARY_DATE_LABEL_RE = re.compile(
-    r"\b(?:kampanya\s+(?:tarihleri|başlangıç\s+ve\s+bitiş|dönemi)|bitiş\s+tarihi|geçerlilik\s+tarihi|son\s+gün)\b",
+    r"\b(?:kampanya\s+(?:tarihleri|başlangıç\s+ve\s+bitiş|dönemi)|"
+    r"bitiş\s+tarihi|geçerlilik\s+tarihi|son\s+gün)\b",
     re.IGNORECASE,
 )
 INLINE_REWARD_CLAUSE_RE = re.compile(
@@ -160,6 +161,7 @@ def _find_explicit_ranges(segment: str) -> list[tuple[int, date, date]]:
             ranges.append((match.start(), start, end))
 
     return sorted(ranges, key=lambda item: item[0])
+
 
 def _extract_explicit_ranges(segment: str) -> tuple[date | None, date | None]:
     ranges = _find_explicit_ranges(segment)
@@ -331,14 +333,16 @@ def _date_segments(text: str) -> list[str]:
     )
     # Collapse label + date: Kampanya Dönemi \n 01-04-2025 - 31-12-2026
     cleaned = re.sub(
-        rf"(kampanya\s+(?:dönemi|donemi|tarihleri|tarihi))\s*\n\s*({NUMERIC_DATE_PATTERN}|{TEXTUAL_DATE_PATTERN})",
+        rf"(kampanya\s+(?:dönemi|donemi|tarihleri|tarihi))\s*\n\s*"
+        rf"({NUMERIC_DATE_PATTERN}|{TEXTUAL_DATE_PATTERN})",
         r"\1 \2",
         cleaned,
         flags=re.IGNORECASE,
     )
     # Collapse archived banner: Kampanya \n 30-04-2026 \n Tarihinde Sona Ermiştir
     cleaned = re.sub(
-        rf"kampanya\s*\n\s*({NUMERIC_DATE_PATTERN})\s*\n\s*(tarihinde\s+sona\s+ermiştir|tarihinde\s+sona\s+ermistir)",
+        rf"kampanya\s*\n\s*({NUMERIC_DATE_PATTERN})\s*\n\s*"
+        rf"(tarihinde\s+sona\s+ermiştir|tarihinde\s+sona\s+ermistir)",
         r"Kampanya \1 \2",
         cleaned,
         flags=re.IGNORECASE,

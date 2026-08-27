@@ -36,8 +36,12 @@ MONEY_PATTERN = re.compile(
     rf"(?:[₺$€£]\s*{NUMBER}|{NUMBER}(?:\s+milyon)?\s*(?:TL|₺|TRY|USD|\$|EUR|€|GBP|£))",
     re.IGNORECASE,
 )
+REWARD_WORDS = (
+    r"ödül|odul|iade|puan|bonus|bankkart\s+lira|parafpara|"
+    r"worldpuan|altın\s+puan|altin\s+puan|hediye\s+bakiye|hediye"
+)
 MONEY_REWARD_PATTERN = re.compile(
-    rf"({MONEY_PATTERN.pattern})(?=[^.!?]{{0,60}}(?:ödül|odul|iade|puan|bonus|bankkart\s+lira|parafpara|worldpuan|altın\s+puan|altin\s+puan|hediye\s+bakiye|hediye))",
+    rf"({MONEY_PATTERN.pattern})(?=[^.!?]{{0,60}}(?:{REWARD_WORDS}))",
     re.IGNORECASE,
 )
 MAX_AMOUNT_PATTERN = re.compile(
@@ -47,8 +51,9 @@ MIN_AMOUNT_PATTERN = re.compile(
     rf"en\s+az\s+({MONEY_PATTERN.pattern})(?:\s+ile)?", re.IGNORECASE
 )
 APPLICATION_CHANNEL_PATTERN = re.compile(
-    r"\b(mobil uygulama|mobil bankacılık|mobil bankacilik|mobilden|internet şubesi|internet subesi|"
-    r"internet şube|internet sube|görüntülü görüşme|goruntulu gorusme|şube|sube|çağrı merkezi|cagri merkezi)\b",
+    r"\b(mobil uygulama|mobil bankacılık|mobil bankacilik|mobilden|"
+    r"internet şubesi|internet subesi|internet şube|internet sube|"
+    r"görüntülü görüşme|goruntulu gorusme|şube|sube|çağrı merkezi|cagri merkezi)\b",
     re.IGNORECASE,
 )
 CONDITION_PATTERN = re.compile(
@@ -239,7 +244,10 @@ def extract_prd_fields(
         (
             "new_customer",
             ("yeni müşteri", "yeni musteri", "ilk kez müşteri", "ilk kez musteri"),
-            r"yeni müşteri(?:lere|miz)?|yeni musteri(?:lere|miz)?|ilk kez müşteri(?:lere)?|ilk kez musteri(?:lere)?",
+            (
+                r"yeni müşteri(?:lere|miz)?|yeni musteri(?:lere|miz)?|"
+                r"ilk kez müşteri(?:lere)?|ilk kez musteri(?:lere)?"
+            ),
         ),
         (
             "retiree",

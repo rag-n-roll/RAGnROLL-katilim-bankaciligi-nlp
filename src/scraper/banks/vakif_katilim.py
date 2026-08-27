@@ -1,5 +1,4 @@
 import re
-from urllib.parse import urljoin
 
 from ..base import BaseBankScraper, ScraperConfig
 
@@ -25,7 +24,8 @@ class VakifKatilimScraper(BaseBankScraper):
         endpoint = "https://www.vakifkatilim.com.tr/plugins/GetCampaignList"
         lang_id = "bf2689d9-071e-4a20-9450-b1dbdd39778f"
 
-        # 1. AJAX API discovery for active campaigns across individual (1) and business (2) categories
+        # 1. AJAX API discovery for active campaigns across
+        # individual (1) and business (2) categories
         for page_type in (1, 2):
             section = "kendim-icin" if page_type == 1 else "isim-icin"
             page = 1
@@ -52,7 +52,10 @@ class VakifKatilimScraper(BaseBankScraper):
                     for item in items:
                         link = str(item.get("link") or "").strip().strip("/")
                         if link:
-                            full_url = f"https://www.vakifkatilim.com.tr/tr/{section}/kampanyalar/detay/{link}"
+                            full_url = (
+                                f"https://www.vakifkatilim.com.tr/tr/{section}/"
+                                f"kampanyalar/detay/{link}"
+                            )
                             if full_url not in seen and full_url not in urls:
                                 urls.append(full_url)
                     if len(items) < 50:
@@ -71,7 +74,8 @@ class VakifKatilimScraper(BaseBankScraper):
             )
             if sitemap_resp.status_code == 200:
                 sitemap_matches = re.findall(
-                    r"<loc>(https://www\.vakifkatilim\.com\.tr/tr/(?:kendim-icin|isim-icin)/kampanyalar/detay/[^<]+)</loc>",
+                    r"<loc>(https://www\.vakifkatilim\.com\.tr/tr/"
+                    r"(?:kendim-icin|isim-icin)/kampanyalar/detay/[^<]+)</loc>",
                     sitemap_resp.text,
                 )
                 for match_url in sitemap_matches:
