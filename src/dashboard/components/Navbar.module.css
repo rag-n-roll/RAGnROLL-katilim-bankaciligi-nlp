@@ -288,6 +288,28 @@
   }
 }
 
+.glintCompass {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  overflow: visible;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+/* Pusula hattı kapatmaz; 3 px'lik ışın merkezden kesintisiz geçer. */
+.glintCompass .compassHalo,
+.glintCompass .compassRing {
+  fill: transparent;
+}
+
+.glintCompass .compassHalo {
+  animation: none;
+}
+
 .navigation {
   height: 100%;
   display: flex;
