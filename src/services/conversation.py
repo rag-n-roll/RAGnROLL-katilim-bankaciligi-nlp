@@ -23,18 +23,42 @@ _FEE_POSITIVE_RE = re.compile(
     r"(?:"
     r"masraf\s+(?:oncelikli|onemli|oncelig(?:iyle|im(?:\s+var)?|ine\s+gore))"
     r"|(?:dusuk|az)\s+masraf"
+    r"|masrafsiz|masraf\s+yok"
     r")",
     re.IGNORECASE,
 )
 _FEE_NEGATION_RE = re.compile(
     r"(?:"
     r"masraf\s+(?:oncelikli|onemli)(?:\s+olmasin)?\s+(?:degil|olmasin)"
-    r"|masraf\s+onceligim\s+degil"
+    r"|masraf\s+onceligim\s+(?:degil|yok)"
+    r"|masraf\s+onemli\s+degil"
     r"|(?:dusuk|az)\s+masraf\s+(?:istemiyorum|onceligim\s+degil)"
     r"|az\s+masraf\s+onceligim\s+degil"
     r")",
     re.IGNORECASE,
 )
+
+FINANCING_TYPE_LABELS = {
+    "consumer": "İhtiyaç finansmanı",
+    "vehicle": "Taşıt finansmanı",
+    "housing": "Konut finansmanı",
+    "commercial": "Ticari/KOBİ finansmanı",
+}
+_FINANCING_TYPE_PATTERNS = {
+    "consumer": re.compile(
+        r"\b(?:ihtiyac|tuketici|borc\s+(?:transfer|kapatma)|"
+        r"evlilik|egitim|okul|saglik|hac|umre)\s*(?:finansman\w*)?\b"
+    ),
+    "vehicle": re.compile(
+        r"\b(?:tasit|arac|otomobil|araba|togg|motosiklet)\s*(?:finansman\w*)?\b"
+    ),
+    "housing": re.compile(
+        r"\b(?:konut|ev|bina|kentsel\s+donusum|gunes\s+enerji\w*)\s*(?:finansman\w*)?\b"
+    ),
+    "commercial": re.compile(
+        r"\b(?:ticari|isletme|kobi|esnaf|hammadde)\s*(?:finansman\w*)?\b"
+    ),
+}
 
 
 def _ascii_turkish(value: str) -> str:
@@ -87,6 +111,18 @@ def extract_comparison_criteria(message: str) -> dict[str, Any]:
             updates["fee_priority"] = True
             break
     return updates
+
+
+def extract_financing_type(message: str) -> str | None:
+    """Extract one explicitly named, supported financing type."""
+
+    normalized = _ascii_turkish(message)
+    matches = [
+        financing_type
+        for financing_type, pattern in _FINANCING_TYPE_PATTERNS.items()
+        if pattern.search(normalized)
+    ]
+    return matches[0] if len(matches) == 1 else None
 
 
 def merge_criteria(
