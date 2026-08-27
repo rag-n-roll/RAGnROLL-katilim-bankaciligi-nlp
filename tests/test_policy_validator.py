@@ -35,6 +35,40 @@ def test_financing_quote_requires_complete_bounded_arguments():
     assert not valid_tool_call("product_comparison", invalid_type)
 
 
+def test_financing_quote_accepts_only_bounded_inclusive_term_range():
+    ranged = {
+        "name": "financing_quote",
+        "arguments": {
+            "financing_type": "housing",
+            "amount": 900_000,
+            "term_months": 12,
+            "term_months_min": 1,
+            "term_months_max": 12,
+            "fee_priority": False,
+        },
+    }
+
+    assert valid_tool_call("product_comparison", ranged)
+    assert not valid_tool_call(
+        "product_comparison",
+        {
+            **ranged,
+            "arguments": {**ranged["arguments"], "term_months": 11},
+        },
+    )
+    assert not valid_tool_call(
+        "product_comparison",
+        {
+            **ranged,
+            "arguments": {
+                **ranged["arguments"],
+                "term_months_max": 30,
+                "term_months": 30,
+            },
+        },
+    )
+
+
 def test_out_of_domain_decision_cannot_call_tools():
     decision = PolicyDecision(
         action=Action.ANSWER,

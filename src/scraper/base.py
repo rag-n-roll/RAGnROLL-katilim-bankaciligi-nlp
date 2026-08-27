@@ -41,10 +41,11 @@ MONTHS = {
 }
 MONTH_PATTERN = "|".join(MONTHS)
 NUMERIC_DATE_PATTERN = r"(?<!\d)\d{1,2}[./-]\d{1,2}[./-]\d{4}"
-TEXTUAL_DATE_PATTERN = rf"(?<!\d)\d{{1,2}}\s+(?:{MONTH_PATTERN})(?:\s+\d{{4}})?"
-FULL_TEXTUAL_DATE_PATTERN = rf"(?<!\d)\d{{1,2}}\s+(?:{MONTH_PATTERN})\s+\d{{4}}"
+TEXTUAL_DATE_PATTERN = rf"(?<!\d)\d{{1,2}}\s*(?:{MONTH_PATTERN})(?:\s*\d{{4}})?"
+FULL_TEXTUAL_DATE_PATTERN = rf"(?<!\d)\d{{1,2}}\s*(?:{MONTH_PATTERN})\s*\d{{4}}"
 PRIMARY_DATE_LABEL_RE = re.compile(
-    r"\bkampanya\s+(?:tarihleri|başlangıç\s+ve\s+bitiş|dönemi)\b",
+    r"\b(?:kampanya\s+(?:tarihleri|başlangıç\s+ve\s+bitiş|dönemi)|"
+    r"bitiş\s+tarihi|geçerlilik\s+tarihi|son\s+gün)\b",
     re.IGNORECASE,
 )
 INLINE_REWARD_CLAUSE_RE = re.compile(
@@ -100,13 +101,13 @@ def _parse_date(value: str, default_year: int | None = None) -> date | None:
         day, month, year = map(int, numeric.groups())
     else:
         textual = re.fullmatch(
-            rf"(\d{{1,2}})\s+({MONTH_PATTERN})(?:\s+(\d{{4}}))?", normalized
+            rf"(\d{{1,2}})\s*({MONTH_PATTERN})(?:\s*(\d{{4}}))?", normalized
         )
         if not textual:
             return None
         day = int(textual.group(1))
         month = MONTHS[textual.group(2)]
-        year = int(textual.group(3)) if textual.group(3) else default_year
+        year = int(textual.group(3)) if textual.group(3) else (default_year or date.today().year)
         if year is None:
             return None
     try:
@@ -119,7 +120,7 @@ def _find_explicit_ranges(segment: str) -> list[tuple[int, date, date]]:
     ranges: list[tuple[int, date, date]] = []
 
     numeric_ranges = re.finditer(
-        rf"({NUMERIC_DATE_PATTERN})\s+(?:-|–|—)\s+({NUMERIC_DATE_PATTERN})",
+        rf"({NUMERIC_DATE_PATTERN})\s*(?:-|–|—)\s*({NUMERIC_DATE_PATTERN})",
         segment,
         re.IGNORECASE,
     )
@@ -132,29 +133,30 @@ def _find_explicit_ranges(segment: str) -> list[tuple[int, date, date]]:
     textual_ranges = re.finditer(
         rf"({TEXTUAL_DATE_PATTERN})\s*"
         rf"(?:saat\s+\d{{1,2}}[.:]\d{{2}}\s*)?"
-        rf"(?:-|–|—)\s*({FULL_TEXTUAL_DATE_PATTERN})",
+        rf"(?:-|–|—)\s*({TEXTUAL_DATE_PATTERN})",
         segment,
         re.IGNORECASE,
     )
     for match in textual_ranges:
-        end = _parse_date(match.group(2))
-        start = _parse_date(match.group(1), default_year=end.year if end else None)
+        end_str = match.group(2)
+        end = _parse_date(end_str)
+        ref_year = end.year if end else date.today().year
+        start = _parse_date(match.group(1), default_year=ref_year)
+        if not end:
+            end = _parse_date(end_str, default_year=ref_year)
         if start and end and start <= end:
             ranges.append((match.start(), start, end))
 
     shared_month_ranges = re.finditer(
-        rf"(?<!\d)(\d{{1,2}})\s*(?:-|–|—)\s*(?<!\d)(\d{{1,2}})\s+"
-        rf"({MONTH_PATTERN})\s+(\d{{4}})(?=\s+tarih(?:leri|lerinde)\b)",
+        rf"(?<!\d)(\d{{1,2}})\s*(?:-|–|—)\s*(?<!\d)(\d{{1,2}})\s*"
+        rf"({MONTH_PATTERN})\s*(\d{{4}})?(?=\s+tarih(?:leri|lerinde)\b)",
         segment,
         re.IGNORECASE,
     )
     for match in shared_month_ranges:
-        start = _parse_date(
-            f"{match.group(1)} {match.group(3)} {match.group(4)}"
-        )
-        end = _parse_date(
-            f"{match.group(2)} {match.group(3)} {match.group(4)}"
-        )
+        year_str = match.group(4) or str(date.today().year)
+        start = _parse_date(f"{match.group(1)} {match.group(3)} {year_str}")
+        end = _parse_date(f"{match.group(2)} {match.group(3)} {year_str}")
         if start and end and start <= end:
             ranges.append((match.start(), start, end))
 
@@ -223,14 +225,18 @@ def _extract_end_only(segment: str) -> tuple[date | None, date | None]:
     context = _normalized_context(segment)
 
     end_only_matches = re.finditer(
-        rf"({NUMERIC_DATE_PATTERN}|{FULL_TEXTUAL_DATE_PATTERN})"
-        rf"(?:\s+tarihine|\s+saat\s+\d{{1,2}}[.:]\d{{2}}(?:['’]?[a-zçğıöşü]+)?|"
+        rf"(?:(?:bitiş|bitis)\s+tarihi[:\s]*|son\s+gün[:\s]*)?"
+        rf"({NUMERIC_DATE_PATTERN}|{TEXTUAL_DATE_PATTERN})"
+        rf"(?:\s+tarihine|\s+tarihinde|\s+saat\s+\d{{1,2}}[.:]\d{{2}}(?:['’]?[a-zçğıöşü]+)?|"
         rf"['’](?:a|e|ya|ye))?"
-        rf"\s+kadar\b",
+        rf"\s*(?:kadar\b|sona\s+ermiştir\b|sona\s+ermistir\b|sona\s+erdi\b|$)",
         segment,
         re.IGNORECASE,
     )
     for match in end_only_matches:
+        parsed_end = _parse_date(match.group(1))
+        if not parsed_end:
+            continue
         campaign_context = any(
             word in context
             for word in (
@@ -247,10 +253,34 @@ def _extract_end_only(segment: str) -> tuple[date | None, date | None]:
                 "magaza",
                 "kiralama",
                 "bilet",
+                "taksit",
+                "pos",
+                "vade farksız",
+                "vade farksiz",
+                "bitiş tarihi",
+                "bitis tarihi",
+                "son gün",
+                "son gun",
+                "sona er",
+                "katılım",
+                "katilim",
+                "hesap",
+                "oran",
+                "indirim",
+                "avantaj",
+                "başvuru",
+                "basvuru",
+                "işlem",
+                "islem",
+                "hediye",
+                "ödül",
+                "odul",
+                "puan",
+                "bonus",
             )
         )
         if campaign_context and not _is_reward_expiry(context):
-            return None, _parse_date(match.group(1))
+            return None, parsed_end
     return None, None
 
 
@@ -273,16 +303,67 @@ def _date_context_score(segment: str) -> int:
 
 
 def _date_segments(text: str) -> list[str]:
+    cleaned = clean_lines(text)
+    # Collapse numeric range across lines: 01-04-2025 \n - \n 31-12-2026
+    cleaned = re.sub(
+        rf"({NUMERIC_DATE_PATTERN})\s*\n\s*[-–—]\s*\n\s*({NUMERIC_DATE_PATTERN})",
+        r"\1 - \2",
+        cleaned,
+    )
+    cleaned = re.sub(
+        rf"({NUMERIC_DATE_PATTERN})\s*[-–—]\s*\n\s*({NUMERIC_DATE_PATTERN})",
+        r"\1 - \2",
+        cleaned,
+    )
+    cleaned = re.sub(
+        rf"({NUMERIC_DATE_PATTERN})\s*\n\s*[-–—]\s*({NUMERIC_DATE_PATTERN})",
+        r"\1 - \2",
+        cleaned,
+    )
+    # Collapse textual range across lines
+    cleaned = re.sub(
+        rf"({TEXTUAL_DATE_PATTERN})\s*\n\s*[-–—]\s*\n\s*({TEXTUAL_DATE_PATTERN})",
+        r"\1 - \2",
+        cleaned,
+    )
+    cleaned = re.sub(
+        rf"({TEXTUAL_DATE_PATTERN})\s*[-–—]\s*\n\s*({TEXTUAL_DATE_PATTERN})",
+        r"\1 - \2",
+        cleaned,
+    )
+    # Collapse label + date: Kampanya Dönemi \n 01-04-2025 - 31-12-2026
+    cleaned = re.sub(
+        rf"(kampanya\s+(?:dönemi|donemi|tarihleri|tarihi))\s*\n\s*"
+        rf"({NUMERIC_DATE_PATTERN}|{TEXTUAL_DATE_PATTERN})",
+        r"\1 \2",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    # Collapse archived banner: Kampanya \n 30-04-2026 \n Tarihinde Sona Ermiştir
+    cleaned = re.sub(
+        rf"kampanya\s*\n\s*({NUMERIC_DATE_PATTERN})\s*\n\s*"
+        rf"(tarihinde\s+sona\s+ermiştir|tarihinde\s+sona\s+ermistir)",
+        r"Kampanya \1 \2",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+
     segments: list[str] = []
-    lines = clean_lines(text).splitlines()
+    lines = cleaned.splitlines()
     index = 0
     while index < len(lines):
         line = lines[index]
-        if index + 1 < len(lines) and re.match(r"^\d{4}\b", lines[index + 1]):
-            combined = f"{line} {lines[index + 1]}"
-            if _extract_explicit_ranges(combined) != (None, None):
-                line = combined
-                index += 1
+        for lookahead in (1, 2):
+            if index + lookahead < len(lines):
+                combined = " ".join(lines[index : index + lookahead + 1])
+                if _find_explicit_ranges(combined) != []:
+                    line = combined
+                    index += lookahead
+                    break
+                if _extract_end_only(combined) != (None, None):
+                    line = combined
+                    index += lookahead
+                    break
         for reward_part in INLINE_REWARD_CLAUSE_RE.split(line):
             for part in re.split(r"(?<=[.!?;])\s+", reward_part):
                 compact = re.sub(r"\s+", " ", part).strip()

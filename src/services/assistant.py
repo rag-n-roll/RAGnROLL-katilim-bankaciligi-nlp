@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import replace
 from hashlib import sha256
 import json
@@ -289,6 +290,44 @@ class GroundedAssistant:
         plan, _ = self._compile_with_policy(message)
         return plan
 
+    def _deterministic_plan(self, message: str) -> QueryPlan:
+        plan = self.compiler.compile(
+            message, known_banks=self.store.bank_summary()
+        )
+        criteria = extract_comparison_criteria(message)
+        explicit_profit_rate_preference = (
+            plan.slots.get("metric") == "PROFIT_RATE"
+            and plan.slots.get("aggregation") == "MIN"
+        )
+        implicit_financing_quote = (
+            plan.intent != "product_comparison"
+            and plan.slots.get("financing_type")
+            in {"consumer", "vehicle", "housing", "commercial"}
+            and criteria.get("term_months") is not None
+            and criteria.get("amount") is not None
+        )
+        slots = {
+            **plan.slots,
+            "term_months_min": criteria.get("term_months_min"),
+            "term_months_max": criteria.get("term_months_max"),
+            "explicit_profit_rate_preference": explicit_profit_rate_preference,
+        }
+        if not implicit_financing_quote:
+            return replace(plan, slots=slots)
+        slots.update({"metric": "PROFIT_RATE", "aggregation": "MIN"})
+        return replace(
+            plan,
+            intent="product_comparison",
+            route=self.compiler.route_for(
+                "product_comparison", slots, trusted_domain=True
+            ),
+            slots=slots,
+            warnings=[
+                *plan.warnings,
+                "Tutar ve vade içeren finansman isteği teklif karşılaştırmasına yönlendirildi",
+            ],
+        )
+
     def _compile_with_policy(
         self, message: str
     ) -> tuple[QueryPlan, PolicyDecision | None]:
@@ -303,7 +342,7 @@ class GroundedAssistant:
             )
             return safe_plan, input_decision
         known_banks = self.store.bank_summary()
-        plan = self.compiler.compile(message, known_banks=known_banks)
+        plan = self._deterministic_plan(message)
         if plan.route == "SAFE_REDIRECT":
             return plan, None
         analyzer = getattr(self.decisions, "analyze", None)
@@ -467,7 +506,8 @@ class GroundedAssistant:
             plan.intent == "product_comparison"
             and plan.slots.get("financing_type")
             in {"consumer", "vehicle", "housing", "commercial"}
-            and plan.slots.get("aggregation") not in {"MIN", "MAX"}
+            and plan.slots.get("term_months") is not None
+            and plan.slots.get("amount") is not None
             and not effective_criteria.missing()
         )
         tool_name = (
@@ -479,9 +519,11 @@ class GroundedAssistant:
             if plan.route == "STRUCTURED_SQL"
             else "hybrid_rag"
         )
-        if plan.intent == "product_comparison" and plan.slots.get(
-            "aggregation"
-        ) in {"MIN", "MAX"}:
+        if (
+            not sourced_financing_comparison
+            and plan.intent == "product_comparison"
+            and plan.slots.get("aggregation") in {"MIN", "MAX"}
+        ):
             # Objective extrema do not require preference criteria; complete only
             # the authorization contract and do not pass these values to tools.
             effective_criteria = ComparisonCriteria(1, 0.0, False)
@@ -513,6 +555,12 @@ class GroundedAssistant:
                 else None,
                 "fee_priority": effective_criteria.fee_priority
                 if tool_name in {"comparison", "financing_quote"}
+                else None,
+                "term_months_min": plan.slots.get("term_months_min")
+                if tool_name == "financing_quote"
+                else None,
+                "term_months_max": plan.slots.get("term_months_max")
+                if tool_name == "financing_quote"
                 else None,
             }.items()
             if value not in (None, [], "")
@@ -1026,46 +1074,88 @@ class GroundedAssistant:
         financing_type = str(arguments["financing_type"])
         amount = float(arguments["amount"])
         term_months = int(arguments["term_months"])
+        term_months_min = int(arguments.get("term_months_min") or term_months)
+        term_months_max = int(arguments.get("term_months_max") or term_months)
+        term_range = list(range(term_months_min, term_months_max + 1))
         fee_priority = bool(arguments["fee_priority"])
         bank_slugs = {
             str(item) for item in arguments.get("banks", []) if str(item).strip()
         }
         eligible = bank_slugs or None
-        official_quotes = fetch_official_quotes(
-            financing_type=financing_type,
-            amount=amount,
-            term_months=term_months,
-            eligible_bank_slugs=eligible,
-        )
         banks = self._financing_catalog_items("raw/participation_banks.json", "banks")
         records = self.store.list_campaigns()
         if not records:
             records = self._financing_catalog_items("processed/campaigns.json", "records")
-        packet = build_financing_quotes(
-            records=records,
-            banks=banks,
-            financing_type=financing_type,
-            amount=amount,
-            term_months=term_months,
-            official_quotes=official_quotes,
-            eligible_bank_slugs=eligible,
-            fee_priority=fee_priority,
+
+        def packet_for_term(months: int) -> tuple[int, dict[str, Any]]:
+            official_quotes = fetch_official_quotes(
+                financing_type=financing_type,
+                amount=amount,
+                term_months=months,
+                eligible_bank_slugs=eligible,
+            )
+            return months, build_financing_quotes(
+                records=records,
+                banks=banks,
+                financing_type=financing_type,
+                amount=amount,
+                term_months=months,
+                official_quotes=official_quotes,
+                eligible_bank_slugs=eligible,
+                fee_priority=fee_priority,
+            )
+
+        packets: dict[int, dict[str, Any]] = {}
+        if len(term_range) == 1:
+            months, packet = packet_for_term(term_range[0])
+            packets[months] = packet
+        else:
+            with ThreadPoolExecutor(max_workers=min(3, len(term_range))) as executor:
+                futures = {
+                    executor.submit(packet_for_term, months): months
+                    for months in term_range
+                }
+                for future in as_completed(futures):
+                    months, packet = future.result()
+                    packets[months] = packet
+
+        verified: list[dict[str, Any]] = []
+        for months in term_range:
+            for quote in packets[months]["quotes"]:
+                if (
+                    quote.get("status") == "available"
+                    and str(quote.get("source_url") or "").startswith("https://")
+                    and str(quote.get("retrieved_at") or "").strip()
+                    and _finite(quote.get("monthly_installment")) is not None
+                    and _finite(quote.get("total_repayment")) is not None
+                ):
+                    verified.append({**quote, "_term_months": months})
+        objective_profit_rate = (
+            plan.slots.get("metric") == "PROFIT_RATE"
+            and plan.slots.get("aggregation") in {"MIN", "MAX"}
         )
-        verified = [
-            quote
-            for quote in packet["quotes"]
-            if quote.get("status") == "available"
-            and str(quote.get("source_url") or "").startswith("https://")
-            and str(quote.get("retrieved_at") or "").strip()
-            and _finite(quote.get("monthly_installment")) is not None
-            and _finite(quote.get("total_repayment")) is not None
-        ]
-        if fee_priority:
+        explicit_profit_rate_preference = bool(
+            plan.slots.get("explicit_profit_rate_preference")
+        )
+        if objective_profit_rate:
+            direction = 1 if plan.slots.get("aggregation") == "MIN" else -1
+            verified.sort(
+                key=lambda quote: (
+                    _finite(quote.get("monthly_profit_rate")) is None,
+                    direction
+                    * (_finite(quote.get("monthly_profit_rate")) or 0.0),
+                    _finite(quote.get("total_repayment")) or float("inf"),
+                    int(quote["_term_months"]),
+                    str(quote.get("bank_name") or ""),
+                )
+            )
+        elif fee_priority:
             verified.sort(
                 key=lambda quote: (
                     quote.get("fees_total") is None,
                     _finite(quote.get("fees_total")) or 0.0,
                     _finite(quote.get("total_repayment")) or float("inf"),
+                    int(quote["_term_months"]),
                     str(quote.get("bank_name") or ""),
                 )
             )
@@ -1073,18 +1163,42 @@ class GroundedAssistant:
             verified.sort(
                 key=lambda quote: (
                     _finite(quote.get("total_repayment")) or float("inf"),
+                    int(quote["_term_months"]),
                     str(quote.get("bank_name") or ""),
                 )
+            )
+
+        displayed_quotes = verified
+        if len(term_range) > 1 and explicit_profit_rate_preference:
+            displayed_quotes = []
+            for months in term_range:
+                candidates = [
+                    quote
+                    for quote in verified
+                    if int(quote["_term_months"]) == months
+                ]
+                if candidates:
+                    displayed_quotes.append(candidates[0])
+        elif len(term_range) > 1:
+            displayed_quotes = sorted(
+                verified,
+                key=lambda quote: (
+                    int(quote["_term_months"]),
+                    _finite(quote.get("monthly_profit_rate")) is None,
+                    _finite(quote.get("monthly_profit_rate")) or 0.0,
+                    str(quote.get("bank_name") or ""),
+                ),
             )
 
         facts: list[dict[str, Any]] = []
         sources: list[dict[str, Any]] = []
         lines: list[str] = []
         amount_text = self._try_amount(amount)
-        for index, quote in enumerate(verified, start=1):
+        for index, quote in enumerate(displayed_quotes, start=1):
             bank_slug = str(quote.get("bank_slug") or "")
             bank_name = str(quote.get("bank_name") or bank_slug)
             product_name = str(quote.get("product_name") or "Finansman")
+            quote_term_months = int(quote["_term_months"])
             monthly_rate = _finite(quote.get("monthly_profit_rate"))
             installment = self._try_amount(quote.get("monthly_installment"))
             total = self._try_amount(quote.get("total_repayment"))
@@ -1096,19 +1210,22 @@ class GroundedAssistant:
             )
             evidence = (
                 f"{bank_name} — {product_name}. Finansman tutarı {amount_text}; "
-                f"vade {term_months} ay; aylık kâr payı {rate_text}; "
+                f"vade {quote_term_months} ay; aylık kâr payı {rate_text}; "
                 f"aylık taksit {installment}; toplam geri ödeme {total}; "
                 f"toplam masraf {fees}. Doğrulama zamanı: {quote['retrieved_at']}."
             )
             facts.append(
                 {
-                    "quote_id": f"{bank_slug}:{financing_type}:{int(amount)}:{term_months}",
+                    "quote_id": (
+                        f"{bank_slug}:{financing_type}:"
+                        f"{int(amount)}:{quote_term_months}"
+                    ),
                     "bank_slug": bank_slug,
                     "bank_name": bank_name,
                     "product_name": product_name,
                     "financing_type": financing_type,
                     "amount": amount,
-                    "term_months": term_months,
+                    "term_months": quote_term_months,
                     "fee_priority": fee_priority,
                     "monthly_profit_rate": monthly_rate,
                     "monthly_installment": _finite(quote.get("monthly_installment")),
@@ -1121,7 +1238,7 @@ class GroundedAssistant:
                 {
                     "campaign_id": (
                         f"financing:{bank_slug}:{financing_type}:"
-                        f"{int(amount)}:{term_months}"
+                        f"{int(amount)}:{quote_term_months}"
                     ),
                     "bank_name": bank_name,
                     "title": product_name,
@@ -1132,21 +1249,63 @@ class GroundedAssistant:
                     "retrieval_method": "official_financing_quote",
                 }
             )
+            term_prefix = (
+                f"{quote_term_months} ay — " if len(term_range) > 1 else ""
+            )
             lines.append(
-                f"- {bank_name} — {product_name}: aylık kâr payı {rate_text}; "
+                f"- {term_prefix}{bank_name} — {product_name}: "
+                f"aylık kâr payı {rate_text}; "
                 f"aylık taksit {installment}; toplam geri ödeme {total}; "
                 f"masraf {fees} [K{index}]"
             )
 
         if lines:
-            priority = "masraf önceliğine" if fee_priority else "toplam geri ödemeye"
-            answer = (
-                f"{amount_text} ve {term_months} ay için doğrulanmış teklifler "
-                f"{priority} göre tarafsız sıralandı:\n" + "\n".join(lines)
+            priority = (
+                "aylık kâr payı oranına"
+                if objective_profit_rate
+                else "masraf önceliğine"
+                if fee_priority
+                else "toplam geri ödemeye"
             )
+            if len(term_range) > 1:
+                range_text = f"{term_months_min}-{term_months_max} ay"
+                intro = (
+                    f"{amount_text} için {range_text} aralığındaki "
+                    f"{len(term_range)} vadenin her biri ayrı hesaplandı."
+                )
+                if explicit_profit_rate_preference and verified:
+                    best = verified[0]
+                    best_rate = _finite(best.get("monthly_profit_rate"))
+                    best_rate_text = (
+                        f"%{best_rate:.2f}".replace(".", ",")
+                        if best_rate is not None
+                        else "belirtilmedi"
+                    )
+                    intro += (
+                        f" En düşük aylık kâr payı {best_rate_text} ile "
+                        f"{best.get('bank_name')} tarafından "
+                        f"{int(best['_term_months'])} ay vadede sunuldu. "
+                        "Eşit oranlarda daha düşük toplam geri ödeme öne alındı."
+                    )
+                else:
+                    intro += (
+                        " Açık bir tercih belirtilmediği için teklifler "
+                        "tarafsız biçimde sıralandı."
+                    )
+                answer = intro + "\n" + "\n".join(lines)
+            else:
+                answer = (
+                    f"{amount_text} ve {term_months} ay için doğrulanmış teklifler "
+                    f"{priority} göre tarafsız sıralandı:\n" + "\n".join(lines)
+                )
         else:
+            term_text = (
+                f"{term_months_min}-{term_months_max} ay aralığı"
+                if len(term_range) > 1
+                else f"{term_months} ay"
+            )
             answer = (
-                f"{amount_text} ve {term_months} ay için resmî kaynağı ve doğrulama "
+                f"{amount_text} ve {term_text} için resmî kaynağı ve doğrulama "
                 "zamanı bulunan karşılaştırılabilir bir teklif alınamadı."
             )
         typed = len(facts)
@@ -1157,7 +1316,17 @@ class GroundedAssistant:
             "answer": answer,
             "facts": facts,
             "sources": sources,
-            "quote_coverage": packet["coverage"],
+            "quote_coverage": (
+                packets[term_months]["coverage"]
+                if len(term_range) == 1
+                else {
+                    "term_count": len(term_range),
+                    "terms": {
+                        str(months): packets[months]["coverage"]
+                        for months in term_range
+                    },
+                }
+            ),
             "confidence": confidence,
             "answer_confidence": confidence,
             "confidence_components": components,
@@ -2216,9 +2385,7 @@ class GroundedAssistant:
             if conversation_state.get("pending_intent") != "product_comparison":
                 raise ValueError("Geçersiz konuşma durumu")
             execution_message = str(conversation_state.get("pending_query") or "")
-            pending_plan = self.compiler.compile(
-                execution_message, known_banks=self.store.bank_summary()
-            )
+            pending_plan = self._deterministic_plan(execution_message)
             if pending_plan.intent != "product_comparison":
                 raise ValueError("Konuşma durumu karşılaştırma isteğiyle uyuşmuyor")
             criteria = merge_criteria(
@@ -2232,11 +2399,15 @@ class GroundedAssistant:
                     message=execution_message, plan=pending_plan, criteria=criteria
                 )
         else:
-            pending_plan = self.compiler.compile(
-                message, known_banks=self.store.bank_summary()
-            )
+            pending_plan = self._deterministic_plan(message)
             criteria = merge_criteria(
                 ComparisonCriteria(), extract_comparison_criteria(message)
+            )
+            objective_financing_comparison = (
+                pending_plan.intent == "product_comparison"
+                and pending_plan.slots.get("aggregation") in {"MIN", "MAX"}
+                and pending_plan.slots.get("financing_type")
+                in {"consumer", "vehicle", "housing", "commercial"}
             )
             subjective_comparison = (
                 pending_plan.intent == "product_comparison"
@@ -2248,7 +2419,13 @@ class GroundedAssistant:
                     plan=pending_plan,
                     criteria=criteria,
                 )
-            if not subjective_comparison:
+            if (
+                objective_financing_comparison
+                and criteria.term_months is not None
+                and criteria.amount is not None
+            ):
+                criteria = merge_criteria(criteria, {"fee_priority": False})
+            elif not subjective_comparison:
                 criteria = None
 
         if clarification is not None:

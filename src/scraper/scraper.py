@@ -412,6 +412,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--quality-report", type=Path, default=Path("outputs/quality_report.json")
     )
     collect.add_argument("--database", type=Path, default=DEFAULT_DATABASE_PATH)
+    collect.add_argument("--verbose", action="store_true")
     add_http_options(collect)
     collect.set_defaults(handler=run_collect)
 

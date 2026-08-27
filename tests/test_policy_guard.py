@@ -135,6 +135,21 @@ def test_input_guard_redirects_transaction_execution_and_how_to_requests(message
 @pytest.mark.parametrize(
     "message",
     [
+        (
+            "Taşıt finansmanına başvuracağım, 200.000 TL çekeceğim, 36 ay vade, "
+            "en düşük kâr payı hangi banka verir?"
+        ),
+        "Taşıt finansmanına başvuracağım, 200 bin TL 8 ay vade.",
+        "Konut finansmanına başvurmak istiyorum; teklifleri karşılaştır.",
+    ],
+)
+def test_input_guard_allows_application_context_with_financing_advice(message):
+    assert InputGuard().inspect(message) is None
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
         "Kartımı kapatmanın sonuçları nelerdir?",
         "Hesabı dondurmak ne demek?",
         "Finansman başvurusunu geri çekme koşulları nelerdir?",

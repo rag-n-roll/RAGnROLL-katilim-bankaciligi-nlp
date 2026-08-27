@@ -757,6 +757,147 @@ def test_suitable_vehicle_financing_requires_criteria(tmp_path):
     assert "vade" in payload["answer_display"].casefold()
 
 
+@pytest.mark.parametrize(
+    "message",
+    [
+        (
+            "Taşıt finansmanına başvuracağım, 200.000 TL çekeceğim, "
+            "36 ay vade, en düşük kâr payı hangi banka verir?"
+        ),
+        "Taşıt finansmanına başvuracağım, 200 bin TL 8 ay vade.",
+    ],
+)
+def test_application_context_with_amount_and_term_uses_financing_quote(
+    tmp_path, monkeypatch, message
+):
+    monkeypatch.setattr(
+        "src.services.assistant.fetch_official_quotes",
+        lambda **_: {
+            "albaraka-turk": {
+                "bank_slug": "albaraka-turk",
+                "bank_name": "Albaraka Türk",
+                "product_name": "Taşıt Finansmanı",
+                "status": "available",
+                "monthly_profit_rate": 3.19,
+                "monthly_installment": 9_200.0,
+                "total_repayment": 331_200.0,
+                "fees_total": 0.0,
+                "source_url": "https://basvur.albaraka.com.tr/jet-finansman",
+                "retrieved_at": "2026-08-27T12:00:00+00:00",
+                "calculation_origin": "official_calculator_live",
+                "message": "Canlı resmî hesaplayıcı sonucu.",
+            },
+            "kuveyt-turk": {
+                "bank_slug": "kuveyt-turk",
+                "bank_name": "Kuveyt Türk",
+                "product_name": "Taşıt Finansmanı",
+                "status": "available",
+                "monthly_profit_rate": 2.79,
+                "monthly_installment": 8_400.0,
+                "total_repayment": 302_400.0,
+                "fees_total": 500.0,
+                "source_url": (
+                    "https://www.kuveytturk.com.tr/hesaplama-araclari/"
+                    "finansman-hesaplama"
+                ),
+                "retrieved_at": "2026-08-27T12:00:00+00:00",
+                "calculation_origin": "official_calculator_live",
+                "message": "Canlı resmî hesaplayıcı sonucu.",
+            }
+        },
+    )
+
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat",
+            json={"message": message},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["action"] == "ANSWER"
+    assert payload["plan"]["intent"] == "product_comparison"
+    assert payload["plan"]["slots"]["financing_type"] == "vehicle"
+    assert payload["plan"]["slots"]["amount"] == 200_000
+    assert payload["plan"]["slots"]["term_months"] in {8, 36}
+    assert payload["plan"]["slots"]["aggregation"] == "MIN"
+    assert len(payload["sources"]) == 2
+    assert payload["sources"][0]["bank_name"] == "Kuveyt Türk"
+    assert payload["sources"][0]["retrieval_method"] == "official_financing_quote"
+    assert "aylık kâr payı oranına göre" in payload["answer_display"].casefold()
+
+
+@pytest.mark.parametrize(
+    ("message", "expects_winner"),
+    [
+        (
+            "Konut finansmanına başvuracağım, 900 bin TL çekeceğim, "
+            "6-8 ay vade düşünüyorum; en düşük kâr payı hangi bankadadır, "
+            "kaç ay seçersem en iyi ödeme planına sahip olurum?",
+            True,
+        ),
+        (
+            "Konut finansmanına başvuracağım, 900 bin TL çekeceğim, "
+            "6-8 ay vade düşünüyorum; ödeme planlarını göster.",
+            False,
+        ),
+    ],
+)
+def test_financing_term_range_evaluates_every_inclusive_month(
+    tmp_path, monkeypatch, message, expects_winner
+):
+    requested_terms = []
+
+    def quotes_for_term(**kwargs):
+        term = kwargs["term_months"]
+        requested_terms.append(term)
+        rates = {6: 3.0, 7: 2.8, 8: 2.9}
+        return {
+            "kuveyt-turk": {
+                "bank_slug": "kuveyt-turk",
+                "bank_name": "Kuveyt Türk",
+                "product_name": "Konut Finansmanı",
+                "status": "available",
+                "monthly_profit_rate": rates[term],
+                "monthly_installment": 100_000.0 + term,
+                "total_repayment": 900_000.0 + term,
+                "fees_total": 500.0,
+                "source_url": (
+                    "https://www.kuveytturk.com.tr/hesaplama-araclari/"
+                    "finansman-hesaplama"
+                ),
+                "retrieved_at": "2026-08-27T12:00:00+00:00",
+                "calculation_origin": "official_calculator_live",
+                "message": "Canlı resmî hesaplayıcı sonucu.",
+            }
+        }
+
+    monkeypatch.setattr(
+        "src.services.assistant.fetch_official_quotes", quotes_for_term
+    )
+
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat",
+            json={"message": message},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert sorted(requested_terms) == [6, 7, 8]
+    assert payload["action"] == "ANSWER"
+    assert payload["plan"]["slots"]["term_months_min"] == 6
+    assert payload["plan"]["slots"]["term_months_max"] == 8
+    assert [fact["term_months"] for fact in payload["facts"]] == [6, 7, 8]
+    assert "3 vadenin her biri ayrı hesaplandı" in payload["answer_display"]
+    if expects_winner:
+        assert "en düşük aylık kâr payı %2,80" in payload["answer_display"].casefold()
+        assert "7 ay vadede sunuldu" in payload["answer_display"].casefold()
+    else:
+        assert "açık bir tercih belirtilmedi" in payload["answer_display"].casefold()
+        assert "tarafsız biçimde sıralandı" in payload["answer_display"].casefold()
+
+
 def test_follow_up_criteria_produces_neutral_comparison(tmp_path, monkeypatch):
     monkeypatch.setattr(
         "src.services.assistant.fetch_official_quotes",

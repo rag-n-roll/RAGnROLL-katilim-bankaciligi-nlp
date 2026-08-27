@@ -17,6 +17,8 @@ PROFIT_PATTERNS = (
         rf"%\s*({NUMBER})\s*(?:k[aâ]r\s+pay[ıi]\s+)?oran(?:[ıi]|ından|li|lı)?",
         re.IGNORECASE,
     ),
+    re.compile(rf"oran(?:ı|i)?\s*%\s*({NUMBER})", re.IGNORECASE),
+    re.compile(rf"%\s*({NUMBER})\s+oran", re.IGNORECASE),
 )
 DISCOUNT_PATTERN = re.compile(
     rf"(?:%\s*({NUMBER})|({NUMBER})\s*%)\s*(?:indirim|iade)",
@@ -28,14 +30,18 @@ DURATION_PATTERN = re.compile(
     re.IGNORECASE,
 )
 INSTALLMENT_PATTERN = re.compile(
-    r"(?<!\d)(\d{1,3})\s*(?:aya\s+varan\s+)?taksit", re.IGNORECASE
+    r"(?<!\d)(\d{1,3})\s*(?:aya\s+varan\s+|ay\s+)?taksit", re.IGNORECASE
 )
 MONEY_PATTERN = re.compile(
     rf"(?:[₺$€£]\s*{NUMBER}|{NUMBER}(?:\s+milyon)?\s*(?:TL|₺|TRY|USD|\$|EUR|€|GBP|£))",
     re.IGNORECASE,
 )
+REWARD_WORDS = (
+    r"ödül|odul|iade|puan|bonus|bankkart\s+lira|parafpara|"
+    r"worldpuan|altın\s+puan|altin\s+puan|hediye\s+bakiye|hediye"
+)
 MONEY_REWARD_PATTERN = re.compile(
-    rf"({MONEY_PATTERN.pattern})(?=[^.!?]{{0,45}}(?:ödül|odul|iade|puan|bonus))",
+    rf"({MONEY_PATTERN.pattern})(?=[^.!?]{{0,60}}(?:{REWARD_WORDS}))",
     re.IGNORECASE,
 )
 MAX_AMOUNT_PATTERN = re.compile(
@@ -45,8 +51,9 @@ MIN_AMOUNT_PATTERN = re.compile(
     rf"en\s+az\s+({MONEY_PATTERN.pattern})(?:\s+ile)?", re.IGNORECASE
 )
 APPLICATION_CHANNEL_PATTERN = re.compile(
-    r"\b(mobil uygulama|internet şubesi|internet subesi|görüntülü görüşme|"
-    r"goruntulu gorusme|şube|sube|çağrı merkezi|cagri merkezi)\b",
+    r"\b(mobil uygulama|mobil bankacılık|mobil bankacilik|mobilden|"
+    r"internet şubesi|internet subesi|internet şube|internet sube|"
+    r"görüntülü görüşme|goruntulu gorusme|şube|sube|çağrı merkezi|cagri merkezi)\b",
     re.IGNORECASE,
 )
 CONDITION_PATTERN = re.compile(
@@ -222,23 +229,128 @@ def extract_prd_fields(
         min_amount = normalized_min.to_dict() if normalized_min else None
 
     target_audience = None
-    new_customer_words = (
-        "yeni müşteri",
-        "yeni musteri",
-        "ilk kez müşteri",
-        "ilk kez musteri",
+    sentences = [s.strip() for s in re.split(r"[\n.!?;]+|\s{2,}", source) if s.strip()]
+    exclusion_markers = (
+        "dahil değil",
+        "dahil degil",
+        "geçerli değil",
+        "gecerli degil",
+        "hariç",
+        "haric",
+        "kapsam dışı",
+        "kapsam disi",
     )
-    if any(word in normalized for word in new_customer_words):
-        target_audience = "new_customer"
-        match = re.search(
-            r"yeni müşteri(?:lere)?|yeni musteri(?:lere)?|"
-            r"ilk kez müşteri(?:lere)?|ilk kez musteri(?:lere)?",
-            source,
-            re.IGNORECASE,
-        )
-        if match:
-            evidence["target_audience"] = match.group(0)
-
+    target_defs = [
+        (
+            "new_customer",
+            (
+                "yeni müşteri", "yeni musteri", "ilk kez müşteri", "ilk kez musteri",
+                "müşteri olan", "musteri olan", "müşteri olun", "musteri olun",
+                "türkiye finanslı", "turkiye finansli", "kuveyt türklü", "kuveyt turklu",
+                "albarakalı", "albarakali", "hayat finanslı", "hayat finansli",
+                "vakıf katılımlı", "vakif katilimli", "ziraat katılımlı", "ziraat katilimli",
+                "hadi'li", "hadili", "kart sahibi olun", "hoş geldin", "hos geldin", "onboarding",
+            ),
+            (
+                r"yeni\s+müşteri(?:ler[ea]?|miz)?|yeni\s+musteri(?:ler[ea]?|miz)?|"
+                r"ilk\s+kez\s+müşteri(?:ler[ea]?|miz)?|ilk\s+kez\s+musteri(?:ler[ea]?|miz)?|"
+                r"müşteri\s+olan(?:lar)?|musteri\s+olan(?:lar)?|"
+                r"müşteri\s+olun|musteri\s+olun|"
+                r"mobilden\s+[^.!?\n]{1,30}?\s*müşteri\s+ol\w*|"
+                r"mobilden\s+[^.!?\n]{1,30}?\s*musteri\s+ol\w*|"
+                r"(?:türkiye\s+finanslı|turkiye\s+finansli|kuveyt\s+türklü|kuveyt\s+turklu|"
+                r"albarakalı|albarakali|hayat\s+finanslı|hayat\s+finansli|"
+                r"vakıf\s+katılımlı|vakif\s+katilimli|ziraat\s+katılımlı|ziraat\s+katilimli|"
+                r"hadi'li|hadili)\s+ol\w*|"
+                r"kart\s+sahibi\s+olun|hoş\s+geldin|hos\s+geldin|onboarding"
+            ),
+        ),
+        (
+            "retiree",
+            ("emekli", "emeklilere", "emekliler", "emekli maaş", "emekli maas"),
+            r"emekli(?:ler[ea]?|miz|ye)?|emekli\s+maaş\w*|emekli\s+maas\w*",
+        ),
+        (
+            "public_sector",
+            (
+                "kamu çalışan", "kamu calisan", "kamu personel",
+                "sağlık meslek", "saglik meslek", "doktor", "öğretmen", "ogretmen",
+            ),
+            (
+                r"kamu\s+(?:çalışan|calisan|personel)\w*|"
+                r"sağlık\s+meslek|saglik\s+meslek|\bdoktor\w*|\böğretmen\w*|\bogretmen\w*"
+            ),
+        ),
+        (
+            "commercial",
+            (
+                "esnaf", "kobi", "ticari", "tüzel", "tuzel",
+                "çiftçi", "ciftci", "tarım", "tarim", "işletme", "isletme", "pilot",
+            ),
+            (
+                r"\b(?:esnaf|kobi|ticari|tüzel|tuzel|çiftçi|ciftci|"
+                r"tarım|tarim|işletme|isletme|pilot\w*)\b"
+            ),
+        ),
+        (
+            "student",
+            (
+                "öğrenci", "ogrenci", "genç", "genc",
+                "gençler", "gencler", "üniversite", "universite", "kampüs", "kampus",
+            ),
+            (
+                r"\b(?:öğrenci\w*|ogrenci\w*|genç\w*|genc\w*|"
+                r"üniversite\w*|universite\w*|kampüs\w*|kampus\w*)\b"
+            ),
+        ),
+        (
+            "existing_customer",
+            (
+                "bankkart", "paraf", "world", "sağlam kart", "saglam kart", "hadi",
+                "vkart", "biz kart", "dkart", "troy", "kartınız", "kartiniz",
+                "kart sahip", "debit kart", "sanal kart",
+                "bireysel müşteri", "bireysel musteri",
+                "mevcut müşteri", "mevcut musteri",
+                "bankamız müşteri", "bankamiz musteri",
+                "müşterilerimize özel", "musterilerimize ozel",
+                "müşterilerine özel", "musterilerine ozel",
+                "müşterimize özel", "musterimize ozel",
+                "müşteri bazlı", "musteri bazli",
+                "işlem yapan müşteri", "islem yapan musteri",
+                "katılma hesabı", "katilma hesabi", "mevduat",
+                "vadesiz hesap", "avantajlı hesap", "avantajli hesap",
+            ),
+            (
+                r"(?:bankkart|paraf|world|sağlam\s+kart|saglam\s+kart|hadi|vkart|"
+                r"biz\s+kart|dkart|troy)\s+(?:kredi\s+)?kart\w*|"
+                r"kartınız(?:la)?|kartiniz(?:la)?|kart\s+sahip\w*|debit\s+kart\w*|"
+                r"sanal\s+kart\w*|"
+                r"(?:bireysel|tüm\s+bireysel|mevcut|bankamız|bankamiz)\s+müşteri\w*|"
+                r"(?:bireysel|tüm\s+bireysel|mevcut|bankamız|bankamiz)\s+musteri\w*|"
+                r"müşteri(?:lerimize|lerine|mize)\s+özel|"
+                r"musteri(?:lerimize|lerine|mize)\s+ozel|"
+                r"müşteri\s+bazlı|musteri\s+bazli|"
+                r"işlem\s+yapan\s+müşteri\w*|islem\s+yapan\s+musteri\w*|"
+                r"(?:hayat\s+finanslı|kuveyt\s+türklü|albarakalı|türkiye\s+finanslı|"
+                r"ziraat\s+katılımlı|vakıf\s+katılımlı|hadi'li)\w*\s+özel|"
+                r"(?:avantajlı|katılma|mevduat|vadesiz)\s+hesap\s+(?:açan\s+)?"
+                r"(?:bireysel\s+)?müşteri\w*"
+            ),
+        ),
+    ]
+    for sentence in sentences:
+        norm_s = _normalized(sentence)
+        if any(m in norm_s for m in exclusion_markers):
+            continue
+        for label, keywords, pattern in target_defs:
+            if any(k in norm_s for k in keywords):
+                match = re.search(pattern, sentence, re.IGNORECASE)
+                if match:
+                    target_audience = label
+                    evidence["target_audience"] = match.group(0)
+                    break
+        if target_audience:
+            break
     product_type = _product_type(normalized)
     if product_type:
         product_evidence_patterns = {

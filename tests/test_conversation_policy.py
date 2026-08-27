@@ -1,3 +1,5 @@
+import pytest
+
 from src.policy import ComparisonCriteria
 from src.services.conversation import extract_comparison_criteria, merge_criteria
 
@@ -22,6 +24,23 @@ def test_extracts_explicit_turkish_comparison_criteria():
         "amount": 750_000,
         "fee_priority": True,
     }
+
+
+@pytest.mark.parametrize(
+    ("message", "expected"),
+    [
+        ("1-12 ay vade düşünüyorum", (1, 12)),
+        ("1.-12 ay vade düşünüyorum", (1, 12)),
+        ("6–8 ay arasında", (6, 8)),
+        ("8-6 ay olabilir", (6, 8)),
+    ],
+)
+def test_extracts_inclusive_financing_term_range(message, expected):
+    extracted = extract_comparison_criteria(message)
+
+    assert extracted["term_months_min"] == expected[0]
+    assert extracted["term_months_max"] == expected[1]
+    assert extracted["term_months"] == expected[1]
 
 
 def test_extracts_fee_priority_in_instrumental_form():

@@ -15,7 +15,7 @@ class DunyaKatilimScraper(BaseBankScraper):
         detail_pattern=r"/kampanyalar/[^/?#]+$",
         listing_link_selectors=(".notification-popup a[href]",),
         discover_from_base_url=True,
-        content_selectors=(".campaign-detail-content-text",),
+        content_selectors=(".campaign-detail-content-text", ".campaign-finish-date"),
         title_selectors=("h1.campaign-detail-header-left-title", "h1"),
     )
 
