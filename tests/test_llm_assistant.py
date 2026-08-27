@@ -1424,6 +1424,17 @@ def test_presentation_removes_internal_citations_and_deduplicates_badges():
     assert len(presented.sources) == 1
 
 
+def test_presentation_cleans_citation_punctuation_without_flattening_emphasis():
+    presented = present_answer(
+        "Oran %0 olarak sunulmaktadır,, [K1]. Peki... gerçekten?! [K1]",
+        sources=[{"campaign_id": "campaign-1", "title": "%0 kâr payı"}],
+    )
+
+    assert presented.answer_display == (
+        "Oran %0 olarak sunulmaktadır. Peki... gerçekten?!"
+    )
+
+
 class MultiTurnFakeLLM:
     enabled = True
     model = "test-gemma"
