@@ -19,6 +19,12 @@ export type CampaignRowItem = {
   validity: string;
 };
 
+type ExtractedDetail = {
+  icon: string;
+  label: string;
+  value: string;
+};
+
 const getBadgeClass = (type: string) => {
   if (type === "Kart") return styles.cardBadge;
   if (type === "Yatırım") return styles.investmentBadge;
@@ -94,6 +100,19 @@ export default function CampaignExplorer({ rows }: { rows: CampaignRowItem[] }) 
     const found = rows.find((r) => r.id === selectedId);
     return found ?? filteredRows[0] ?? rows[0];
   }, [rows, selectedId, filteredRows]);
+
+  const extractedDetails = useMemo<ExtractedDetail[]>(() => {
+    if (!selected) return [];
+
+    return [
+      { icon: "🏦", label: "Banka", value: selected.bank },
+      { icon: "▣", label: "Ürün Türü", value: selected.type },
+      { icon: "%", label: "Kâr Payı", value: selected.rate },
+      { icon: "◷", label: "Vade", value: selected.term },
+      { icon: "◉", label: "Masraf", value: selected.cost },
+      { icon: "▦", label: "Geçerlilik Tarihi", value: selected.validity },
+    ].filter(({ value }) => value.trim() !== "—");
+  }, [selected]);
 
   if (!selected && rows.length === 0) {
     return (
@@ -227,14 +246,7 @@ export default function CampaignExplorer({ rows }: { rows: CampaignRowItem[] }) 
             </div>
             {selected && (
               <div className={styles.extractedList}>
-                {[
-                  ["🏦", "Banka", selected.bank],
-                  ["▣", "Ürün Türü", selected.type],
-                  ["%", "Kâr Payı", selected.rate],
-                  ["◷", "Vade", selected.term],
-                  ["◉", "Masraf", selected.cost],
-                  ["▦", "Geçerlilik Tarihi", selected.validity],
-                ].map(([icon, label, value], index) => (
+                {extractedDetails.map(({ icon, label, value }, index) => (
                   <div className={styles.extractedRow} key={label}>
                     <span className={styles.extractedLabel}>
                       <i className={`${styles.infoIcon} ${styles[`infoIcon${index % 3}`]}`}>

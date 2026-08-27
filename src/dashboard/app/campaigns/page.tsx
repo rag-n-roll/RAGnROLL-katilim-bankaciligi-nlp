@@ -45,6 +45,11 @@ const mapCampaignType = (value?: string | null) => {
   return "Finansman";
 };
 
+const displayFeeInformation = (value?: string | null) => {
+  if (value?.toLocaleLowerCase("tr-TR") === "masrafsız") return "Masrafsız";
+  return value || "—";
+};
+
 function loadLocalProcessedCampaigns(): CampaignRowItem[] {
   try {
     const candidatePath = path.resolve(process.cwd(), "..", "..", "data", "processed", "campaigns.json");
@@ -67,7 +72,7 @@ function loadLocalProcessedCampaigns(): CampaignRowItem[] {
             type: mapCampaignType(structured.product_type),
             rate: rate ? `%${String(rate).replace(".", ",")}` : "—",
             term: term ? `${term} Ay` : "—",
-            cost: structured.fee_information || "—",
+            cost: displayFeeInformation(structured.fee_information),
             validity: [record.start_date, record.end_date].filter(Boolean).join(" – ") || "Güncel",
           };
         });
@@ -83,7 +88,9 @@ export default async function CampaignsPage() {
   let rows: CampaignRowItem[] = [];
 
   try {
-    const apiResult = await getCampaigns({ limit: 100 });
+    // API'nin üst sınırıyla tüm katalog tek istekte alınır; istemci tarafı
+    // filtreleri yalnızca ilk 100 kayıtla sınırlı kalmaz.
+    const apiResult = await getCampaigns({ limit: 500 });
     if (apiResult && apiResult.items && apiResult.items.length > 0) {
       rows = apiResult.items.map((item) => {
         const structured = item.structured as Record<string, unknown> | undefined;
@@ -100,7 +107,7 @@ export default async function CampaignsPage() {
           type: mapCampaignType((structured?.product_type as string) || null),
           rate: rate ? `%${String(rate).replace(".", ",")}` : "—",
           term: term ? `${term} Ay` : "—",
-          cost: fee || "—",
+          cost: displayFeeInformation(fee),
           validity: "Güncel",
         };
       });
