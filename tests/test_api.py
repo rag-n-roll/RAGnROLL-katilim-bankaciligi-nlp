@@ -138,10 +138,13 @@ def test_refresh_endpoint_rejects_parallel_jobs_and_reports_status(tmp_path):
 
 def test_api_validation_rejects_unbounded_requests(tmp_path):
     with client_with_data(tmp_path) as client:
-        too_many = client.get("/api/v1/campaigns", params={"limit": 101})
+        all_campaigns = client.get("/api/v1/campaigns", params={"limit": 500})
+        too_many = client.get("/api/v1/campaigns", params={"limit": 501})
         invalid_refresh = client.post(
             "/api/v1/data-refresh", json={"max_per_bank": 0}
         )
 
+    assert all_campaigns.status_code == 200
+    assert all_campaigns.json()["limit"] == 500
     assert too_many.status_code == 422
     assert invalid_refresh.status_code == 422

@@ -83,7 +83,9 @@ export default async function CampaignsPage() {
   let rows: CampaignRowItem[] = [];
 
   try {
-    const apiResult = await getCampaigns({ limit: 100 });
+    // API'nin üst sınırıyla tüm katalog tek istekte alınır; istemci tarafı
+    // filtreleri yalnızca ilk 100 kayıtla sınırlı kalmaz.
+    const apiResult = await getCampaigns({ limit: 500 });
     if (apiResult && apiResult.items && apiResult.items.length > 0) {
       rows = apiResult.items.map((item) => {
         const structured = item.structured as Record<string, unknown> | undefined;

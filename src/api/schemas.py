@@ -292,7 +292,7 @@ class BankSummaryResponse(ApiModel):
 class CampaignListResponse(ApiModel):
     items: list[dict[str, Any]]
     total: int = Field(ge=0)
-    limit: int = Field(ge=1, le=100)
+    limit: int = Field(ge=1, le=500)
     offset: int = Field(ge=0)
 
 

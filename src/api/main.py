@@ -539,7 +539,7 @@ def campaigns(
     product_type: str | None = None,
     currency: Annotated[str | None, Query(min_length=3, max_length=3)] = None,
     search: Annotated[str | None, Query(min_length=2, max_length=100)] = None,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    limit: Annotated[int, Query(ge=1, le=500)] = 20,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> dict[str, Any]:
     items, total = _store(request).query_campaigns(
