@@ -90,6 +90,13 @@ test("sayfalar canlı API sözleşmelerini korur", async () => {
   }
 });
 
+test("çıkarılan bilgiler yalnız doğrulanmış değerleri gösterir", async () => {
+  const explorer = await source("app/campaigns/CampaignExplorer.tsx");
+
+  assert.match(explorer, /\.filter\(\(\{ value \}\) => value\.trim\(\) !== "—"\)/);
+  assert.match(explorer, /extractedDetails\.map/);
+});
+
 test("chatbot karşılaştırma kriterlerini sonraki SSE isteğine taşır", async () => {
   const [chatbot, api] = await Promise.all([
     source("app/chatbot/page.tsx"),
