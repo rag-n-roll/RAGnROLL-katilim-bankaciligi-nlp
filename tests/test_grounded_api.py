@@ -757,6 +757,76 @@ def test_suitable_vehicle_financing_requires_criteria(tmp_path):
     assert "vade" in payload["answer_display"].casefold()
 
 
+@pytest.mark.parametrize(
+    "message",
+    [
+        (
+            "Taşıt finansmanına başvuracağım, 200.000 TL çekeceğim, "
+            "36 ay vade, en düşük kâr payı hangi banka verir?"
+        ),
+        "Taşıt finansmanına başvuracağım, 200 bin TL 8 ay vade.",
+    ],
+)
+def test_application_context_with_amount_and_term_uses_financing_quote(
+    tmp_path, monkeypatch, message
+):
+    monkeypatch.setattr(
+        "src.services.assistant.fetch_official_quotes",
+        lambda **_: {
+            "albaraka-turk": {
+                "bank_slug": "albaraka-turk",
+                "bank_name": "Albaraka Türk",
+                "product_name": "Taşıt Finansmanı",
+                "status": "available",
+                "monthly_profit_rate": 3.19,
+                "monthly_installment": 9_200.0,
+                "total_repayment": 331_200.0,
+                "fees_total": 0.0,
+                "source_url": "https://basvur.albaraka.com.tr/jet-finansman",
+                "retrieved_at": "2026-08-27T12:00:00+00:00",
+                "calculation_origin": "official_calculator_live",
+                "message": "Canlı resmî hesaplayıcı sonucu.",
+            },
+            "kuveyt-turk": {
+                "bank_slug": "kuveyt-turk",
+                "bank_name": "Kuveyt Türk",
+                "product_name": "Taşıt Finansmanı",
+                "status": "available",
+                "monthly_profit_rate": 2.79,
+                "monthly_installment": 8_400.0,
+                "total_repayment": 302_400.0,
+                "fees_total": 500.0,
+                "source_url": (
+                    "https://www.kuveytturk.com.tr/hesaplama-araclari/"
+                    "finansman-hesaplama"
+                ),
+                "retrieved_at": "2026-08-27T12:00:00+00:00",
+                "calculation_origin": "official_calculator_live",
+                "message": "Canlı resmî hesaplayıcı sonucu.",
+            }
+        },
+    )
+
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat",
+            json={"message": message},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["action"] == "ANSWER"
+    assert payload["plan"]["intent"] == "product_comparison"
+    assert payload["plan"]["slots"]["financing_type"] == "vehicle"
+    assert payload["plan"]["slots"]["amount"] == 200_000
+    assert payload["plan"]["slots"]["term_months"] in {8, 36}
+    assert payload["plan"]["slots"]["aggregation"] == "MIN"
+    assert len(payload["sources"]) == 2
+    assert payload["sources"][0]["bank_name"] == "Kuveyt Türk"
+    assert payload["sources"][0]["retrieval_method"] == "official_financing_quote"
+    assert "aylık kâr payı oranına göre" in payload["answer_display"].casefold()
+
+
 def test_follow_up_criteria_produces_neutral_comparison(tmp_path, monkeypatch):
     monkeypatch.setattr(
         "src.services.assistant.fetch_official_quotes",

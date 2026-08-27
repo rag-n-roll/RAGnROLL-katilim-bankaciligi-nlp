@@ -1,13 +1,13 @@
 {
-  "record_count": 398,
-  "valid_record_count": 398,
-  "input_record_count": 595,
+  "record_count": 476,
+  "valid_record_count": 476,
+  "input_record_count": 709,
   "rejected_record_count": 3,
   "error_count": 3,
-  "warning_count": 259,
+  "warning_count": 319,
   "fetch_failure_count": 1,
   "duplicate_count": 0,
-  "quality_score": 0.995,
+  "quality_score": 0.9958,
   "issues": [
     {
       "record_id": "e10fdcaa84202df8e255",
@@ -402,6 +402,202 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
+      "record_id": "c7b9b172f50d51a87078",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "8eb45a26d25671f2d4a9",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "3ab29cb748d2cd733316",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "05c3c82bebea12d24619",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "d70c5004fe66f451a854",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "809c68715675f81bcfcf",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "46b85d7d8ad15b66fca1",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "b36127e81b1cfbc9b5ea",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "c69eb357d64d52847fe0",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "2db21590b0a0facbfe99",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a2762234dfce8d178991",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "000ad3614d91d6002135",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "1f128299574009c851d8",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "7ecafd6ba42f66387695",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a8d3b038134cd853575f",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "1bc7c3c4e94c2055ee31",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a5f52597d7f6111e2e21",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a92e6c7b1b4173c01a2d",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "0618b561a850c5959df0",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "4738e601e6bcdfc293ee",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "f3a57e4ae9582624ceb2",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "3fbc815f0359c4c06939",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a0608c06c3fda94951e8",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "4019f89e82b418799e2d",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "536d8285b6dd986f32a9",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "84012c38c527b876260c",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "5480edb679a6aa85b5d7",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "b69c378bd3c92d6be48a",
+      "bank_slug": "tom-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
       "record_id": "3499170aa072354952ec",
       "bank_slug": "emlak-katilim",
       "severity": "warning",
@@ -764,6 +960,230 @@
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "d20b01e030d09bc77e26",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "summary",
+      "message": "Ozet bulunamadi"
+    },
+    {
+      "record_id": "4e6afb30c9b61eb8f12d",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "e29efbcd6cc9bbfc8394",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "790dfe29ca3b331bdd4e",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "96059846f8c06218fdea",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "91418081f1cbd12983fd",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "5d5386a44927662042a9",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "9433e58293cf631f3601",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "fba2d75afaeec7fca1cd",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "8f42e8d4c3bc3843a0f9",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "61da51151bc945b308bb",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "eddf74a9941ebad18ab6",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "3ba43c8af706fbed7341",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "7d45c6b03e0f7c7716a6",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "57dd32d5e7c3cb86197c",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "d25c54dfb4d7087ba6ed",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "9c147ea65d3048bc7457",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "04fc4a7a7f74202bb93c",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a620275e8905c86e8056",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a620275e8905c86e8056",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "summary",
+      "message": "Ozet bulunamadi"
+    },
+    {
+      "record_id": "15b1a3160cc836136382",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "46e055bcc3d5a49479d2",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "564083e8293e1199d20d",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "8438feb804422d51820a",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "baffee82cce50a963bb2",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a1342a3fd805b49d0e2b",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "91742fa77f8796660837",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "c7592e5dd0126c5c7e1b",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "summary",
+      "message": "Ozet bulunamadi"
+    },
+    {
+      "record_id": "f7bad94a08ac5483bf24",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "summary",
+      "message": "Ozet bulunamadi"
+    },
+    {
+      "record_id": "bf65339eaf4cffe16f52",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "summary",
+      "message": "Ozet bulunamadi"
+    },
+    {
+      "record_id": "1dd440d90293c89c5cb9",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "summary",
+      "message": "Ozet bulunamadi"
+    },
+    {
+      "record_id": "bff73b9eb7c5c6eaa215",
+      "bank_slug": "turkiye-finans",
+      "severity": "warning",
+      "field": "summary",
+      "message": "Ozet bulunamadi"
     },
     {
       "record_id": "c49ae545b94a8cb3b9df",
@@ -1852,7 +2272,7 @@
       "error_type": "HTTPError",
       "error": "404 Client Error: Not Found for url: https://www.kuveytturk.com.tr/kampanyalar/kendim-icin/kart-kampanyalari/konforda-5000-tl-indirim-ve-vade-farksiz-9-aya-varan-taksit-firsati",
       "http_status": 404,
-      "timestamp": "2026-08-27T13:13:19.980802+00:00"
+      "timestamp": "2026-08-27T14:43:02.293980+00:00"
     }
   ],
   "duplicates": [],
@@ -1883,17 +2303,17 @@
       "ratio": 1.0
     },
     "field_fill_rates": {
-      "product_type": 0.9397,
-      "financing_type": 0.1482,
-      "profit_share_rate": 0.0276,
-      "term_months": 0.0276,
-      "installment_count": 0.5854,
-      "campaign_benefit": 0.7789,
-      "reward_amount": 0.2186,
-      "discount_rate": 0.1156,
-      "target_audience": 0.2337,
-      "campaign_start_date": 0.7236,
-      "campaign_end_date": 0.9196,
+      "product_type": 0.9496,
+      "financing_type": 0.1639,
+      "profit_share_rate": 0.0273,
+      "term_months": 0.0378,
+      "installment_count": 0.5945,
+      "campaign_benefit": 0.813,
+      "reward_amount": 0.2962,
+      "discount_rate": 0.1282,
+      "target_audience": 0.2017,
+      "campaign_start_date": 0.6723,
+      "campaign_end_date": 0.8782,
       "fee_information": 0.0126
     },
     "by_bank": {
@@ -1928,13 +2348,13 @@
         "product_count": 0
       },
       "tom-katilim": {
-        "record_count": 16,
-        "campaign_count": 16,
+        "record_count": 57,
+        "campaign_count": 57,
         "product_count": 0
       },
       "turkiye-finans": {
-        "record_count": 14,
-        "campaign_count": 14,
+        "record_count": 51,
+        "campaign_count": 51,
         "product_count": 0
       },
       "vakif-katilim": {

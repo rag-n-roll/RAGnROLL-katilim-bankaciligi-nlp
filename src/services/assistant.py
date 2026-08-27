@@ -289,6 +289,38 @@ class GroundedAssistant:
         plan, _ = self._compile_with_policy(message)
         return plan
 
+    def _deterministic_plan(self, message: str) -> QueryPlan:
+        plan = self.compiler.compile(
+            message, known_banks=self.store.bank_summary()
+        )
+        criteria = extract_comparison_criteria(message)
+        implicit_financing_quote = (
+            plan.intent != "product_comparison"
+            and plan.slots.get("financing_type")
+            in {"consumer", "vehicle", "housing", "commercial"}
+            and criteria.get("term_months") is not None
+            and criteria.get("amount") is not None
+        )
+        if not implicit_financing_quote:
+            return plan
+        slots = {
+            **plan.slots,
+            "metric": "PROFIT_RATE",
+            "aggregation": "MIN",
+        }
+        return replace(
+            plan,
+            intent="product_comparison",
+            route=self.compiler.route_for(
+                "product_comparison", slots, trusted_domain=True
+            ),
+            slots=slots,
+            warnings=[
+                *plan.warnings,
+                "Tutar ve vade içeren finansman isteği teklif karşılaştırmasına yönlendirildi",
+            ],
+        )
+
     def _compile_with_policy(
         self, message: str
     ) -> tuple[QueryPlan, PolicyDecision | None]:
@@ -303,7 +335,7 @@ class GroundedAssistant:
             )
             return safe_plan, input_decision
         known_banks = self.store.bank_summary()
-        plan = self.compiler.compile(message, known_banks=known_banks)
+        plan = self._deterministic_plan(message)
         if plan.route == "SAFE_REDIRECT":
             return plan, None
         analyzer = getattr(self.decisions, "analyze", None)
@@ -467,7 +499,8 @@ class GroundedAssistant:
             plan.intent == "product_comparison"
             and plan.slots.get("financing_type")
             in {"consumer", "vehicle", "housing", "commercial"}
-            and plan.slots.get("aggregation") not in {"MIN", "MAX"}
+            and plan.slots.get("term_months") is not None
+            and plan.slots.get("amount") is not None
             and not effective_criteria.missing()
         )
         tool_name = (
@@ -479,9 +512,11 @@ class GroundedAssistant:
             if plan.route == "STRUCTURED_SQL"
             else "hybrid_rag"
         )
-        if plan.intent == "product_comparison" and plan.slots.get(
-            "aggregation"
-        ) in {"MIN", "MAX"}:
+        if (
+            not sourced_financing_comparison
+            and plan.intent == "product_comparison"
+            and plan.slots.get("aggregation") in {"MIN", "MAX"}
+        ):
             # Objective extrema do not require preference criteria; complete only
             # the authorization contract and do not pass these values to tools.
             effective_criteria = ComparisonCriteria(1, 0.0, False)
@@ -1060,7 +1095,22 @@ class GroundedAssistant:
             and _finite(quote.get("monthly_installment")) is not None
             and _finite(quote.get("total_repayment")) is not None
         ]
-        if fee_priority:
+        objective_profit_rate = (
+            plan.slots.get("metric") == "PROFIT_RATE"
+            and plan.slots.get("aggregation") in {"MIN", "MAX"}
+        )
+        if objective_profit_rate:
+            direction = 1 if plan.slots.get("aggregation") == "MIN" else -1
+            verified.sort(
+                key=lambda quote: (
+                    _finite(quote.get("monthly_profit_rate")) is None,
+                    direction
+                    * (_finite(quote.get("monthly_profit_rate")) or 0.0),
+                    _finite(quote.get("total_repayment")) or float("inf"),
+                    str(quote.get("bank_name") or ""),
+                )
+            )
+        elif fee_priority:
             verified.sort(
                 key=lambda quote: (
                     quote.get("fees_total") is None,
@@ -1139,7 +1189,13 @@ class GroundedAssistant:
             )
 
         if lines:
-            priority = "masraf önceliğine" if fee_priority else "toplam geri ödemeye"
+            priority = (
+                "aylık kâr payı oranına"
+                if objective_profit_rate
+                else "masraf önceliğine"
+                if fee_priority
+                else "toplam geri ödemeye"
+            )
             answer = (
                 f"{amount_text} ve {term_months} ay için doğrulanmış teklifler "
                 f"{priority} göre tarafsız sıralandı:\n" + "\n".join(lines)
@@ -2216,9 +2272,7 @@ class GroundedAssistant:
             if conversation_state.get("pending_intent") != "product_comparison":
                 raise ValueError("Geçersiz konuşma durumu")
             execution_message = str(conversation_state.get("pending_query") or "")
-            pending_plan = self.compiler.compile(
-                execution_message, known_banks=self.store.bank_summary()
-            )
+            pending_plan = self._deterministic_plan(execution_message)
             if pending_plan.intent != "product_comparison":
                 raise ValueError("Konuşma durumu karşılaştırma isteğiyle uyuşmuyor")
             criteria = merge_criteria(
@@ -2232,11 +2286,15 @@ class GroundedAssistant:
                     message=execution_message, plan=pending_plan, criteria=criteria
                 )
         else:
-            pending_plan = self.compiler.compile(
-                message, known_banks=self.store.bank_summary()
-            )
+            pending_plan = self._deterministic_plan(message)
             criteria = merge_criteria(
                 ComparisonCriteria(), extract_comparison_criteria(message)
+            )
+            objective_financing_comparison = (
+                pending_plan.intent == "product_comparison"
+                and pending_plan.slots.get("aggregation") in {"MIN", "MAX"}
+                and pending_plan.slots.get("financing_type")
+                in {"consumer", "vehicle", "housing", "commercial"}
             )
             subjective_comparison = (
                 pending_plan.intent == "product_comparison"
@@ -2248,7 +2306,13 @@ class GroundedAssistant:
                     plan=pending_plan,
                     criteria=criteria,
                 )
-            if not subjective_comparison:
+            if (
+                objective_financing_comparison
+                and criteria.term_months is not None
+                and criteria.amount is not None
+            ):
+                criteria = merge_criteria(criteria, {"fee_priority": False})
+            elif not subjective_comparison:
                 criteria = None
 
         if clarification is not None:

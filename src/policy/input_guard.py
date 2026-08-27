@@ -33,6 +33,17 @@ _APPLICATION_CONCEPT_RE = re.compile(r"\b(?:basvuru\w*|finansman\w*)\b")
 _APPLICATION_ACTION_RE = re.compile(
     r"\b(?:basvur(?:mak|mayi|uyorum|urum|alim|un(?:uz)?|acag\w*|abilir\w*)?|yap\w*)\b"
 )
+_FINANCING_ADVISORY_RE = re.compile(
+    r"\b(?:"
+    r"karsilastir\w*|kiyasla\w*|"
+    r"en\s+(?:dusuk|yuksek|uygun|avantajli)\w*|"
+    r"hangi\s+(?:banka|finansman|urun)\w*"
+    r")\b"
+)
+_FINANCING_AMOUNT_RE = re.compile(
+    r"(?<!\d)\d[\d.,]*\s*(?:bin|milyon)?\s*(?:tl|try|₺)\b"
+)
+_FINANCING_TERM_RE = re.compile(r"(?<!\d)\d{1,3}\s*ay(?:lik)?\b")
 _ACCOUNT_PRODUCT_CONCEPT_RE = re.compile(
     r"\b(?:kart\w*|hesap\w*|hesab\w*|basvuru\w*|finansman\w*|"
     r"limit\w*|sifre\w*)\b"
@@ -67,16 +78,29 @@ def _clauses(message: str) -> tuple[str, ...]:
 
 
 def _is_transaction_request(message: str) -> bool:
+    clauses = _clauses(message)
+    normalized = _normalize(message)
+    financing_advisory = bool(
+        _APPLICATION_CONCEPT_RE.search(normalized)
+        and (
+            _FINANCING_ADVISORY_RE.search(normalized)
+            or (
+                _FINANCING_AMOUNT_RE.search(normalized)
+                and _FINANCING_TERM_RE.search(normalized)
+            )
+        )
+    )
     intent_patterns = (
-        (_TRANSFER_CONCEPT_RE, _TRANSFER_ACTION_RE),
-        (_COMPLAINT_CONCEPT_RE, _COMPLAINT_ACTION_RE),
-        (_APPLICATION_CONCEPT_RE, _APPLICATION_ACTION_RE),
-        (_ACCOUNT_PRODUCT_CONCEPT_RE, _CANCELLATION_ACTION_RE),
+        (_TRANSFER_CONCEPT_RE, _TRANSFER_ACTION_RE, False),
+        (_COMPLAINT_CONCEPT_RE, _COMPLAINT_ACTION_RE, False),
+        (_APPLICATION_CONCEPT_RE, _APPLICATION_ACTION_RE, financing_advisory),
+        (_ACCOUNT_PRODUCT_CONCEPT_RE, _CANCELLATION_ACTION_RE, False),
     )
     return any(
         concept.search(clause) and action.search(clause)
-        for clause in _clauses(message)
-        for concept, action in intent_patterns
+        for clause in clauses
+        for concept, action, advisory_exempt in intent_patterns
+        if not advisory_exempt
     )
 
 

@@ -9,7 +9,7 @@
     "quality_report": "outputs/quality_report.json",
     "chroma_indexing_executed": false,
     "notes": "Chroma / vector DB embedding was explicitly excluded as per critical constraint.",
-    "last_updated_at": "2026-08-27T13:24:36.005321+00:00",
+    "last_updated_at": "2026-08-27T14:57:56.859616+00:00",
     "extraction_enhancements_applied": true,
     "active_dataset_cleanup_applied": true,
     "cleanup_timestamp": "2026-08-27T11:45:30.137524+00:00",
@@ -1659,25 +1659,27 @@
   },
   "active_dataset_summary": {
     "reference_date": "2026-08-27",
-    "total_active_records": 398,
-    "total_archived_records": 202,
+    "total_active_records": 476,
+    "total_archived_records": 232,
     "active_counts_by_bank": {
+      "tom-katilim": 57,
       "albaraka-turk": 48,
       "kuveyt-turk": 72,
       "dunya-katilim": 38,
       "ziraat-katilim": 96,
       "emlak-katilim": 65,
       "vakif-katilim": 37,
-      "tom-katilim": 16,
+      "turkiye-finans": 51,
       "hayat-finans": 11,
-      "turkiye-finans": 14,
       "adil-katilim": 1
     },
     "archived_counts_by_bank": {
       "vakif-katilim": 76,
       "ziraat-katilim": 115,
+      "tom-katilim": 29,
       "dunya-katilim": 8,
       "emlak-katilim": 2,
+      "turkiye-finans": 1,
       "kuveyt-turk": 1
     }
   }
