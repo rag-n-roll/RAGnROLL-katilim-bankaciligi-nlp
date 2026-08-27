@@ -528,13 +528,20 @@ class GroundedAssistant:
             if plan.route == "STRUCTURED_SQL"
             else "hybrid_rag"
         )
+        is_financing = (
+            plan.slots.get("product_type") == "financing"
+            or plan.slots.get("financing_type") is not None
+        )
         if (
             not sourced_financing_comparison
             and plan.intent == "product_comparison"
-            and plan.slots.get("aggregation") in {"MIN", "MAX"}
+            and (
+                plan.slots.get("aggregation") in {"MIN", "MAX"}
+                or not is_financing
+            )
         ):
-            # Objective extrema do not require preference criteria; complete only
-            # the authorization contract and do not pass these values to tools.
+            # Objective extrema or non-financing campaign comparisons do not require
+            # loan preference criteria; complete only the authorization contract.
             effective_criteria = ComparisonCriteria(1, 0.0, False)
         arguments = {
             key: value
@@ -2421,10 +2428,10 @@ class GroundedAssistant:
         if conversation_state is not None:
             if conversation_state.get("pending_intent") != "product_comparison":
                 raise ValueError("Geçersiz konuşma durumu")
-
             # Takip mesajı yalnız eksik slotları doldursa da güvenlik katmanını
             # yeniden geçmek zorundadır. Önceki güvenli soru, sonraki mesaj için
             # bir politika yetkisi olarak kullanılamaz.
+            follow_up_plan = self._deterministic_plan(message)
             follow_up_criteria = extract_comparison_criteria(message)
             follow_up_financing_type = extract_financing_type(message)
             state_criteria = dict(conversation_state.get("criteria") or {})
@@ -2436,8 +2443,33 @@ class GroundedAssistant:
                 if contextual_fee is not None:
                     follow_up_criteria["fee_priority"] = contextual_fee
 
+            is_explicit_non_financing = (
+                follow_up_plan.slots.get("product_type") in {
+                    "card",
+                    "investment",
+                    "participation_account",
+                    "insurance",
+                }
+                or (
+                    follow_up_plan.intent == "product_search"
+                    and follow_up_plan.slots.get("product_type") not in {"financing", None}
+                )
+            )
+            is_distinct_intent = follow_up_plan.intent in {
+                "definition",
+                "bank_list",
+                "count_query",
+                "campaign_query",
+                "rate_query",
+                "maturity_query",
+            }
+            if is_explicit_non_financing or is_distinct_intent:
+                yield from self.stream_conversation_answer(
+                    message, limit=limit, conversation_state=None
+                )
+                return
+
             if not follow_up_criteria and follow_up_financing_type is None:
-                follow_up_plan = self._deterministic_plan(message)
                 if follow_up_plan.route == "SAFE_REDIRECT":
                     yield from self.stream_answer(message, limit=limit)
                     return
@@ -2530,6 +2562,7 @@ class GroundedAssistant:
             )
             subjective_comparison = (
                 pending_plan.intent == "product_comparison"
+                and is_financing_product
                 and pending_plan.slots.get("aggregation") not in {"MIN", "MAX"}
             )
             if generic_financing_request:

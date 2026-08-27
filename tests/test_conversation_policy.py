@@ -65,6 +65,10 @@ def test_extracts_fee_free_preference_and_supported_financing_type():
     }
     assert extract_financing_type("İhtiyaç finansmanı istiyorum") == "consumer"
     assert extract_financing_type("Ticari/KOBİ finansmanı istiyorum") == "commercial"
+    assert extract_financing_type("eğitim kampanyaları") is None
+    assert extract_financing_type("eğitim finansmanı") == "consumer"
+    assert extract_financing_type("sağlık kampanyaları") is None
+    assert extract_financing_type("sağlık finansmanı") == "consumer"
 
 
 def test_fee_priority_negation_wins_over_positive_word():

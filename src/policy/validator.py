@@ -33,8 +33,23 @@ class PolicyValidator:
         if decision.action in {Action.REFUSE, Action.REDIRECT}:
             return replace(decision, tool_calls=())
         if decision.intent == "product_comparison":
+            is_financing = any(
+                call.get("name") == "financing_quote"
+                or (
+                    call.get("name") == "comparison"
+                    and (
+                        call.get("arguments", {}).get("product_type") == "financing"
+                        or call.get("arguments", {}).get("financing_type") is not None
+                    )
+                )
+                for call in decision.tool_calls
+            )
             missing = tuple(decision.criteria.missing())
-            if missing:
+            if missing and (
+                decision.action == Action.CLARIFY
+                or is_financing
+                or not decision.tool_calls
+            ):
                 return replace(
                     decision,
                     action=Action.CLARIFY,
