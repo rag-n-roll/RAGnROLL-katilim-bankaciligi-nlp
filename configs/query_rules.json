@@ -15,12 +15,15 @@
     "icâre": "icare"
   },
   "product_terms": {
+    "finansman": {"product_type": "financing"},
     "ev": {"product_type": "financing", "financing_type": "housing"},
     "konut": {"product_type": "financing", "financing_type": "housing"},
     "ev finansmanı": {"product_type": "financing", "financing_type": "housing"},
     "taşıt": {"product_type": "financing", "financing_type": "vehicle"},
     "araç finansmanı": {"product_type": "financing", "financing_type": "vehicle"},
     "ihtiyaç": {"product_type": "financing", "financing_type": "consumer"},
+    "ticari finansman": {"product_type": "financing", "financing_type": "commercial"},
+    "kobi finansmanı": {"product_type": "financing", "financing_type": "commercial"},
     "kart": {"product_type": "card"},
     "yatırım": {"product_type": "investment"},
     "katılma hesabı": {"product_type": "investment"}

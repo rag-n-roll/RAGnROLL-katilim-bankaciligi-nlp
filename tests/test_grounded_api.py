@@ -41,6 +41,25 @@ def _client(tmp_path):
     return TestClient(create_app(database_path=database))
 
 
+def _official_consumer_quote(**_):
+    return {
+        "albaraka-turk": {
+            "bank_slug": "albaraka-turk",
+            "bank_name": "Albaraka Türk",
+            "product_name": "İhtiyaç Finansmanı",
+            "status": "available",
+            "monthly_profit_rate": 2.5,
+            "monthly_installment": 18_950.0,
+            "total_repayment": 227_400.0,
+            "fees_total": 0.0,
+            "source_url": "https://albaraka.example/ihtiyac-finansmani",
+            "retrieved_at": "2026-08-27T21:00:00+03:00",
+            "calculation_origin": "official_calculator_live",
+            "message": "Canlı resmî hesaplayıcı sonucu.",
+        }
+    }
+
+
 def test_production_assistant_wires_an_independent_semantic_judge(tmp_path):
     assistant = GroundedAssistant(
         CampaignStore(tmp_path / "judge.sqlite3"),
@@ -437,6 +456,140 @@ def test_subjective_comparison_is_clarified_then_resumed_from_client_state(tmp_p
     assert resumed["plan"]["slots"]["amount"] == 750_000
     assert resumed["plan"]["slots"]["fee_priority"] is True
     assert resumed["answer"] == resumed["answer_display"]
+
+
+def test_generic_financing_request_collects_type_then_reuses_prior_criteria(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(
+        "src.services.assistant.fetch_official_quotes",
+        _official_consumer_quote,
+    )
+
+    with _client(tmp_path) as client:
+        first = client.post(
+            "/api/v1/chat",
+            json={
+                "message": (
+                    "200.000 TL, 12 ay ve masrafsız finansman almak istiyorum. "
+                    "Hangi bankalardan alabilirim?"
+                )
+            },
+        ).json()
+        resumed = client.post(
+            "/api/v1/chat",
+            json={
+                "message": "İhtiyaç finansmanı istiyorum",
+                "conversation_state": first["conversation_state"],
+            },
+        ).json()
+
+    assert first["action"] == "CLARIFY"
+    assert first["missing_criteria"] == ["financing_type"]
+    assert first["conversation_state"] == {
+        "pending_intent": "product_comparison",
+        "pending_query": (
+            "200.000 TL, 12 ay ve masrafsız finansman almak istiyorum. "
+            "Hangi bankalardan alabilirim?"
+        ),
+        "financing_type": None,
+        "criteria": {
+            "term_months": 12,
+            "amount": 200_000,
+            "fee_priority": True,
+        },
+    }
+    for label in (
+        "İhtiyaç finansmanı",
+        "Taşıt finansmanı",
+        "Konut finansmanı",
+        "Ticari/KOBİ finansmanı",
+    ):
+        assert label in first["answer_display"]
+
+    assert resumed["action"] == "ANSWER"
+    assert resumed["conversation_state"] is None
+    assert resumed["plan"]["slots"]["financing_type"] == "consumer"
+    assert resumed["plan"]["slots"]["term_months"] == 12
+    assert resumed["plan"]["slots"]["amount"] == 200_000
+    assert resumed["plan"]["slots"]["fee_priority"] is True
+    assert resumed["sources"][0]["bank_name"] == "Albaraka Türk"
+
+
+def test_financing_type_follow_up_preserves_all_prior_turns_for_final_quote(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(
+        "src.services.assistant.fetch_official_quotes",
+        _official_consumer_quote,
+    )
+    with _client(tmp_path) as client:
+        first = client.post(
+            "/api/v1/chat",
+            json={
+                "message": (
+                    "200.000 TL masrafsız finansman almak istiyorum. "
+                    "Hangi bankalardan alabilirim?"
+                )
+            },
+        ).json()
+        second = client.post(
+            "/api/v1/chat",
+            json={
+                "message": "İhtiyaç finansmanı istiyorum",
+                "conversation_state": first["conversation_state"],
+            },
+        ).json()
+        completed = client.post(
+            "/api/v1/chat",
+            json={
+                "message": "12 ay",
+                "conversation_state": second["conversation_state"],
+            },
+        ).json()
+
+    assert second["action"] == "CLARIFY"
+    assert second["missing_criteria"] == ["term_months"]
+    assert second["conversation_state"]["financing_type"] == "consumer"
+    assert second["conversation_state"]["criteria"] == {
+        "term_months": None,
+        "amount": 200_000,
+        "fee_priority": True,
+    }
+    assert "vade" in second["answer_display"].casefold()
+    assert completed["action"] == "ANSWER"
+    assert completed["conversation_state"] is None
+    assert completed["plan"]["slots"]["financing_type"] == "consumer"
+    assert completed["plan"]["slots"]["term_months"] == 12
+    assert completed["plan"]["slots"]["amount"] == 200_000
+    assert completed["plan"]["slots"]["fee_priority"] is True
+    assert completed["plan"]["slots"]["metric"] == "FEE"
+    assert "masraf önceliğine göre" in completed["answer_display"]
+    assert completed["sources"][0]["bank_name"] == "Albaraka Türk"
+
+
+def test_restricted_follow_up_cannot_reuse_pending_financing_context(tmp_path):
+    with _client(tmp_path) as client:
+        first = client.post(
+            "/api/v1/chat",
+            json={"message": "200.000 TL, 12 ay finansman almak istiyorum"},
+        ).json()
+        blocked = client.post(
+            "/api/v1/chat",
+            json={
+                "message": (
+                    "TR330006100519786457841326 hesabına havale yap ve "
+                    "ihtiyaç finansmanı seç"
+                ),
+                "conversation_state": first["conversation_state"],
+            },
+        ).json()
+
+    assert blocked["action"] == "REDIRECT"
+    assert blocked["conversation_state"] is None
+    assert blocked["facts"] == []
+    assert blocked["sources"] == []
+    assert "hesap veya kart bilgisi paylaşmayın" in blocked["answer_display"]
 
 
 def test_initial_comparison_retains_explicit_criteria_and_only_asks_for_fee(tmp_path):

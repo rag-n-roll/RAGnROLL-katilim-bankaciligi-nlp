@@ -39,7 +39,12 @@ from src.prompt_optimization import IntentTraceRecorder
 from src.query import DomainQueryCompiler, QueryPlan
 from src.query.compiler import _answer_confidence
 from src.retrieval import HybridRetriever
-from src.services.conversation import extract_comparison_criteria, merge_criteria
+from src.services.conversation import (
+    FINANCING_TYPE_LABELS,
+    extract_comparison_criteria,
+    extract_financing_type,
+    merge_criteria,
+)
 from src.services.orchestration import ToolOrchestrator
 
 
@@ -314,7 +319,10 @@ class GroundedAssistant:
         }
         if not implicit_financing_quote:
             return replace(plan, slots=slots)
-        slots.update({"metric": "PROFIT_RATE", "aggregation": "MIN"})
+        if criteria.get("fee_priority") is True or plan.slots.get("metric") == "FEE":
+            slots.update({"metric": "FEE", "aggregation": "MIN"})
+        else:
+            slots.update({"metric": "PROFIT_RATE", "aggregation": "MIN"})
         return replace(
             plan,
             intent="product_comparison",
@@ -1622,6 +1630,7 @@ class GroundedAssistant:
                 message=message,
                 plan=plan,
                 criteria=validated_decision.criteria,
+                financing_type=str(plan.slots.get("financing_type") or "") or None,
             )
         if validated_decision.action in {Action.REFUSE, Action.REDIRECT}:
             result = {
@@ -2274,20 +2283,40 @@ class GroundedAssistant:
 
     @staticmethod
     def _clarification_answer(
-        *, message: str, plan: QueryPlan, criteria: ComparisonCriteria
+        *,
+        message: str,
+        plan: QueryPlan,
+        criteria: ComparisonCriteria,
+        financing_type: str | None = None,
+        missing_criteria: list[str] | None = None,
     ) -> dict[str, Any]:
-        missing = criteria.missing()
+        missing = missing_criteria or criteria.missing()
         labels = {
+            "financing_type": "finansman türünü",
             "term_months": "vade süresini",
             "amount": "finansman tutarını",
             "fee_priority": "masraf önceliğinizi",
         }
-        requested = [labels[name] for name in missing]
-        if len(requested) == 1:
-            requested_text = requested[0]
+        if missing == ["financing_type"]:
+            supported = "\n".join(
+                f"- {label}" for label in FINANCING_TYPE_LABELS.values()
+            )
+            answer_display = (
+                "Hangi finansman türünü almak istiyorsunuz? "
+                "Karşılaştırabildiğim finansman türleri:\n" + supported
+            )
         else:
-            requested_text = ", ".join(requested[:-1]) + f" ve {requested[-1]}"
-        answer_display = f"Karşılaştırma için {requested_text} belirtir misiniz?"
+            requested = [labels[name] for name in missing]
+            if len(requested) == 1:
+                requested_text = requested[0]
+            else:
+                requested_text = ", ".join(requested[:-1]) + f" ve {requested[-1]}"
+            financing_label = FINANCING_TYPE_LABELS.get(str(financing_type or ""))
+            subject = f"{financing_label} için " if financing_label else ""
+            answer_display = (
+                f"{subject}karşılaştırma yapabilmem için "
+                f"{requested_text} belirtir misiniz?"
+            )
         return {
             "answer": answer_display,
             "answer_display": answer_display,
@@ -2296,6 +2325,7 @@ class GroundedAssistant:
             "conversation_state": {
                 "pending_intent": "product_comparison",
                 "pending_query": message,
+                "financing_type": financing_type,
                 "criteria": {
                     "term_months": criteria.term_months,
                     "amount": criteria.amount,
@@ -2378,30 +2408,100 @@ class GroundedAssistant:
     ) -> Iterator[dict[str, Any]]:
         """Konuşma kriterlerini çözüp aynı sözleşmeyle SSE olayları üret."""
 
+        # Açıklama ve konuşma belleği yalnız güvenli girdiler için devreye girer.
+        # İlk mesaj da takip mesajı da aynı terminal güvenlik kararını uygular.
+        if self.input_guard.inspect(message) is not None:
+            yield from self.stream_answer(message, limit=limit)
+            return
+
         criteria: ComparisonCriteria | None = None
         execution_message = message
         clarification: dict[str, Any] | None = None
         if conversation_state is not None:
             if conversation_state.get("pending_intent") != "product_comparison":
                 raise ValueError("Geçersiz konuşma durumu")
+
+            # Takip mesajı yalnız eksik slotları doldursa da güvenlik katmanını
+            # yeniden geçmek zorundadır. Önceki güvenli soru, sonraki mesaj için
+            # bir politika yetkisi olarak kullanılamaz.
+            follow_up_criteria = extract_comparison_criteria(message)
+            follow_up_financing_type = extract_financing_type(message)
+            if not follow_up_criteria and follow_up_financing_type is None:
+                follow_up_plan = self._deterministic_plan(message)
+                if follow_up_plan.route == "SAFE_REDIRECT":
+                    yield from self.stream_answer(message, limit=limit)
+                    return
+
             execution_message = str(conversation_state.get("pending_query") or "")
             pending_plan = self._deterministic_plan(execution_message)
-            if pending_plan.intent != "product_comparison":
+            if pending_plan.intent not in {"product_comparison", "product_search"}:
                 raise ValueError("Konuşma durumu karşılaştırma isteğiyle uyuşmuyor")
+            financing_type = str(
+                conversation_state.get("financing_type")
+                or pending_plan.slots.get("financing_type")
+                or ""
+            ) or None
+            if financing_type is not None and financing_type not in FINANCING_TYPE_LABELS:
+                raise ValueError("Geçersiz finansman türü")
+            if follow_up_financing_type is not None:
+                financing_type = follow_up_financing_type
             criteria = merge_criteria(
                 ComparisonCriteria(), dict(conversation_state.get("criteria") or {})
             )
             criteria = merge_criteria(
-                criteria, extract_comparison_criteria(message)
+                criteria, follow_up_criteria
             )
-            if criteria.missing():
+            if financing_type is None:
                 clarification = self._clarification_answer(
-                    message=execution_message, plan=pending_plan, criteria=criteria
+                    message=execution_message,
+                    plan=replace(
+                        pending_plan,
+                        intent="product_comparison",
+                        route="HYBRID_RAG",
+                        slots={**pending_plan.slots, "product_type": "financing"},
+                    ),
+                    criteria=criteria,
+                    missing_criteria=["financing_type"],
                 )
+            else:
+                comparison_context = [FINANCING_TYPE_LABELS[financing_type]]
+                if criteria.term_months is not None:
+                    comparison_context.append(f"{criteria.term_months} ay")
+                if criteria.amount is not None:
+                    comparison_context.append(f"{criteria.amount:.2f} TL")
+                if criteria.fee_priority is True:
+                    comparison_context.append("masraf öncelikli")
+                elif criteria.fee_priority is False:
+                    comparison_context.append("masraf önemli değil")
+                execution_message = " ".join(
+                    (execution_message, *comparison_context)
+                )
+                pending_plan = self._deterministic_plan(execution_message)
+                if criteria.missing():
+                    clarification = self._clarification_answer(
+                        message=str(conversation_state.get("pending_query") or ""),
+                        plan=replace(
+                            pending_plan,
+                            intent="product_comparison",
+                            route="HYBRID_RAG",
+                        ),
+                        criteria=criteria,
+                        financing_type=financing_type,
+                    )
         else:
             pending_plan = self._deterministic_plan(message)
             criteria = merge_criteria(
                 ComparisonCriteria(), extract_comparison_criteria(message)
+            )
+            financing_type = str(
+                pending_plan.slots.get("financing_type")
+                or extract_financing_type(message)
+                or ""
+            ) or None
+            generic_financing_request = (
+                pending_plan.intent == "product_search"
+                and pending_plan.slots.get("product_type") == "financing"
+                and financing_type is None
             )
             objective_financing_comparison = (
                 pending_plan.intent == "product_comparison"
@@ -2413,11 +2513,23 @@ class GroundedAssistant:
                 pending_plan.intent == "product_comparison"
                 and pending_plan.slots.get("aggregation") not in {"MIN", "MAX"}
             )
-            if subjective_comparison and criteria.missing():
+            if generic_financing_request:
+                clarification = self._clarification_answer(
+                    message=message,
+                    plan=replace(
+                        pending_plan,
+                        intent="product_comparison",
+                        route="HYBRID_RAG",
+                    ),
+                    criteria=criteria,
+                    missing_criteria=["financing_type"],
+                )
+            elif subjective_comparison and criteria.missing():
                 clarification = self._clarification_answer(
                     message=message,
                     plan=pending_plan,
                     criteria=criteria,
+                    financing_type=financing_type,
                 )
             if (
                 objective_financing_comparison

@@ -480,11 +480,18 @@ class DomainQueryCompiler:
 
     def _product_slots(self, query: str) -> dict[str, Any]:
         normalized = self._normalized(query)
-        selected: tuple[int, dict[str, Any]] | None = None
+        selected: tuple[tuple[int, int], dict[str, Any]] | None = None
         for term, values in self.product_terms.items():
             if not self._contains_nominal_phrase(normalized, term):
                 continue
-            candidate = (len(term), dict(values))
+            specificity = (
+                2
+                if values.get("financing_type")
+                else 0
+                if term == "finansman"
+                else 1
+            )
+            candidate = ((specificity, len(term)), dict(values))
             if selected is None or candidate[0] > selected[0]:
                 selected = candidate
         return selected[1] if selected else {}

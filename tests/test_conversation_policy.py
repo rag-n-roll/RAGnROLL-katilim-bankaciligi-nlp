@@ -1,7 +1,11 @@
 import pytest
 
 from src.policy import ComparisonCriteria
-from src.services.conversation import extract_comparison_criteria, merge_criteria
+from src.services.conversation import (
+    extract_comparison_criteria,
+    extract_financing_type,
+    merge_criteria,
+)
 
 
 def test_follow_up_completes_pending_comparison_criteria():
@@ -51,6 +55,15 @@ def test_extracts_fee_priority_in_instrumental_form():
         "amount": 50_000,
         "fee_priority": True,
     }
+
+
+def test_extracts_fee_free_preference_and_supported_financing_type():
+    assert extract_comparison_criteria("200.000 TL masrafsız olsun") == {
+        "amount": 200_000,
+        "fee_priority": True,
+    }
+    assert extract_financing_type("İhtiyaç finansmanı istiyorum") == "consumer"
+    assert extract_financing_type("Ticari/KOBİ finansmanı istiyorum") == "commercial"
 
 
 def test_fee_priority_negation_wins_over_positive_word():

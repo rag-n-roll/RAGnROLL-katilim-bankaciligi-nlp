@@ -111,6 +111,7 @@ test("chatbot karşılaştırma kriterlerini sonraki SSE isteğine taşır", asy
   ]);
 
   assert.match(api, /export type ChatConversationState/);
+  assert.match(api, /financing_type\?: FinancingType \| null/);
   assert.match(api, /conversation_state:\s*conversationState/);
   assert.match(chatbot, /setConversationState\(meta\.conversation_state \?\? null\)/);
   assert.match(chatbot, /setConversationState\(null\)/);

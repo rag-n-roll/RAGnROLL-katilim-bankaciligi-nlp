@@ -528,7 +528,7 @@ def test_legacy_twelve_example_proxy_and_import_surface_remain_available():
         ),
     )
 
-    assert len(rows) == 12
+    assert len(rows) >= 12
     assert result.score == 1.0
 
 

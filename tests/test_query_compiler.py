@@ -141,6 +141,30 @@ def test_product_discovery_uses_hybrid_rag(query):
     assert plan.route == "HYBRID_RAG"
 
 
+def test_generic_financing_request_is_in_domain_without_inventing_a_type():
+    plan = DomainQueryCompiler().compile(
+        "200.000 TL masrafsız finansman almak istiyorum"
+    )
+
+    assert plan.intent == "product_search"
+    assert plan.route == "HYBRID_RAG"
+    assert plan.slots["product_type"] == "financing"
+    assert plan.slots.get("financing_type") is None
+
+
+def test_specific_financing_type_wins_over_generic_financing_term():
+    plan = DomainQueryCompiler().compile("İhtiyaç finansmanı istiyorum")
+
+    assert plan.slots["financing_type"] == "consumer"
+
+
+def test_specific_card_term_wins_over_generic_credit_alias():
+    plan = DomainQueryCompiler().compile("Kredi kartı seçenekleri nelerdir?")
+
+    assert plan.slots["product_type"] == "card"
+    assert plan.slots.get("financing_type") is None
+
+
 def test_metric_bound_comparison_keeps_structured_sql():
     plan = DomainQueryCompiler().compile(
         "Konut finansmanında en düşük kâr payı hangisi?"

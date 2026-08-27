@@ -54,6 +54,7 @@ class ConversationState(ApiModel):
 
     pending_intent: Literal["product_comparison"]
     pending_query: str = Field(min_length=1, max_length=4000)
+    financing_type: Literal["consumer", "vehicle", "housing", "commercial"] | None = None
     criteria: ComparisonCriteriaState
 
 
@@ -66,7 +67,9 @@ class GroundedChatRequest(ApiModel):
 class GroundedChatResponse(ContractResponse):
     answer: str
     action: Literal["ANSWER", "CLARIFY", "REFUSE", "REDIRECT"]
-    missing_criteria: list[Literal["term_months", "amount", "fee_priority"]]
+    missing_criteria: list[
+        Literal["financing_type", "term_months", "amount", "fee_priority"]
+    ]
     conversation_state: ConversationState | None
     answer_display: str
     facts: list[dict[str, Any]]

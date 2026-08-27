@@ -281,6 +281,7 @@ export type ChatSource = {
 export type ChatConversationState = {
   pending_intent: "product_comparison";
   pending_query: string;
+  financing_type?: FinancingType | null;
   criteria: {
     term_months?: number | null;
     amount?: number | null;
@@ -292,7 +293,9 @@ export type ChatMeta = {
   api_version: string;
   request_id: string;
   action?: "ANSWER" | "CLARIFY" | "REFUSE" | "REDIRECT";
-  missing_criteria?: Array<"term_months" | "amount" | "fee_priority">;
+  missing_criteria?: Array<
+    "financing_type" | "term_months" | "amount" | "fee_priority"
+  >;
   conversation_state?: ChatConversationState | null;
   confidence: number;
   warnings: string[];
