@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import CampaignDistributionChart from "../components/CampaignDistributionChart";
 import BankLogo from "../components/BankLogo";
 import styles from "./page.module.css";
-import { getDashboardSnapshot } from "../services/api";
-import type { DashboardSnapshotData } from "../services/api";
+import { getCampaigns, getDashboardSnapshot } from "../services/api";
+import { sampleCampaigns } from "./campaigns/campaignSelection";
 
 const heroBanks = [
   { bank: "Kuveyt Türk", size: 54 },
@@ -27,14 +28,23 @@ function mapProductType(type?: string | null): string {
 }
 
 export default async function HomePage() {
-  let snapshot: DashboardSnapshotData | null = null;
-
-  try {
-    snapshot = await getDashboardSnapshot();
-  } catch {
-    // Doğrulanmamış finansal değer üretme; görünür boş durum gösterilir.
-    snapshot = null;
-  }
+  // Rastgele seçim build sırasında sabitlenmez; her istekte yeniden yapılır.
+  await connection();
+  const [snapshotResult, campaignsResult] = await Promise.allSettled([
+    getDashboardSnapshot(),
+    getCampaigns({ limit: 500 }),
+  ]);
+  const snapshot = snapshotResult.status === "fulfilled" ? snapshotResult.value : null;
+  const campaignPool = campaignsResult.status === "fulfilled"
+    ? campaignsResult.value.items.map((campaign) => ({
+        id: campaign.id,
+        bank_name: campaign.bank_name,
+        title: campaign.title,
+        product_type: typeof campaign.structured?.product_type === "string"
+          ? campaign.structured.product_type : null,
+        updated_at: campaign.scraped_at,
+      }))
+    : snapshot?.recent_campaigns ?? [];
   const bankCount = snapshot?.summary?.bank_count ?? "—";
   const campaignCount = snapshot?.summary?.campaign_count ?? "—";
   const avgProfitRate = snapshot?.summary?.average_profit_share_rate
@@ -62,8 +72,8 @@ export default async function HomePage() {
       ] as [string, string, string])
     : [];
 
-  const displayCampaigns = snapshot?.recent_campaigns?.length
-    ? snapshot.recent_campaigns.map((c) => ({
+  const displayCampaigns = sampleCampaigns(campaignPool).map((c) => ({
+        id: c.id,
         bank: c.bank_name,
         title: c.title,
         type: mapProductType(c.product_type),
@@ -74,8 +84,7 @@ export default async function HomePage() {
               year: "numeric",
             })
           : "Güncel",
-      }))
-    : [];
+      }));
 
   return (
     <main className={styles.main}>
@@ -221,9 +230,10 @@ export default async function HomePage() {
             </p>
           ) : displayCampaigns.map((campaign) => (
             <Link
-              href="/campaigns"
+              href={`/campaigns?campaign=${encodeURIComponent(campaign.id)}`}
+              prefetch={false}
               className={styles.campaignRow}
-              key={campaign.title}
+              key={campaign.id}
             >
               <BankLogo bank={campaign.bank} size={36} />
               <strong>{campaign.bank}</strong>
