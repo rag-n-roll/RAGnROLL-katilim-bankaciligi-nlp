@@ -234,7 +234,7 @@
 .navbarGlint {
   position: relative;
 
-  height: 2px;
+  height: 3px;
   max-width: 500px;
   flex: 1;
 
@@ -242,50 +242,20 @@
 
   background: linear-gradient(
     90deg,
-    transparent 0%,
-    rgba(16, 42, 67, 0.08) 15%,
-    rgba(201, 155, 63, 0.55) 35%,
+    rgba(201, 155, 63, 0.22) 0%,
+    rgba(201, 155, 63, 0.58) 24%,
     rgba(240, 185, 31, 0.85) 50%,
-    rgba(201, 155, 63, 0.55) 65%,
-    rgba(16, 42, 67, 0.08) 85%,
-    transparent 100%
+    rgba(201, 155, 63, 0.58) 76%,
+    rgba(201, 155, 63, 0.22) 100%
   );
 
   box-shadow: 0 0 8px rgba(201, 155, 63, 0.3);
 }
 
-.navbarGlint::before {
-  content: "";
-  position: absolute;
-  inset: -2px 0;
-
-  pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 224, 105, 0.45) 50%,
-    transparent
-  );
-  filter: blur(2px);
-  opacity: 0.6;
-  animation: glintLineAura 4s ease-in-out infinite alternate;
-}
-
-@keyframes glintLineAura {
-  0% {
-    opacity: 0.35;
-    transform: scaleY(0.8);
-  }
-  100% {
-    opacity: 0.95;
-    transform: scaleY(1.4);
-  }
-}
-
 .navbarGlint::after {
   content: "";
   position: absolute;
-  inset: -1px 0;
+  inset: 0;
 
   pointer-events: none;
   opacity: 0.95;
@@ -318,47 +288,6 @@
   }
 }
 
-.glintCompass {
-  position: absolute;
-  z-index: 2;
-  top: 50%;
-  left: 50%;
-
-  width: 28px;
-  height: 28px;
-  overflow: visible;
-
-  filter: drop-shadow(0 0 8px rgba(240, 185, 31, 0.75)) drop-shadow(0 2px 5px rgba(0, 39, 57, 0.2));
-
-  transform: translate(-50%, -50%) translateZ(0);
-  backface-visibility: hidden;
-  will-change: transform, filter;
-  animation: glintCompassDrift 7s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@keyframes glintCompassDrift {
-  0% {
-    transform: translate(-50%, -50%) rotate(0deg) scale(1);
-    filter: drop-shadow(0 0 6px rgba(201, 155, 63, 0.6)) drop-shadow(0 2px 4px rgba(0, 43, 58, 0.18));
-  }
-  25% {
-    transform: translate(-50%, calc(-50% - 2.5px)) rotate(90deg) scale(1.08);
-    filter: drop-shadow(0 0 12px rgba(255, 230, 110, 0.95)) drop-shadow(0 0 20px rgba(240, 185, 31, 0.6));
-  }
-  50% {
-    transform: translate(-50%, -50%) rotate(180deg) scale(1.15);
-    filter: drop-shadow(0 0 16px rgba(255, 240, 168, 1)) drop-shadow(0 0 26px rgba(240, 185, 31, 0.8));
-  }
-  75% {
-    transform: translate(-50%, calc(-50% + 2px)) rotate(270deg) scale(1.08);
-    filter: drop-shadow(0 0 12px rgba(255, 230, 110, 0.95)) drop-shadow(0 0 20px rgba(240, 185, 31, 0.6));
-  }
-  100% {
-    transform: translate(-50%, -50%) rotate(360deg) scale(1);
-    filter: drop-shadow(0 0 6px rgba(201, 155, 63, 0.6)) drop-shadow(0 2px 4px rgba(0, 43, 58, 0.18));
-  }
-}
 .navigation {
   height: 100%;
   display: flex;
@@ -695,16 +624,8 @@
     animation-duration: 8s;
   }
 
-  .navbarGlint::before {
-    animation-duration: 8s;
-  }
-
   .navbarGlint::after {
     animation-duration: 6s;
-  }
-
-  .glintCompass {
-    animation-duration: 12s;
   }
 
   .navLink,

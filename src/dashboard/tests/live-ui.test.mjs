@@ -224,7 +224,6 @@ test("hero, pusula, yörünge ve floating AI animasyonları tanımlıdır", asyn
   // Navbar pusula animasyonları
   assert.match(navbarStyles, /@keyframes haloPulse/);
   assert.match(navbarStyles, /@keyframes compassOrbitSpin/);
-  assert.match(navbarStyles, /@keyframes glintCompassDrift/);
   assert.match(navbarStyles, /@keyframes navbarLineTravel/);
 
   // Floating AI animasyonları
