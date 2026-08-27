@@ -150,7 +150,7 @@
 .detailColumn {
   height: var(--workspace-height);
   display: grid;
-  grid-template-rows: minmax(0, 0.96fr) minmax(0, 1.04fr);
+  grid-template-rows: minmax(0, 1fr) auto;
   min-width: 0;
   gap: 28px;
 }
@@ -159,6 +159,10 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+.extractedPanel {
+  max-height: 440px;
 }
 
 .panelHeader,
@@ -429,10 +433,11 @@
 
 .extractedList {
   flex: 1;
+  min-height: 0;
   border: 1px solid #eee3c7;
   border-radius: 10px;
   background-color: #fffdf8;
-  overflow: visible;
+  overflow-y: auto;
 }
 
 .extractedRow {
@@ -459,6 +464,7 @@
 }
 
 .extractedRow strong {
+  overflow-wrap: anywhere;
   color: #062f35;
   font-size: 13px;
   font-weight: 700;
@@ -600,6 +606,10 @@
 
   .detailColumn {
     grid-template-rows: auto;
+  }
+
+  .extractedPanel {
+    max-height: none;
   }
 }
 

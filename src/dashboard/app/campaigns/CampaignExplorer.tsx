@@ -243,7 +243,7 @@ export default function CampaignExplorer({ rows, initialSelectedId }: {
             )}
           </article>
 
-          <article className={styles.panel}>
+          <article className={`${styles.panel} ${styles.extractedPanel}`}>
             <div className={styles.contentTitle}>
               <span className={styles.titleIcon}>✣</span>
               <h2>Çıkarılan Bilgiler</h2>
