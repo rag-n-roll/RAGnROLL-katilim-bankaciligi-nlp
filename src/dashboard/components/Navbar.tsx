@@ -98,8 +98,8 @@ export default function Navbar() {
           <svg className={styles.glintCompass} viewBox="0 0 48 48">
             <circle className={styles.compassHalo} cx="24" cy="24" r="21" />
             <circle className={styles.compassRing} cx="24" cy="24" r="17" />
+            <path className={styles.glintCompassReflection} d="M13 14 A16 16 0 0 1 35 16" />
             <circle className={styles.compassOrbit} cx="24" cy="24" r="13.5" />
-
             <g className={styles.compassNeedle}>
               <path className={styles.compassWest} d="M7.5 24 21 19.5 18.5 24 21 28.5 7.5 24Z" />
               <path className={styles.compassEast} d="M40.5 24 27 19.5 29.5 24 27 28.5 40.5 24Z" />
@@ -108,7 +108,6 @@ export default function Navbar() {
               <path className={styles.compassShine} d="M24 8 24 20 19.3 22.7 24 8Z" />
               <circle className={styles.compassCenter} cx="24" cy="24" r="3.5" />
             </g>
-
             <circle className={styles.compassNode} cx="6.8" cy="24" r="1.65" />
             <circle className={styles.compassNode} cx="41.2" cy="24" r="1.65" />
             <circle className={styles.compassAccent} cx="24" cy="3.8" r="1.9" />
