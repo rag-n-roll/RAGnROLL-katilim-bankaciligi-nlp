@@ -568,6 +568,43 @@ def test_financing_type_follow_up_preserves_all_prior_turns_for_final_quote(
     assert completed["sources"][0]["bank_name"] == "Albaraka Türk"
 
 
+def test_specific_financing_request_with_missing_term_clarifies_then_answers(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(
+        "src.services.assistant.fetch_official_quotes",
+        _official_consumer_quote,
+    )
+    with _client(tmp_path) as client:
+        first = client.post(
+            "/api/v1/chat",
+            json={"message": "800 bin tl'lik konut finansmanı almak istiyorum."},
+        ).json()
+        completed = client.post(
+            "/api/v1/chat",
+            json={
+                "message": "120 ay, masraf öncelikli",
+                "conversation_state": first["conversation_state"],
+            },
+        ).json()
+
+    assert first["action"] == "CLARIFY"
+    assert first["missing_criteria"] == ["term_months", "fee_priority"]
+    assert first["conversation_state"]["financing_type"] == "housing"
+    assert first["conversation_state"]["criteria"] == {
+        "term_months": None,
+        "amount": 800_000,
+        "fee_priority": None,
+    }
+    assert "vade süresini ve masraf önceliğinizi" in first["answer_display"]
+    assert completed["action"] == "ANSWER"
+    assert completed["conversation_state"] is None
+    assert completed["plan"]["slots"]["financing_type"] == "housing"
+    assert completed["plan"]["slots"]["term_months"] == 120
+    assert completed["plan"]["slots"]["amount"] == 800_000
+    assert completed["plan"]["slots"]["fee_priority"] is True
+
+
 def test_restricted_follow_up_cannot_reuse_pending_financing_context(tmp_path):
     with _client(tmp_path) as client:
         first = client.post(

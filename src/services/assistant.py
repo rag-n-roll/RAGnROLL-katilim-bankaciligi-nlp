@@ -2490,18 +2490,28 @@ class GroundedAssistant:
                     )
         else:
             pending_plan = self._deterministic_plan(message)
-            criteria = merge_criteria(
-                ComparisonCriteria(), extract_comparison_criteria(message)
-            )
+            raw_criteria = extract_comparison_criteria(message)
+            criteria = merge_criteria(ComparisonCriteria(), raw_criteria)
             financing_type = str(
                 pending_plan.slots.get("financing_type")
                 or extract_financing_type(message)
                 or ""
             ) or None
-            generic_financing_request = (
-                pending_plan.intent == "product_search"
+            is_financing_product = (
+                pending_plan.intent in {"product_search", "product_comparison"}
                 and pending_plan.slots.get("product_type") == "financing"
+                and pending_plan.route != "STRUCTURED_SQL"
+                and pending_plan.slots.get("aggregation") not in {"MIN", "MAX"}
+            )
+            generic_financing_request = (
+                is_financing_product
                 and financing_type is None
+                and (pending_plan.intent == "product_comparison" or bool(raw_criteria))
+            )
+            specific_financing_request = (
+                is_financing_product
+                and financing_type in FINANCING_TYPE_LABELS
+                and (pending_plan.intent == "product_comparison" or bool(raw_criteria))
             )
             objective_financing_comparison = (
                 pending_plan.intent == "product_comparison"
@@ -2524,22 +2534,42 @@ class GroundedAssistant:
                     criteria=criteria,
                     missing_criteria=["financing_type"],
                 )
-            elif subjective_comparison and criteria.missing():
+            elif (
+                (
+                    subjective_comparison
+                    or (
+                        specific_financing_request
+                        and not (
+                            criteria.term_months is not None
+                            and criteria.amount is not None
+                        )
+                    )
+                )
+                and criteria.missing()
+            ):
                 clarification = self._clarification_answer(
                     message=message,
-                    plan=pending_plan,
+                    plan=(
+                        replace(
+                            pending_plan,
+                            intent="product_comparison",
+                            route="HYBRID_RAG",
+                        )
+                        if specific_financing_request
+                        else pending_plan
+                    ),
                     criteria=criteria,
                     financing_type=financing_type,
                 )
             if (
-                objective_financing_comparison
+                (objective_financing_comparison or specific_financing_request)
                 and criteria.term_months is not None
                 and criteria.amount is not None
             ):
-                criteria = merge_criteria(criteria, {"fee_priority": False})
-            elif not subjective_comparison:
+                if criteria.fee_priority is None:
+                    criteria = merge_criteria(criteria, {"fee_priority": False})
+            elif not subjective_comparison and not specific_financing_request:
                 criteria = None
-
         if clarification is not None:
             yield {
                 "event": "meta",
