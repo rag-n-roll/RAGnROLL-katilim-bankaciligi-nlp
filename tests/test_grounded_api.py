@@ -605,6 +605,67 @@ def test_specific_financing_request_with_missing_term_clarifies_then_answers(
     assert completed["plan"]["slots"]["fee_priority"] is True
 
 
+def test_multi_turn_chain_resolves_bare_boolean_fee_priority(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(
+        "src.services.assistant.fetch_official_quotes",
+        _official_consumer_quote,
+    )
+    with _client(tmp_path) as client:
+        t1 = client.post(
+            "/api/v1/chat",
+            json={"message": "800 bin tl'lik konut finansmanı almak istiyorum."},
+        ).json()
+        t2 = client.post(
+            "/api/v1/chat",
+            json={
+                "message": "24 ay",
+                "conversation_state": t1["conversation_state"],
+            },
+        ).json()
+        t3_neg = client.post(
+            "/api/v1/chat",
+            json={
+                "message": "yok",
+                "conversation_state": t2["conversation_state"],
+            },
+        ).json()
+        t3_pos = client.post(
+            "/api/v1/chat",
+            json={
+                "message": "evet",
+                "conversation_state": t2["conversation_state"],
+            },
+        ).json()
+
+    assert t1["action"] == "CLARIFY"
+    assert t1["missing_criteria"] == ["term_months", "fee_priority"]
+    assert t1["conversation_state"]["financing_type"] == "housing"
+    assert t1["conversation_state"]["criteria"]["amount"] == 800_000
+
+    assert t2["action"] == "CLARIFY"
+    assert t2["missing_criteria"] == ["fee_priority"]
+    assert t2["conversation_state"]["financing_type"] == "housing"
+    assert t2["conversation_state"]["criteria"]["term_months"] == 24
+    assert t2["conversation_state"]["criteria"]["amount"] == 800_000
+    assert "masraf önceliğinizi" in t2["answer_display"]
+
+    assert t3_neg["action"] == "ANSWER"
+    assert t3_neg["conversation_state"] is None
+    assert t3_neg["plan"]["slots"]["financing_type"] == "housing"
+    assert t3_neg["plan"]["slots"]["term_months"] == 24
+    assert t3_neg["plan"]["slots"]["amount"] == 800_000
+    assert t3_neg["plan"]["slots"]["fee_priority"] is False
+
+    assert t3_pos["action"] == "ANSWER"
+    assert t3_pos["conversation_state"] is None
+    assert t3_pos["plan"]["slots"]["financing_type"] == "housing"
+    assert t3_pos["plan"]["slots"]["term_months"] == 24
+    assert t3_pos["plan"]["slots"]["amount"] == 800_000
+    assert t3_pos["plan"]["slots"]["fee_priority"] is True
+
+
 def test_restricted_follow_up_cannot_reuse_pending_financing_context(tmp_path):
     with _client(tmp_path) as client:
         first = client.post(

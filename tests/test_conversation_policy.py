@@ -3,6 +3,7 @@ import pytest
 from src.policy import ComparisonCriteria
 from src.services.conversation import (
     extract_comparison_criteria,
+    extract_contextual_fee_priority,
     extract_financing_type,
     merge_criteria,
 )
@@ -93,6 +94,17 @@ def test_fee_priority_negation_variants_are_false():
         "az masraf önceliğim değil",
     ):
         assert extract_comparison_criteria(message) == {"fee_priority": False}
+
+
+def test_extract_contextual_fee_priority():
+    for msg in ("yok", "hayır", "hayir", "istemiyorum", "önemli değil", "onemli degil", "yok."):
+        assert extract_contextual_fee_priority(msg) is False
+
+    for msg in ("var", "evet", "olsun", "istiyorum", "önemli", "onemli", "evet!"):
+        assert extract_contextual_fee_priority(msg) is True
+
+    for msg in ("24 ay", "500.000 TL", "merhaba", "konut finansmanı"):
+        assert extract_contextual_fee_priority(msg) is None
 
 
 def test_unrelated_negation_does_not_invert_positive_fee_clause():
