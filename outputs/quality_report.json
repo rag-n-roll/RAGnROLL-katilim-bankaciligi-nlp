@@ -1,13 +1,13 @@
 {
-  "record_count": 471,
-  "valid_record_count": 471,
-  "input_record_count": 472,
-  "rejected_record_count": 1,
-  "error_count": 1,
-  "warning_count": 215,
+  "record_count": 398,
+  "valid_record_count": 398,
+  "input_record_count": 595,
+  "rejected_record_count": 3,
+  "error_count": 3,
+  "warning_count": 259,
   "fetch_failure_count": 1,
   "duplicate_count": 0,
-  "quality_score": 0.9979,
+  "quality_score": 0.995,
   "issues": [
     {
       "record_id": "e10fdcaa84202df8e255",
@@ -102,6 +102,13 @@
     },
     {
       "record_id": "430b8040dcc8b844d1db",
+      "bank_slug": "dunya-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "acf5482dcff2ce1d3a3c",
       "bank_slug": "dunya-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -367,6 +374,20 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
+      "record_id": "54389cb8c80993382258",
+      "bank_slug": "kuveyt-turk",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "d7b76a481030dfcb4e6b",
+      "bank_slug": "kuveyt-turk",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
       "record_id": "f3ec1a5630259d751bc8",
       "bank_slug": "kuveyt-turk",
       "severity": "warning",
@@ -375,20 +396,6 @@
     },
     {
       "record_id": "abeb5c6cc664851f77ee",
-      "bank_slug": "tom-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "1821fee2e8200748a4f6",
-      "bank_slug": "tom-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "c7b9b172f50d51a87078",
       "bank_slug": "tom-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -759,133 +766,371 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "7c7d178619cfb5842ccf",
+      "record_id": "c49ae545b94a8cb3b9df",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "4b419048ad904c891bb4",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "945088c03a76f5b410c6",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "cee24c5c09f38384f7c7",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "3d7a354474e6257d321b",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "af2d16b6aff5658415e0",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "5e394c07adb821db94d2",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "0717301096bf262126b2",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "6ce090cf230080f7264e",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a050a70ba267e5856e1c",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "df6529c1eafb1fdec20d",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "69aa987de8517f320e88",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a1e4acb61297cbb3c789",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "d3b0cd7feaf017cbda92",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "1bf7f68a1e8a6654dcab",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "4e7cf4b8ccfbc661fc9c",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "62bba3e22df772d40ece",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a091228bb4f006176944",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "4b9b9eecec7e2016c6be",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "f68a95b2fc274d34e202",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "133b31e932c68ea29e3c",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "73e89d13db4fb4f03065",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "eb3ec65334e2d62f8714",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "b25a2c08fd76227262b3",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "38499d106e5d1efaf14d",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "c21a5c411a2f4a2e2b90",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "7cc79064a309539e0e94",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "c8186176b8088866eccb",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "be2497ce5d59172c7f86",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "6fbacf95e1e2739be593",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "4a84b17ef78e706b01cd",
+      "bank_slug": "vakif-katilim",
+      "severity": "error",
+      "field": "content",
+      "message": "Kampanya metni en az 80 karakter olmali"
+    },
+    {
+      "record_id": "4a84b17ef78e706b01cd",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "96b494092266efb6c11c",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "67199c610a28d5fab11d",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a60b3b6244e03c800434",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a9ba2d4d79deb813ccdb",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "6bdbdf1bc4613286c111",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "0d861cf671a88becce99",
+      "bank_slug": "vakif-katilim",
+      "severity": "error",
+      "field": "content",
+      "message": "Kampanya metni en az 80 karakter olmali"
+    },
+    {
+      "record_id": "0d861cf671a88becce99",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "325735e33960fbb5e0c9",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "1a646ca43ef8e34e383d",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "f9a7943d1d52c50ebc8c",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "763285503c27a6c069ba",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "27b6efc41da0b23263bd",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "511f57706176390c7757",
+      "bank_slug": "vakif-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "3100f2b6db180470c3bf",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "b00bc2ca29e3e9b96607",
+      "record_id": "f8cbc7a450740afd4a38",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "f8fc2d41a7bddd10ca13",
+      "record_id": "2cb1bbccdcd75ef9049f",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "abb3e2f75789ec77db3b",
+      "record_id": "929a4d6a203d662aa5e5",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "c1a42fe26b48ab6846b0",
+      "record_id": "849c65214f3a101b8393",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "1caa938a9b701864af4e",
+      "record_id": "190aa1baf31f339d3fd9",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "45da380d9a1cf89a223e",
+      "record_id": "c9cf829b29f43eb93b0c",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "2058baa0614e8cff8a64",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "b012ab9421d755c47f0e",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "6d0ffdbae5661699860a",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "cebc43ca7890bbf9d7a6",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "3a8fda64d1ea11421b1f",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "86a377a3bd18868e18ea",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "41713fa6db8572745678",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "5620d98f1226f289568b",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "d598c260afc5778fad86",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "c79af848583eaf7e1a37",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "998aeb7fcda8d1e890a7",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "4c9151fa5cc7ded77d18",
+      "record_id": "67829dc1db49f195e41b",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -899,7 +1144,49 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "20110494d6b298c88c4b",
+      "record_id": "093654e9450b72d766f9",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "77f3f88b15bff3062bd7",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "580614e39d6c23fad741",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "18db1442277d7e3c8aad",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "42c5dd5af609c63ae556",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "c7ddfa4c059e550f6770",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "5d34c04b8178a6814da3",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -913,6 +1200,83 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
+      "record_id": "71104baba78ab3f9cf98",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "8ba7fce9b1cb0fe0d3bd",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a3c2c2944920dd35fde3",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "e47b190f67c131ec2f31",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "e4f846c36099bd5b93b8",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "e59733374dcfa4714392",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "e88c087692f23dfd7917",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "90e8b01fb482eee6c705",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "fadf28167abc4f402245",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "83f303853ae6910c3293",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "6a88dfef7c4c92fdcc41",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
       "record_id": "2fb76d1375d9bcaba29b",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
@@ -920,7 +1284,175 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
+      "record_id": "59ec25e94822cb86b788",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "524a903619f2a00f428e",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "2d2e6cd6f7ee28e65618",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "ea1d77fb691306e15e63",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "cc82769e78132413b5a7",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "db77b3aa9c682b9ce4a2",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "6b49ff0a5adf50fd63e2",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "b0a38b3483f85b65af31",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "2ff02400dea0557283b9",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "41a7302e836c4867c5b3",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a18c27c61d5f5fe59f06",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "ca0e567acadd79d18115",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "b714ab9cb1b75ac4e4fe",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
       "record_id": "6a0a54e4c9d283e67e96",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "d3e903e1f90da8354472",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "730e09d833b052bc8465",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "153effedb55b7b289a57",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "c5c621a0f955d4102d4b",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "ac2ac9ff39fe0700c2dc",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "dc3e26a79700b02b7217",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "ff938154d54f388e4666",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "917c085a566d9f2dd59f",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "675176b751aad31e54f9",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "7581385516cdb2b1a260",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "a212039d28e3bbd9f789",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -948,7 +1480,42 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "c397e5ca16b85c81b01a",
+      "record_id": "5ccfbf4d03c8d76a0176",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "c0254558a5dd840dd8f1",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "c4051e3dd23b51d83047",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "005ac128224eb66ceb82",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "f0f61b2aff2e17bb7c86",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "abc88bc9d37443e10c97",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -962,14 +1529,70 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "30ad7e8437dbd65b8ee9",
+      "record_id": "54581665c3a0cbc3c2d3",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "295a8c09f471a813781a",
+      "record_id": "995d066ab78a00c0d9fd",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "8a3b9544b6b681c56859",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "3ea8b56301aa00f40185",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "602b66bb39c574de79ae",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "3adadd505bfc724a0a77",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "04161a2564827be32b1e",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "e530fed786d9ccabc951",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "fdf196bf93bcab1dc801",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "5f547c42494baf294e24",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -990,13 +1613,6 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "35d50a455cf31c859e3f",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
       "record_id": "50b6bcf86bb345d2a793",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
@@ -1004,35 +1620,14 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "dde8dddd80b80a215d9e",
+      "record_id": "6d537fe8130cc40bde16",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "7a0951ee076079b3293b",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "aea1fff4a2e16d36b200",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "f2838dcdb8faeadff232",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "b90d7a20f5e6f5796cd2",
+      "record_id": "618ed61d8cf3816c1e18",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -1053,7 +1648,21 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "561e66b8ab4ef5e4bc03",
+      "record_id": "ef4f7c6b33d93fa0bcd3",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "7b02c928f0801f5e10e4",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "8f3a4e942e6646c65c66",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -1074,13 +1683,6 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "40a7fd592c7849d1a357",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
       "record_id": "a561f5cfdd5cf17dc76e",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
@@ -1095,20 +1697,6 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "caff250d53b5152a792a",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "21f36a33b2c7d9a1088a",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
       "record_id": "f39ba80fa9367f6f0f79",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
@@ -1116,7 +1704,21 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "32b037341071d7f306f7",
+      "record_id": "47473acf411efa4a00ac",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "bb0281f7d2994c304062",
+      "bank_slug": "ziraat-katilim",
+      "severity": "warning",
+      "field": "date_range",
+      "message": "Tarih araligi eksik veya ayiklanamadi"
+    },
+    {
+      "record_id": "e1b256ee1a83e913b1cf",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -1124,13 +1726,6 @@
     },
     {
       "record_id": "42a2f110715aef278e39",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "622136284245a89d53ab",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -1151,28 +1746,7 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "205aef0dfe49580af572",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "01a273557ec4f4b94dd0",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "36151248efc210bf04b6",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "18434701f92c26e50ff5",
+      "record_id": "bd938ec3653b66003046",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -1186,35 +1760,7 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "5ae4f31ba9dda76469fd",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "2b8c6484d4de706b8ef1",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "0705e4fc8830b71cbe42",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "aa94a206f4716b41502a",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "685abd10c815e3f2982e",
+      "record_id": "3ae4bf90d19208e9d55c",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -1228,28 +1774,7 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "f4a5f51cd7a0070a35bb",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "a572c1a3581d6ce6446c",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
       "record_id": "80528ee3b4a57c49d087",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "b3b9ff1ebb265b660272",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -1284,56 +1809,7 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "04b2ec4512dfdc7bb5bb",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "d3182f1631ec45c5ab78",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "0b41bb6fb86bedd1c66c",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "20ec62d8d6d60e5b7cca",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
       "record_id": "37128580d09066a0a23a",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "8faa6860cfa793f88de0",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "0fe2f8e8ddacf35748d0",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "15b1ee37da7546b51327",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -1347,56 +1823,7 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "0564d949a683e36e9168",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
       "record_id": "db1540d43d0ef326eaae",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "c577bc358369ed5b3114",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "36cd0f7d9bba4bbbaa14",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "944954e5d37a23bad5ba",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "c03243e11cae46ef0a12",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "feb2064016a8fadcd697",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "2a0541e9b9d35e19eb15",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -1410,112 +1837,7 @@
       "message": "Tarih araligi eksik veya ayiklanamadi"
     },
     {
-      "record_id": "b29a2a4804d4b9d12168",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "4434616a23ce9cb97604",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "2951624f1670d993ec2c",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
       "record_id": "4e18e8d0beb447c1aaa0",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "bde6fd277cf88b2ca337",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "ae1ee4800258278cd500",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "9529bb96f0c2166b3f90",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "a66abd076e2a85bb92dc",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "eba94de3fedbc4f69383",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "908345e7904dc99a66a4",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "42e7ccf09b5f186ca05a",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "332b2822507b4f1694d0",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "13514bf62b6bf0a757f4",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "02e99f8b58c862df82d1",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "42adfa72f1936aac369e",
-      "bank_slug": "ziraat-katilim",
-      "severity": "warning",
-      "field": "date_range",
-      "message": "Tarih araligi eksik veya ayiklanamadi"
-    },
-    {
-      "record_id": "7ea82b36e38e13824f03",
       "bank_slug": "ziraat-katilim",
       "severity": "warning",
       "field": "date_range",
@@ -1530,7 +1852,7 @@
       "error_type": "HTTPError",
       "error": "404 Client Error: Not Found for url: https://www.kuveytturk.com.tr/kampanyalar/kendim-icin/kart-kampanyalari/konforda-5000-tl-indirim-ve-vade-farksiz-9-aya-varan-taksit-firsati",
       "http_status": 404,
-      "timestamp": "2026-08-11T14:30:15.714257+00:00"
+      "timestamp": "2026-08-27T13:13:19.980802+00:00"
     }
   ],
   "duplicates": [],
@@ -1561,18 +1883,18 @@
       "ratio": 1.0
     },
     "field_fill_rates": {
-      "product_type": 0.9745,
-      "financing_type": 0.1253,
-      "profit_share_rate": 0.0064,
-      "term_months": 0.0149,
-      "installment_count": 0.5117,
-      "campaign_benefit": 0.5966,
-      "reward_amount": 0.087,
-      "discount_rate": 0.1062,
-      "target_audience": 0.034,
-      "campaign_start_date": 0.5456,
-      "campaign_end_date": 0.6391,
-      "fee_information": 0.0085
+      "product_type": 0.9397,
+      "financing_type": 0.1482,
+      "profit_share_rate": 0.0276,
+      "term_months": 0.0276,
+      "installment_count": 0.5854,
+      "campaign_benefit": 0.7789,
+      "reward_amount": 0.2186,
+      "discount_rate": 0.1156,
+      "target_audience": 0.2337,
+      "campaign_start_date": 0.7236,
+      "campaign_end_date": 0.9196,
+      "fee_information": 0.0126
     },
     "by_bank": {
       "adil-katilim": {
@@ -1586,43 +1908,43 @@
         "product_count": 0
       },
       "dunya-katilim": {
-        "record_count": 45,
-        "campaign_count": 45,
+        "record_count": 38,
+        "campaign_count": 38,
         "product_count": 0
       },
       "emlak-katilim": {
-        "record_count": 64,
-        "campaign_count": 64,
+        "record_count": 65,
+        "campaign_count": 65,
         "product_count": 0
       },
       "hayat-finans": {
-        "record_count": 10,
-        "campaign_count": 10,
+        "record_count": 11,
+        "campaign_count": 11,
         "product_count": 0
       },
       "kuveyt-turk": {
-        "record_count": 69,
-        "campaign_count": 69,
+        "record_count": 72,
+        "campaign_count": 72,
         "product_count": 0
       },
       "tom-katilim": {
-        "record_count": 10,
-        "campaign_count": 10,
+        "record_count": 16,
+        "campaign_count": 16,
         "product_count": 0
       },
       "turkiye-finans": {
-        "record_count": 13,
-        "campaign_count": 13,
+        "record_count": 14,
+        "campaign_count": 14,
         "product_count": 0
       },
       "vakif-katilim": {
-        "record_count": 3,
-        "campaign_count": 3,
+        "record_count": 37,
+        "campaign_count": 37,
         "product_count": 0
       },
       "ziraat-katilim": {
-        "record_count": 208,
-        "campaign_count": 208,
+        "record_count": 96,
+        "campaign_count": 96,
         "product_count": 0
       }
     }

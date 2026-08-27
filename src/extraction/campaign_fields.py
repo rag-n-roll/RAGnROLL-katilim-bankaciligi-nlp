@@ -17,6 +17,8 @@ PROFIT_PATTERNS = (
         rf"%\s*({NUMBER})\s*(?:k[aâ]r\s+pay[ıi]\s+)?oran(?:[ıi]|ından|li|lı)?",
         re.IGNORECASE,
     ),
+    re.compile(rf"oran(?:ı|i)?\s*%\s*({NUMBER})", re.IGNORECASE),
+    re.compile(rf"%\s*({NUMBER})\s+oran", re.IGNORECASE),
 )
 DISCOUNT_PATTERN = re.compile(
     rf"(?:%\s*({NUMBER})|({NUMBER})\s*%)\s*(?:indirim|iade)",
@@ -28,14 +30,14 @@ DURATION_PATTERN = re.compile(
     re.IGNORECASE,
 )
 INSTALLMENT_PATTERN = re.compile(
-    r"(?<!\d)(\d{1,3})\s*(?:aya\s+varan\s+)?taksit", re.IGNORECASE
+    r"(?<!\d)(\d{1,3})\s*(?:aya\s+varan\s+|ay\s+)?taksit", re.IGNORECASE
 )
 MONEY_PATTERN = re.compile(
     rf"(?:[₺$€£]\s*{NUMBER}|{NUMBER}(?:\s+milyon)?\s*(?:TL|₺|TRY|USD|\$|EUR|€|GBP|£))",
     re.IGNORECASE,
 )
 MONEY_REWARD_PATTERN = re.compile(
-    rf"({MONEY_PATTERN.pattern})(?=[^.!?]{{0,45}}(?:ödül|odul|iade|puan|bonus))",
+    rf"({MONEY_PATTERN.pattern})(?=[^.!?]{{0,60}}(?:ödül|odul|iade|puan|bonus|bankkart\s+lira|parafpara|worldpuan|altın\s+puan|altin\s+puan|hediye\s+bakiye|hediye))",
     re.IGNORECASE,
 )
 MAX_AMOUNT_PATTERN = re.compile(
@@ -45,8 +47,8 @@ MIN_AMOUNT_PATTERN = re.compile(
     rf"en\s+az\s+({MONEY_PATTERN.pattern})(?:\s+ile)?", re.IGNORECASE
 )
 APPLICATION_CHANNEL_PATTERN = re.compile(
-    r"\b(mobil uygulama|internet şubesi|internet subesi|görüntülü görüşme|"
-    r"goruntulu gorusme|şube|sube|çağrı merkezi|cagri merkezi)\b",
+    r"\b(mobil uygulama|mobil bankacılık|mobil bankacilik|mobilden|internet şubesi|internet subesi|"
+    r"internet şube|internet sube|görüntülü görüşme|goruntulu gorusme|şube|sube|çağrı merkezi|cagri merkezi)\b",
     re.IGNORECASE,
 )
 CONDITION_PATTERN = re.compile(
@@ -222,23 +224,57 @@ def extract_prd_fields(
         min_amount = normalized_min.to_dict() if normalized_min else None
 
     target_audience = None
-    new_customer_words = (
-        "yeni müşteri",
-        "yeni musteri",
-        "ilk kez müşteri",
-        "ilk kez musteri",
+    sentences = [s.strip() for s in re.split(r"(?<=[.!?\n])\s+", source) if s.strip()]
+    exclusion_markers = (
+        "dahil değil",
+        "dahil degil",
+        "geçerli değil",
+        "gecerli degil",
+        "hariç",
+        "haric",
+        "kapsam dışı",
+        "kapsam disi",
     )
-    if any(word in normalized for word in new_customer_words):
-        target_audience = "new_customer"
-        match = re.search(
-            r"yeni müşteri(?:lere)?|yeni musteri(?:lere)?|"
-            r"ilk kez müşteri(?:lere)?|ilk kez musteri(?:lere)?",
-            source,
-            re.IGNORECASE,
-        )
-        if match:
-            evidence["target_audience"] = match.group(0)
-
+    target_defs = [
+        (
+            "new_customer",
+            ("yeni müşteri", "yeni musteri", "ilk kez müşteri", "ilk kez musteri"),
+            r"yeni müşteri(?:lere|miz)?|yeni musteri(?:lere|miz)?|ilk kez müşteri(?:lere)?|ilk kez musteri(?:lere)?",
+        ),
+        (
+            "retiree",
+            ("emekli", "emeklilere", "emekliler"),
+            r"emekli(?:lere|ler|miz|ye)?",
+        ),
+        (
+            "public_sector",
+            ("kamu çalışanı", "kamu calisani", "kamu personeli"),
+            r"kamu\s+(?:çalışan|calisan|personel)\w*",
+        ),
+        (
+            "commercial",
+            ("esnaf", "kobi", "ticari"),
+            r"\b(?:esnaf|kobi|ticari)\b",
+        ),
+        (
+            "student",
+            ("öğrenci", "ogrenci", "genç", "genc", "üniversite"),
+            r"\b(?:öğrenci|ogrenci|genç|genc|üniversite)\b",
+        ),
+    ]
+    for sentence in sentences:
+        norm_s = _normalized(sentence)
+        if any(m in norm_s for m in exclusion_markers):
+            continue
+        for label, keywords, pattern in target_defs:
+            if any(k in norm_s for k in keywords):
+                match = re.search(pattern, sentence, re.IGNORECASE)
+                if match:
+                    target_audience = label
+                    evidence["target_audience"] = match.group(0)
+                    break
+        if target_audience:
+            break
     product_type = _product_type(normalized)
     if product_type:
         product_evidence_patterns = {
