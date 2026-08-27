@@ -229,7 +229,7 @@ def extract_prd_fields(
         min_amount = normalized_min.to_dict() if normalized_min else None
 
     target_audience = None
-    sentences = [s.strip() for s in re.split(r"(?<=[.!?\n])\s+", source) if s.strip()]
+    sentences = [s.strip() for s in re.split(r"[\n.!?;]+|\s{2,}", source) if s.strip()]
     exclusion_markers = (
         "dahil değil",
         "dahil degil",
@@ -243,31 +243,99 @@ def extract_prd_fields(
     target_defs = [
         (
             "new_customer",
-            ("yeni müşteri", "yeni musteri", "ilk kez müşteri", "ilk kez musteri"),
             (
-                r"yeni müşteri(?:lere|miz)?|yeni musteri(?:lere|miz)?|"
-                r"ilk kez müşteri(?:lere)?|ilk kez musteri(?:lere)?"
+                "yeni müşteri", "yeni musteri", "ilk kez müşteri", "ilk kez musteri",
+                "müşteri olan", "musteri olan", "müşteri olun", "musteri olun",
+                "türkiye finanslı", "turkiye finansli", "kuveyt türklü", "kuveyt turklu",
+                "albarakalı", "albarakali", "hayat finanslı", "hayat finansli",
+                "vakıf katılımlı", "vakif katilimli", "ziraat katılımlı", "ziraat katilimli",
+                "hadi'li", "hadili", "kart sahibi olun", "hoş geldin", "hos geldin", "onboarding",
+            ),
+            (
+                r"yeni\s+müşteri(?:ler[ea]?|miz)?|yeni\s+musteri(?:ler[ea]?|miz)?|"
+                r"ilk\s+kez\s+müşteri(?:ler[ea]?|miz)?|ilk\s+kez\s+musteri(?:ler[ea]?|miz)?|"
+                r"müşteri\s+olan(?:lar)?|musteri\s+olan(?:lar)?|"
+                r"müşteri\s+olun|musteri\s+olun|"
+                r"mobilden\s+[^.!?\n]{1,30}?\s*müşteri\s+ol\w*|"
+                r"mobilden\s+[^.!?\n]{1,30}?\s*musteri\s+ol\w*|"
+                r"(?:türkiye\s+finanslı|turkiye\s+finansli|kuveyt\s+türklü|kuveyt\s+turklu|"
+                r"albarakalı|albarakali|hayat\s+finanslı|hayat\s+finansli|"
+                r"vakıf\s+katılımlı|vakif\s+katilimli|ziraat\s+katılımlı|ziraat\s+katilimli|"
+                r"hadi'li|hadili)\s+ol\w*|"
+                r"kart\s+sahibi\s+olun|hoş\s+geldin|hos\s+geldin|onboarding"
             ),
         ),
         (
             "retiree",
-            ("emekli", "emeklilere", "emekliler"),
-            r"emekli(?:lere|ler|miz|ye)?",
+            ("emekli", "emeklilere", "emekliler", "emekli maaş", "emekli maas"),
+            r"emekli(?:ler[ea]?|miz|ye)?|emekli\s+maaş\w*|emekli\s+maas\w*",
         ),
         (
             "public_sector",
-            ("kamu çalışanı", "kamu calisani", "kamu personeli"),
-            r"kamu\s+(?:çalışan|calisan|personel)\w*",
+            (
+                "kamu çalışan", "kamu calisan", "kamu personel",
+                "sağlık meslek", "saglik meslek", "doktor", "öğretmen", "ogretmen",
+            ),
+            (
+                r"kamu\s+(?:çalışan|calisan|personel)\w*|"
+                r"sağlık\s+meslek|saglik\s+meslek|\bdoktor\w*|\böğretmen\w*|\bogretmen\w*"
+            ),
         ),
         (
             "commercial",
-            ("esnaf", "kobi", "ticari"),
-            r"\b(?:esnaf|kobi|ticari)\b",
+            (
+                "esnaf", "kobi", "ticari", "tüzel", "tuzel",
+                "çiftçi", "ciftci", "tarım", "tarim", "işletme", "isletme", "pilot",
+            ),
+            (
+                r"\b(?:esnaf|kobi|ticari|tüzel|tuzel|çiftçi|ciftci|"
+                r"tarım|tarim|işletme|isletme|pilot\w*)\b"
+            ),
         ),
         (
             "student",
-            ("öğrenci", "ogrenci", "genç", "genc", "üniversite"),
-            r"\b(?:öğrenci|ogrenci|genç|genc|üniversite)\b",
+            (
+                "öğrenci", "ogrenci", "genç", "genc",
+                "gençler", "gencler", "üniversite", "universite", "kampüs", "kampus",
+            ),
+            (
+                r"\b(?:öğrenci\w*|ogrenci\w*|genç\w*|genc\w*|"
+                r"üniversite\w*|universite\w*|kampüs\w*|kampus\w*)\b"
+            ),
+        ),
+        (
+            "existing_customer",
+            (
+                "bankkart", "paraf", "world", "sağlam kart", "saglam kart", "hadi",
+                "vkart", "biz kart", "dkart", "troy", "kartınız", "kartiniz",
+                "kart sahip", "debit kart", "sanal kart",
+                "bireysel müşteri", "bireysel musteri",
+                "mevcut müşteri", "mevcut musteri",
+                "bankamız müşteri", "bankamiz musteri",
+                "müşterilerimize özel", "musterilerimize ozel",
+                "müşterilerine özel", "musterilerine ozel",
+                "müşterimize özel", "musterimize ozel",
+                "müşteri bazlı", "musteri bazli",
+                "işlem yapan müşteri", "islem yapan musteri",
+                "katılma hesabı", "katilma hesabi", "mevduat",
+                "vadesiz hesap", "avantajlı hesap", "avantajli hesap",
+            ),
+            (
+                r"(?:bankkart|paraf|world|sağlam\s+kart|saglam\s+kart|hadi|vkart|"
+                r"biz\s+kart|dkart|troy)\s+(?:kredi\s+)?kart\w*|"
+                r"kartınız(?:la)?|kartiniz(?:la)?|kart\s+sahip\w*|debit\s+kart\w*|"
+                r"sanal\s+kart\w*|"
+                r"(?:bireysel|tüm\s+bireysel|mevcut|bankamız|bankamiz)\s+müşteri\w*|"
+                r"(?:bireysel|tüm\s+bireysel|mevcut|bankamız|bankamiz)\s+musteri\w*|"
+                r"müşteri(?:lerimize|lerine|mize)\s+özel|"
+                r"musteri(?:lerimize|lerine|mize)\s+ozel|"
+                r"müşteri\s+bazlı|musteri\s+bazli|"
+                r"işlem\s+yapan\s+müşteri\w*|islem\s+yapan\s+musteri\w*|"
+                r"(?:hayat\s+finanslı|kuveyt\s+türklü|albarakalı|türkiye\s+finanslı|"
+                r"ziraat\s+katılımlı|vakıf\s+katılımlı|hadi'li)\w*\s+özel|"
+                r"(?:avantajlı|katılma|mevduat|vadesiz)\s+hesap\s+(?:açan\s+)?"
+                r"(?:bireysel\s+)?müşteri\w*"
+            ),
         ),
     ]
     for sentence in sentences:

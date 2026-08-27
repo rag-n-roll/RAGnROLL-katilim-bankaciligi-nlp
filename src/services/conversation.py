@@ -11,6 +11,10 @@ from src.policy import ComparisonCriteria
 
 
 _TERM_RE = re.compile(r"(?<!\d)(\d{1,4})\s*ay(?:l[ıi]k)?\b", re.IGNORECASE)
+_TERM_RANGE_RE = re.compile(
+    r"(?<!\d)(\d{1,3})\s*\.?\s*[-–—]\s*(\d{1,3})\s*ay(?:l[ıi]k)?\b",
+    re.IGNORECASE,
+)
 _MONEY_RE = re.compile(
     r"(?<!\d)(\d[\d.,]*)\s*(bin|milyon)?\s*(?:(?:TL|TRY)\b|₺)",
     re.IGNORECASE,
@@ -46,8 +50,15 @@ def extract_comparison_criteria(message: str) -> dict[str, Any]:
     """Extract only explicit, bounded comparison criteria from Turkish text."""
 
     updates: dict[str, Any] = {}
+    range_match = _TERM_RANGE_RE.search(message)
+    if range_match:
+        first, last = sorted((int(range_match.group(1)), int(range_match.group(2))))
+        if 1 <= first <= last <= 240 and last - first <= 23:
+            updates["term_months"] = last
+            updates["term_months_min"] = first
+            updates["term_months_max"] = last
     term_match = _TERM_RE.search(message)
-    if term_match:
+    if term_match and "term_months" not in updates:
         term_months = int(term_match.group(1))
         if 1 <= term_months <= 1200:
             updates["term_months"] = term_months

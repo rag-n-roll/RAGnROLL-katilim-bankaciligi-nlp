@@ -67,8 +67,11 @@ def preprocess_record(record: dict[str, Any]) -> dict[str, Any]:
         str(record.get("title") or ""), str(record.get("content") or "")
     )
     result["duplicate_fingerprint"] = simhash(cleaned)
+    source_text = "\n".join(
+        filter(None, [str(record.get("title") or ""), str(record.get("content") or cleaned)])
+    )
     result["structured"] = extract_prd_fields(
-        "\n".join(filter(None, [str(record.get("title") or ""), cleaned])),
+        source_text,
         start_date=record.get("start_date"),
         end_date=record.get("end_date"),
     )

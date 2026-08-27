@@ -75,7 +75,15 @@ TOOL_ARGUMENTS = {
     "hybrid_rag": frozenset(_COMMON_FILTERS),
     "comparison": frozenset({*_COMMON_FILTERS, *ALLOWED_CRITERIA}),
     "financing_quote": frozenset(
-        {"banks", "financing_type", "term_months", "amount", "fee_priority"}
+        {
+            "banks",
+            "financing_type",
+            "term_months",
+            "term_months_min",
+            "term_months_max",
+            "amount",
+            "fee_priority",
+        }
     ),
     "ontology": frozenset(),
 }
@@ -147,6 +155,8 @@ def valid_tool_call(
             return False
         term_months = arguments.get("term_months")
         amount = arguments.get("amount")
+        term_min = arguments.get("term_months_min")
+        term_max = arguments.get("term_months_max")
         if (
             isinstance(term_months, bool)
             or not isinstance(term_months, int)
@@ -155,6 +165,18 @@ def valid_tool_call(
             or not isinstance(amount, (int, float))
             or not isfinite(float(amount))
             or not 0 < float(amount) <= 100_000_000
+        ):
+            return False
+        if (term_min is None) != (term_max is None):
+            return False
+        if term_min is not None and (
+            isinstance(term_min, bool)
+            or isinstance(term_max, bool)
+            or not isinstance(term_min, int)
+            or not isinstance(term_max, int)
+            or not 1 <= term_min <= term_max <= 240
+            or term_max - term_min > 23
+            or term_months != term_max
         ):
             return False
     return _valid_arguments(
