@@ -97,6 +97,13 @@ test("çıkarılan bilgiler yalnız doğrulanmış değerleri gösterir", async 
   assert.match(explorer, /extractedDetails\.map/);
 });
 
+test("masrafsız bilgisi kullanıcıya büyük harfle gösterilir", async () => {
+  const campaigns = await source("app/campaigns/page.tsx");
+
+  assert.match(campaigns, /displayFeeInformation/);
+  assert.match(campaigns, /return "Masrafsız"/);
+});
+
 test("chatbot karşılaştırma kriterlerini sonraki SSE isteğine taşır", async () => {
   const [chatbot, api] = await Promise.all([
     source("app/chatbot/page.tsx"),
