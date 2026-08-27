@@ -12,7 +12,13 @@
     "faizsiz bankacılık": "katılım esasları",
     "mudarebe": "mudârebe",
     "mudaraba": "mudârebe",
-    "icâre": "icare"
+    "icâre": "İcare",
+    "icare": "İcare",
+    "finansal kiralama": "Finansal Kiralama",
+    "fatsı": "Altın Biriktiren Hesap",
+    "fatsi": "Altın Biriktiren Hesap",
+    "altın teslimatı": "Altın Alım-Satımı",
+    "aidatsız": "Aidatsız Kart"
   },
   "product_terms": {
     "finansman": {"product_type": "financing"},

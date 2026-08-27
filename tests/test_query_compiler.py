@@ -308,3 +308,33 @@ def test_chained_turkish_suffixes_preserve_measurable_bank_queries():
     assert campaign.slots["aggregation"] == "COUNT"
     assert banks.intent == "bank_list"
     assert banks.route == "STRUCTURED_SQL"
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "En yüksek faiz veren geleneksel banka hangisi?",
+        "Bugün repo getirisi ne kadar?",
+        "Halka arz hisselerini tavan bozmadan nasıl satarım?",
+        "Dolara faiz veren en iyi özel banka hangisi?",
+    ],
+)
+def test_compiler_refuses_conventional_finance_before_alias_rewrite(query):
+    plan = DomainQueryCompiler().compile(query)
+    assert plan.intent == "unknown"
+    assert plan.route == "SAFE_REDIRECT"
+    assert plan.confidence == 0.0
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "3.000.000 TL ev finansmanı oranları nedir?",
+        "Ev finansmanı karşılaştırma tablosu çıkar.",
+        "Konut finansmanında kâr payı oranları nasıl?",
+    ],
+)
+def test_financing_discovery_cues_enter_comparison_clarification_flow(query):
+    plan = DomainQueryCompiler().compile(query)
+    assert plan.intent == "product_comparison"
+    assert plan.route == "HYBRID_RAG"

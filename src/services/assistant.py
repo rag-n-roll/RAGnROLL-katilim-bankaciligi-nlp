@@ -511,6 +511,21 @@ class GroundedAssistant:
         plan: QueryPlan, *, criteria: ComparisonCriteria | None = None
     ) -> tuple[dict[str, Any], ComparisonCriteria]:
         effective_criteria = criteria or ComparisonCriteria()
+        term_months = (
+            effective_criteria.term_months
+            if effective_criteria.term_months is not None
+            else plan.slots.get("term_months")
+        )
+        amount = (
+            effective_criteria.amount
+            if effective_criteria.amount is not None
+            else plan.slots.get("amount")
+        )
+        fee_priority = (
+            effective_criteria.fee_priority
+            if effective_criteria.fee_priority is not None
+            else plan.slots.get("fee_priority")
+        )
         sourced_financing_comparison = (
             plan.intent == "product_comparison"
             and plan.slots.get("financing_type")
@@ -543,6 +558,9 @@ class GroundedAssistant:
             # Objective extrema or non-financing campaign comparisons do not require
             # loan preference criteria; complete only the authorization contract.
             effective_criteria = ComparisonCriteria(1, 0.0, False)
+            term_months = effective_criteria.term_months
+            amount = effective_criteria.amount
+            fee_priority = effective_criteria.fee_priority
         arguments = {
             key: value
             for key, value in {
@@ -563,13 +581,13 @@ class GroundedAssistant:
                     else None
                 ),
                 "financing_type": plan.slots.get("financing_type"),
-                "term_months": effective_criteria.term_months
+                "term_months": term_months
                 if tool_name in {"comparison", "financing_quote"}
                 else None,
-                "amount": effective_criteria.amount
+                "amount": amount
                 if tool_name in {"comparison", "financing_quote"}
                 else None,
-                "fee_priority": effective_criteria.fee_priority
+                "fee_priority": fee_priority
                 if tool_name in {"comparison", "financing_quote"}
                 else None,
                 "term_months_min": plan.slots.get("term_months_min")
@@ -1352,6 +1370,11 @@ class GroundedAssistant:
     def _hybrid_answer(self, plan: QueryPlan, *, limit: int) -> dict[str, Any]:
         filters = dict(plan.filters)
         filters["intent"] = plan.intent
+        aidatsiz_card_query = (
+            plan.intent == "product_search"
+            and plan.slots.get("product_type") == "card"
+            and re.search(r"\baidats[ıi]z\b", plan.original_query, re.IGNORECASE)
+        )
         if plan.intent == "definition":
             # Ürün/finansman slotları tanım ontolojisinin metadata alanları
             # değildir. Bu filtreleri taşımak geçerli terimleri Chroma'da sıfırlar.
@@ -1401,6 +1424,24 @@ class GroundedAssistant:
             documents = [
                 document
                 for document in documents
+                if _FEE_FREE_EVIDENCE_RE.search(
+                    "\n".join(
+                        (
+                            str(document.get("metadata", {}).get("title") or ""),
+                            str(document.get("text") or ""),
+                        )
+                    )
+                )
+            ]
+        if aidatsiz_card_query and not documents:
+            terminology_filters = {**filters, "source_types": ["terminology"]}
+            documents = [
+                document
+                for document in self.retriever.retrieve(
+                    plan.canonical_query,
+                    filters=terminology_filters,
+                    limit=limit,
+                )
                 if _FEE_FREE_EVIDENCE_RE.search(
                     "\n".join(
                         (
@@ -2476,7 +2517,26 @@ class GroundedAssistant:
             execution_message = str(conversation_state.get("pending_query") or "")
             pending_plan = self._deterministic_plan(execution_message)
             if pending_plan.intent not in {"product_comparison", "product_search"}:
-                raise ValueError("Konuşma durumu karşılaştırma isteğiyle uyuşmuyor")
+                pending_financing_type = (
+                    pending_plan.slots.get("financing_type")
+                    or extract_financing_type(execution_message)
+                )
+                if (
+                    pending_plan.slots.get("product_type") == "financing"
+                    or pending_financing_type in FINANCING_TYPE_LABELS
+                ):
+                    pending_plan = replace(
+                        pending_plan,
+                        intent="product_comparison",
+                        route="HYBRID_RAG",
+                        slots={
+                            **pending_plan.slots,
+                            "product_type": "financing",
+                            "financing_type": pending_financing_type,
+                        },
+                    )
+                else:
+                    raise ValueError("Konuşma durumu karşılaştırma isteğiyle uyuşmuyor")
             financing_type = str(
                 conversation_state.get("financing_type")
                 or pending_plan.slots.get("financing_type")
@@ -2518,7 +2578,24 @@ class GroundedAssistant:
                     (execution_message, *comparison_context)
                 )
                 pending_plan = self._deterministic_plan(execution_message)
-                if criteria.missing():
+                objective_financing_comparison = (
+                    pending_plan.intent == "product_comparison"
+                    and pending_plan.slots.get("aggregation") in {"MIN", "MAX"}
+                    and pending_plan.slots.get("financing_type")
+                    in {"consumer", "vehicle", "housing", "commercial"}
+                    and pending_plan.slots.get("explicit_profit_rate_preference")
+                    is True
+                )
+                missing_criteria = (
+                    [
+                        name
+                        for name in ("term_months", "amount")
+                        if getattr(criteria, name) is None
+                    ]
+                    if objective_financing_comparison
+                    else criteria.missing()
+                )
+                if missing_criteria:
                     clarification = self._clarification_answer(
                         message=str(conversation_state.get("pending_query") or ""),
                         plan=replace(
@@ -2528,7 +2605,10 @@ class GroundedAssistant:
                         ),
                         criteria=criteria,
                         financing_type=financing_type,
+                        missing_criteria=missing_criteria,
                     )
+                elif objective_financing_comparison and criteria.fee_priority is None:
+                    criteria = merge_criteria(criteria, {"fee_priority": False})
         else:
             pending_plan = self._deterministic_plan(message)
             raw_criteria = extract_comparison_criteria(message)
@@ -2538,11 +2618,39 @@ class GroundedAssistant:
                 or extract_financing_type(message)
                 or ""
             ) or None
+            financing_context = (
+                financing_type in FINANCING_TYPE_LABELS
+                and (
+                    bool(raw_criteria)
+                    or (
+                        pending_plan.intent != "definition"
+                        and (
+                            pending_plan.slots.get("product_type") == "financing"
+                            or bool(
+                                re.search(
+                                    r"\b(?:finansman|kredi)\w*\b",
+                                    pending_plan.canonical_query.casefold(),
+                                )
+                            )
+                            or (
+                                pending_plan.intent
+                                in {"product_search", "product_comparison"}
+                                and bool(
+                                    re.search(
+                                        r"\b(?:al\w*|bank\w*|uygun|oran\w*|vade\w*)\b",
+                                        pending_plan.canonical_query.casefold(),
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
             is_financing_product = (
                 pending_plan.intent in {"product_search", "product_comparison"}
                 and pending_plan.slots.get("product_type") == "financing"
-                and pending_plan.route != "STRUCTURED_SQL"
-                and pending_plan.slots.get("aggregation") not in {"MIN", "MAX"}
+            ) or (
+                financing_context and pending_plan.route != "STRUCTURED_SQL"
             )
             generic_financing_request = (
                 is_financing_product
@@ -2552,13 +2660,21 @@ class GroundedAssistant:
             specific_financing_request = (
                 is_financing_product
                 and financing_type in FINANCING_TYPE_LABELS
-                and (pending_plan.intent == "product_comparison" or bool(raw_criteria))
+                and (
+                    bool(raw_criteria)
+                    or (
+                        pending_plan.intent == "product_comparison"
+                        and pending_plan.route != "STRUCTURED_SQL"
+                    )
+                )
             )
             objective_financing_comparison = (
                 pending_plan.intent == "product_comparison"
                 and pending_plan.slots.get("aggregation") in {"MIN", "MAX"}
                 and pending_plan.slots.get("financing_type")
                 in {"consumer", "vehicle", "housing", "commercial"}
+                and bool(raw_criteria)
+                and pending_plan.slots.get("explicit_profit_rate_preference") is True
             )
             subjective_comparison = (
                 pending_plan.intent == "product_comparison"
@@ -2576,33 +2692,42 @@ class GroundedAssistant:
                     criteria=criteria,
                     missing_criteria=["financing_type"],
                 )
-            elif (
-                (
+            else:
+                missing_criteria = (
+                    [
+                        name
+                        for name in ("term_months", "amount")
+                        if getattr(criteria, name) is None
+                    ]
+                    if objective_financing_comparison
+                    else criteria.missing()
+                )
+                needs_criteria = (
                     subjective_comparison
                     or (
                         specific_financing_request
-                        and not (
-                            criteria.term_months is not None
-                            and criteria.amount is not None
+                        and (
+                            criteria.term_months is None
+                            or criteria.amount is None
                         )
                     )
                 )
-                and criteria.missing()
-            ):
-                clarification = self._clarification_answer(
-                    message=message,
-                    plan=(
-                        replace(
-                            pending_plan,
-                            intent="product_comparison",
-                            route="HYBRID_RAG",
-                        )
-                        if specific_financing_request
-                        else pending_plan
-                    ),
-                    criteria=criteria,
-                    financing_type=financing_type,
-                )
+                if needs_criteria and missing_criteria:
+                    clarification = self._clarification_answer(
+                        message=message,
+                        plan=(
+                            replace(
+                                pending_plan,
+                                intent="product_comparison",
+                                route="HYBRID_RAG",
+                            )
+                            if specific_financing_request
+                            else pending_plan
+                        ),
+                        criteria=criteria,
+                        financing_type=financing_type,
+                        missing_criteria=missing_criteria,
+                    )
             if (
                 (objective_financing_comparison or specific_financing_request)
                 and criteria.term_months is not None

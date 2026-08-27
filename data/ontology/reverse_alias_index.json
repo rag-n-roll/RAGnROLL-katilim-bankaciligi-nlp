@@ -1859,6 +1859,41 @@
       "entity": "PRODUCT"
     }
   ],
+  "fatsı": [
+    {
+      "canonical": "Altın Biriktiren Hesap",
+      "term_id": "TRM0386",
+      "entity": "PRECIOUS_METAL_ACCOUNT"
+    }
+  ],
+  "fatsi": [
+    {
+      "canonical": "Altın Biriktiren Hesap",
+      "term_id": "TRM0386",
+      "entity": "PRECIOUS_METAL_ACCOUNT"
+    }
+  ],
+  "fiziki altın tasarruf sistemi": [
+    {
+      "canonical": "Altın Biriktiren Hesap",
+      "term_id": "TRM0386",
+      "entity": "PRECIOUS_METAL_ACCOUNT"
+    }
+  ],
+  "altın teslimatı": [
+    {
+      "canonical": "Altın Alım-Satımı",
+      "term_id": "TRM1009",
+      "entity": "PRECIOUS_METAL_TRANSACTION"
+    }
+  ],
+  "aidatsız kredi kartı": [
+    {
+      "canonical": "Aidatsız Kart",
+      "term_id": "TRM0434",
+      "entity": "CARD_FEATURE"
+    }
+  ],
   "i̇lk konut finansmanı": [
     {
       "canonical": "İlk Evim Konut Finansmanı",
