@@ -177,6 +177,21 @@ def test_input_guard_redirects_account_mutation_commands(message):
     assert decision.reason_code == "transaction_execution"
 
 
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Kredi kartı şifremi unuttum, yeni şifre belirle.",
+        "IBAN numarama 10.000 TL para çekme talebi oluştur.",
+    ],
+)
+def test_input_guard_redirects_password_reset_and_withdrawal_commands(message):
+    decision = InputGuard().inspect(message)
+
+    assert decision is not None
+    assert decision.action == Action.REDIRECT
+    assert decision.reason_code == "transaction_execution"
+
+
 def test_input_guard_redacts_sensitive_bank_identifiers():
     decision = InputGuard().inspect(
         "TR120006200000000000000001 IBAN hesabımı kontrol et"

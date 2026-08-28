@@ -56,7 +56,9 @@ FINANCING_TYPE_LABELS = {
 _FINANCING_TYPE_PATTERNS = {
     "consumer": re.compile(
         r"\b(?:ihtiyac|tuketici|borc\s+(?:transfer|kapatma))\s*(?:finansman\w*)?\b|"
-        r"\b(?:evlilik|egitim|okul|saglik|hac|umre)\b[^\n.!?]{0,30}?\s*finansman\w*\b"
+        r"\b(?:evlilik|dugun|egitim|okul|saglik|tedavi|hac|umre|"
+        r"tatil|seyahat|beyaz\s+esya|mobilya|tadilat|yenileme)\b"
+        r"[^\n.!?]{0,80}?\s*finansman\w*\b"
     ),
     "vehicle": re.compile(
         r"\b(?:tasit|arac|otomobil|araba|togg|motosiklet)\s*(?:finansman\w*)?\b"
@@ -66,7 +68,7 @@ _FINANCING_TYPE_PATTERNS = {
         r"\b(?:ev|bina)\b[^\n.!?]{0,30}?\s*finansman\w*\b"
     ),
     "commercial": re.compile(
-        r"\b(?:ticari|isletme|kobi|esnaf|hammadde)\s*(?:finansman\w*)?\b"
+        r"\b(?:ticari|isletme|kobi|esnaf|hammadde|filo)\s*(?:finansman\w*)?\b"
     ),
 }
 
@@ -132,7 +134,21 @@ def extract_financing_type(message: str) -> str | None:
         for financing_type, pattern in _FINANCING_TYPE_PATTERNS.items()
         if pattern.search(normalized)
     ]
-    return matches[0] if len(matches) == 1 else None
+    if not matches:
+        return None
+    # Explicit vehicle language wins over a commercial qualifier such as
+    # "ticari" or "filo" (e.g. ticari taşıt finansmanı).
+    if "vehicle" in matches:
+        return "vehicle"
+    # Commercial purpose cues are more specific than generic consumer
+    # language (e.g. esnaf için ihtiyaç finansmanı).
+    if "commercial" in matches:
+        return "commercial"
+    if "consumer" in matches:
+        return "consumer"
+    if len(matches) == 1:
+        return matches[0]
+    return None
 
 
 def extract_contextual_fee_priority(message: str) -> bool | None:

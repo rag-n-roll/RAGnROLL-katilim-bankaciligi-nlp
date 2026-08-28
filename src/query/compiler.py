@@ -139,6 +139,25 @@ class DomainQueryCompiler:
             )
         )
 
+    @classmethod
+    def _is_out_of_domain_finance(cls, query: str) -> bool:
+        """Reject conventional-market requests before participation aliases run."""
+        normalized = cls._normalized(query)
+        if re.search(r"\bfaizsiz\b", normalized):
+            normalized = re.sub(r"\bfaizsiz\b", "", normalized)
+        conventional_markers = (
+            r"\bfaiz(?:li|leri| oran\w*| getir\w*)?\b",
+            r"\bmevduat\w*\b",
+            r"\brepo\w*\b",
+            r"\b(?:borsa|bist|hisse\w*|forex|kripto|bitcoin|ethereum)\b",
+        )
+        if any(re.search(marker, normalized) for marker in conventional_markers):
+            return True
+        return bool(
+            re.search(r"\bhalka arz\b", normalized)
+            and re.search(r"\b(?:sat\w*|al\w*|tavan|hisse)\b", normalized)
+        )
+
     def _intent(
         self,
         query: str,
@@ -164,11 +183,40 @@ class DomainQueryCompiler:
             if str(item.get("surface") or "").casefold() not in generic_terms
             and str(item.get("canonical") or "").casefold() not in generic_terms
         ]
+        campaign_cues = (
+            "taksit",
+            "alışveriş",
+            "harcama",
+            "akaryakıt",
+            "ekstre",
+            "bonus",
+            "indirim",
+        )
+        campaign_brand = any(
+            self._contains_phrase(normalized, term)
+            for term in ("happy", "total", "monster notebook")
+        )
+        campaign_topic = any(
+            self._contains_phrase(normalized, term) for term in campaign_cues
+        )
+        banking_product = (
+            self._contains_nominal_phrase(normalized, "banka")
+            or self._contains_nominal_phrase(normalized, "kart")
+        )
+        campaign_signal = (campaign_brand and campaign_topic) or (
+            banking_product and campaign_topic
+        )
+        policy_signal = any(
+            self._contains_phrase(normalized, term)
+            for term in ("gecikme cezası", "cezai şart", "temerrüt")
+        )
         has_domain = bool(
             has_product
             or bank_count
             or domain_matches
             or metric == "REWARD_AMOUNT"
+            or campaign_signal
+            or policy_signal
         )
         if any(
             term in normalized
@@ -188,6 +236,28 @@ class DomainQueryCompiler:
             )
         ):
             return "bank_list", 0.99
+        financing_comparison_cues = (
+            "oranları",
+            "oranlar",
+            "oranı nasıl",
+            "karşılaştırma tablosu",
+            "tablosu",
+            "finansmanı arıyorum",
+            "finansman çekmek istiyorum",
+            "finansman desteği",
+        )
+        if (
+            has_product
+            and any(
+                item in normalized
+                for item in ("finansman", "konut", "taşıt", "araç", "ihtiyaç", "kobi")
+            )
+            and any(
+                self._contains_phrase(normalized, cue)
+                for cue in financing_comparison_cues
+            )
+        ):
+            return "product_comparison", 0.99
         if self._contains_nominal_phrase(normalized, "kampanya") and any(
             self._contains_phrase(normalized, term)
             for term in ("kaç", "sayısı", "sayisi", "say", "sayar", "adet")
@@ -210,21 +280,30 @@ class DomainQueryCompiler:
         ):
             return "product_comparison", 0.99
         if (
-            self._contains_nominal_phrase(normalized, "kampanya")
-            or "campaign_query" in matched_term_intents
-            or "CAMPAIGN" in entities
-        ) and any(
-            self._contains_phrase(normalized, term)
-            for term in (
-                "ne zamana kadar",
-                "geçerli",
-                "avantaj",
-                "fırsat",
-                "koşul",
-                "şart",
-                "indirim",
-                "nakit iade",
-                "ödül",
+            (
+                self._contains_nominal_phrase(normalized, "kampanya")
+                or "campaign_query" in matched_term_intents
+                or "CAMPAIGN" in entities
+                or campaign_signal
+            )
+            and any(
+                self._contains_phrase(normalized, term)
+                for term in (
+                    "ne zamana kadar",
+                    "geçerli",
+                    "avantaj",
+                    "fırsat",
+                    "koşul",
+                    "şart",
+                    "indirim",
+                    "nakit iade",
+                    "ödül",
+                    "ne kadar",
+                    "yapan",
+                    "veren",
+                    "uygulayan",
+                    "hangileridir",
+                )
             )
         ):
             return "campaign_query", 0.98
@@ -254,6 +333,7 @@ class DomainQueryCompiler:
                 "ilkeleri nelerdir",
                 "esasları nelerdir",
                 "nasıl işler",
+                "nereye aktarılır",
             )
         )
         if definition_requested:
@@ -272,7 +352,28 @@ class DomainQueryCompiler:
             self._contains_phrase(normalized, term) for term in ("vade kaç", "kaç ay")
         ):
             return "maturity_query", 0.96
-        if "nasıl yaparım" in normalized or "nasıl yapılır" in normalized:
+        if (
+            ("nasıl yaparım" in normalized or "nasıl yapılır" in normalized)
+            and any(
+                term in normalized
+                for term in (
+                    "istisna",
+                    "fatsi",
+                    "altın teslimat",
+                    "altın biriktiren hesap",
+                    "altın alım-satımı",
+                    "finansal kiralama",
+                )
+            )
+        ):
+            return "definition", 0.94
+        if (
+            ("nasıl yaparım" in normalized or "nasıl yapılır" in normalized)
+            and not any(
+                term in normalized
+                for term in ("istisna", "fatsi", "altın teslimat", "finansal kiralama")
+            )
+        ):
             return "transaction_howto", 0.96
         if (
             "trade_finance_query" in matched_term_intents
@@ -500,9 +601,9 @@ class DomainQueryCompiler:
     def _metric(query: str) -> tuple[str | None, str | None]:
         normalized = turkish_lower(query)
         if (
-            DomainQueryCompiler._contains_phrase(normalized, "kâr payı")
-            or DomainQueryCompiler._contains_phrase(normalized, "kar payı")
-            or DomainQueryCompiler._contains_phrase(normalized, "oran")
+            DomainQueryCompiler._contains_nominal_phrase(normalized, "kâr payı")
+            or DomainQueryCompiler._contains_nominal_phrase(normalized, "kar payı")
+            or DomainQueryCompiler._contains_nominal_phrase(normalized, "oran")
         ):
             aggregation = (
                 "MIN"
@@ -574,6 +675,17 @@ class DomainQueryCompiler:
         original = str(query or "").strip()
         if not original:
             raise ValueError("Sorgu boş olamaz")
+        if self._is_out_of_domain_finance(original):
+            return QueryPlan(
+                original_query=original,
+                canonical_query=original,
+                intent="unknown",
+                route="SAFE_REDIRECT",
+                slots={"banks": []},
+                filters={"active_only": True},
+                confidence=0.0,
+                warnings=["geleneksel_finans_piyasası_sorgusu"],
+            )
         canonical, rewrites = self.terminology.rewrite_query(original)
         banks = self._banks(canonical, known_banks)
         slots = self._product_slots(canonical)

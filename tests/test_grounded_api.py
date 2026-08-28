@@ -393,6 +393,25 @@ def test_aidatsiz_card_search_excludes_free_transfer_campaigns(tmp_path):
     ]
 
 
+def test_aidatsiz_card_search_falls_back_to_terminology_when_campaigns_missing(
+    tmp_path,
+):
+    database = tmp_path / "aidatsiz-card.sqlite3"
+    CampaignStore(database).initialize()
+
+    with TestClient(create_app(database_path=database, chroma_enabled=False)) as client:
+        response = client.post(
+            "/api/v1/chat",
+            json={"message": "Aidatsız katılım kredi kartları hangileridir?"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["action"] == "ANSWER"
+    assert payload["plan"]["intent"] == "product_search"
+    assert [source["term_id"] for source in payload["sources"]] == ["TRM0434"]
+
+
 def test_participation_principles_question_uses_exact_principles_term(tmp_path):
     with _client(tmp_path) as client:
         response = client.post(
@@ -1046,6 +1065,72 @@ def test_suitable_vehicle_financing_requires_criteria(tmp_path):
     assert payload["facts"] == []
     assert payload["sources"] == []
     assert "vade" in payload["answer_display"].casefold()
+
+
+def test_rate_comparison_with_amount_requires_term_before_retrieval(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/chat",
+            json={
+                "message": (
+                    "İhtiyaç finansmanı çekmek istiyorum. 1 milyon TL çekeceğim. "
+                    "Hangi banka en düşük kâr payını veriyor?"
+                )
+            },
+        )
+
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["action"] == "CLARIFY"
+    assert payload["missing_criteria"] == ["term_months"]
+    assert payload["facts"] == []
+    assert payload["sources"] == []
+    assert payload["plan"]["intent"] == "product_comparison"
+    assert payload["plan"]["route"] == "HYBRID_RAG"
+    assert payload["plan"]["slots"]["metric"] == "PROFIT_RATE"
+    assert payload["conversation_state"]["criteria"]["amount"] == 1_000_000
+    assert "vade süresini" in payload["answer_display"]
+
+
+def test_rate_comparison_follow_up_uses_financing_quote_without_fee_question(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(
+        "src.services.assistant.fetch_official_quotes",
+        _official_consumer_quote,
+    )
+    message = (
+        "İhtiyaç finansmanı çekmek istiyorum. 1 milyon TL çekeceğim. "
+        "Hangi banka en düşük kâr payını veriyor?"
+    )
+    with _client(tmp_path) as client:
+        first = client.post("/api/v1/chat", json={"message": message}).json()
+        second = client.post(
+            "/api/v1/chat",
+            json={"message": "24 ay", "conversation_state": first["conversation_state"]},
+        ).json()
+
+    assert first["action"] == "CLARIFY"
+    assert first["missing_criteria"] == ["term_months"]
+    assert second["action"] == "ANSWER"
+    assert second["missing_criteria"] == []
+    assert second["conversation_state"] is None
+    assert second["plan"]["slots"]["amount"] == 1_000_000
+    assert second["plan"]["slots"]["term_months"] == 24
+    assert second["plan"]["slots"]["fee_priority"] is False
+    assert second["sources"]
+    assert all(
+        source["retrieval_method"] == "official_financing_quote"
+        for source in second["sources"]
+    )
+    assert all(
+        source["campaign_id"].startswith("financing:")
+        for source in second["sources"]
+    )
+    assert all(
+        "1.000.000,00 TL" in source["evidence"]["text"]
+        for source in second["sources"]
+    )
 
 
 @pytest.mark.parametrize(

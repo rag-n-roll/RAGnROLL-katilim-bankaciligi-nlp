@@ -2910,7 +2910,7 @@
   "Altın Biriktiren Hesap": {
     "term_id": "TRM0386",
     "canonical": "Altın Biriktiren Hesap",
-    "aliases": [],
+    "aliases": ["FATSİ", "FATSI", "Fiziki Altın Tasarruf Sistemi"],
     "entity": "PRECIOUS_METAL_ACCOUNT",
     "category": "Hesaplar"
   },
@@ -3272,7 +3272,7 @@
   "Aidatsız Kart": {
     "term_id": "TRM0434",
     "canonical": "Aidatsız Kart",
-    "aliases": [],
+    "aliases": ["Aidatsız Kredi Kartı"],
     "entity": "CARD_FEATURE",
     "category": "Kartlar"
   },
@@ -7491,7 +7491,7 @@
   "Altın Alım-Satımı": {
     "term_id": "TRM1009",
     "canonical": "Altın Alım-Satımı",
-    "aliases": [],
+    "aliases": ["Altın Teslimatı"],
     "entity": "PRECIOUS_METAL_TRANSACTION",
     "category": "Yatırım"
   },

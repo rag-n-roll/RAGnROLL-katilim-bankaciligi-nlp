@@ -71,6 +71,26 @@ def test_extracts_fee_free_preference_and_supported_financing_type():
     assert extract_financing_type("sağlık finansmanı") == "consumer"
 
 
+@pytest.mark.parametrize(
+    ("message", "expected"),
+    [
+        ("Evlilik ve düğün masrafları için finansman.", "consumer"),
+        ("Eğitim ve okul ücreti finansmanı hesapla.", "consumer"),
+        ("Sağlık ve tedavi masrafları için finansman.", "consumer"),
+        ("Hac ve Umre ibadeti için finansman.", "consumer"),
+        ("Tatil ve seyahat için tüketici finansmanı.", "consumer"),
+        ("Beyaz eşya ve mobilya alımı için ihtiyaç finansmanı.", "consumer"),
+        ("Tadilat ve ev yenileme finansmanı.", "consumer"),
+        ("Esnaf için hammadde alım finansmanı.", "commercial"),
+        ("Ticari araç ve filo taşıt finansmanı.", "vehicle"),
+    ],
+)
+def test_extracts_financing_type_from_consumer_and_commercial_purposes(
+    message, expected
+):
+    assert extract_financing_type(message) == expected
+
+
 def test_fee_priority_negation_wins_over_positive_word():
     assert extract_comparison_criteria("Masraf önemli değil") == {
         "fee_priority": False

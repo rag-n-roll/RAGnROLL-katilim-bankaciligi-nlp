@@ -33,11 +33,30 @@ _APPLICATION_CONCEPT_RE = re.compile(r"\b(?:basvuru\w*|finansman\w*)\b")
 _APPLICATION_ACTION_RE = re.compile(
     r"\b(?:basvur(?:mak|mayi|uyorum|urum|alim|un(?:uz)?|acag\w*|abilir\w*)?|yap\w*)\b"
 )
+_PASSWORD_CONCEPT_RE = re.compile(r"\b(?:kart\s+)?sifre\w*\b")
+_PASSWORD_ACTION_RE = re.compile(
+    r"\b(?:"
+    r"unutt(?:um|un|u|unuz)"
+    r"|sifirla(?:y(?:in|iniz))?"
+    r"|belirle(?:y(?:in|iniz))?"
+    r"|yenile(?:y(?:in|iniz))?"
+    r"|degistir(?:in|iniz)?"
+    r"|(?:sifirla|belirle|yenile|degistir|olustur)mek\s+ist\w*"
+    r"|olustur(?:un|unuz)?"
+    r")\b"
+)
+_WITHDRAWAL_CONCEPT_RE = re.compile(r"\bpara\s+cek\w*\b")
+_WITHDRAWAL_ACTION_RE = re.compile(
+    r"\b(?:olustur\w*|talep\s+et\w*|cek(?:in|iniz)?|cekmek\s+ist\w*)\b"
+)
+
+
 _FINANCING_ADVISORY_RE = re.compile(
     r"\b(?:"
     r"karsilastir\w*|kiyasla\w*|"
     r"en\s+(?:dusuk|yuksek|uygun|avantajli)\w*|"
-    r"hangi\s+(?:banka|finansman|urun)\w*"
+    r"hangi\s+(?:banka|finansman|urun)\w*|"
+    r"nasil\s+(?:yap\w*|uygula\w*|kullan\w*|calis\w*)"
     r")\b"
 )
 _FINANCING_AMOUNT_RE = re.compile(
@@ -94,6 +113,8 @@ def _is_transaction_request(message: str) -> bool:
         (_TRANSFER_CONCEPT_RE, _TRANSFER_ACTION_RE, False),
         (_COMPLAINT_CONCEPT_RE, _COMPLAINT_ACTION_RE, False),
         (_APPLICATION_CONCEPT_RE, _APPLICATION_ACTION_RE, financing_advisory),
+        (_PASSWORD_CONCEPT_RE, _PASSWORD_ACTION_RE, False),
+        (_WITHDRAWAL_CONCEPT_RE, _WITHDRAWAL_ACTION_RE, False),
         (_ACCOUNT_PRODUCT_CONCEPT_RE, _CANCELLATION_ACTION_RE, False),
     )
     return any(
