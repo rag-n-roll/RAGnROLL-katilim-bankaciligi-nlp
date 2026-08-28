@@ -1977,6 +1977,12 @@ class GroundedAssistant:
         polished = answer
         for incorrect, correct in replacements.items():
             polished = re.sub(rf"\b{incorrect}\b", correct, polished, flags=re.IGNORECASE)
+        polished = re.sub(
+            r"\s*\[(?:verified_fallback_answer|verified_fallback|fallback_answer|fallback)\]",
+            "",
+            polished,
+            flags=re.IGNORECASE,
+        )
         polished = re.sub(r"(?m)^\s*\*\s+", "• ", polished)
         polished = polished.replace("**", "")
         polished = re.sub(r"\*([^*\n]+)\*", r"\1", polished)

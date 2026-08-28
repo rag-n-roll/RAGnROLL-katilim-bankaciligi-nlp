@@ -85,7 +85,7 @@ TOOL_ARGUMENTS = {
             "fee_priority",
         }
     ),
-    "ontology": frozenset(),
+    "ontology": frozenset({*_COMMON_FILTERS, "query", "domain", "term", "term_id"}),
 }
 
 

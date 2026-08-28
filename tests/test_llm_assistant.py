@@ -46,6 +46,9 @@ class StructuredStore:
     def bank_summary(self):
         return []
 
+    def list_campaigns(self):
+        return list(self.rows)
+
     def query_campaigns(self, *, limit, offset=0, **filters):
         del filters
         return self.rows[offset : offset + limit], len(self.rows)
@@ -1436,6 +1439,17 @@ def test_presentation_removes_internal_citations_and_deduplicates_badges():
     )
     assert presented.answer_display == "Masrafsız kart seçeneği sunulur."
     assert len(presented.sources) == 1
+
+
+def test_presentation_removes_internal_fallback_markers():
+    presented = present_answer(
+        "Konut finansmanında katılım bankacılığı ilkeleri uygulanır "
+        "[K1] [verified_fallback_answer].",
+        sources=[{"document_id": "pdf:1", "title": "TKBB İlkeleri"}],
+    )
+    assert presented.answer_display == "Konut finansmanında katılım bankacılığı ilkeleri uygulanır."
+    assert "[verified_fallback_answer]" not in presented.answer_display
+    assert "verified_fallback_answer" not in presented.answer_display
 
 
 def test_presentation_cleans_citation_punctuation_without_flattening_emphasis():
