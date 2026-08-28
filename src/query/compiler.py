@@ -98,6 +98,7 @@ class DomainQueryCompiler:
             (PROJECT_ROOT / "configs" / "query_rules.json").read_text(encoding="utf-8")
         )
         self.product_terms = rules["product_terms"]
+        self.islamic_contract_terms = tuple(rules.get("islamic_contract_terms", ()))
         self.product_search_patterns = tuple(rules["product_search_patterns"])
         self.structured_intents = set(rules["structured_intents"])
         self.blocked_intents = set(rules["blocked_transaction_intents"])
@@ -223,6 +224,10 @@ class DomainQueryCompiler:
             or self._contains_phrase(normalized, "faizsiz")
             or metric in {"REWARD_AMOUNT", "FEE"}
             or "vade" in normalized
+            or any(
+                self._contains_phrase(normalized, term)
+                for term in self.islamic_contract_terms
+            )
         )
         if any(
             term in normalized

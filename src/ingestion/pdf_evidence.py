@@ -19,6 +19,28 @@ TOPIC_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("kar_dagitim", ("kâr dağıt", "kar dağıt", "birim değer", "hesap değeri")),
     ("muhasebe", ("muhasebe", "yevmiye", "hesap planı", "finansal rapor")),
     ("urun_sureci", ("murabaha", "müşareke", "mudârebe", "mudarebe", "finansal kiralama")),
+    (
+        "katilim_sozlesmeleri",
+        (
+            "garanti",
+            "icara",
+            "i̇cara",
+            "istisna",
+            "karz-ı hasen",
+            "mudarebe",
+            "mudârebe",
+            "murabaha",
+            "müşareke",
+            "musareke",
+            "müsaveme",
+            "musaveme",
+            "selem",
+            "teverruk",
+            "tevliye",
+            "yatırım vekâleti",
+            "yatirim vekaleti",
+        ),
+    ),
 )
 
 
@@ -40,10 +62,13 @@ class PageExtractor(Protocol):
 
 
 class PyMuPdfExtractor:
-    """PyMuPDF ile her sayfayı ayrı hata kaydıyla çıkarır."""
+    """PyMuPDF ile, yoksa pypdf ile, her sayfayı ayrı hata kaydıyla çıkarır."""
 
     def extract_all(self, path: Path, *, max_pages: int | None = None) -> list[PdfPage]:
-        import pymupdf
+        try:
+            import pymupdf
+        except ModuleNotFoundError:
+            return self._extract_with_pypdf(path, max_pages=max_pages)
 
         pages: list[PdfPage] = []
         with pymupdf.open(path) as document:
@@ -64,6 +89,30 @@ class PyMuPdfExtractor:
                             error=f"{type(exc).__name__}: {str(exc)[:240]}",
                         )
                     )
+        return pages
+
+    @staticmethod
+    def _extract_with_pypdf(path: Path, *, max_pages: int | None) -> list[PdfPage]:
+        from pypdf import PdfReader
+
+        reader = PdfReader(str(path))
+        limit = (
+            len(reader.pages)
+            if max_pages is None or max_pages <= 0
+            else min(max_pages, len(reader.pages))
+        )
+        pages: list[PdfPage] = []
+        for index in range(limit):
+            try:
+                pages.append(PdfPage(number=index + 1, text=reader.pages[index].extract_text()))
+            except Exception as exc:
+                pages.append(
+                    PdfPage(
+                        number=index + 1,
+                        text="",
+                        error=f"{type(exc).__name__}: {str(exc)[:240]}",
+                    )
+                )
         return pages
 
 

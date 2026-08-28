@@ -262,6 +262,28 @@ class HybridRetriever:
             ),
             key=lambda item: (-item["score"], item["id"]),
         )
+        if str(filters.get("intent") or "") == "definition":
+            query_terms = {
+                term for term in tokenize_turkish(query) if len(term) >= 3
+            }
+            exact_title = [
+                item
+                for item in lexical
+                if query_terms
+                and query_terms
+                & set(
+                    term
+                    for term in tokenize_turkish(
+                        str(item["metadata"].get("title") or "")
+                    )
+                    if len(term) >= 3
+                )
+            ]
+            if exact_title:
+                exact_ids = {str(item["id"]) for item in exact_title}
+                lexical = exact_title + [
+                    item for item in lexical if str(item["id"]) not in exact_ids
+                ]
         graph = self.graph_retriever.rank_documents(documents, graph_expansion)
         vector: list[dict[str, Any]] = []
         vector_backend = ""
@@ -314,12 +336,36 @@ class HybridRetriever:
             method += "+knowledge-graph"
             self.last_backend += "+knowledge-graph"
         constants = [60, 60, 10] if graph else None
-        return self._fuse(
+        is_definition = str(filters.get("intent") or "") == "definition"
+        fused = self._fuse(
             rankings,
-            limit=limit,
+            limit=max(limit, 20) if is_definition else limit,
             method=method,
             rrf_constants=constants,
         )
+        if is_definition:
+            query_terms = {
+                term for term in tokenize_turkish(query) if len(term) >= 3
+            }
+            fused.sort(
+                key=lambda item: (
+                    -int(
+                        bool(query_terms)
+                        and bool(
+                            query_terms
+                            & set(
+                                term
+                                for term in tokenize_turkish(
+                                    str(item["metadata"].get("title") or "")
+                                )
+                                if len(term) >= 3
+                            )
+                        )
+                    ),
+                    -float(item.get("score") or 0),
+                )
+            )
+        return fused[:limit]
 
     def status(self) -> dict[str, Any]:
         """Birincil ve fallback retrieval yeteneklerinin durumunu döndürür."""

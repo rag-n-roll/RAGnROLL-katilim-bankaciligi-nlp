@@ -1471,7 +1471,39 @@ class GroundedAssistant:
                     if document.get("metadata", {}).get("source_type")
                     == "pdf_evidence"
                 ]
+                if not pdf_documents and isinstance(self.retriever, HybridRetriever):
+                    # Tanım ontolojisi doğru terimi ilk kaynak olarak taşır. Ancak
+                    # kullanıcıya denetlenebilir sayfa kanıtı da sunabilmek için
+                    # aynı sorguyla yalnız PDF kanıt havuzundan bir ek kaynak al.
+                    pdf_documents = self.retriever.retrieve(
+                        plan.canonical_query,
+                        filters={"intent": "definition", "source_types": ["pdf_evidence"]},
+                        limit=1,
+                    )
                 documents = exact_documents + pdf_documents
+        if plan.intent == "definition":
+            query_terms = {
+                token
+                for token in re.findall(r"[\wçğıöşü]+", plan.canonical_query.casefold())
+                if len(token) >= 3
+            }
+            documents.sort(
+                key=lambda document: (
+                    -int(
+                        bool(query_terms)
+                        and bool(
+                            query_terms
+                            & set(
+                                re.findall(
+                                    r"[\wçğıöşü]+",
+                                    str(document.get("metadata", {}).get("title") or "").casefold(),
+                                )
+                            )
+                        )
+                    ),
+                    -float(document.get("score") or 0),
+                )
+            )
         if not documents:
             answer_confidence, confidence_components = _answer_confidence(
                 typed=0, evidenced=0, candidates=0

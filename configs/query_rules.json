@@ -34,6 +34,25 @@
     "yatırım": {"product_type": "investment"},
     "katılma hesabı": {"product_type": "investment"}
   },
+  "islamic_contract_terms": [
+    "garanti",
+    "icare",
+    "icâre",
+    "istisna",
+    "karz-ı hasen",
+    "mudarebe",
+    "mudârebe",
+    "murabaha",
+    "müşareke",
+    "musareke",
+    "müsaveme",
+    "musaveme",
+    "selem",
+    "teverruk",
+    "tevliye",
+    "yatırım vekâleti",
+    "yatirim vekaleti"
+  ],
   "structured_intents": [
     "bank_list",
     "campaign_count",
