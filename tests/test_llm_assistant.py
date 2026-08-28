@@ -53,6 +53,7 @@ class StructuredStore:
         del filters
         return self.rows[offset : offset + limit], len(self.rows)
 
+
 def test_tool_orchestrator_rejects_unvalidated_or_unlisted_tool_calls():
     calls = []
     orchestrator = ToolOrchestrator(allowed_banks=set())
@@ -1439,9 +1440,11 @@ def test_presentation_removes_internal_citations_and_deduplicates_badges():
     assert presented.answer_display == "Masrafsız kart seçeneği sunulur."
     assert len(presented.sources) == 1
 
+
 def test_presentation_removes_internal_fallback_markers():
     presented = present_answer(
-        "Konut finansmanında katılım bankacılığı ilkeleri uygulanır [K1] [verified_fallback_answer].",
+        "Konut finansmanında katılım bankacılığı ilkeleri uygulanır "
+        "[K1] [verified_fallback_answer].",
         sources=[{"document_id": "pdf:1", "title": "TKBB İlkeleri"}],
     )
     assert presented.answer_display == "Konut finansmanında katılım bankacılığı ilkeleri uygulanır."

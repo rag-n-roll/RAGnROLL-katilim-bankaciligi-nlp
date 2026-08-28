@@ -72,7 +72,10 @@ def present_answer(
     answer: str, *, sources: list[dict[str, Any]]
 ) -> PresentedAnswer:
     display = re.sub(
-        r"\s*\[(?:verified_fallback_answer|verified_fallback|fallback_answer|fallback|facts|sources|route|intent)\]",
+        (
+            r"\s*\[(?:verified_fallback_answer|verified_fallback|"
+            r"fallback_answer|fallback|facts|sources|route|intent)\]"
+        ),
         "",
         answer,
         flags=re.IGNORECASE,
