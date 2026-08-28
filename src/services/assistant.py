@@ -43,6 +43,7 @@ from src.services.conversation import (
     FINANCING_TYPE_LABELS,
     extract_comparison_criteria,
     extract_contextual_fee_priority,
+    extract_contextual_term_months,
     extract_financing_type,
     merge_criteria,
 )
@@ -2482,6 +2483,13 @@ class GroundedAssistant:
             follow_up_criteria = extract_comparison_criteria(message)
             follow_up_financing_type = extract_financing_type(message)
             state_criteria = dict(conversation_state.get("criteria") or {})
+            if (
+                "term_months" not in follow_up_criteria
+                and state_criteria.get("term_months") is None
+            ):
+                contextual_term = extract_contextual_term_months(message)
+                if contextual_term is not None:
+                    follow_up_criteria["term_months"] = contextual_term
             if (
                 "fee_priority" not in follow_up_criteria
                 and state_criteria.get("fee_priority") is None

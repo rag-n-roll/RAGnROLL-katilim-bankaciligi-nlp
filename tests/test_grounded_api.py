@@ -562,7 +562,7 @@ def test_financing_type_follow_up_preserves_all_prior_turns_for_final_quote(
         completed = client.post(
             "/api/v1/chat",
             json={
-                "message": "12 ay",
+                "message": "12",
                 "conversation_state": second["conversation_state"],
             },
         ).json()

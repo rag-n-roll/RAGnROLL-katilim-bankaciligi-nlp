@@ -4,6 +4,7 @@ from src.policy import ComparisonCriteria
 from src.services.conversation import (
     extract_comparison_criteria,
     extract_contextual_fee_priority,
+    extract_contextual_term_months,
     extract_financing_type,
     merge_criteria,
 )
@@ -129,6 +130,18 @@ def test_extract_contextual_fee_priority():
 
     for msg in ("24 ay", "500.000 TL", "merhaba", "konut finansmanı"):
         assert extract_contextual_fee_priority(msg) is None
+
+
+@pytest.mark.parametrize("message", ("12", "18.", "240"))
+def test_extract_contextual_term_months_from_bare_bounded_response(message):
+    assert extract_contextual_term_months(message) == int(message.rstrip("."))
+
+
+@pytest.mark.parametrize(
+    "message", ("0", "241", "12 ay", "12 gün", "500.000 TL", "12,5")
+)
+def test_contextual_term_months_rejects_non_bare_or_out_of_range_response(message):
+    assert extract_contextual_term_months(message) is None
 
 
 def test_unrelated_negation_does_not_invert_positive_fee_clause():
