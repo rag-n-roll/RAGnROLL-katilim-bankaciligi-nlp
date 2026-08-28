@@ -1471,6 +1471,15 @@ class GroundedAssistant:
                     if document.get("metadata", {}).get("source_type")
                     == "pdf_evidence"
                 ]
+                if not pdf_documents and isinstance(self.retriever, HybridRetriever):
+                    # Tanım ontolojisi doğru terimi ilk kaynak olarak taşır. Ancak
+                    # kullanıcıya denetlenebilir sayfa kanıtı da sunabilmek için
+                    # aynı sorguyla yalnız PDF kanıt havuzundan bir ek kaynak al.
+                    pdf_documents = self.retriever.retrieve(
+                        plan.canonical_query,
+                        filters={"intent": "definition", "source_types": ["pdf_evidence"]},
+                        limit=1,
+                    )
                 documents = exact_documents + pdf_documents
         if plan.intent == "definition":
             query_terms = {
