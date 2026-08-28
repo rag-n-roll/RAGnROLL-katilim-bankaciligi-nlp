@@ -65,6 +65,13 @@ def test_compiler_links_domain_definition_to_ontology():
     assert plan.intent == "definition"
 
 
+def test_compiler_routes_ne_anlama_gelir_to_definition():
+    plan = DomainQueryCompiler().compile("Karz-ı Hasen ne anlama gelir?")
+
+    assert plan.route == "HYBRID_RAG"
+    assert plan.intent == "definition"
+
+
 def test_compiler_recognizes_profit_pool_informational_question():
     plan = DomainQueryCompiler().compile("Katılım bankacılığındaki kâr payı havuzu nasıl işler?")
     assert plan.intent == "definition"

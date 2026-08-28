@@ -130,6 +130,7 @@ class RefreshManager:
                 str(dataset.resolve()),
                 "--database",
                 str(database.resolve()),
+                "--replace",
                 "--raw-output",
                 str(raw_output),
                 "--processed-output",

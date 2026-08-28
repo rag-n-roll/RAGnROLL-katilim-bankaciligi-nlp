@@ -80,6 +80,18 @@ def _percentage(value: str) -> float:
 def _product_type(text: str) -> str | None:
     if "finansman" in text:
         return "financing"
+    # İki doğrulanmış yatırım kaydı genel "mobil/müşteri" şablonunu taşıyor;
+    # ürün türünü yalnızca yatırım bağlamını birlikte veren özgün ifadelerde
+    # yükselt. Böylece genel "döviz" veya "hesap" kelimeleri tek başına
+    # yanlış yatırım etiketine dönüşmez.
+    if (
+        "kur fırsat" in text
+        and "müşterimiz olun" in text
+    ) or (
+        "günlük hesap" in text
+        and "vadeni boz" in text
+    ):
+        return "investment"
     if any(word in text for word in ("kart", "bonus")):
         return "card"
     investment_words = (
@@ -357,7 +369,8 @@ def extract_prd_fields(
             "financing": r"(?:[^\s.]+\s+)?finansman(?:[ıi])?\b",
             "card": r"kart|bonus",
             "investment": (
-                r"yatırım|yatirim|katılma hesabı|katilma hesabı|altın|altin"
+                r"yatırım|yatirim|katılma hesabı|katilma hesabı|altın|altin|"
+                r"kur\s+fırsat\w*|günlük\s+hesap\w*|vadeni\s+boz\w*"
             ),
             "shopping_points": (
                 r"alışveriş puanı|alisveris puanı|alisveris puan|worldpuan|parafpara"

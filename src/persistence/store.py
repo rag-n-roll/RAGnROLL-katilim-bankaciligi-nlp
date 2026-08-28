@@ -10,6 +10,7 @@ from pathlib import Path
 import sqlite3
 from typing import Any, Iterable
 
+from src.campaign_catalog import filter_curated_campaigns
 from src.data_quality import cluster_near_duplicates, content_hash, hamming_distance, simhash
 from src.nlp_runtime.advisory import (
     RUNTIME_CONTRACT,
@@ -437,27 +438,71 @@ class CampaignStore:
             ("lineage_backfill_version", "1"),
         )
 
-    def import_dataset(self, dataset: dict[str, Any]) -> int:
+    def import_dataset(
+        self, dataset: dict[str, Any], *, replace: bool = False
+    ) -> int:
         rows = dataset.get("records")
         if not isinstance(rows, list):
             raise ValueError("Veri setinde 'records' listesi bulunmuyor")
-        accepted = [row for row in rows if isinstance(row, dict)]
-        self.upsert_rows(accepted, run_status="imported")
+        accepted = filter_curated_campaigns(
+            row for row in rows if isinstance(row, dict)
+        )
+        self.upsert_rows(
+            accepted,
+            run_status="imported",
+            prune_missing=replace,
+        )
         return len(accepted)
 
-    def upsert_rows(self, rows: Iterable[dict[str, Any]], *, run_status: str) -> None:
+    def upsert_rows(
+        self,
+        rows: Iterable[dict[str, Any]],
+        *,
+        run_status: str,
+        prune_missing: bool = False,
+    ) -> None:
         prepared = cluster_near_duplicates(self._prepare_row(row) for row in rows)
         self.initialize()
         now = datetime.now(timezone.utc).isoformat()
         with self._connect() as connection:
             for row in prepared:
                 self._upsert_row(connection, row, now)
+            if prune_missing:
+                self._prune_missing_active_records(connection, prepared)
             connection.execute(
                 "INSERT INTO scrape_runs("
                 "started_at, completed_at, status, record_count"
                 ") VALUES (?, ?, ?, ?)",
                 (now, now, run_status, len(prepared)),
             )
+
+    @staticmethod
+    def _prune_missing_active_records(
+        connection: sqlite3.Connection,
+        prepared: list[dict[str, Any]],
+    ) -> None:
+        """Reconcile a complete snapshot without deleting version history."""
+
+        active_ids = {
+            str(row["id"])
+            for row in prepared
+            if str(row.get("record_kind") or "campaign") == "campaign"
+        }
+        active_product_ids = {
+            str(row["id"])
+            for row in prepared
+            if str(row.get("record_kind") or "campaign") == "product"
+        }
+
+        for table, ids in (("campaigns", active_ids), ("products", active_product_ids)):
+            if ids:
+                placeholders = ",".join("?" for _ in ids)
+                connection.execute(
+                    f"DELETE FROM {table} WHERE id NOT IN ({placeholders})",
+                    tuple(sorted(ids)),
+                )
+            else:
+                connection.execute(f"DELETE FROM {table}")
 
     def _prepare_row(self, row: dict[str, Any]) -> dict[str, Any]:
         raw = {

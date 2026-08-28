@@ -1048,6 +1048,20 @@ def test_definition_keeps_only_exact_terminology_source(tmp_path):
     assert "Muhabir Banka" not in grounded["answer"]
 
 
+def test_definition_question_never_falls_back_to_campaign_sources(tmp_path):
+    assistant = GroundedAssistant(
+        _store(tmp_path), llm=FakeLLM([]), chroma_enabled=False
+    )
+
+    result = assistant.answer("Karz-ı Hasen ne anlama gelir?")
+
+    assert result["plan"]["intent"] == "definition"
+    assert result["plan"]["route"] == "HYBRID_RAG"
+    assert result["sources"]
+    assert all(source.get("campaign_id") is None for source in result["sources"])
+    assert "Karşılıksız ve faizsiz borç verme" in result["answer"]
+
+
 def test_definition_does_not_apply_product_slots_to_terminology_retrieval(tmp_path):
     assistant = GroundedAssistant(
         _store(tmp_path), llm=FakeLLM(), chroma_enabled=False
