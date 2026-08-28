@@ -29,6 +29,7 @@ type ExtractedDetail = {
 const getBadgeClass = (type: string) => {
   if (type === "Kart") return styles.cardBadge;
   if (type === "Yatırım") return styles.investmentBadge;
+  if (type === "Belirsiz") return styles.unknownBadge;
   return styles.financeBadge;
 };
 

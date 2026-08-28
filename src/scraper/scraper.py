@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from src.comparison import ComparisonQuery, compare_records
+from src.campaign_catalog import filter_curated_campaigns
 from src.persistence import CampaignStore
 from src.preprocessing.clean_text import preprocess_dataset
 
@@ -101,6 +102,7 @@ def run_collect(args: argparse.Namespace) -> int:
         )
 
     valid_records, duplicates, record_issues = select_valid_campaigns(records)
+    valid_records = filter_curated_campaigns(valid_records)
     raw = campaign_dataset(valid_records)
     processed = preprocess_dataset(raw)
     quality = build_quality_report(
@@ -125,6 +127,13 @@ def run_collect(args: argparse.Namespace) -> int:
                 processed["records"],
                 run_status=(
                     "partial" if failures or quality["error_count"] else "success"
+                ),
+                # Yalnızca tüm banka kapsamı ve doğrulama başarılıysa tam
+                # snapshot uzlaştırılır; kısmi scrape eski kayıtları korur.
+                prune_missing=(
+                    not failures
+                    and not quality["error_count"]
+                    and quality["processed_coverage"]["bank_coverage"]["ratio"] == 1.0
                 ),
             )
             raw, processed = store.export_datasets()
@@ -160,7 +169,7 @@ def run_db_import(args: argparse.Namespace) -> int:
     with args.input.open(encoding="utf-8") as stream:
         payload = json.load(stream)
     store = CampaignStore(args.database)
-    count = store.import_dataset(payload)
+    count = store.import_dataset(payload, replace=getattr(args, "replace", False))
     raw_output = getattr(args, "raw_output", None)
     processed_output = getattr(args, "processed_output", None)
     if raw_output is not None or processed_output is not None:
@@ -445,6 +454,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     db_import.add_argument("input", type=Path)
     db_import.add_argument("--database", type=Path, default=DEFAULT_DATABASE_PATH)
+    db_import.add_argument(
+        "--replace",
+        action="store_true",
+        help="Tam snapshot olarak içe aktar ve snapshotta olmayan aktif kayıtları sil",
+    )
     db_import.add_argument("--raw-output", type=Path)
     db_import.add_argument("--processed-output", type=Path)
     db_import.set_defaults(handler=run_db_import)

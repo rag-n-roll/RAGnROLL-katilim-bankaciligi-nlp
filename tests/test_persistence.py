@@ -123,6 +123,19 @@ def test_import_legacy_dataset_reextracts_fields_and_exports_raw_and_processed(
     json.dumps(processed, ensure_ascii=False)
 
 
+def test_replace_import_prunes_missing_active_records_but_keeps_lineage(tmp_path):
+    store = CampaignStore(tmp_path / "replace.sqlite3")
+    first = record()
+    second = record()
+    second["id"] = "second"
+    store.upsert_rows([first, second], run_status="success")
+
+    assert store.import_dataset({"records": [first]}, replace=True) == 1
+
+    assert [row["id"] for row in store.list_campaigns()] == [first["id"]]
+    assert store.record_versions("second")
+
+
 def test_query_campaigns_filters_and_pages_in_sql(tmp_path):
     store = CampaignStore(tmp_path / "campaigns.sqlite3")
     first = record()

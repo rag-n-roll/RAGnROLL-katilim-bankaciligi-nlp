@@ -328,7 +328,9 @@ class DomainQueryCompiler:
             for term in (
                 "nedir",
                 "ne demek",
+                "ne anlama gelir",
                 "ne anlama geliyor",
+                "anlamı nedir",
                 "açıklar mısın",
                 "ilkeleri nelerdir",
                 "esasları nelerdir",

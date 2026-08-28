@@ -4,9 +4,11 @@ import styles from "./page.module.css";
 import CampaignExplorer, { type CampaignRowItem } from "./CampaignExplorer";
 import { getCampaignDetail, getCampaigns } from "../../services/api";
 import { cleanCampaignText } from "./textFormatter";
+import { mapCampaignType } from "./campaignType";
 
 type ProcessedCampaign = {
   id: string;
+  record_kind?: string;
   bank_name?: string;
   title?: string;
   summary?: string | null;
@@ -37,14 +39,6 @@ const canonicalBankName = (name = "") => {
   return name || "Katılım Bankası";
 };
 
-const mapCampaignType = (value?: string | null) => {
-  if (!value) return "Finansman";
-  const lower = value.toLowerCase();
-  if (lower.includes("card") || lower.includes("kart")) return "Kart";
-  if (lower.includes("invest") || lower.includes("katıl") || lower.includes("yatırım")) return "Yatırım";
-  return "Finansman";
-};
-
 const displayFeeInformation = (value?: string | null) => {
   if (value?.toLocaleLowerCase("tr-TR") === "masrafsız") return "Masrafsız";
   return value || "—";
@@ -57,8 +51,11 @@ function loadLocalProcessedCampaigns(): CampaignRowItem[] {
       const rawContent = fs.readFileSync(/* turbopackIgnore: true */ candidatePath, "utf8");
       const parsed = JSON.parse(rawContent) as { records?: ProcessedCampaign[] } | ProcessedCampaign[];
       const records = Array.isArray(parsed) ? parsed : parsed.records ?? [];
-      if (records.length > 0) {
-        return records.map((record) => {
+      const campaignRecords = records.filter(
+        (record) => !record.record_kind || record.record_kind === "campaign",
+      );
+      if (campaignRecords.length > 0) {
+        return campaignRecords.map((record) => {
           const structured = record.structured ?? {};
           const rate = structured.profit_share_rate;
           const term = structured.term_months;

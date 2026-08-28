@@ -13,6 +13,7 @@ from typing import Any
 
 from bs4 import BeautifulSoup
 
+from src.campaign_catalog import filter_curated_campaigns
 from src.data_quality import cluster_near_duplicates, content_hash, simhash
 from src.extraction.campaign_fields import extract_prd_fields
 
@@ -84,9 +85,10 @@ def preprocess_dataset(payload: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("Veri setinde 'records' listesi bulunmuyor")
     result = dict(payload)
     result["preprocessed_at"] = datetime.now(timezone.utc).isoformat()
-    result["records"] = cluster_near_duplicates(
+    processed_records = cluster_near_duplicates(
         preprocess_record(record) for record in records if isinstance(record, dict)
     )
+    result["records"] = filter_curated_campaigns(processed_records)
     result["record_count"] = len(result["records"])
     return result
 

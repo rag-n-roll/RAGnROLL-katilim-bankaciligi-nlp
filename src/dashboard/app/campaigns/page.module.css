@@ -288,7 +288,8 @@
 
 .financeBadge,
 .cardBadge,
-.investmentBadge {
+.investmentBadge,
+.unknownBadge {
   color: #075244;
   background: #e8f3ee;
 }

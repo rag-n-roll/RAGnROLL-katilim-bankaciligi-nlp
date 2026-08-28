@@ -5,6 +5,7 @@ import BankLogo from "../components/BankLogo";
 import styles from "./page.module.css";
 import { getCampaigns, getDashboardSnapshot } from "../services/api";
 import { sampleCampaigns } from "./campaigns/campaignSelection";
+import { mapCampaignType } from "./campaigns/campaignType";
 
 const heroBanks = [
   { bank: "Kuveyt Türk", size: 54 },
@@ -18,14 +19,6 @@ const heroBanks = [
   { bank: "Ziraat Katılım", size: 54 },
   { bank: "Emlak Katılım", size: 34 },
 ];
-
-function mapProductType(type?: string | null): string {
-  if (!type) return "Finansman";
-  const lower = type.toLowerCase();
-  if (lower.includes("card") || lower.includes("kart")) return "Kart";
-  if (lower.includes("invest") || lower.includes("katıl") || lower.includes("yatırım")) return "Yatırım";
-  return "Finansman";
-}
 
 export default async function HomePage() {
   // Rastgele seçim build sırasında sabitlenmez; her istekte yeniden yapılır.
@@ -76,7 +69,7 @@ export default async function HomePage() {
         id: c.id,
         bank: c.bank_name,
         title: c.title,
-        type: mapProductType(c.product_type),
+        type: mapCampaignType(c.product_type),
         date: c.updated_at
           ? new Date(c.updated_at).toLocaleDateString("tr-TR", {
               day: "numeric",
