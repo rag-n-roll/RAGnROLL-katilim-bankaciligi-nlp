@@ -80,6 +80,13 @@ def test_compiler_recognizes_profit_pool_informational_question():
     assert any(item.get("term_id") == "TRM0452" for item in plan.terminology_rewrites)
 
 
+def test_compiler_routes_selem_definition_to_grounded_rag():
+    plan = DomainQueryCompiler().compile("Selem ne anlama gelir?")
+
+    assert plan.intent == "definition"
+    assert plan.route == "HYBRID_RAG"
+
+
 @pytest.mark.parametrize(
     "query",
     (

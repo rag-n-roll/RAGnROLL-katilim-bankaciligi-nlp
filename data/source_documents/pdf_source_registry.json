@@ -3,7 +3,9 @@
   "documents": [
     {
       "document_id": "FAIZSIZ-FINANS-KURULUSLARI-MUHASEBESI",
-      "filenames": ["FAIZSIZ-FINANS-KURULUSLARI-MUHASEBESI.pdf"],
+      "filenames": [
+        "FAIZSIZ-FINANS-KURULUSLARI-MUHASEBESI.pdf"
+      ],
       "sha256": "492e1c3bcce9ab3d1f37b2208e56c20fc0a973bf4e7cbc273960e03791b93dba",
       "title": "Faizsiz Finans Kuruluşları Muhasebesi",
       "publisher": "TKBB",
@@ -22,7 +24,9 @@
     },
     {
       "document_id": "KATILIM-FINANS-URUNLERI-VE-MUHASEBE-SURECLERI",
-      "filenames": ["Katilim_Finans_Urunleri_ve_Muhasebe_Surecleri_2.pdf"],
+      "filenames": [
+        "Katilim_Finans_Urunleri_ve_Muhasebe_Surecleri_2.pdf"
+      ],
       "sha256": "95888b6aa7d7fe809c15773e3d5464aeb0159a08712009cce67fe2e0734da1e3",
       "title": "Katılım Finans Ürünleri ve Muhasebe Süreçleri",
       "publisher": "TKBB",
@@ -30,7 +34,9 @@
     },
     {
       "document_id": "TKBB-2025-FAALIYET-RAPORU",
-      "filenames": ["8803561630-2025-faaliyet-raporu.pdf"],
+      "filenames": [
+        "8803561630-2025-faaliyet-raporu.pdf"
+      ],
       "sha256": "94687eed341c543c295025170fabba5eb9f663362cbbb638415e8e323a6799e7",
       "title": "TKBB 2025 Faaliyet Raporu",
       "publisher": "TKBB",
@@ -38,11 +44,143 @@
     },
     {
       "document_id": "KATILIM-BANKACILIGINDA-KAR-DAGITIMI",
-      "filenames": ["KATILIM_BANKACILIGINDA_KAR_DAGITIMI.pdf"],
+      "filenames": [
+        "KATILIM_BANKACILIGINDA_KAR_DAGITIMI.pdf"
+      ],
       "sha256": "61ac130b01c5c8721c092039155fb3759bf03b361333751b3ed4a76cf69fbfd6",
       "title": "Katılım Bankacılığında Kâr Dağıtımı",
       "publisher": "TKBB",
       "source_url": "https://tkbb.org.tr/upload/KATILIM_BANKACILIGINDA_KAR_DAGITIMI.pdf"
+    },
+    {
+      "document_id": "ALBARAKA-KATILIM-GARANTI",
+      "filenames": [
+        "garanti.pdf"
+      ],
+      "sha256": "87c0a08f922f2fb135dc52352d357e169c3f4ef9b28c2180170146bc1910d167",
+      "title": "Garanti",
+      "publisher": "Albaraka Türk",
+      "source_url": "https://www.albaraka.com.tr/documents/hakkimizda/katilim-bankaciligi-bilgilendirme-formu/garanti.pdf"
+    },
+    {
+      "document_id": "ALBARAKA-KATILIM-ICARA-FINANSAL-KIRALAMA",
+      "filenames": [
+        "icara_-finansal_kiralama.pdf"
+      ],
+      "sha256": "edb129e4381b1c488201310090190ccd20dafa133bdba9948ba18c43c9438a12",
+      "title": "İcare (Finansal Kiralama)",
+      "publisher": "Albaraka Türk",
+      "source_url": "https://www.albaraka.com.tr/documents/hakkimizda/katilim-bankaciligi-bilgilendirme-formu/icara_-finansal_kiralama.pdf"
+    },
+    {
+      "document_id": "ALBARAKA-KATILIM-ICARA-ISGUCU-HIZMET",
+      "filenames": [
+        "icara_-is_gucu_hizmet_kiralamasi.pdf"
+      ],
+      "sha256": "4ed09cdc06eccba1d03168a8b8dc7227dac71a9aad58b40b242be0a18d6b5e09",
+      "title": "İcare (İş gücü/hizmet kiralaması)",
+      "publisher": "Albaraka Türk",
+      "source_url": "https://www.albaraka.com.tr/documents/hakkimizda/katilim-bankaciligi-bilgilendirme-formu/icara_-is_gucu_hizmet_kiralamasi.pdf"
+    },
+    {
+      "document_id": "ALBARAKA-KATILIM-ISTISNA-ESER",
+      "filenames": [
+        "istisna-(eser)-akdi.pdf"
+      ],
+      "sha256": "578fffa8e82a4a07689e80461f99432adee29a3d6eac7b6b545afc16a28922f3",
+      "title": "İstisna (Eser) Akdi",
+      "publisher": "Albaraka Türk",
+      "source_url": "https://www.albaraka.com.tr/documents/hakkimizda/katilim-bankaciligi-bilgilendirme-formu/istisna-(eser)-akdi.pdf"
+    },
+    {
+      "document_id": "ALBARAKA-KATILIM-KARZ-I-HASEN",
+      "filenames": [
+        "karz-i-hasen-fon-kullandirma.pdf"
+      ],
+      "sha256": "915e71fb66869cf11c1b917b1ae47bbf74b76b5ded59ca963315a481b7e4ffbf",
+      "title": "Karz-ı hasen (Fon kullandırma)",
+      "publisher": "Albaraka Türk",
+      "source_url": "https://www.albaraka.com.tr/documents/hakkimizda/katilim-bankaciligi-bilgilendirme-formu/karz-i-hasen-fon-kullandirma.pdf"
+    },
+    {
+      "document_id": "ALBARAKA-KATILIM-MUDAREBE",
+      "filenames": [
+        "mudarebe_-fon_toplama.pdf"
+      ],
+      "sha256": "739988555639c3bf67b190b4c3d3dc6ba1a45b5d460c0b790c313870b2a81db0",
+      "title": "Mudarebe",
+      "publisher": "Albaraka Türk",
+      "source_url": "https://www.albaraka.com.tr/documents/hakkimizda/katilim-bankaciligi-bilgilendirme-formu/mudarebe_-fon_toplama.pdf"
+    },
+    {
+      "document_id": "ALBARAKA-KATILIM-MURABAHA",
+      "filenames": [
+        "murabaha.pdf"
+      ],
+      "sha256": "1ce83c03f26d0558044b924759ba9cdfb47286dbc868ff7a379cc6f219dd4bbd",
+      "title": "Murabaha",
+      "publisher": "Albaraka Türk",
+      "source_url": "https://www.albaraka.com.tr/documents/hakkimizda/katilim-bankaciligi-bilgilendirme-formu/murabaha.pdf"
+    },
+    {
+      "document_id": "ALBARAKA-KATILIM-MUSAREKE",
+      "filenames": [
+        "musareke_-kar_zarar_ortakligi.pdf"
+      ],
+      "sha256": "b926d298c9f9a1a984509b5319ad3c7658dcf2d41d03785901cf2de8182888a0",
+      "title": "Müşareke",
+      "publisher": "Albaraka Türk",
+      "source_url": "https://www.albaraka.com.tr/documents/hakkimizda/katilim-bankaciligi-bilgilendirme-formu/musareke_-kar_zarar_ortakligi.pdf"
+    },
+    {
+      "document_id": "ALBARAKA-KATILIM-MUSAVEME",
+      "filenames": [
+        "musaveme.pdf"
+      ],
+      "sha256": "3c1e5ee46265adde45bc174ad03d543ea86bf6b58bdc5fcdf6e8e3d620d90305",
+      "title": "Müsaveme",
+      "publisher": "Albaraka Türk",
+      "source_url": "https://www.albaraka.com.tr/documents/hakkimizda/katilim-bankaciligi-bilgilendirme-formu/musaveme.pdf"
+    },
+    {
+      "document_id": "ALBARAKA-KATILIM-SELEM",
+      "filenames": [
+        "selem.pdf"
+      ],
+      "sha256": "1654779e2d56a0a8248b6b05c38f92b382b000ec913c1b17a65015050e28e46a",
+      "title": "Selem",
+      "publisher": "Albaraka Türk",
+      "source_url": "https://www.albaraka.com.tr/documents/hakkimizda/katilim-bankaciligi-bilgilendirme-formu/selem.pdf"
+    },
+    {
+      "document_id": "ALBARAKA-KATILIM-TEVERRUK",
+      "filenames": [
+        "teverruk.pdf"
+      ],
+      "sha256": "97f89530b5f218a641930c1488adb864c2f3db6a0fae6f4d4bd59535c479263c",
+      "title": "Teverruk",
+      "publisher": "Albaraka Türk",
+      "source_url": "https://www.albaraka.com.tr/documents/hakkimizda/katilim-bankaciligi-bilgilendirme-formu/teverruk.pdf"
+    },
+    {
+      "document_id": "ALBARAKA-KATILIM-TEVLIYE",
+      "filenames": [
+        "tevliye.pdf"
+      ],
+      "sha256": "25417df9fa7ad6de1638059448a88ee948a71fcd91c737279b30940bf9781e75",
+      "title": "Tevliye",
+      "publisher": "Albaraka Türk",
+      "source_url": "https://www.albaraka.com.tr/documents/hakkimizda/katilim-bankaciligi-bilgilendirme-formu/tevliye.pdf"
+    },
+    {
+      "document_id": "ALBARAKA-KATILIM-YATIRIM-VEKALETI",
+      "filenames": [
+        "yatirim_vekaleti_-fon_kullandirma.pdf"
+      ],
+      "sha256": "d7a220683426c664f15b96683afa8e49f7bb7da094d847a5de363bbbbd35b3f6",
+      "title": "Yatırım Vekaleti (Fon kullandırma)",
+      "publisher": "Albaraka Türk",
+      "source_url": "https://www.albaraka.com.tr/documents/hakkimizda/katilim-bankaciligi-bilgilendirme-formu/yatirim_vekaleti_-fon_kullandirma.pdf"
     }
   ]
 }

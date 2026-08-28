@@ -1472,6 +1472,29 @@ class GroundedAssistant:
                     == "pdf_evidence"
                 ]
                 documents = exact_documents + pdf_documents
+        if plan.intent == "definition":
+            query_terms = {
+                token
+                for token in re.findall(r"[\wçğıöşü]+", plan.canonical_query.casefold())
+                if len(token) >= 3
+            }
+            documents.sort(
+                key=lambda document: (
+                    -int(
+                        bool(query_terms)
+                        and bool(
+                            query_terms
+                            & set(
+                                re.findall(
+                                    r"[\wçğıöşü]+",
+                                    str(document.get("metadata", {}).get("title") or "").casefold(),
+                                )
+                            )
+                        )
+                    ),
+                    -float(document.get("score") or 0),
+                )
+            )
         if not documents:
             answer_confidence, confidence_components = _answer_confidence(
                 typed=0, evidenced=0, candidates=0
