@@ -214,9 +214,15 @@ class DomainQueryCompiler:
             has_product
             or bank_count
             or domain_matches
-            or metric == "REWARD_AMOUNT"
             or campaign_signal
             or policy_signal
+            or self._contains_nominal_phrase(normalized, "katılım banka")
+            or self._contains_phrase(normalized, "katılım finans")
+            or self._contains_phrase(normalized, "kâr payı")
+            or self._contains_phrase(normalized, "kar payı")
+            or self._contains_phrase(normalized, "faizsiz")
+            or metric in {"REWARD_AMOUNT", "FEE"}
+            or "vade" in normalized
         )
         if any(
             term in normalized
@@ -335,6 +341,7 @@ class DomainQueryCompiler:
                 "ilkeleri nelerdir",
                 "esasları nelerdir",
                 "nasıl işler",
+                "nasıl hesaplanır",
                 "nereye aktarılır",
             )
         )

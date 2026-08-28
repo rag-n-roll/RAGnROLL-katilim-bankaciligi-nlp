@@ -71,7 +71,14 @@ class PresentedAnswer:
 def present_answer(
     answer: str, *, sources: list[dict[str, Any]]
 ) -> PresentedAnswer:
-    display = re.sub(r"\s*\[K\d+(?:\s*,\s*K?\d+)*\]", "", answer)
+    display = re.sub(
+        r"\s*\[(?:verified_fallback_answer|verified_fallback|fallback_answer|fallback|facts|sources|route|intent)\]",
+        "",
+        answer,
+        flags=re.IGNORECASE,
+    )
+    display = re.sub(r"\s*\[K\d+(?:\s*,\s*K?\d+)*\]", "", display)
+    display = re.sub(r"\bverified_fallback_answer\b", "", display, flags=re.IGNORECASE)
     display = re.sub(r"[ \t]+([.,;:!?])", r"\1", display).strip()
     # Küçük modeller kaynak etiketinin çevresinde bazen `,,.` gibi artık
     # noktalama bırakır. Yalnızca ara noktalama ile cümle sonu işaretinin

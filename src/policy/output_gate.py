@@ -14,7 +14,12 @@ class OutputVerdict:
 def _fingerprints(answer: str) -> list[str]:
     values = []
     for line in answer.splitlines():
-        clean = re.sub(r"\[K\d+\]", "", line).casefold()
+        clean = re.sub(
+            r"\[(?:K\d+|verified_fallback_answer|verified_fallback|fallback_answer|fallback)\]",
+            "",
+            line,
+            flags=re.IGNORECASE,
+        ).casefold()
         clean = re.sub(r"[^\wçğıöşü]+", " ", clean).strip()
         if clean:
             values.append(clean)
