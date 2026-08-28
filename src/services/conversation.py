@@ -46,6 +46,7 @@ _BARE_POSITIVE_FEE_RE = re.compile(
     r"^\s*(?:var|evet|olsun|istiyorum|[öo]nemli)\s*[.!]?\s*$",
     re.IGNORECASE,
 )
+_BARE_TERM_RESPONSE_RE = re.compile(r"^\s*(\d{1,3})\s*[.!]?\s*$")
 
 FINANCING_TYPE_LABELS = {
     "consumer": "İhtiyaç finansmanı",
@@ -160,6 +161,16 @@ def extract_contextual_fee_priority(message: str) -> bool | None:
     if _BARE_POSITIVE_FEE_RE.match(normalized):
         return True
     return None
+
+
+def extract_contextual_term_months(message: str) -> int | None:
+    """Extract a bare, bounded month count only for a pending term prompt."""
+
+    match = _BARE_TERM_RESPONSE_RE.match(message)
+    if match is None:
+        return None
+    term_months = int(match.group(1))
+    return term_months if 1 <= term_months <= 240 else None
 
 
 def merge_criteria(
