@@ -10,7 +10,8 @@
 [![Backend Tests](https://img.shields.io/badge/Pytest-912%20Passed-brightgreen.svg?logo=pytest&logoColor=white)](https://docs.pytest.org/)
 [![Frontend Tests](https://img.shields.io/badge/Node%20Test-39%20Passed-brightgreen.svg?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Final Raporu](https://shields.ioNAL%20RAPORU-brightgreen?style=for-the-badge)](FINALRAPORU.md)
+[![Final Raporu](https://img.shields.io/badge/FINAL%20RAPORU-28a745?style=for-the-badge&logo=markdown&logoColor=white)](FINALRAPORU.md)
+
 **Türkiye'deki 10 resmî katılım bankasının güncel ürün, kampanya ve faizsiz finansman olanaklarını tek bir güvenli, doğrulanabilir ve açıklanabilir karar destek platformunda birleştiren uçtan uca NLP ve Hibrit RAG sistemi.**
 
 [Özellikler](#1-öne-çıkan-ürün-özellikleri) • [Mimari](#2-sistem-ve-güvenlik-mimarisi) • [Hızlı Başlangıç](#4-hızlı-başlangıç-ve-kurulum) • [API Referansı](#5-api-ve-entegrasyon-kılavuzu) • [Kalite ve Testler](#6-kalite-güvence-test-ve-değerlendirme) • [Dokümantasyon](#9-teknik-dokümantasyon-ve-kaynaklar)
